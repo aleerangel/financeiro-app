@@ -236,3 +236,4 @@ export async function deleteSale(saleId: string) {
   revalidatePath('/transacoes');
   revalidatePath('/contas');
 }
+

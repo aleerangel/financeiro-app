@@ -41,3 +41,4 @@ export default async function VendasPage() {
     </AppShell>
   );
 }
+

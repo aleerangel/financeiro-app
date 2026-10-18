@@ -96,3 +96,4 @@ CREATE POLICY "Users can manage items of their own sales"
             AND public.sales.user_id = auth.uid()
         )
     );
+

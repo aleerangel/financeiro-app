@@ -152,3 +152,4 @@ export async function deleteProduct(id: string) {
   revalidatePath('/produtos');
   revalidatePath('/vendas');
 }
+
