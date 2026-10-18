@@ -4,6 +4,8 @@ import { AppShell } from '@/components/layout/AppShell';
 import { getProducts } from '@/lib/actions/products';
 import { ProductsList } from '@/components/products/ProductsList';
 
+export const instant = false;
+
 export default async function ProdutosPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

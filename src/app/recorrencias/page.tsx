@@ -7,6 +7,8 @@ import { getCreditCards } from '@/lib/actions/credit-cards';
 import { getCategories } from '@/lib/actions/categories';
 import { RecurrencesList } from '@/components/recurrences/RecurrencesList';
 
+export const instant = false;
+
 export default async function RecorrenciasPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

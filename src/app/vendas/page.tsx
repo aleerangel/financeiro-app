@@ -6,6 +6,8 @@ import { getProducts } from '@/lib/actions/products';
 import { getAccounts } from '@/lib/actions/accounts';
 import { SalesView } from '@/components/sales/SalesView';
 
+export const instant = false;
+
 export default async function VendasPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

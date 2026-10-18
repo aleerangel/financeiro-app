@@ -6,6 +6,8 @@ import { getCreditCards } from '@/lib/actions/credit-cards';
 import { getCategories } from '@/lib/actions/categories';
 import { TransactionsView } from '@/components/transactions/TransactionsView';
 
+export const instant = false;
+
 export default async function TransacoesPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

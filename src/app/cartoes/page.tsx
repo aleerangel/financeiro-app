@@ -4,6 +4,8 @@ import { getCreditCards } from '@/lib/actions/credit-cards';
 import { AppShell } from '@/components/layout/AppShell';
 import { CreditCardsList } from '@/components/cards/CreditCardsList';
 
+export const instant = false;
+
 export default async function CartoesPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

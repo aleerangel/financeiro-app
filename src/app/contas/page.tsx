@@ -4,6 +4,8 @@ import { getAccounts } from '@/lib/actions/accounts';
 import { AppShell } from '@/components/layout/AppShell';
 import { AccountsList } from '@/components/accounts/AccountsList';
 
+export const instant = false;
+
 export default async function ContasPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
