@@ -14,6 +14,14 @@ interface NewSaleModalProps {
   onSuccess?: () => void;
 }
 
+const getTodayString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export function NewSaleModal({
   isOpen,
   onClose,
@@ -22,6 +30,7 @@ export function NewSaleModal({
   onSuccess,
 }: NewSaleModalProps) {
   const [clientName, setClientName] = useState('');
+  const [saleDate, setSaleDate] = useState(getTodayString());
   const [selectedItems, setSelectedItems] = useState<CreateSaleItemInput[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -109,12 +118,14 @@ export function NewSaleModal({
         account_id: accountId,
         items: selectedItems,
         notes: notes.trim() || undefined,
+        sale_date: saleDate,
       });
 
       // Reset
       setClientName('');
       setSelectedItems([]);
       setNotes('');
+      setSaleDate(getTodayString());
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
@@ -138,7 +149,7 @@ export function NewSaleModal({
           Novo Atendimento
         </h2>
         <p className="text-xs text-zinc-400 mb-5">
-          Comanda rápida: toque nos serviços prestados, informe o cliente e finalize.
+          Comanda rápida: informe o cliente, data, serviços prestados e finalize.
         </p>
 
         {error && (
@@ -148,20 +159,34 @@ export function NewSaleModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Nome do Cliente */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wider">
-              Nome do Cliente
-            </label>
-            <input
-              type="text"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              placeholder="Ex: João, Lucas, Marcos..."
-              className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-base text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition font-medium"
-              required
-              autoFocus
-            />
+          {/* Nome do Cliente e Data do Atendimento */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wider">
+                Nome do Cliente
+              </label>
+              <input
+                type="text"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="Ex: João, Lucas, Marcos..."
+                className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-base text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition font-medium"
+                required
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wider">
+                Data
+              </label>
+              <input
+                type="date"
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value)}
+                className="w-full px-3.5 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition font-medium"
+                required
+              />
+            </div>
           </div>
 
           {/* Grade de Serviços Rápidos (Toque para adicionar) */}

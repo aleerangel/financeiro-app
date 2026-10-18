@@ -17,6 +17,7 @@ export interface CreateSaleInput {
   account_id: string;
   items: CreateSaleItemInput[];
   notes?: string;
+  sale_date?: string;
 }
 
 export interface TodaySalesSummary {
@@ -124,7 +125,25 @@ export async function createSale(input: CreateSaleInput) {
     .join(', ');
 
   const transactionDesc = `Atendimento: ${input.client_name.trim()} (${itemsSummary})`;
-  const todayStr = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  let saleDateIso: string;
+  let dateOnlyStr: string;
+
+  if (input.sale_date) {
+    if (input.sale_date.includes('T')) {
+      const parsed = new Date(input.sale_date);
+      saleDateIso = parsed.toISOString();
+      dateOnlyStr = saleDateIso.split('T')[0];
+    } else {
+      const [year, month, day] = input.sale_date.split('-').map(Number);
+      const customDate = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
+      saleDateIso = customDate.toISOString();
+      dateOnlyStr = input.sale_date;
+    }
+  } else {
+    saleDateIso = now.toISOString();
+    dateOnlyStr = now.toISOString().split('T')[0];
+  }
 
   // 3. Cria a transação financeira de receita
   const { data: transaction, error: txError } = await supabase
@@ -135,11 +154,11 @@ export async function createSale(input: CreateSaleInput) {
       amount: totalAmount,
       type: 'income',
       payment_method: input.payment_method,
-      transaction_date: todayStr,
-      due_date: todayStr,
+      transaction_date: dateOnlyStr,
+      due_date: dateOnlyStr,
       account_id: input.account_id,
       is_paid: true,
-      paid_at: new Date().toISOString(),
+      paid_at: saleDateIso,
       notes: input.notes ? `Comanda: ${input.notes}` : 'Atendimento registrado no módulo de vendas',
     })
     .select('id')
@@ -159,7 +178,7 @@ export async function createSale(input: CreateSaleInput) {
       payment_method: input.payment_method,
       account_id: input.account_id,
       transaction_id: transaction.id,
-      sale_date: new Date().toISOString(),
+      sale_date: saleDateIso,
       notes: input.notes?.trim() || null,
     })
     .select('id')
