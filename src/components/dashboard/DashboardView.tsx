@@ -77,12 +77,22 @@ export function DashboardView({
   const totalCardUsed = initialCards.reduce((acc, curr) => acc + curr.used_limit, 0);
   const totalCardLimit = initialCards.reduce((acc, curr) => acc + Number(curr.credit_limit), 0);
 
-  const monthIncome = transactions
-    .filter((t) => t.type === 'income')
+  // Receitas Realizadas (Recebidas) vs Previstas (A Receber)
+  const receivedIncome = transactions
+    .filter((t) => t.type === 'income' && t.is_paid)
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
 
-  const monthExpense = transactions
-    .filter((t) => t.type === 'expense')
+  const pendingIncome = transactions
+    .filter((t) => t.type === 'income' && !t.is_paid)
+    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+  // Despesas Realizadas (Pagas) vs Previstas (A Pagar)
+  const paidExpense = transactions
+    .filter((t) => t.type === 'expense' && t.is_paid)
+    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+  const pendingExpense = transactions
+    .filter((t) => t.type === 'expense' && !t.is_paid)
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
 
   const recentTransactions = transactions.slice(0, 5);
@@ -142,15 +152,19 @@ export function DashboardView({
         {/* Card Receitas do Mês */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Receitas no Mês</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">Receitas Recebidas</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(monthIncome)}</h2>
-            <span className="text-[11px] text-zinc-500 mt-1 block">
-              {loading ? 'Calculando...' : `Em ${formattedMonth}`}
+            <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(receivedIncome)}</h2>
+            <span className="text-[11px] text-zinc-400 mt-1 block">
+              {loading
+                ? 'Calculando...'
+                : pendingIncome > 0
+                ? `+ ${formatCurrency(pendingIncome)} a receber`
+                : 'Nenhuma receita pendente'}
             </span>
           </div>
         </div>
@@ -158,15 +172,19 @@ export function DashboardView({
         {/* Card Despesas do Mês */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Despesas no Mês</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">Despesas Pagas</span>
             <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400">
               <ArrowDownRight className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-rose-400">{formatCurrency(monthExpense)}</h2>
-            <span className="text-[11px] text-zinc-500 mt-1 block">
-              {loading ? 'Calculando...' : `Em ${formattedMonth}`}
+            <h2 className="text-2xl font-bold text-rose-400">{formatCurrency(paidExpense)}</h2>
+            <span className="text-[11px] text-zinc-400 mt-1 block">
+              {loading
+                ? 'Calculando...'
+                : pendingExpense > 0
+                ? `+ ${formatCurrency(pendingExpense)} a pagar`
+                : 'Todas as contas pagas'}
             </span>
           </div>
         </div>

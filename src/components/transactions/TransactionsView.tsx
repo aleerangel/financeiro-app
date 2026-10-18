@@ -111,20 +111,25 @@ export function TransactionsView({
     }
   };
 
-  // Cálculos consolidados do mês
-  const totalIncome = transactions
-    .filter((t) => t.type === 'income')
+  // Cálculos consolidados do mês (Realizado vs Previsto)
+  const receivedIncome = transactions
+    .filter((t) => t.type === 'income' && t.is_paid)
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
 
-  const totalExpense = transactions
-    .filter((t) => t.type === 'expense')
+  const pendingIncome = transactions
+    .filter((t) => t.type === 'income' && !t.is_paid)
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
 
-  const balance = totalIncome - totalExpense;
-
-  const totalPending = transactions
-    .filter((t) => !t.is_paid && t.type === 'expense')
+  const paidExpense = transactions
+    .filter((t) => t.type === 'expense' && t.is_paid)
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+  const pendingExpense = transactions
+    .filter((t) => t.type === 'expense' && !t.is_paid)
+    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+  const realizedBalance = receivedIncome - paidExpense;
+  const projectedBalance = (receivedIncome + pendingIncome) - (paidExpense + pendingExpense);
 
   // Filtros
   const filteredTransactions = transactions.filter((t) => {
@@ -141,32 +146,41 @@ export function TransactionsView({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
           <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-            Receitas
+            Receitas Recebidas
           </span>
-          <span className="text-lg sm:text-xl font-bold text-emerald-400">
-            {formatCurrency(totalIncome)}
+          <span className="text-lg sm:text-xl font-bold text-emerald-400 block">
+            {formatCurrency(receivedIncome)}
           </span>
-        </div>
-
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-            Despesas
-          </span>
-          <span className="text-lg sm:text-xl font-bold text-rose-400">
-            {formatCurrency(totalExpense)}
+          <span className="text-[10px] text-zinc-400 mt-1 block">
+            {pendingIncome > 0 ? `+ ${formatCurrency(pendingIncome)} a receber` : 'Tudo recebido'}
           </span>
         </div>
 
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
           <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-            Balanço do Mês
+            Despesas Pagas
+          </span>
+          <span className="text-lg sm:text-xl font-bold text-rose-400 block">
+            {formatCurrency(paidExpense)}
+          </span>
+          <span className="text-[10px] text-zinc-400 mt-1 block">
+            {pendingExpense > 0 ? `+ ${formatCurrency(pendingExpense)} a pagar` : 'Tudo pago'}
+          </span>
+        </div>
+
+        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
+            Balanço Realizado
           </span>
           <span
-            className={`text-lg sm:text-xl font-bold ${
-              balance >= 0 ? 'text-zinc-100' : 'text-rose-400'
+            className={`text-lg sm:text-xl font-bold block ${
+              realizedBalance >= 0 ? 'text-zinc-100' : 'text-rose-400'
             }`}
           >
-            {formatCurrency(balance)}
+            {formatCurrency(realizedBalance)}
+          </span>
+          <span className="text-[10px] text-zinc-400 mt-1 block">
+            Previsão: {formatCurrency(projectedBalance)}
           </span>
         </div>
 
@@ -174,8 +188,11 @@ export function TransactionsView({
           <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-400 block mb-1">
             A Pagar / Pendente
           </span>
-          <span className="text-lg sm:text-xl font-bold text-amber-300">
-            {formatCurrency(totalPending)}
+          <span className="text-lg sm:text-xl font-bold text-amber-300 block">
+            {formatCurrency(pendingExpense)}
+          </span>
+          <span className="text-[10px] text-emerald-400/80 mt-1 block">
+            A receber: {formatCurrency(pendingIncome)}
           </span>
         </div>
       </div>

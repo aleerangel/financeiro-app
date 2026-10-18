@@ -10,34 +10,49 @@ interface MonthlyBarChartProps {
 }
 
 export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
-  const { totalIncome, totalExpense, paidExpense, pendingExpense, savingsRate } = useMemo(() => {
-    let income = 0;
-    let expense = 0;
+  const {
+    receivedIncome,
+    pendingIncome,
+    totalIncome,
+    paidExpense,
+    pendingExpense,
+    totalExpense,
+    savingsRate,
+  } = useMemo(() => {
+    let recInc = 0;
+    let pendInc = 0;
     let paidExp = 0;
-    let pendingExp = 0;
+    let pendExp = 0;
 
     for (const t of transactions) {
       const amt = Number(t.amount);
       if (t.type === 'income') {
-        income += amt;
+        if (t.is_paid) {
+          recInc += amt;
+        } else {
+          pendInc += amt;
+        }
       } else if (t.type === 'expense') {
-        expense += amt;
         if (t.is_paid) {
           paidExp += amt;
         } else {
-          pendingExp += amt;
+          pendExp += amt;
         }
       }
     }
 
-    const net = income - expense;
-    const rate = income > 0 ? (net / income) * 100 : 0;
+    const tIncome = recInc + pendInc;
+    const tExpense = paidExp + pendExp;
+    const realizedNet = recInc - paidExp;
+    const rate = recInc > 0 ? (realizedNet / recInc) * 100 : 0;
 
     return {
-      totalIncome: income,
-      totalExpense: expense,
+      receivedIncome: recInc,
+      pendingIncome: pendInc,
+      totalIncome: tIncome,
       paidExpense: paidExp,
-      pendingExpense: pendingExp,
+      pendingExpense: pendExp,
+      totalExpense: tExpense,
       savingsRate: Math.max(-100, Math.min(100, rate)),
     };
   }, [transactions]);
@@ -51,7 +66,7 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
       <div>
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-bold text-zinc-100 text-base">Receitas vs. Despesas</h3>
-          {totalIncome > 0 && (
+          {receivedIncome > 0 && (
             <span
               className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${
                 savingsRate >= 0
@@ -61,8 +76,8 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
             >
               <Sparkles className="w-3 h-3" />
               {savingsRate >= 0
-                ? `${savingsRate.toFixed(0)}% de economia`
-                : `${Math.abs(savingsRate).toFixed(0)}% de déficit`}
+                ? `${savingsRate.toFixed(0)}% de economia realizada`
+                : `${Math.abs(savingsRate).toFixed(0)}% de déficit realizado`}
             </span>
           )}
         </div>
@@ -76,9 +91,11 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
           <div className="flex justify-between items-center text-xs">
             <span className="flex items-center gap-1.5 font-medium text-emerald-400">
               <TrendingUp className="w-3.5 h-3.5" />
-              Receitas
+              Receitas (Recebido: {formatCurrency(receivedIncome)})
             </span>
-            <span className="font-bold text-zinc-100">{formatCurrency(totalIncome)}</span>
+            <span className="font-bold text-zinc-300">
+              Total: {formatCurrency(totalIncome)}
+            </span>
           </div>
           <div className="w-full h-3 bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-zinc-800">
             <div
@@ -93,9 +110,11 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
           <div className="flex justify-between items-center text-xs">
             <span className="flex items-center gap-1.5 font-medium text-rose-400">
               <TrendingDown className="w-3.5 h-3.5" />
-              Despesas
+              Despesas (Pago: {formatCurrency(paidExpense)})
             </span>
-            <span className="font-bold text-zinc-100">{formatCurrency(totalExpense)}</span>
+            <span className="font-bold text-zinc-300">
+              Total: {formatCurrency(totalExpense)}
+            </span>
           </div>
           <div className="w-full h-3 bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-zinc-800">
             <div
@@ -106,19 +125,19 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
         </div>
       </div>
 
-      {/* Sub-indicadores de Pagamento das Despesas */}
+      {/* Sub-indicadores de Realizado vs Previsto */}
       <div className="border-t border-zinc-800/80 pt-3 grid grid-cols-2 gap-2 text-xs">
         <div>
           <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">
-            Despesas Pagas
+            A Receber (Previsão)
           </span>
-          <span className="font-semibold text-zinc-200 mt-0.5 block">
-            {formatCurrency(paidExpense)}
+          <span className="font-semibold text-emerald-400/90 mt-0.5 block">
+            {formatCurrency(pendingIncome)}
           </span>
         </div>
         <div className="text-right">
           <span className="text-[10px] text-amber-500/80 uppercase tracking-wider block">
-            Ainda Pendentes
+            A Pagar (Previsão)
           </span>
           <span className="font-semibold text-amber-400 mt-0.5 block">
             {formatCurrency(pendingExpense)}
@@ -128,4 +147,3 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
     </div>
   );
 }
-
