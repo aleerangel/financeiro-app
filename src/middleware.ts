@@ -40,12 +40,16 @@ export async function middleware(request: NextRequest) {
 
   // Redireciona quem não está logado para o login
   if (!user && isProtectedPage) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url, { headers: response.headers });
   }
 
   // Redireciona quem já está logado para o dashboard se tentar abrir o login
   if (user && isAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url, { headers: response.headers });
   }
 
   return response;
