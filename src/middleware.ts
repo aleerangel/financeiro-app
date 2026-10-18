@@ -36,10 +36,10 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isAuthPage = request.nextUrl.pathname.startsWith('/login');
-  const isProtectedPage = request.nextUrl.pathname.startsWith('/dashboard');
+  const isPublicRoute = isAuthPage || request.nextUrl.pathname.startsWith('/auth');
 
-  // Redireciona quem não está logado para o login
-  if (!user && isProtectedPage) {
+  // Redireciona quem não está logado para o login se tentar acessar qualquer rota privada
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url, { headers: response.headers });

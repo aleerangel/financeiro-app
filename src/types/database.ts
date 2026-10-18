@@ -88,3 +88,4 @@ export interface Transaction {
   account?: Account | null;
   credit_card?: CreditCard | null;
 }
+
