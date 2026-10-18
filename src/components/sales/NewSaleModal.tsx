@@ -1,16 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Plus, Minus, Trash2, CheckCircle2 } from 'lucide-react';
-import { Product, Account, PaymentMethod } from '@/types/database';
+import { X, Plus, Minus, Trash2, CheckCircle2, UserPlus } from 'lucide-react';
+import { Product, Account, PaymentMethod, Client } from '@/types/database';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
+import { ClientModal } from '@/components/clients/ClientModal';
 
 interface NewSaleModalProps {
   isOpen: boolean;
   onClose: () => void;
   products: Product[];
   accounts: Account[];
+  clients?: Client[];
   onSuccess?: () => void;
 }
 
@@ -27,8 +29,12 @@ export function NewSaleModal({
   onClose,
   products,
   accounts,
+  clients = [],
   onSuccess,
 }: NewSaleModalProps) {
+  const [clientsList, setClientsList] = useState<Client[]>(clients);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [clientModalOpen, setClientModalOpen] = useState(false);
   const [clientName, setClientName] = useState('');
   const [saleDate, setSaleDate] = useState(getTodayString());
   const [selectedItems, setSelectedItems] = useState<CreateSaleItemInput[]>([]);
@@ -113,6 +119,7 @@ export function NewSaleModal({
       setError(null);
 
       await createSale({
+        client_id: selectedClientId || undefined,
         client_name: clientName,
         payment_method: paymentMethod,
         account_id: accountId,
@@ -123,6 +130,7 @@ export function NewSaleModal({
 
       // Reset
       setClientName('');
+      setSelectedClientId(null);
       setSelectedItems([]);
       setNotes('');
       setSaleDate(getTodayString());
@@ -162,18 +170,43 @@ export function NewSaleModal({
           {/* Nome do Cliente e Data do Atendimento */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wider">
-                Nome do Cliente
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                  Cliente
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setClientModalOpen(true)}
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  + Novo Cadastro
+                </button>
+              </div>
               <input
                 type="text"
+                list="clients-datalist"
                 value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="Ex: João, Lucas, Marcos..."
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setClientName(val);
+                  const matched = clientsList.find(
+                    (c) => c.name.toLowerCase() === val.toLowerCase()
+                  );
+                  setSelectedClientId(matched ? matched.id : null);
+                }}
+                placeholder="Selecione ou digite o nome do cliente..."
                 className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-base text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition font-medium"
                 required
                 autoFocus
               />
+              <datalist id="clients-datalist">
+                {clientsList.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.phone ? `Tel: ${c.phone}` : ''}
+                  </option>
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wider">
@@ -334,6 +367,19 @@ export function NewSaleModal({
           </div>
         </form>
       </div>
+
+      <ClientModal
+        isOpen={clientModalOpen}
+        onClose={() => setClientModalOpen(false)}
+        onSuccess={(newClient) => {
+          if (newClient) {
+            setClientsList((prev) => [newClient, ...prev]);
+            setSelectedClientId(newClient.id);
+            setClientName(newClient.name);
+          }
+          setClientModalOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { getSales } from '@/lib/actions/sales';
 import { getProducts } from '@/lib/actions/products';
 import { getAccounts } from '@/lib/actions/accounts';
+import { getClients } from '@/lib/actions/clients';
 import { SalesView } from '@/components/sales/SalesView';
 
 export const instant = false;
@@ -16,10 +17,11 @@ export default async function VendasPage() {
     redirect('/login');
   }
 
-  const [sales, products, accounts] = await Promise.all([
+  const [sales, products, accounts, clients] = await Promise.all([
     getSales(),
     getProducts(false),
     getAccounts(),
+    getClients(),
   ]);
 
   return (
@@ -38,6 +40,7 @@ export default async function VendasPage() {
           initialSales={sales}
           products={products}
           accounts={accounts}
+          clients={clients}
         />
       </div>
     </AppShell>

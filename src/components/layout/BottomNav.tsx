@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Scissors, Package, ArrowLeftRight, Wallet } from 'lucide-react';
+import { LayoutDashboard, Scissors, Users, ArrowLeftRight, Wallet } from 'lucide-react';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -10,8 +10,8 @@ export function BottomNav() {
   const tabs = [
     { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
     { href: '/vendas', label: 'Atender', icon: Scissors },
+    { href: '/clientes', label: 'Clientes', icon: Users },
     { href: '/transacoes', label: 'Extrato', icon: ArrowLeftRight },
-    { href: '/produtos', label: 'Serviços', icon: Package },
     { href: '/contas', label: 'Contas', icon: Wallet },
   ];
 

@@ -13,6 +13,7 @@ import {
   Repeat,
   Scissors,
   Package,
+  Users,
 } from 'lucide-react';
 import { useDateContext } from '@/context/DateContext';
 import { createClient } from '@/lib/supabase/client';
@@ -37,6 +38,7 @@ export function Navbar({ userEmail }: NavbarProps) {
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/vendas', label: 'Atendimentos', icon: Scissors },
+    { href: '/clientes', label: 'Clientes', icon: Users },
     { href: '/produtos', label: 'Serviços', icon: Package },
     { href: '/transacoes', label: 'Transações', icon: ArrowLeftRight },
     { href: '/cartoes', label: 'Cartões', icon: CreditCard },

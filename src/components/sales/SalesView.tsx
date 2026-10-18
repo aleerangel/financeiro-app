@@ -10,7 +10,7 @@ import {
   Trash2,
   Calendar,
 } from 'lucide-react';
-import { Sale, Product, Account } from '@/types/database';
+import { Sale, Product, Account, Client } from '@/types/database';
 import { deleteSale } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
 import { NewSaleModal } from './NewSaleModal';
@@ -19,12 +19,14 @@ interface SalesViewProps {
   initialSales: Sale[];
   products: Product[];
   accounts: Account[];
+  clients?: Client[];
 }
 
 export function SalesView({
   initialSales,
   products,
   accounts,
+  clients,
 }: SalesViewProps) {
   const [sales, setSales] = useState<Sale[]>(initialSales);
   const [modalOpen, setModalOpen] = useState(false);
@@ -266,6 +268,7 @@ export function SalesView({
         onClose={() => setModalOpen(false)}
         products={products}
         accounts={accounts}
+        clients={clients}
         onSuccess={() => window.location.reload()}
       />
     </div>

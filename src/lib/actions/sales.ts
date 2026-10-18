@@ -12,6 +12,7 @@ export interface CreateSaleItemInput {
 }
 
 export interface CreateSaleInput {
+  client_id?: string | null;
   client_name: string;
   payment_method: PaymentMethod;
   account_id: string;
@@ -38,7 +39,8 @@ export async function getSales(month?: number, year?: number): Promise<Sale[]> {
     .select(`
       *,
       items:sale_items(*),
-      account:accounts(*)
+      account:accounts(*),
+      client:clients(*)
     `)
     .eq('user_id', user.id)
     .order('sale_date', { ascending: false });
@@ -76,7 +78,8 @@ export async function getTodaySalesSummary(): Promise<TodaySalesSummary> {
     .select(`
       *,
       items:sale_items(*),
-      account:accounts(*)
+      account:accounts(*),
+      client:clients(*)
     `)
     .eq('user_id', user.id)
     .gte('sale_date', startOfDay)
@@ -173,6 +176,7 @@ export async function createSale(input: CreateSaleInput) {
     .from('sales')
     .insert({
       user_id: user.id,
+      client_id: input.client_id || null,
       client_name: input.client_name.trim(),
       total_amount: totalAmount,
       payment_method: input.payment_method,
@@ -212,6 +216,7 @@ export async function createSale(input: CreateSaleInput) {
   revalidatePath('/dashboard');
   revalidatePath('/transacoes');
   revalidatePath('/contas');
+  revalidatePath('/clientes');
 
   return sale;
 }
@@ -254,5 +259,6 @@ export async function deleteSale(saleId: string) {
   revalidatePath('/dashboard');
   revalidatePath('/transacoes');
   revalidatePath('/contas');
+  revalidatePath('/clientes');
 }
 

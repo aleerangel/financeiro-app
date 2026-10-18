@@ -119,9 +119,21 @@ export interface SaleItem {
   created_at: string;
 }
 
+export interface Client {
+  id: string;
+  user_id: string;
+  name: string;
+  phone?: string | null;
+  cpf?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Sale {
   id: string;
   user_id: string;
+  client_id?: string | null;
   client_name: string;
   total_amount: number;
   payment_method: PaymentMethod;
@@ -133,5 +145,6 @@ export interface Sale {
   // Campos populados via joins
   items?: SaleItem[];
   account?: Account | null;
+  client?: Client | null;
 }
 
