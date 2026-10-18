@@ -128,3 +128,4 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
     </div>
   );
 }
+

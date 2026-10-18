@@ -188,3 +188,4 @@ export async function deleteRecurrence(id: string) {
   revalidatePath('/recorrencias');
   revalidatePath('/dashboard');
 }
+
