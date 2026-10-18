@@ -11,6 +11,11 @@ interface AccountModalProps {
   accountToEdit?: AccountWithBalance | null;
 }
 
+interface DialogProps {
+  accountToEdit?: AccountWithBalance | null;
+  onClose: () => void;
+}
+
 const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
   { value: 'checking', label: 'Conta Corrente' },
   { value: 'wallet', label: 'Dinheiro / Carteira' },
@@ -28,17 +33,15 @@ const PRESET_COLORS = [
   '#64748b', // Cinza
 ];
 
-export function AccountModal({ isOpen, onClose, accountToEdit }: AccountModalProps) {
+function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
   const [name, setName] = useState(accountToEdit?.name || '');
   const [type, setType] = useState<AccountType>(accountToEdit?.type || 'checking');
-  const [initialBalance, setInitialBalance] = useState(
-    accountToEdit?.initial_balance ? String(accountToEdit.initial_balance) : '0'
+  const [balance, setBalance] = useState(
+    String(accountToEdit?.current_balance ?? accountToEdit?.initial_balance ?? 0)
   );
   const [color, setColor] = useState(accountToEdit?.color || '#3b82f6');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,13 +53,13 @@ export function AccountModal({ isOpen, onClose, accountToEdit }: AccountModalPro
     try {
       setLoading(true);
       setError(null);
-      const parsedBalance = parseFloat(initialBalance.replace(',', '.')) || 0;
+      const parsedBalance = parseFloat(balance.replace(/\./g, '').replace(',', '.')) || 0;
 
       if (accountToEdit) {
         await updateAccount(accountToEdit.id, {
           name,
           type,
-          initial_balance: parsedBalance,
+          current_balance: parsedBalance,
           color,
         });
       } else {
@@ -134,12 +137,12 @@ export function AccountModal({ isOpen, onClose, accountToEdit }: AccountModalPro
 
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                Saldo Inicial (R$)
+                {accountToEdit ? 'Saldo Atual (R$)' : 'Saldo Inicial (R$)'}
               </label>
               <input
                 type="text"
-                value={initialBalance}
-                onChange={(e) => setInitialBalance(e.target.value)}
+                value={balance}
+                onChange={(e) => setBalance(e.target.value)}
                 placeholder="0,00"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
               />
@@ -188,3 +191,14 @@ export function AccountModal({ isOpen, onClose, accountToEdit }: AccountModalPro
   );
 }
 
+export function AccountModal({ isOpen, onClose, accountToEdit }: AccountModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <AccountModalDialog
+      key={accountToEdit ? `${accountToEdit.id}-${accountToEdit.current_balance}` : 'new'}
+      accountToEdit={accountToEdit}
+      onClose={onClose}
+    />
+  );
+}

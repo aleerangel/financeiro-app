@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Landmark,
   ArrowLeftRight,
+  Pencil,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -26,6 +27,7 @@ interface GeneralDashboardViewProps {
   cards: CreditCardWithUsage[];
   formattedMonth: string;
   loading?: boolean;
+  onEditBalance?: (account: AccountWithBalance) => void;
 }
 
 export function GeneralDashboardView({
@@ -35,6 +37,7 @@ export function GeneralDashboardView({
   cards,
   formattedMonth,
   loading = false,
+  onEditBalance,
 }: GeneralDashboardViewProps) {
   // Configuração das 3 curvas solicitadas pelo usuário:
   // 1. Saldo de serviços (verde)
@@ -209,9 +212,17 @@ export function GeneralDashboardView({
                   />
                   <span className="text-sm font-medium text-zinc-200">{acc.name}</span>
                 </div>
-                <span className="text-sm font-bold text-zinc-100">
-                  {formatCurrency(acc.current_balance)}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => onEditBalance && onEditBalance(acc)}
+                  className="flex items-center gap-1.5 hover:text-emerald-400 group/bal transition"
+                  title="Editar saldo"
+                >
+                  <span className="text-sm font-bold text-zinc-100 group-hover/bal:text-emerald-400 transition">
+                    {formatCurrency(acc.current_balance)}
+                  </span>
+                  <Pencil className="w-3 h-3 text-zinc-500 opacity-60 group-hover/bal:opacity-100 group-hover/bal:text-emerald-400 transition" />
+                </button>
               </div>
             ))}
 
@@ -316,3 +327,4 @@ export function GeneralDashboardView({
     </div>
   );
 }
+

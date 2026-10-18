@@ -248,3 +248,4 @@ export async function getGeneralDashboardData(year: number): Promise<GeneralDash
     monthlyStats,
   };
 }
+

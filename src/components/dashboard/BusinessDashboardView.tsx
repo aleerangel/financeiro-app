@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Eye, CreditCard, ArrowUpRight, ArrowDownRight, Minus, Scissors } from 'lucide-react';
+import { Eye, CreditCard, ArrowUpRight, ArrowDownRight, Minus, Scissors, Pencil } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { BusinessDashboardData } from '@/lib/actions/dashboard';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
@@ -11,6 +11,7 @@ interface BusinessDashboardViewProps {
   data: BusinessDashboardData;
   accounts: AccountWithBalance[];
   loading?: boolean;
+  onEditBalance?: (account: AccountWithBalance) => void;
 }
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -24,6 +25,7 @@ export function BusinessDashboardView({
   data,
   accounts,
   loading = false,
+  onEditBalance,
 }: BusinessDashboardViewProps) {
   // Configura as séries do gráfico no estilo do mockup:
   // Receita (amarelo) e Vendas (verde)
@@ -94,9 +96,17 @@ export function BusinessDashboardView({
                     </div>
                   </div>
 
-                  <span className="text-base font-extrabold text-zinc-100">
-                    {formatCurrency(acc.current_balance)}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onEditBalance && onEditBalance(acc)}
+                    className="flex items-center gap-1.5 hover:text-emerald-400 group/bal transition text-right"
+                    title="Editar saldo desta conta"
+                  >
+                    <span className="text-base font-extrabold text-zinc-100 group-hover/bal:text-emerald-400 transition">
+                      {formatCurrency(acc.current_balance)}
+                    </span>
+                    <Pencil className="w-3.5 h-3.5 text-zinc-500 opacity-60 group-hover/bal:opacity-100 group-hover/bal:text-emerald-400 transition" />
+                  </button>
                 </div>
               ))}
 
@@ -252,3 +262,4 @@ export function BusinessDashboardView({
     </div>
   );
 }
+

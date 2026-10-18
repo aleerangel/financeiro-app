@@ -5,6 +5,7 @@ import { Plus, Wallet, Landmark, PiggyBank, TrendingUp, MoreVertical, Pencil, Tr
 import { AccountWithBalance, deleteAccount } from '@/lib/actions/accounts';
 import { formatCurrency } from '@/lib/utils';
 import { AccountModal } from './AccountModal';
+import { EditAccountBalanceModal } from './EditAccountBalanceModal';
 
 interface AccountsListProps {
   initialAccounts: AccountWithBalance[];
@@ -12,7 +13,9 @@ interface AccountsListProps {
 
 export function AccountsList({ initialAccounts }: AccountsListProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<AccountWithBalance | null>(null);
+  const [accountToAdjustBalance, setAccountToAdjustBalance] = useState<AccountWithBalance | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -122,13 +125,24 @@ export function AccountsList({ initialAccounts }: AccountsListProps) {
                   </button>
 
                   {activeMenuId === account.id && (
-                    <div className="absolute right-0 top-8 z-20 w-32 bg-zinc-950 border border-zinc-800 rounded-xl py-1 shadow-xl text-xs">
+                    <div className="absolute right-0 top-8 z-20 w-36 bg-zinc-950 border border-zinc-800 rounded-xl py-1 shadow-xl text-xs">
+                      <button
+                        onClick={() => {
+                          setAccountToAdjustBalance(account);
+                          setBalanceModalOpen(true);
+                          setActiveMenuId(null);
+                        }}
+                        className="w-full px-3 py-2 text-left text-emerald-400 hover:bg-zinc-900 flex items-center gap-2 font-medium"
+                      >
+                        <Wallet className="w-3.5 h-3.5" />
+                        Ajustar Saldo
+                      </button>
                       <button
                         onClick={() => handleEdit(account)}
                         className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2"
                       >
                         <Pencil className="w-3.5 h-3.5" />
-                        Editar
+                        Editar Conta
                       </button>
                       <button
                         onClick={() => handleDelete(account.id)}
@@ -145,13 +159,24 @@ export function AccountsList({ initialAccounts }: AccountsListProps) {
 
               <div className="border-t border-zinc-800/80 pt-3 flex items-baseline justify-between">
                 <span className="text-xs text-zinc-400">Saldo Atual</span>
-                <span
-                  className={`text-lg font-bold ${
-                    account.current_balance >= 0 ? 'text-zinc-100' : 'text-red-400'
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAccountToAdjustBalance(account);
+                    setBalanceModalOpen(true);
+                  }}
+                  className="group/btn flex items-center gap-1.5 hover:text-emerald-400 transition"
+                  title="Clique para ajustar o saldo"
                 >
-                  {formatCurrency(account.current_balance)}
-                </span>
+                  <span
+                    className={`text-lg font-bold ${
+                      account.current_balance >= 0 ? 'text-zinc-100 group-hover/btn:text-emerald-400' : 'text-red-400'
+                    }`}
+                  >
+                    {formatCurrency(account.current_balance)}
+                  </span>
+                  <Pencil className="w-3.5 h-3.5 text-zinc-500 group-hover/btn:text-emerald-400 opacity-60 group-hover/btn:opacity-100 transition" />
+                </button>
               </div>
             </div>
           );
@@ -170,6 +195,15 @@ export function AccountsList({ initialAccounts }: AccountsListProps) {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         accountToEdit={accountToEdit}
+      />
+
+      <EditAccountBalanceModal
+        isOpen={balanceModalOpen}
+        onClose={() => {
+          setBalanceModalOpen(false);
+          setAccountToAdjustBalance(null);
+        }}
+        account={accountToAdjustBalance}
       />
     </div>
   );

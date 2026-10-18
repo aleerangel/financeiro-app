@@ -20,6 +20,7 @@ import {
   getGeneralDashboardData,
 } from '@/lib/actions/dashboard';
 import { TransactionModal } from '@/components/transactions/TransactionModal';
+import { EditAccountBalanceModal } from '@/components/accounts/EditAccountBalanceModal';
 import { BusinessDashboardView } from './BusinessDashboardView';
 import { GeneralDashboardView } from './GeneralDashboardView';
 
@@ -47,6 +48,8 @@ export function DashboardView({
   const [generalData, setGeneralData] = useState<GeneralDashboardData>(initialGeneralData);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [balanceModalOpen, setBalanceModalOpen] = useState(false);
+  const [accountToAdjustBalance, setAccountToAdjustBalance] = useState<AccountWithBalance | null>(null);
 
   const refreshData = useCallback(async () => {
     try {
@@ -184,6 +187,10 @@ export function DashboardView({
           data={businessData}
           accounts={accounts}
           loading={loading}
+          onEditBalance={(acc) => {
+            setAccountToAdjustBalance(acc);
+            setBalanceModalOpen(true);
+          }}
         />
       ) : (
         <GeneralDashboardView
@@ -193,6 +200,10 @@ export function DashboardView({
           cards={initialCards}
           formattedMonth={formattedMonth}
           loading={loading}
+          onEditBalance={(acc) => {
+            setAccountToAdjustBalance(acc);
+            setBalanceModalOpen(true);
+          }}
         />
       )}
 
@@ -203,6 +214,17 @@ export function DashboardView({
         accounts={accounts}
         cards={initialCards}
         categories={categories}
+        onSuccess={refreshData}
+      />
+
+      {/* Modal de Ajuste Rápido de Saldo da Conta */}
+      <EditAccountBalanceModal
+        isOpen={balanceModalOpen}
+        onClose={() => {
+          setBalanceModalOpen(false);
+          setAccountToAdjustBalance(null);
+        }}
+        account={accountToAdjustBalance}
         onSuccess={refreshData}
       />
     </div>

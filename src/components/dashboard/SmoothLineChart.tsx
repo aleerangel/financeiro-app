@@ -323,3 +323,4 @@ export function SmoothLineChart({
     </div>
   );
 }
+

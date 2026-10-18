@@ -98,7 +98,8 @@ export async function updateAccount(
   formData: {
     name: string;
     type: AccountType;
-    initial_balance: number;
+    initial_balance?: number;
+    current_balance?: number;
     color?: string;
   }
 ) {
@@ -107,13 +108,76 @@ export async function updateAccount(
 
   if (!user) throw new Error('Não autenticado');
 
+  let initialBalanceToSave = formData.initial_balance;
+
+  // Se o usuário informou o saldo atual diretamente, calcula o initial_balance proporcional
+  if (formData.current_balance !== undefined) {
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('type, amount, is_paid')
+      .eq('user_id', user.id)
+      .eq('account_id', id)
+      .eq('is_paid', true);
+
+    let transactionSum = 0;
+    if (transactions) {
+      for (const t of transactions) {
+        const amt = Number(t.amount);
+        if (t.type === 'income') transactionSum += amt;
+        else if (t.type === 'expense') transactionSum -= amt;
+      }
+    }
+
+    initialBalanceToSave = formData.current_balance - transactionSum;
+  }
+
   const { error } = await supabase
     .from('accounts')
     .update({
       name: formData.name.trim(),
       type: formData.type,
-      initial_balance: formData.initial_balance,
+      ...(initialBalanceToSave !== undefined ? { initial_balance: initialBalanceToSave } : {}),
       color: formData.color,
+    })
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath('/contas');
+  revalidatePath('/dashboard');
+}
+
+export async function updateAccountBalance(id: string, newBalance: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('type, amount, is_paid')
+    .eq('user_id', user.id)
+    .eq('account_id', id)
+    .eq('is_paid', true);
+
+  let transactionSum = 0;
+  if (transactions) {
+    for (const t of transactions) {
+      const amt = Number(t.amount);
+      if (t.type === 'income') transactionSum += amt;
+      else if (t.type === 'expense') transactionSum -= amt;
+    }
+  }
+
+  const newInitialBalance = newBalance - transactionSum;
+
+  const { error } = await supabase
+    .from('accounts')
+    .update({
+      initial_balance: newInitialBalance,
     })
     .eq('id', id)
     .eq('user_id', user.id);
