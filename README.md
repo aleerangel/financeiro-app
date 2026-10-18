@@ -2,6 +2,8 @@
 
 Uma aplicação web moderna, ágil e inteligente para gestão de **finanças pessoais**, desenvolvida com **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4** e **Supabase (PostgreSQL)** com isolamento completo de dados via **Row Level Security (RLS)**.
 
+> 🚀 **Acesso Remoto:** Em breve a aplicação estará oficialmente hospedada e acessível remotamente online para uso em qualquer computador ou smartphone!
+
 ---
 
 ## ✨ Funcionalidades Principais
@@ -137,6 +139,12 @@ npm run dev
 ```
 
 Abra **[http://localhost:3000](http://localhost:3000)** no seu navegador.
+
+---
+
+## 🌐 Hospedagem & Acesso Remoto
+
+> ⏳ **Em breve:** A aplicação está sendo preparada para deploy em produção (Vercel). Muito em breve o link público estará disponível para acesso remoto seguro de qualquer lugar, direto pelo navegador ou adicionado como Web App na tela inicial do celular!
 
 ---
 
