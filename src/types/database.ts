@@ -60,6 +60,10 @@ export interface Recurrence {
   active: boolean;
   created_at: string;
   updated_at: string;
+  // Campos populados via joins
+  category?: Category | null;
+  account?: Account | null;
+  credit_card?: CreditCard | null;
 }
 
 export interface Transaction {

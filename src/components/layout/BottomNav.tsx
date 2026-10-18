@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Repeat } from 'lucide-react';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -12,6 +12,7 @@ export function BottomNav() {
     { href: '/transacoes', label: 'Transações', icon: ArrowLeftRight },
     { href: '/cartoes', label: 'Cartões', icon: CreditCard },
     { href: '/contas', label: 'Contas', icon: Wallet },
+    { href: '/recorrencias', label: 'Fixas', icon: Repeat },
   ];
 
   return (

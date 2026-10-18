@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronLeft, ChevronRight, LogOut, Wallet, CreditCard, LayoutDashboard, ArrowLeftRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut, Wallet, CreditCard, LayoutDashboard, ArrowLeftRight, Repeat } from 'lucide-react';
 import { useDateContext } from '@/context/DateContext';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -28,6 +28,7 @@ export function Navbar({ userEmail }: NavbarProps) {
     { href: '/transacoes', label: 'Transações', icon: ArrowLeftRight },
     { href: '/cartoes', label: 'Cartões', icon: CreditCard },
     { href: '/contas', label: 'Contas', icon: Wallet },
+    { href: '/recorrencias', label: 'Fixas', icon: Repeat },
   ];
 
   return (

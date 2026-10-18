@@ -17,8 +17,11 @@ import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { Category, Transaction } from '@/types/database';
 import { useDateContext } from '@/context/DateContext';
 import { getTransactions } from '@/lib/actions/transactions';
+import { syncMonthlyRecurrences } from '@/lib/actions/recurrences';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { TransactionModal } from '@/components/transactions/TransactionModal';
+import { CategoryDonutChart } from './CategoryDonutChart';
+import { MonthlyBarChart } from './MonthlyBarChart';
 
 interface DashboardViewProps {
   initialAccounts: AccountWithBalance[];
@@ -39,6 +42,7 @@ export function DashboardView({
   const refreshData = useCallback(async () => {
     try {
       setLoading(true);
+      await syncMonthlyRecurrences(month, year);
       const data = await getTransactions(month, year);
       setTransactions(data);
     } catch (err) {
@@ -50,7 +54,8 @@ export function DashboardView({
 
   useEffect(() => {
     let active = true;
-    getTransactions(month, year)
+    syncMonthlyRecurrences(month, year)
+      .then(() => getTransactions(month, year))
       .then((data) => {
         if (active) {
           setTransactions(data);
@@ -165,6 +170,12 @@ export function DashboardView({
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Gráficos Visuais do Mês */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MonthlyBarChart transactions={transactions} />
+        <CategoryDonutChart transactions={transactions} />
       </div>
 
       {/* Grid: Contas, Cartões e Últimas Transações */}

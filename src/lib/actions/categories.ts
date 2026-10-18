@@ -47,3 +47,4 @@ export async function getCategories(): Promise<Category[]> {
 
   return categories;
 }
+
