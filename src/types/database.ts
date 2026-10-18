@@ -93,3 +93,45 @@ export interface Transaction {
   credit_card?: CreditCard | null;
 }
 
+export type ProductType = 'service' | 'product';
+
+export interface Product {
+  id: string;
+  user_id: string;
+  name: string;
+  type: ProductType;
+  default_price: number;
+  icon: string;
+  color: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SaleItem {
+  id: string;
+  sale_id: string;
+  product_id: string | null;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  created_at: string;
+}
+
+export interface Sale {
+  id: string;
+  user_id: string;
+  client_name: string;
+  total_amount: number;
+  payment_method: PaymentMethod;
+  account_id: string | null;
+  transaction_id: string | null;
+  sale_date: string;
+  notes: string | null;
+  created_at: string;
+  // Campos populados via joins
+  items?: SaleItem[];
+  account?: Account | null;
+}
+

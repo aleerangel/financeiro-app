@@ -2,17 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ArrowLeftRight, CreditCard, Wallet, Repeat } from 'lucide-react';
+import { LayoutDashboard, Scissors, Package, ArrowLeftRight, Wallet } from 'lucide-react';
 
 export function BottomNav() {
   const pathname = usePathname();
 
   const tabs = [
     { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
-    { href: '/transacoes', label: 'Transações', icon: ArrowLeftRight },
-    { href: '/cartoes', label: 'Cartões', icon: CreditCard },
+    { href: '/vendas', label: 'Atender', icon: Scissors },
+    { href: '/transacoes', label: 'Extrato', icon: ArrowLeftRight },
+    { href: '/produtos', label: 'Serviços', icon: Package },
     { href: '/contas', label: 'Contas', icon: Wallet },
-    { href: '/recorrencias', label: 'Fixas', icon: Repeat },
   ];
 
   return (

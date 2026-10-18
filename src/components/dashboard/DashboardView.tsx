@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Landmark,
   ArrowLeftRight,
+  Scissors,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -106,13 +107,23 @@ export function DashboardView({
           <p className="text-sm text-zinc-400">Resumo financeiro de {formattedMonth}</p>
         </div>
 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          Nova Transação
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/vendas"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-medium text-xs sm:text-sm rounded-xl transition border border-zinc-700/60 shadow-sm"
+          >
+            <Scissors className="w-4 h-4 text-emerald-400" />
+            <span>Atendimento</span>
+          </Link>
+
+          <button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            Nova Transação
+          </button>
+        </div>
       </div>
 
       {/* Cards de Resumo Principal */}
