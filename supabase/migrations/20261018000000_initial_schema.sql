@@ -11,6 +11,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Limpa tabelas antigas se existirem (para evitar conflito com schemas anteriores)
+DROP TABLE IF EXISTS public.transactions CASCADE;
+DROP TABLE IF EXISTS public.recurrences CASCADE;
+DROP TABLE IF EXISTS public.categories CASCADE;
+DROP TABLE IF EXISTS public.credit_cards CASCADE;
+DROP TABLE IF EXISTS public.accounts CASCADE;
+
 -- 2. TABELA: ACCOUNTS (Contas e Carteiras)
 CREATE TABLE IF NOT EXISTS public.accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -199,3 +206,4 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_setup();
+
