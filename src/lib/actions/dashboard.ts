@@ -223,10 +223,10 @@ export async function getGeneralDashboardData(year: number): Promise<GeneralDash
     }
   }
 
-  // Soma transações gerais
+  // Soma transações gerais (apenas realizadas/pagas)
   if (txData) {
     for (const t of txData) {
-      if (!t.due_date) continue;
+      if (!t.due_date || !t.is_paid) continue;
       const m = parseInt(t.due_date.split('-')[1], 10) - 1;
       const amt = Number(t.amount) || 0;
 
