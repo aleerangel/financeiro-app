@@ -11,6 +11,7 @@ import {
   Calendar,
   DollarSign,
   MessageCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { ClientWithStats, deleteClient } from '@/lib/actions/clients';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -39,6 +40,8 @@ export function ClientsList({ initialClients }: ClientsListProps) {
   const totalClients = clients.length;
   const totalSalesAll = clients.reduce((sum, c) => sum + c.totalSalesCount, 0);
   const totalRevenueAll = clients.reduce((sum, c) => sum + c.totalSpent, 0);
+  const avgTicketPerClient = totalClients > 0 ? totalRevenueAll / totalClients : 0;
+  const avgTicketPerSale = totalSalesAll > 0 ? totalRevenueAll / totalSalesAll : 0;
 
   const handleEdit = (client: ClientWithStats) => {
     setClientToEdit(client);
@@ -69,7 +72,7 @@ export function ClientsList({ initialClients }: ClientsListProps) {
   return (
     <div className="space-y-6">
       {/* Resumo e Estatísticas de Clientes */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
           <div>
             <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
@@ -109,6 +112,25 @@ export function ClientsList({ initialClients }: ClientsListProps) {
           </div>
           <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
             <DollarSign className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
+          <div>
+            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
+              Ticket Médio / Cliente
+            </span>
+            <span className="text-2xl font-bold text-amber-400 mt-1 block">
+              {formatCurrency(avgTicketPerClient)}
+            </span>
+            {totalSalesAll > 0 && (
+              <span className="text-[11px] text-zinc-500 block mt-0.5">
+                {formatCurrency(avgTicketPerSale)} por atendimento
+              </span>
+            )}
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <TrendingUp className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -208,7 +230,12 @@ export function ClientsList({ initialClients }: ClientsListProps) {
                     </td>
 
                     <td className="py-3.5 text-right font-extrabold text-emerald-400">
-                      {formatCurrency(client.totalSpent)}
+                      <div>{formatCurrency(client.totalSpent)}</div>
+                      {client.totalSalesCount > 0 && (
+                        <span className="text-[10px] text-zinc-500 font-normal block">
+                          méd. {formatCurrency(client.totalSpent / client.totalSalesCount)}/visita
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3.5 text-right text-zinc-400 text-[11px]">
