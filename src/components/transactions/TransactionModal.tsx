@@ -1,0 +1,357 @@
+'use client';
+
+import { useState } from 'react';
+import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon } from 'lucide-react';
+import { Account, CreditCard, Category, TransactionType, PaymentMethod } from '@/types/database';
+import { createTransaction } from '@/lib/actions/transactions';
+import { formatCurrency } from '@/lib/utils';
+
+interface TransactionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  accounts: Account[];
+  cards: CreditCard[];
+  categories: Category[];
+  onSuccess?: () => void;
+}
+
+type TabType = 'expense' | 'income' | 'credit';
+
+export function TransactionModal({
+  isOpen,
+  onClose,
+  accounts,
+  cards,
+  categories,
+  onSuccess,
+}: TransactionModalProps) {
+  const [tab, setTab] = useState<TabType>('expense');
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [accountId, setAccountId] = useState<string>(accounts[0]?.id || '');
+  const [cardId, setCardId] = useState<string>(cards[0]?.id || '');
+  const [installments, setInstallments] = useState(1);
+  const [isPaid, setIsPaid] = useState(true);
+  const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const filteredCategories = categories.filter((c) => {
+    if (tab === 'income') return c.type === 'income' || c.type === 'both';
+    return c.type === 'expense' || c.type === 'both';
+  });
+
+  const parsedAmount = parseFloat(amount.replace(',', '.')) || 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!description.trim()) {
+      setError('Informe a descrição do lançamento.');
+      return;
+    }
+    if (parsedAmount <= 0) {
+      setError('Informe um valor válido maior que zero.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      let txType: TransactionType = 'expense';
+      let paymentMethod: PaymentMethod = 'pix';
+
+      if (tab === 'income') {
+        txType = 'income';
+        paymentMethod = 'transfer';
+      } else if (tab === 'credit') {
+        txType = 'expense';
+        paymentMethod = 'credit';
+      } else {
+        txType = 'expense';
+        paymentMethod = 'debit';
+      }
+
+      await createTransaction({
+        description,
+        amount: parsedAmount,
+        type: txType,
+        payment_method: paymentMethod,
+        transaction_date: date,
+        due_date: date,
+        category_id: categoryId || null,
+        account_id: tab !== 'credit' ? accountId || null : null,
+        credit_card_id: tab === 'credit' ? cardId || null : null,
+        total_installments: tab === 'credit' ? installments : 1,
+        is_paid: tab === 'credit' ? false : isPaid,
+        notes: notes.trim() || null,
+      });
+
+      // Reset form
+      setDescription('');
+      setAmount('');
+      setNotes('');
+      setInstallments(1);
+      onClose();
+      if (onSuccess) onSuccess();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao cadastrar transação.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <h2 className="text-lg font-bold text-zinc-100 mb-4">Nova Transação</h2>
+
+        {/* Abas: Despesa, Receita, Cartão */}
+        <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-5">
+          <button
+            type="button"
+            onClick={() => {
+              setTab('expense');
+              setIsPaid(true);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+              tab === 'expense'
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <ArrowDownRight className="w-3.5 h-3.5" />
+            Despesa
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTab('credit');
+              setIsPaid(false);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+              tab === 'credit'
+                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <CardIcon className="w-3.5 h-3.5" />
+            Cartão
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTab('income');
+              setIsPaid(true);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+              tab === 'income'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            Receita
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-red-950/60 border border-red-800/80 text-xs text-red-300">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Campo de Valor em Destaque */}
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Valor (R$)</label>
+            <input
+              type="text"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0,00"
+              className={`w-full text-2xl sm:text-3xl font-extrabold px-4 py-3 rounded-2xl bg-zinc-950 border border-zinc-800 focus:outline-none transition ${
+                tab === 'income'
+                  ? 'text-emerald-400 focus:border-emerald-500'
+                  : tab === 'credit'
+                  ? 'text-purple-300 focus:border-purple-500'
+                  : 'text-rose-400 focus:border-rose-500'
+              }`}
+              required
+              autoFocus
+            />
+          </div>
+
+          {/* Descrição */}
+          <div>
+            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Descrição</label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ex: Supermercado, Almoço, Salário"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Data da Compra */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Data</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                required
+              />
+            </div>
+
+            {/* Categoria */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Categoria</label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+              >
+                <option value="">Selecione...</option>
+                {filteredCategories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Seletor de Conta ou Cartão de Crédito */}
+          {tab === 'credit' ? (
+            <div className="space-y-3 p-4 bg-purple-950/20 border border-purple-900/40 rounded-2xl">
+              <div>
+                <label className="block text-xs font-medium text-purple-200 mb-1.5">
+                  Cartão de Crédito
+                </label>
+                <select
+                  value={cardId}
+                  onChange={(e) => setCardId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 transition"
+                  required
+                >
+                  {cards.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} (Vence dia {c.due_day})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Parcelamento Automático */}
+              <div>
+                <label className="block text-xs font-medium text-purple-200 mb-1.5">
+                  Número de Parcelas
+                </label>
+                <select
+                  value={installments}
+                  onChange={(e) => setInstallments(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 transition"
+                >
+                  <option value={1}>1x à vista (R$ {parsedAmount.toFixed(2)})</option>
+                  {[2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 18, 24].map((n) => (
+                    <option key={n} value={n}>
+                      {n}x de {formatCurrency(parsedAmount > 0 ? parsedAmount / n : 0)}
+                    </option>
+                  ))}
+                </select>
+                {installments > 1 && parsedAmount > 0 && (
+                  <p className="text-[11px] text-purple-300/80 mt-1.5">
+                    💡 O sistema gerará automaticamente as {installments} parcelas nos meses subsequentes.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1.5">Conta</label>
+                <select
+                  value={accountId}
+                  onChange={(e) => setAccountId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                >
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1.5">Status</label>
+                <select
+                  value={isPaid ? 'true' : 'false'}
+                  onChange={(e) => setIsPaid(e.target.value === 'true')}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                >
+                  <option value="true">{tab === 'income' ? 'Recebido' : 'Pago'}</option>
+                  <option value="false">{tab === 'income' ? 'A Receber' : 'Pendente'}</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Observações */}
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Observações (opcional)</label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Comentários adicionais..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+            />
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 py-2.5 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-5 py-2.5 font-semibold text-sm rounded-xl transition disabled:opacity-50 text-zinc-950 ${
+                tab === 'income'
+                  ? 'bg-emerald-400 hover:bg-emerald-500'
+                  : tab === 'credit'
+                  ? 'bg-purple-400 hover:bg-purple-500'
+                  : 'bg-rose-400 hover:bg-rose-500'
+              }`}
+            >
+              {loading ? 'Salvando...' : 'Confirmar Lançamento'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

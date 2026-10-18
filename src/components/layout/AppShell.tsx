@@ -23,3 +23,4 @@ export function AppShell({ userEmail, children }: AppShellProps) {
     </DateProvider>
   );
 }
+

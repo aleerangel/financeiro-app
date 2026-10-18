@@ -145,3 +145,4 @@ export async function deleteAccount(id: string) {
   revalidatePath('/contas');
   revalidatePath('/dashboard');
 }
+

@@ -1,7 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
-import { ArrowLeftRight } from 'lucide-react';
+import { getAccounts } from '@/lib/actions/accounts';
+import { getCreditCards } from '@/lib/actions/credit-cards';
+import { getCategories } from '@/lib/actions/categories';
+import { TransactionsView } from '@/components/transactions/TransactionsView';
 
 export default async function TransacoesPage() {
   const supabase = await createClient();
@@ -11,23 +14,27 @@ export default async function TransacoesPage() {
     redirect('/login');
   }
 
+  const [accounts, cards, categories] = await Promise.all([
+    getAccounts(),
+    getCreditCards(),
+    getCategories(),
+  ]);
+
   return (
     <AppShell userEmail={user.email}>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Transações</h1>
           <p className="text-sm text-zinc-400">
-            Histórico e lançamentos de receitas, despesas e compras no cartão.
+            Acompanhe receitas, despesas à vista e faturas de cartão de crédito.
           </p>
         </div>
 
-        <div className="py-16 text-center text-zinc-500 bg-zinc-900/40 border border-dashed border-zinc-800 rounded-2xl">
-          <ArrowLeftRight className="w-10 h-10 mx-auto mb-3 opacity-40 text-emerald-400" />
-          <h3 className="text-base font-semibold text-zinc-200">Módulo de Transações</h3>
-          <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-            Em breve: Lançamentos rápidos, categorização automática e divisão de compras parceladas.
-          </p>
-        </div>
+        <TransactionsView
+          initialAccounts={accounts}
+          initialCards={cards}
+          initialCategories={categories}
+        />
       </div>
     </AppShell>
   );

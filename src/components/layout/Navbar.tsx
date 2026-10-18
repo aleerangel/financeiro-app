@@ -105,3 +105,4 @@ export function Navbar({ userEmail }: NavbarProps) {
     </header>
   );
 }
+

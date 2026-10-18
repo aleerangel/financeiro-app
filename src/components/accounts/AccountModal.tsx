@@ -187,3 +187,4 @@ export function AccountModal({ isOpen, onClose, accountToEdit }: AccountModalPro
     </div>
   );
 }
+
