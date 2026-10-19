@@ -37,6 +37,7 @@ export interface MonthlyGeneralStat {
   generalIncome: number;
   generalExpense: number;
   netBalance: number;
+  accountBalance: number;
 }
 
 export interface GeneralDashboardData {
@@ -181,28 +182,48 @@ export async function getGeneralDashboardData(year: number): Promise<GeneralDash
   const startDate = `${year}-01-01`;
   const endDate = `${year}-12-31`;
 
-  // Busca transações do ano
-  const { data: txData, error: txError } = await supabase
-    .from('transactions')
-    .select('id, amount, type, is_paid, due_date')
-    .eq('user_id', user.id)
-    .gte('due_date', startDate)
-    .lte('due_date', endDate);
-
-  if (txError) {
-    console.error('Erro ao buscar transações anuais:', txError);
-  }
-
-  // Busca vendas do ano para saber o saldo de serviços mês a mês
   const salesStartDate = `${year}-01-01T00:00:00.000Z`;
   const salesEndDate = `${year}-12-31T23:59:59.999Z`;
 
-  const { data: salesData } = await supabase
-    .from('sales')
-    .select('total_amount, sale_date')
-    .eq('user_id', user.id)
-    .gte('sale_date', salesStartDate)
-    .lte('sale_date', salesEndDate);
+  const [
+    { data: txData, error: txError },
+    { data: salesData, error: salesError },
+    { data: accountsData, error: accountsError },
+    { data: accountTxData, error: accountTxError },
+  ] = await Promise.all([
+    // Transações do ano para receitas/despesas gerais
+    supabase
+      .from('transactions')
+      .select('id, amount, type, is_paid, due_date')
+      .eq('user_id', user.id)
+      .gte('due_date', startDate)
+      .lte('due_date', endDate),
+    // Vendas do ano para saber o saldo de serviços mês a mês
+    supabase
+      .from('sales')
+      .select('total_amount, sale_date')
+      .eq('user_id', user.id)
+      .gte('sale_date', salesStartDate)
+      .lte('sale_date', salesEndDate),
+    // Contas bancárias/carteiras para somar saldo inicial
+    supabase
+      .from('accounts')
+      .select('id, initial_balance')
+      .eq('user_id', user.id),
+    // Transações pagas vinculadas a contas até o final do ano em análise
+    supabase
+      .from('transactions')
+      .select('amount, type, due_date')
+      .eq('user_id', user.id)
+      .eq('is_paid', true)
+      .not('account_id', 'is', null)
+      .lte('due_date', endDate),
+  ]);
+
+  if (txError) console.error('Erro ao buscar transações anuais:', txError);
+  if (salesError) console.error('Erro ao buscar vendas anuais:', salesError);
+  if (accountsError) console.error('Erro ao buscar contas:', accountsError);
+  if (accountTxError) console.error('Erro ao buscar transações de contas:', accountTxError);
 
   const monthlyStats: MonthlyGeneralStat[] = MONTH_LABELS.map((label, idx) => ({
     month: idx,
@@ -211,6 +232,7 @@ export async function getGeneralDashboardData(year: number): Promise<GeneralDash
     generalIncome: 0,
     generalExpense: 0,
     netBalance: 0,
+    accountBalance: 0,
   }));
 
   // Soma vendas (serviços)
@@ -242,6 +264,39 @@ export async function getGeneralDashboardData(year: number): Promise<GeneralDash
 
   for (const stat of monthlyStats) {
     stat.netBalance = stat.generalIncome - stat.generalExpense;
+  }
+
+  // Cálculo da evolução do saldo em contas (mês a mês)
+  const initialBalanceSum = (accountsData || []).reduce(
+    (acc, a) => acc + (Number(a.initial_balance) || 0),
+    0
+  );
+
+  let runningAccountBalance = initialBalanceSum;
+  const monthlyAccountDelta = new Array(12).fill(0);
+
+  if (accountTxData) {
+    for (const t of accountTxData) {
+      if (!t.due_date) continue;
+      const amt = Number(t.amount) || 0;
+      const signedAmt = t.type === 'income' ? amt : -amt;
+
+      // Se a transação paga ocorreu antes do início do ano selecionado, compõe o saldo de partida
+      if (t.due_date < startDate) {
+        runningAccountBalance += signedAmt;
+      } else {
+        const m = parseInt(t.due_date.split('-')[1], 10) - 1;
+        if (m >= 0 && m < 12) {
+          monthlyAccountDelta[m] += signedAmt;
+        }
+      }
+    }
+  }
+
+  // Acumula mês a mês para refletir o saldo real em contas no encerramento de cada mês
+  for (let m = 0; m < 12; m++) {
+    runningAccountBalance += monthlyAccountDelta[m];
+    monthlyStats[m].accountBalance = runningAccountBalance;
   }
 
   return {

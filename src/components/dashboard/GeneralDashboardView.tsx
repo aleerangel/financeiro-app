@@ -40,10 +40,11 @@ export function GeneralDashboardView({
   loading = false,
   onEditBalance,
 }: GeneralDashboardViewProps) {
-  // Configuração das 3 curvas solicitadas pelo usuário:
+  // Configuração das 4 curvas:
   // 1. Saldo de serviços (verde)
   // 2. Saldo geral (azul)
   // 3. Balanço de entrada e saída geral (âmbar)
+  // 4. Saldo em contas (roxo)
   const chartSeries: ChartSeries[] = [
     {
       id: 'serviceRevenue',
@@ -64,6 +65,13 @@ export function GeneralDashboardView({
       name: 'Balanço Geral (Entrada - Saída)',
       color: '#f59e0b', // Âmbar
       values: yearlyStats.map((s) => s.netBalance),
+      formatValue: (v) => formatCurrency(v),
+    },
+    {
+      id: 'accountBalance',
+      name: 'Saldo em Contas',
+      color: '#a855f7', // Roxo
+      values: yearlyStats.map((s) => s.accountBalance),
       formatValue: (v) => formatCurrency(v),
     },
   ];
@@ -110,9 +118,9 @@ export function GeneralDashboardView({
 
   return (
     <div className="space-y-6">
-      {/* Gráfico Geral com as 3 Curvas Solicitadas */}
+      {/* Gráfico Geral com as 4 Curvas */}
       <SmoothLineChart
-        title="Vendas, Receitas e Balanço Geral Mensal"
+        title="Vendas, Receitas, Balanço e Saldo em Contas"
         series={chartSeries}
         height={280}
       />
