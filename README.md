@@ -1,162 +1,185 @@
-# 💰 Finanças Pessoais
+# 💈 BarberFin — Gestão Financeira & Barbearia
 
-Uma aplicação web moderna, ágil e inteligente para gestão de **finanças pessoais**, desenvolvida com **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4** e **Supabase (PostgreSQL)** com isolamento completo de dados via **Row Level Security (RLS)**.
+Uma aplicação web moderna, ágil e completa para **gestão financeira pessoal e negócios de barbearia / serviços**, desenvolvida com **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4** e **Supabase (PostgreSQL)** com isolamento de dados via **Row Level Security (RLS)**.
 
-> 🚀 **Acesso Remoto:** Em breve a aplicação estará oficialmente hospedada e acessível remotamente online para uso em qualquer computador ou smartphone!
+Projetada com foco em **velocidade de atendimento** no balcão e **clareza no fluxo de caixa**, permitindo acompanhar a lucratividade da cadeira da barbearia e as finanças gerais da vida real em um só lugar.
 
 ---
 
 ## ✨ Funcionalidades Principais
 
-### 🔐 Autenticação & Segurança
-* **Login Social com Google OAuth** integrado ao Supabase Auth.
-* **Isolamento Total por Usuário (RLS)**: Políticas ativas no PostgreSQL garantem que nenhum usuário acesse dados de terceiros.
-* **Middleware com Renovação de Sessão**: Suporte nativo a cookies seguros e compatibilidade com proxies de produção (`x-forwarded-host`).
+### 💈 Módulo da Barbearia & Atendimentos
+* **Caixa & Comandas Rápidas (`/vendas`)**:
+  * Seleção ágil de múltiplos produtos e serviços (Corte, Barba, Sobrancelha, etc.).
+  * Vínculo inteligente com clientes cadastrados via busca automática, ou atendimento avulso para máxima rapidez.
+  * Botão de **+ Novo Cadastro** na hora sem perder os serviços já marcados na comanda.
+  * Escolha de forma de pagamento (Pix, Dinheiro, Débito, Crédito) e conta bancária de destino.
+  * Escolha da data do atendimento (com data atual por padrão).
+  * Geração automática de receita vinculada à categoria **Barbearia**.
+* **Gestão de Clientes (`/clientes`)**:
+  * Cadastro de clientes com Nome, Telefone, CPF e Observações (preferências de corte, etc.).
+  * Busca em tempo real por nome, telefone ou CPF.
+  * **Métricas por Cliente (LTV)**: Quantidade de visitas, total gasto histórico, data da última visita e ticket médio por visita.
+  * **Atalho WhatsApp em 1 clique**: Conversa iniciada diretamente com o cliente.
+* **Catálogo de Serviços & Produtos (`/produtos`)**:
+  * Cadastro e edição de serviços e produtos com preço de venda, custo de reposição e comissão.
+  * Ativação e desativação rápida de itens do menu.
 
-### 📱 Experiência do Usuário (Mobile-First)
-* **Design Responsivo & Dark Mode**: Interface moderna inspirada em fintechs, com alto contraste e navegação inferior (*Bottom Navigation Bar*) no celular.
-* **Navegação Temporal Sincronizada**: Seletor de mês/ano no topo que atualiza todos os cards, relatórios e transações simultaneamente.
+---
 
-### 💳 Gestão de Cartões de Crédito & Parcelamento Automático
-* **Visual de Cartão Físico**: Apresentação elegante com chip, dados de limite e cores personalizadas.
-* **Controle de Ciclo de Faturas**: Considera o dia de fechamento (*melhor dia de compra*) e o dia de vencimento. Compras após o fechamento caem automaticamente na fatura do mês seguinte.
-* **Motor de Parcelamento Automático**: Ao registrar uma compra parcelada (ex: R$ 600 em 6x), o sistema gera automaticamente os 6 lançamentos mensais com a etiqueta `(X/Y)` nos meses corretos, com possibilidade de exclusão individual ou em lote.
-* **Acompanhamento de Limite**: Monitoramento em tempo real do limite total, limite utilizado e limite disponível com barra de progresso.
+### 📊 Dashboard Híbrido e Inteligente (`/dashboard`)
+* **Alternância Negócio vs. Geral em 1 Clique**:
+  * **Modo Negócio (Barbearia)**: Focado 100% no desempenho da barbearia — Faturamento mensal, atendimentos realizados, ticket médio, gráfico de evolução de vendas, ranking dos serviços mais vendidos e histórico de comandas.
+  * **Modo Geral (Finanças Completas)**: Visão consolidada de todas as contas, faturas de cartão, despesas e receitas da sua vida.
+* **Gráfico de Linhas com 3 Curvas Simultâneas**:
+  * 🟢 **Saldo de Serviços**: Total gerado pelos atendimentos da barbearia.
+  * 🔵 **Saldo Geral (Entradas)**: Todas as receitas somadas (barbearia + salário + investimentos).
+  * 🟡 **Balanço Geral**: Diferença líquida entre entradas e saídas.
+* **Comparativo Receitas vs. Despesas**:
+  * **Barra de Receitas com Cores por Categoria**: Visualização proporcional segmentada de quanto veio da Barbearia vs. Outras fontes (Salário, Investimentos).
+  * **Saldo Realizado Atual & Projeção do Mês**: Mostra claramente quanto já está em caixa hoje e qual a previsão de fechamento.
+* **Gastos por Categoria (Gráfico Donut)**: Distribuição percentual das despesas com cores personalizadas.
 
-### 🏦 Contas Bancárias & Carteiras
-* Cadastro de contas correntes, contas poupança, investimentos e carteira de dinheiro físico.
-* **Cálculo de Saldo em Tempo Real**: O saldo disponível reflete o saldo inicial mais todas as receitas consolidadas menos as despesas pagas.
+---
 
-### 🔁 Contas Fixas & Recorrências Automáticas
-* Cadastro de compromissos recorrentes (aluguel, salário, internet, streaming, assinaturas).
-* **Projeção Mensal**: O sistema gera automaticamente os lançamentos com status *Pendente* na virada do mês, bastando um clique para confirmar o pagamento.
-* Opção de pausar/reativar recorrências a qualquer momento.
+### 💳 Cartões de Crédito & Parcelamento Automático (`/cartoes`)
+* **Design de Cartão Físico**: Apresentação visual elegante com limite total, limite utilizado e limite disponível.
+* **Inteligência de Fatura**: Controle automático do dia de fechamento (*melhor dia de compra*) e vencimento. Compras após o fechamento caem na fatura subsequente.
+* **Parcelamento Automático**: Divide compras em até 24x gerando os lançamentos mensais com a tag `(X/Y)` nos meses corretos, com exclusão individual ou de todo o grupo.
 
-### 📊 Dashboard com Gráficos Visuais
-* **Cards Consolidadores**: Saldo total em contas, limite utilizado em faturas, receitas do mês e despesas do mês.
-* **Gráfico Donut de Categorias**: Distribuição percentual dos gastos por categoria com legenda e valores em BRL.
-* **Gráfico de Barras Receitas vs. Despesas**: Comparativo visual e indicador de **Taxa de Economia** (*percentual poupado no mês*).
-* **Resumo Rápido**: Últimos lançamentos registrados no mês e atalho para novo lançamento.
+---
+
+### 🏦 Contas Bancárias & Carteiras (`/contas`)
+* Gerenciamento de contas correntes, poupança, investimentos e carteira de dinheiro.
+* **Ajuste Rápido de Saldo**: Botão de calibração para acertar o saldo bancário a qualquer momento sem distorcer o histórico de lançamentos.
+* Saldo atualizado em tempo real com receitas e despesas quitadas.
+
+---
+
+### 🔁 Contas Fixas & Recorrências (`/recorrencias`)
+* Cadastro e **edição completa** de despesas e receitas fixas (aluguel, internet, salários, assinaturas).
+* **Sincronização Automática**: Ao editar o valor, vencimento ou categoria de uma conta fixa, os lançamentos do mês são atualizados automaticamente no Dashboard.
+* Pausar e reativar recorrências com um clique.
+
+---
+
+### 🏷️ Gestão de Categorias (`/categorias`)
+* Personalização completa de categorias de Receitas e Despesas.
+* Seletor de cores em tempo real e dezenas de ícones visuais (tesoura, utensílios, carro, dinheiro, etc.).
+* Categoria **Barbearia** integrada por padrão como receita dos atendimentos.
+
+---
+
+### 💸 Transações & Extrato (`/transacoes`)
+* Listagem completa do mês com filtros por tipo (*Todas, Despesas, Cartão, Receitas, Pendentes*).
+* **Edição de Transações**: Altere categoria, descrição, valor, data ou conta de qualquer lançamento com 1 clique.
+* Toggle de confirmação rápida de pagamento (*Pago / Pendente*).
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-* **Frontend:** [Next.js 16](https://nextjs.org) (App Router, Server Components & Server Actions)
-* **Biblioteca UI:** [React 19](https://react.dev)
-* **Estilização:** [Tailwind CSS v4](https://tailwindcss.com)
-* **Banco de Dados & Auth:** [Supabase](https://supabase.com) (PostgreSQL, Row Level Security, Triggers e Stored Procedures)
-* **Ícones:** [Lucide React](https://lucide.dev)
-* **Linguagem:** [TypeScript](https://www.typescriptlang.org)
+| Tecnologia | Descrição |
+| :--- | :--- |
+| **Next.js 16** | Framework React com App Router, Server Components e Server Actions |
+| **React 19** | Biblioteca para interfaces reativas |
+| **Tailwind CSS v4** | Estilização utility-first responsiva com tema escuro moderno |
+| **Supabase** | Banco de dados PostgreSQL gerenciado, Auth e Row Level Security |
+| **Lucide React** | Conjunto completo de ícones |
+| **TypeScript** | Tipagem estática segura de ponta a ponta |
 
 ---
 
-## 📁 Estrutura de Pastas
+## 📁 Estrutura do Projeto
 
 ```text
 financeiro-app/
 ├── public/                 # Arquivos estáticos e ícones
 ├── src/
 │   ├── app/                # Rotas da aplicação (Next.js App Router)
-│   │   ├── auth/callback/  # Callback OAuth da troca do código por sessão
+│   │   ├── auth/callback/  # Callback de autenticação Supabase
 │   │   ├── cartoes/        # Módulo de Cartões de Crédito
-│   │   ├── contas/         # Módulo de Contas Bancárias e Carteiras
-│   │   ├── dashboard/      # Painel Principal com Gráficos e Resumos
-│   │   ├── login/          # Tela de Login com Google
-│   │   ├── recorrencias/   # Módulo de Contas Fixas Recorrentes
-│   │   ├── transacoes/     # Módulo de Transações e Lançamentos
-│   │   ├── layout.tsx      # Layout Raiz e Configurações Globais
-│   │   └── page.tsx        # Redirecionamento Inicial
+│   │   ├── categorias/     # Módulo de Gestão de Categorias
+│   │   ├── clientes/       # Módulo de Gestão de Clientes
+│   │   ├── contas/         # Módulo de Contas Bancárias
+│   │   ├── dashboard/      # Dashboard Híbrido (Negócio & Geral)
+│   │   ├── login/          # Tela de Login com Google OAuth
+│   │   ├── produtos/       # Catálogo de Produtos e Serviços
+│   │   ├── recorrencias/   # Contas Fixas e Assinaturas
+│   │   ├── transacoes/     # Extrato e Gestão de Lançamentos
+│   │   └── vendas/         # Frente de Caixa e Atendimentos
 │   ├── components/         # Componentes React Reutilizáveis
-│   │   ├── accounts/       # Modais e Listagem de Contas
-│   │   ├── cards/          # Visual de Cartão Físico e Modais
-│   │   ├── dashboard/      # Gráficos (Donut e Barras) e DashboardView
+│   │   ├── accounts/       # Modais e listagem de contas
+│   │   ├── cards/          # Visual de cartões físicos
+│   │   ├── categories/     # Modais e ícones de categorias
+│   │   ├── clients/        # Modais e listagem de clientes
+│   │   ├── dashboard/      # Gráficos de barras, donut e linha
 │   │   ├── layout/         # AppShell, Navbar e BottomNav
-│   │   ├── recurrences/    # Modais e Listagem de Recorrências
-│   │   └── transactions/   # Modal de Nova Transação e TransactionsView
-│   ├── context/            # Contextos React (DateContext para mês/ano)
+│   │   ├── products/       # Modais de catálogo de serviços
+│   │   ├── recurrences/    # Modais de contas fixas
+│   │   ├── sales/          # Frente de caixa e comandas
+│   │   └── transactions/   # Modais de nova transação e extrato
+│   ├── context/            # Contextos globais (DateContext mês/ano)
 │   ├── lib/
-│   │   ├── actions/        # Server Actions (contas, cartões, transações, etc.)
-│   │   ├── supabase/       # Clientes do Supabase (Browser, Server, Middleware)
-│   │   ├── credit-card-utils.ts # Lógica matemática de faturas e parcelamento
+│   │   ├── actions/        # Server Actions (banco e regras de negócio)
+│   │   ├── supabase/       # Clientes Supabase (Browser, Server, Middleware)
 │   │   └── utils.ts        # Formatadores de moeda (BRL) e data
-│   ├── middleware.ts       # Proteção de rotas e sincronização de cookies
-│   └── types/              # Definições de tipos TypeScript do banco de dados
+│   └── types/              # Definições TypeScript do banco de dados
 └── supabase/
-    └── migrations/         # Migrações SQL e scripts DDL do banco
+    └── migrations/         # Migrações SQL e DDL do banco
 ```
 
 ---
 
-## 🚀 Como Executar o Projeto Localmente
+## 🚀 Como Executar Localmente
 
-### 1. Pré-requisitos
-* **Node.js** (versão 18.18+ ou 20+)
-* **npm**, **yarn** ou **pnpm**
-* Uma conta e projeto no **[Supabase](https://supabase.com)**
-
-### 2. Clonar o Repositório
+### 1. Clonar o Repositório
 ```bash
 git clone https://github.com/aleerangel/financeiro-app.git
 cd financeiro-app
 ```
 
-### 3. Instalar Dependências
+### 2. Instalar as Dependências
 ```bash
 npm install
 ```
 
-### 4. Configurar as Variáveis de Ambiente
-Crie um arquivo `.env.local` na raiz do projeto com base no arquivo `.env.example`:
-
-```bash
-cp .env.example .env.local
-```
-
-Preencha com as credenciais do seu projeto no Supabase:
+### 3. Configurar Variáveis de Ambiente
+Crie um arquivo `.env.local` na raiz:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anonima-supabase
 ```
 
-### 5. Configurar o Banco de Dados no Supabase
-1. Acesse o painel do seu projeto no Supabase.
-2. Navegue até o **SQL Editor**.
-3. Abra e copie todo o conteúdo do arquivo [`supabase/migrations/20261018000000_initial_schema.sql`](supabase/migrations/20261018000000_initial_schema.sql).
-4. Cole no editor do Supabase e clique em **Run**.
+### 4. Executar as Migrações no Supabase
+Acesse o **SQL Editor** no painel do Supabase e execute os arquivos de migração presentes em `supabase/migrations/` na seguinte ordem:
+1. `20261018000000_initial_schema.sql` (Estrutura base, contas, cartões e transações)
+2. `20261018190000_products_and_sales.sql` (Módulo de produtos, catálogo e vendas)
+3. `20261018203000_clients_schema.sql` (Tabela de clientes e vínculo com vendas)
+4. `20261018210000_deduplicate_and_manage_categories.sql` (Deduplicação e índice único de categorias)
+5. `20261018215000_default_barbearia_category.sql` (Vínculo padrão da categoria Barbearia)
 
-> Este script criará as tabelas, índices de alta performance, políticas RLS e os gatilhos que criam automaticamente a conta inicial e as categorias padrão assim que o usuário faz login pela primeira vez.
-
-### 6. Configurar o Provedor Google no Supabase
-1. No painel do Supabase, vá em **Authentication > Providers > Google** e ative-o com seu `Client ID` e `Client Secret` do Google Cloud Console.
-2. Em **Authentication > URL Configuration > Redirect URLs**, adicione:
-   * `http://localhost:3000/auth/callback` (para desenvolvimento local)
-   * `https://seudominio.com/auth/callback` (para produção)
-
-### 7. Executar a Aplicação
+### 5. Iniciar em Desenvolvimento
 ```bash
 npm run dev
 ```
-
-Abra **[http://localhost:3000](http://localhost:3000)** no seu navegador.
-
----
-
-## 🌐 Hospedagem & Acesso Remoto
-
-> ⏳ **Em breve:** A aplicação está sendo preparada para deploy em produção (Vercel). Muito em breve o link público estará disponível para acesso remoto seguro de qualquer lugar, direto pelo navegador ou adicionado como Web App na tela inicial do celular!
+Abra **[http://localhost:3000](http://localhost:3000)** no navegador.
 
 ---
 
-## 📜 Scripts Disponíveis
+## 🌐 Deploy & Hospedagem na Vercel
 
-* `npm run dev`: Inicia o servidor local de desenvolvimento com Turbopack.
-* `npm run build`: Compila a aplicação para produção.
-* `npm run start`: Inicia o servidor de produção compilado.
-* `npm run lint`: Executa a verificação estática de código com o ESLint.
+O projeto está otimizado para deploy instantâneo na **[Vercel](https://vercel.com/)**:
+
+1. Crie um novo projeto na Vercel e importe o repositório do GitHub.
+2. Nas configurações do projeto na Vercel, adicione as variáveis de ambiente:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Clique em **Deploy**.
+4. No painel do **Supabase** (*Authentication ➔ URL Configuration*), adicione a URL da Vercel no **Site URL** e em **Redirect URLs** (`https://seu-app.vercel.app/**`).
 
 ---
 
 ## 📄 Licença
 
-Este projeto é desenvolvido para fins de controle financeiro pessoal sob a licença [MIT](LICENSE).
+Distribuído sob a licença [MIT](LICENSE).
