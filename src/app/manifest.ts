@@ -1,0 +1,62 @@
+import type { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Finanças Pessoais',
+    short_name: 'Finanças',
+    description: 'Controle financeiro pessoal e empresarial inteligente, ágil e seguro.',
+    start_url: '/dashboard',
+    id: '/dashboard',
+    scope: '/',
+    display: 'standalone',
+    background_color: '#09090b',
+    theme_color: '#09090b',
+    orientation: 'portrait',
+    icons: [
+      {
+        src: '/icons/icon-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: '/icons/icon-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+      {
+        src: '/icons/icon-maskable-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icons/icon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+      },
+    ],
+    shortcuts: [
+      {
+        name: 'Dashboard',
+        short_name: 'Dashboard',
+        description: 'Visualizar visão geral e gráficos financeiros',
+        url: '/dashboard',
+        icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'Nova Transação',
+        short_name: 'Transação',
+        description: 'Registrar entradas, saídas ou transferências',
+        url: '/transacoes',
+        icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'Atendimentos',
+        short_name: 'Atendimentos',
+        description: 'Vendas e serviços da barbearia',
+        url: '/vendas',
+        icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
+      },
+    ],
+  };
+}

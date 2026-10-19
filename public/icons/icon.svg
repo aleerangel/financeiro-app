@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b" />
+      <stop offset="100%" stop-color="#09090b" />
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.05" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#059669" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background base -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <rect width="510" height="510" x="1" y="1" rx="127" fill="none" stroke="#27272a" stroke-width="2" />
+
+  <!-- Center Card / Squircle with glow -->
+  <rect x="76" y="76" width="360" height="360" rx="96" fill="url(#glowGrad)" stroke="#10b981" stroke-opacity="0.3" stroke-width="3" />
+
+  <!-- Inner Badge -->
+  <circle cx="256" cy="256" r="115" fill="url(#emeraldGrad)" filter="url(#shadow)" />
+
+  <!-- Stylized currency $ -->
+  <g fill="#09090b">
+    <rect x="250" y="172" width="12" height="168" rx="6" />
+    <path d="M 288 222 C 288 198 270 188 244 188 C 214 188 198 204 198 228 C 198 272 304 262 304 294 C 304 312 284 324 256 324 C 224 324 202 310 200 286" fill="none" stroke="#09090b" stroke-width="22" stroke-linecap="round" />
+  </g>
+</svg>
