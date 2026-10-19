@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Eye,
@@ -44,11 +44,12 @@ export function BusinessDashboardView({
   onEditBalance,
 }: BusinessDashboardViewProps) {
   const [period, setPeriod] = useState<ChartPeriod>('yearly');
-  const [userSelectedWeekIndex, setUserSelectedWeekIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    setUserSelectedWeekIndex(null);
-  }, [formattedMonth]);
+  // Seleção de semana vinculada ao mês em que foi feita: ao trocar de mês, é descartada
+  const [weekSelection, setWeekSelection] = useState<{ month: string | undefined; index: number } | null>(null);
+  const userSelectedWeekIndex =
+    weekSelection && weekSelection.month === formattedMonth ? weekSelection.index : null;
+  const setUserSelectedWeekIndex = (index: number) =>
+    setWeekSelection({ month: formattedMonth, index });
 
   // Deriva o índice da semana sem setState em useEffect
   const selectedWeekIndex =

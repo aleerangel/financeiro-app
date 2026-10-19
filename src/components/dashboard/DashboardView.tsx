@@ -12,7 +12,6 @@ import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { Category, Transaction } from '@/types/database';
 import { useDateContext } from '@/context/DateContext';
 import { getTransactions, getUpcomingAndOverdueBills, getPendingIncomeReceipts } from '@/lib/actions/transactions';
-import { syncMonthlyRecurrences } from '@/lib/actions/recurrences';
 import {
   BusinessDashboardData,
   GeneralDashboardData,
@@ -52,14 +51,18 @@ export function DashboardView({
   const [generalData, setGeneralData] = useState<GeneralDashboardData>(initialGeneralData);
   const [upcomingBills, setUpcomingBills] = useState<Transaction[]>(initialUpcomingBills);
   const [pendingReceipts, setPendingReceipts] = useState<Transaction[]>(initialPendingReceipts);
-  const [loading, setLoading] = useState(false);
+  const monthKey = `${year}-${month}`;
+  // Mês cujos dados já foram carregados; enquanto diferir do selecionado, está carregando
+  const [loadedKey, setLoadedKey] = useState(monthKey);
+  const [refreshing, setRefreshing] = useState(false);
+  const loading = refreshing || loadedKey !== monthKey;
   const [modalOpen, setModalOpen] = useState(false);
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [accountToAdjustBalance, setAccountToAdjustBalance] = useState<AccountWithBalance | null>(null);
 
   const refreshData = useCallback(async () => {
     try {
-      setLoading(true);
+      setRefreshing(true);
       const [txs, bData, gData, accs, bills, receipts] = await Promise.all([
         getTransactions(month, year),
         getBusinessDashboardData(year, month),
@@ -74,26 +77,15 @@ export function DashboardView({
       setAccounts(accs);
       setUpcomingBills(bills);
       setPendingReceipts(receipts);
-
-      const now = new Date();
-      const isPast = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth());
-
-      if (!isPast) {
-        // Sincroniza recorrências em segundo plano
-        syncMonthlyRecurrences(month, year).catch((err) => {
-          console.warn('Aviso ao sincronizar recorrências:', err);
-        });
-      }
     } catch (err) {
       console.error('Erro ao atualizar dados do dashboard:', err);
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
   }, [month, year]);
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
 
     Promise.all([
       getTransactions(month, year),
@@ -118,24 +110,14 @@ export function DashboardView({
       })
       .finally(() => {
         if (active) {
-          setLoading(false);
+          setLoadedKey(monthKey);
         }
       });
-
-    const now = new Date();
-    const isPast = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth());
-
-    if (!isPast) {
-      // Sincroniza recorrências em segundo plano
-      syncMonthlyRecurrences(month, year).catch((err) => {
-        console.warn('Aviso ao sincronizar recorrências:', err);
-      });
-    }
 
     return () => {
       active = false;
     };
-  }, [month, year]);
+  }, [month, year, monthKey]);
 
   return (
     <div className="space-y-6">

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Transaction, TransactionType, PaymentMethod } from '@/types/database';
 import { calculateInstallmentDueDates } from '@/lib/credit-card-utils';
-import { cleanupInvalidPastRecurrenceTransactions } from './recurrences';
+import { getZonedParts, getTodayYMD } from '@/lib/date-utils';
 
 export interface CreateTransactionInput {
   description: string;
@@ -292,10 +292,8 @@ export async function getUpcomingAndOverdueBills(daysAhead: number = 3): Promise
 
   if (!user) throw new Error('Não autenticado');
 
-  await cleanupInvalidPastRecurrenceTransactions();
-
-  const now = new Date();
-  const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysAhead);
+  const today = getZonedParts();
+  const targetDate = new Date(today.year, today.month, today.day + daysAhead);
   const maxDueDate = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
 
   const { data, error } = await supabase
@@ -327,8 +325,7 @@ export async function getPendingIncomeReceipts(): Promise<Transaction[]> {
 
   if (!user) throw new Error('Não autenticado');
 
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayStr = getTodayYMD();
 
   const { data, error } = await supabase
     .from('transactions')

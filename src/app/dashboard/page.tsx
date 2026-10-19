@@ -6,6 +6,8 @@ import { getCreditCards } from '@/lib/actions/credit-cards';
 import { getCategories } from '@/lib/actions/categories';
 import { getBusinessDashboardData, getGeneralDashboardData } from '@/lib/actions/dashboard';
 import { getUpcomingAndOverdueBills, getPendingIncomeReceipts } from '@/lib/actions/transactions';
+import { syncMonthlyRecurrences } from '@/lib/actions/recurrences';
+import { getZonedParts } from '@/lib/date-utils';
 import { AppShell } from '@/components/layout/AppShell';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 
@@ -21,9 +23,15 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
+  const { year: currentYear, month: currentMonth } = getZonedParts();
+
+  // Gera as contas fixas do mês atual (e do próximo, para alertas de vencimento
+  // na virada do mês) uma única vez por carregamento, no servidor.
+  await syncMonthlyRecurrences(currentMonth, currentYear);
+  await syncMonthlyRecurrences(
+    (currentMonth + 1) % 12,
+    currentMonth === 11 ? currentYear + 1 : currentYear
+  );
 
   const [accounts, cards, categories, businessData, generalData, upcomingBills, pendingReceipts] = await Promise.all([
     getAccounts(),

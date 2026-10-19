@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { buildCalendarWeeks, findDefaultWeekIndex } from '@/lib/week-utils';
 
 export interface BusinessPeriodStat {
   label: string; // Ex: 'Jan', '01-07', 'Seg'
@@ -80,12 +81,6 @@ const MONTH_FULL_NAMES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-function formatDateYMD(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 export async function getBusinessDashboardData(year: number, currentMonth: number): Promise<BusinessDashboardData> {
   const supabase = await createClient();
@@ -96,75 +91,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   const startDate = `${year}-01-01`;
   const endDate = `${year}-12-31`;
 
-  // Calcula semanas de Domingo a Sábado do mês atual
-  const firstDayOfMonth = new Date(year, currentMonth, 1);
-  const firstDayOfWeek = firstDayOfMonth.getDay(); // 0: Dom, 1: Seg, ..., 6: Sáb
-  const diffToSunday = -firstDayOfWeek;
-  const initialSunday = new Date(year, currentMonth, 1 + diffToSunday);
-  const lastDayOfMonth = new Date(year, currentMonth + 1, 0);
-
-  const calendarWeeks: {
-    index: number;
-    label: string;
-    shortLabel: string;
-    startDate: string;
-    endDate: string;
-    days: {
-      dateStr: string;
-      weekdayLabel: string;
-      fullLabel: string;
-    }[];
-  }[] = [];
-
-  const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  const fullWeekdayNames = [
-    'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira',
-    'Quinta-feira', 'Sexta-feira', 'Sábado'
-  ];
-
-  const iterDate = new Date(initialSunday);
-  let wIdx = 0;
-
-  while (iterDate <= lastDayOfMonth) {
-    const weekStart = new Date(iterDate); // Domingo
-    const sundayStr = formatDateYMD(weekStart);
-    const days = [];
-
-    // 7 dias: Domingo (0) até Sábado (6)
-    for (let d = 0; d < 7; d++) {
-      const cur = new Date(weekStart);
-      cur.setDate(cur.getDate() + d);
-      const dateStr = formatDateYMD(cur);
-      const dayNum = String(cur.getDate()).padStart(2, '0');
-      const mNum = String(cur.getMonth() + 1).padStart(2, '0');
-      const dayOfWeek = cur.getDay();
-
-      days.push({
-        dateStr,
-        weekdayLabel: weekdayNames[dayOfWeek],
-        fullLabel: `${fullWeekdayNames[dayOfWeek]} (${dayNum}/${mNum})`,
-      });
-    }
-
-    const saturdayDate = new Date(weekStart);
-    saturdayDate.setDate(saturdayDate.getDate() + 6);
-    const saturdayStr = formatDateYMD(saturdayDate);
-
-    const startDisplay = `${String(weekStart.getDate()).padStart(2, '0')}/${String(weekStart.getMonth() + 1).padStart(2, '0')}`;
-    const endDisplay = `${String(saturdayDate.getDate()).padStart(2, '0')}/${String(saturdayDate.getMonth() + 1).padStart(2, '0')}`;
-
-    calendarWeeks.push({
-      index: wIdx,
-      label: `Semana ${wIdx + 1} (${startDisplay} a ${endDisplay})`,
-      shortLabel: `${startDisplay} - ${endDisplay}`,
-      startDate: sundayStr,
-      endDate: saturdayStr,
-      days,
-    });
-
-    wIdx++;
-    iterDate.setDate(iterDate.getDate() + 7);
-  }
+  // Semanas de Domingo a Sábado do mês atual
+  const calendarWeeks = buildCalendarWeeks(year, currentMonth);
 
   const earliestDate = calendarWeeks.length > 0 && calendarWeeks[0].startDate < startDate
     ? calendarWeeks[0].startDate
@@ -276,7 +204,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   });
 
   // 2. STATS MENSAIS (Semanas de Domingo a Sábado do Mês Selecionado)
-  const monthlyStats: BusinessPeriodStat[] = calendarWeeks.map((cw, i) => {
+  const monthlyStats: BusinessPeriodStat[] = calendarWeeks.map((cw) => {
     let revenue = 0;
     let salesCount = 0;
 
@@ -314,14 +242,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     weeklyStatsByWeek[cw.index] = stats;
   }
 
-  const todayStr = formatDateYMD(new Date());
-  let defaultWeekIndex = 0;
-  for (let i = 0; i < calendarWeeks.length; i++) {
-    if (todayStr >= calendarWeeks[i].startDate && todayStr <= calendarWeeks[i].endDate) {
-      defaultWeekIndex = i;
-      break;
-    }
-  }
+  const defaultWeekIndex = findDefaultWeekIndex(calendarWeeks);
 
   const weeksMeta: WeekMeta[] = calendarWeeks.map((cw) => ({
     index: cw.index,
@@ -382,76 +303,8 @@ export async function getGeneralDashboardData(
   const startDate = `${year}-01-01`;
   const endDate = `${year}-12-31`;
 
-  // Calcula todas as semanas (Domingo a Sábado) que intersectam o mês selecionado
-  const firstDayOfMonth = new Date(year, month, 1);
-  const firstDayOfWeek = firstDayOfMonth.getDay(); // 0: Dom, 1: Seg, ..., 6: Sáb
-  const diffToSunday = -firstDayOfWeek;
-  const initialSunday = new Date(year, month, 1 + diffToSunday);
-
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-
-  const calendarWeeks: {
-    index: number;
-    label: string;
-    shortLabel: string;
-    startDate: string;
-    endDate: string;
-    days: {
-      dateStr: string;
-      weekdayLabel: string;
-      fullLabel: string;
-    }[];
-  }[] = [];
-
-  const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  const fullWeekdayNames = [
-    'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira',
-    'Quinta-feira', 'Sexta-feira', 'Sábado'
-  ];
-
-  const iterDate = new Date(initialSunday);
-  let wIdx = 0;
-
-  while (iterDate <= lastDayOfMonth) {
-    const weekStart = new Date(iterDate); // Domingo
-    const sundayStr = formatDateYMD(weekStart);
-    const days = [];
-
-    // 7 dias: Domingo (0) até Sábado (6)
-    for (let d = 0; d < 7; d++) {
-      const cur = new Date(weekStart);
-      cur.setDate(cur.getDate() + d);
-      const dateStr = formatDateYMD(cur);
-      const dayNum = String(cur.getDate()).padStart(2, '0');
-      const mNum = String(cur.getMonth() + 1).padStart(2, '0');
-      const dayOfWeek = cur.getDay();
-
-      days.push({
-        dateStr,
-        weekdayLabel: weekdayNames[dayOfWeek],
-        fullLabel: `${fullWeekdayNames[dayOfWeek]} (${dayNum}/${mNum})`,
-      });
-    }
-
-    const saturdayDate = new Date(weekStart);
-    saturdayDate.setDate(saturdayDate.getDate() + 6);
-    const saturdayStr = formatDateYMD(saturdayDate);
-
-    const startDisplay = `${String(weekStart.getDate()).padStart(2, '0')}/${String(weekStart.getMonth() + 1).padStart(2, '0')}`;
-    const endDisplay = `${String(saturdayDate.getDate()).padStart(2, '0')}/${String(saturdayDate.getMonth() + 1).padStart(2, '0')}`;
-
-    calendarWeeks.push({
-      index: wIdx,
-      label: `Semana ${wIdx + 1} (${startDisplay} a ${endDisplay})`,
-      shortLabel: `${startDisplay} - ${endDisplay}`,
-      startDate: sundayStr,
-      endDate: saturdayStr,
-      days,
-    });
-
-    wIdx++;
-    iterDate.setDate(iterDate.getDate() + 7);
-  }
+  // Semanas (Domingo a Sábado) que intersectam o mês selecionado
+  const calendarWeeks = buildCalendarWeeks(year, month);
 
   // Define os limites abrangentes para a query
   const earliestDate = calendarWeeks.length > 0 && calendarWeeks[0].startDate < startDate
@@ -598,7 +451,7 @@ export async function getGeneralDashboardData(
   });
 
   // 2. STATS MENSAIS (Semanas de Domingo a Sábado do Mês Selecionado)
-  const monthlyStats: PeriodStat[] = calendarWeeks.map((cw, i) => {
+  const monthlyStats: PeriodStat[] = calendarWeeks.map((cw) => {
     let serviceRevenue = 0;
     let generalIncome = 0;
     let generalExpense = 0;
@@ -648,14 +501,7 @@ export async function getGeneralDashboardData(
     weeklyStatsByWeek[cw.index] = stats;
   }
 
-  const todayStr = formatDateYMD(new Date());
-  let defaultWeekIndex = 0;
-  for (let i = 0; i < calendarWeeks.length; i++) {
-    if (todayStr >= calendarWeeks[i].startDate && todayStr <= calendarWeeks[i].endDate) {
-      defaultWeekIndex = i;
-      break;
-    }
-  }
+  const defaultWeekIndex = findDefaultWeekIndex(calendarWeeks);
 
   const weeksMeta: WeekMeta[] = calendarWeeks.map((cw) => ({
     index: cw.index,

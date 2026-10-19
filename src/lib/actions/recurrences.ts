@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Recurrence, TransactionType } from '@/types/database';
+import { isPastMonth, getZonedParts } from '@/lib/date-utils';
+import { isRecurrenceEligible, buildDueDate } from '@/lib/recurrence-utils';
 
 export interface CreateRecurrenceInput {
   description: string;
@@ -53,100 +55,39 @@ export async function getRecurrences(): Promise<Recurrence[]> {
 }
 
 /**
- * Remove lançamentos pendentes gerados automaticamente por recorrências
- * para meses anteriores ao mês de criação da própria recorrência.
- */
-export async function cleanupInvalidPastRecurrenceTransactions() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return;
-
-  const { data: recurrences } = await supabase
-    .from('recurrences')
-    .select('id, created_at')
-    .eq('user_id', user.id);
-
-  if (!recurrences || recurrences.length === 0) return;
-
-  for (const rec of recurrences) {
-    const recCreated = new Date(rec.created_at);
-    const recYear = recCreated.getFullYear();
-    const recMonth = recCreated.getMonth(); // 0-indexed
-    const startOfCreationMonth = `${recYear}-${String(recMonth + 1).padStart(2, '0')}-01`;
-
-    await supabase
-      .from('transactions')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('recurrence_id', rec.id)
-      .eq('is_paid', false)
-      .lt('due_date', startOfCreationMonth);
-  }
-}
-
-/**
- * Garante que todas as despesas e receitas fixas ativas sejam geradas como
- * transações pendentes no mês/ano selecionado, caso ainda não existam.
- * Nunca gera para meses anteriores ao mês atual ou anteriores ao mês de criação da recorrência.
+ * Garante que as despesas e receitas fixas ativas sejam geradas como transações
+ * pendentes no mês/ano informado. Idempotente: o índice único
+ * (recurrence_id, due_date) no banco impede duplicatas mesmo com chamadas concorrentes.
+ *
+ * Regras:
+ * - nunca gera em meses passados (fuso America/Sao_Paulo);
+ * - só gera a partir do mês de criação da recorrência;
+ * - NÃO chama revalidatePath: é executada durante o render do servidor.
  */
 export async function syncMonthlyRecurrences(month: number, year: number) {
+  if (isPastMonth(month, year)) return;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error('Não autenticado');
 
-  // Limpa preventivamente lançamentos indevidos gerados em meses anteriores à criação da recorrência
-  await cleanupInvalidPastRecurrenceTransactions();
-
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  const isPastMonth = year < currentYear || (year === currentYear && month < currentMonth);
-
-  // Não gera novos lançamentos automáticos pendentes em meses que já se passaram
-  if (isPastMonth) {
-    return;
-  }
-
-  // 1. Busca todas as recorrências ativas do usuário
   const { data: recurrences, error: recError } = await supabase
     .from('recurrences')
     .select('*')
     .eq('user_id', user.id)
     .eq('active', true);
 
-  if (recError || !recurrences || recurrences.length === 0) {
-    return;
-  }
+  if (recError || !recurrences || recurrences.length === 0) return;
 
-  // Filtra apenas as recorrências que foram criadas no mês selecionado ou antes dele
-  const eligibleRecurrences = recurrences.filter((rec) => {
-    const recCreated = new Date(rec.created_at);
-    const recCreatedYear = recCreated.getFullYear();
-    const recCreatedMonth = recCreated.getMonth();
+  const eligible = recurrences.filter((rec) => isRecurrenceEligible(rec, month, year));
+  if (eligible.length === 0) return;
 
-    if (year < recCreatedYear || (year === recCreatedYear && month < recCreatedMonth)) {
-      return false;
-    }
-
-    if (rec.frequency === 'yearly' && month !== recCreatedMonth) {
-      return false;
-    }
-
-    return true;
-  });
-
-  if (eligibleRecurrences.length === 0) {
-    return;
-  }
-
-  // 2. Busca as transações já geradas por recorrência nesse mês/ano
   const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month + 1, 0).getDate();
   const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-  const { data: existingTransactions } = await supabase
+  const { data: existing } = await supabase
     .from('transactions')
     .select('recurrence_id')
     .eq('user_id', user.id)
@@ -154,26 +95,18 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
     .gte('due_date', startDate)
     .lte('due_date', endDate);
 
-  const existingRecurrenceIds = new Set(
-    (existingTransactions || []).map((t) => t.recurrence_id)
-  );
-
-  // 3. Identifica as que ainda não foram geradas neste mês
-  const toInsert = eligibleRecurrences.filter((rec) => !existingRecurrenceIds.has(rec.id));
+  const existingIds = new Set((existing || []).map((t) => t.recurrence_id));
+  const toInsert = eligible.filter((rec) => !existingIds.has(rec.id));
 
   if (toInsert.length > 0) {
-    const newTransactions = toInsert.map((rec) => {
-      // Ajusta o dia de vencimento para o mês específico (ex: dia 31 em fevereiro)
-      const validDay = Math.min(rec.due_day, lastDay);
-      const dueDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
-      const paymentMethod = rec.credit_card_id ? 'credit' : rec.account_id ? 'debit' : 'pix';
-
+    const rows = toInsert.map((rec) => {
+      const dueDate = buildDueDate(year, month, rec.due_day);
       return {
         user_id: user.id,
         description: rec.description,
         amount: rec.amount,
         type: rec.type,
-        payment_method: paymentMethod,
+        payment_method: rec.credit_card_id ? 'credit' : rec.account_id ? 'debit' : 'pix',
         transaction_date: dueDate,
         due_date: dueDate,
         category_id: rec.category_id || null,
@@ -186,17 +119,18 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
       };
     });
 
+    // ignoreDuplicates => ON CONFLICT DO NOTHING (corrida entre abas/dispositivos)
     const { error: insertError } = await supabase
       .from('transactions')
-      .insert(newTransactions);
+      .upsert(rows, { onConflict: 'recurrence_id,due_date', ignoreDuplicates: true });
 
     if (insertError) {
       console.error('Erro ao sincronizar transações recorrentes:', insertError);
     }
   }
 
-  // 4. Sincroniza categoria e descrição das transações deste mês caso a recorrência tenha sido editada
-  for (const rec of eligibleRecurrences) {
+  // Propaga categoria/descrição editadas na recorrência para os lançamentos do mês
+  for (const rec of eligible) {
     await supabase
       .from('transactions')
       .update({
@@ -236,8 +170,8 @@ export async function createRecurrence(input: CreateRecurrenceInput) {
   if (error) throw new Error(error.message);
 
   // Sincroniza imediatamente com o mês atual
-  const now = new Date();
-  await syncMonthlyRecurrences(now.getMonth(), now.getFullYear());
+  const today = getZonedParts();
+  await syncMonthlyRecurrences(today.month, today.year);
 
   revalidatePath('/recorrencias');
   revalidatePath('/dashboard');
