@@ -36,6 +36,14 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
+
+  // Caso o Supabase redirecione o ?code= do OAuth para a raiz (/), encaminha para /auth/callback
+  if (pathname === '/' && request.nextUrl.searchParams.has('code')) {
+    const callbackUrl = request.nextUrl.clone();
+    callbackUrl.pathname = '/auth/callback';
+    return NextResponse.redirect(callbackUrl);
+  }
+
   const isAuthPage = pathname.startsWith('/login');
   const isPwaFile =
     pathname === '/sw.js' ||
