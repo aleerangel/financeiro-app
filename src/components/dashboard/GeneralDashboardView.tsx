@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Wallet,
@@ -59,6 +59,10 @@ export function GeneralDashboardView({
 }: GeneralDashboardViewProps) {
   const [period, setPeriod] = useState<ChartPeriod>('yearly');
   const [userSelectedWeekIndex, setUserSelectedWeekIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setUserSelectedWeekIndex(null);
+  }, [formattedMonth]);
 
   // Deriva o índice da semana sem necessidade de setState em useEffect
   const selectedWeekIndex =

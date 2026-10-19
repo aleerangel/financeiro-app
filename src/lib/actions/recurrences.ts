@@ -140,9 +140,6 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
       .gte('due_date', startDate)
       .lte('due_date', endDate);
   }
-
-  revalidatePath('/transacoes');
-  revalidatePath('/dashboard');
 }
 
 export async function createRecurrence(input: CreateRecurrenceInput) {

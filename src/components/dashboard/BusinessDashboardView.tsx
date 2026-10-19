@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Eye,
@@ -45,6 +45,10 @@ export function BusinessDashboardView({
 }: BusinessDashboardViewProps) {
   const [period, setPeriod] = useState<ChartPeriod>('yearly');
   const [userSelectedWeekIndex, setUserSelectedWeekIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setUserSelectedWeekIndex(null);
+  }, [formattedMonth]);
 
   // Deriva o índice da semana sem setState em useEffect
   const selectedWeekIndex =

@@ -60,7 +60,6 @@ export function DashboardView({
   const refreshData = useCallback(async () => {
     try {
       setLoading(true);
-      await syncMonthlyRecurrences(month, year);
       const [txs, bData, gData, accs, bills, receipts] = await Promise.all([
         getTransactions(month, year),
         getBusinessDashboardData(year, month),
@@ -75,6 +74,11 @@ export function DashboardView({
       setAccounts(accs);
       setUpcomingBills(bills);
       setPendingReceipts(receipts);
+
+      // Sincroniza recorrências em segundo plano
+      syncMonthlyRecurrences(month, year).catch((err) => {
+        console.warn('Aviso ao sincronizar recorrências:', err);
+      });
     } catch (err) {
       console.error('Erro ao atualizar dados do dashboard:', err);
     } finally {
@@ -84,15 +88,16 @@ export function DashboardView({
 
   useEffect(() => {
     let active = true;
-    syncMonthlyRecurrences(month, year)
-      .then(() => Promise.all([
-        getTransactions(month, year),
-        getBusinessDashboardData(year, month),
-        getGeneralDashboardData(year, month),
-        getAccounts(),
-        getUpcomingAndOverdueBills(3),
-        getPendingIncomeReceipts(),
-      ]))
+    setLoading(true);
+
+    Promise.all([
+      getTransactions(month, year),
+      getBusinessDashboardData(year, month),
+      getGeneralDashboardData(year, month),
+      getAccounts(),
+      getUpcomingAndOverdueBills(3),
+      getPendingIncomeReceipts(),
+    ])
       .then(([txs, bData, gData, accs, bills, receipts]) => {
         if (active) {
           setTransactions(txs);
@@ -104,8 +109,18 @@ export function DashboardView({
         }
       })
       .catch((err) => {
-        console.error('Erro ao sincronizar dashboard:', err);
+        console.error('Erro ao buscar dados do dashboard:', err);
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
       });
+
+    // Sincroniza recorrências em segundo plano
+    syncMonthlyRecurrences(month, year).catch((err) => {
+      console.warn('Aviso ao sincronizar recorrências:', err);
+    });
 
     return () => {
       active = false;
