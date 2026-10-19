@@ -58,7 +58,7 @@ export function DashboardView({
       const [txs, bData, gData, accs] = await Promise.all([
         getTransactions(month, year),
         getBusinessDashboardData(year, month),
-        getGeneralDashboardData(year),
+        getGeneralDashboardData(year, month),
         getAccounts(),
       ]);
       setTransactions(txs);
@@ -78,7 +78,7 @@ export function DashboardView({
       .then(() => Promise.all([
         getTransactions(month, year),
         getBusinessDashboardData(year, month),
-        getGeneralDashboardData(year),
+        getGeneralDashboardData(year, month),
         getAccounts(),
       ]))
       .then(([txs, bData, gData, accs]) => {
@@ -194,7 +194,8 @@ export function DashboardView({
         />
       ) : (
         <GeneralDashboardView
-          yearlyStats={generalData.monthlyStats}
+          generalData={generalData}
+          yearlyStats={generalData.yearlyStats}
           transactions={transactions}
           accounts={accounts}
           cards={initialCards}

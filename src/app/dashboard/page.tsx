@@ -29,7 +29,7 @@ export default async function DashboardPage() {
     getCreditCards(),
     getCategories(),
     getBusinessDashboardData(currentYear, currentMonth),
-    getGeneralDashboardData(currentYear),
+    getGeneralDashboardData(currentYear, currentMonth),
   ]);
 
   return (

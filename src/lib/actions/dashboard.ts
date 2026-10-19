@@ -30,9 +30,12 @@ export interface BusinessDashboardData {
   recentSales: RecentBusinessSale[];
 }
 
-export interface MonthlyGeneralStat {
-  month: number;
-  monthLabel: string;
+export interface PeriodStat {
+  label: string; // Ex: 'Jan', 'Sem 1', 'Seg'
+  fullLabel: string; // Ex: 'Janeiro de 2026', 'Semana 1 (01/10 a 07/10)', 'Segunda-feira (12/10)'
+  dateKey?: string;
+  month?: number;
+  monthLabel?: string;
   serviceRevenue: number;
   generalIncome: number;
   generalExpense: number;
@@ -40,8 +43,22 @@ export interface MonthlyGeneralStat {
   accountBalance: number;
 }
 
+export type MonthlyGeneralStat = PeriodStat;
+
+export interface WeekMeta {
+  index: number;
+  label: string;
+  shortLabel: string;
+  startDate: string;
+  endDate: string;
+}
+
 export interface GeneralDashboardData {
-  monthlyStats: MonthlyGeneralStat[];
+  yearlyStats: PeriodStat[];
+  monthlyStats: PeriodStat[];
+  weeklyStatsByWeek: Record<number, PeriodStat[]>;
+  weeksMeta: WeekMeta[];
+  defaultWeekIndex: number;
 }
 
 const MONTH_LABELS = [
@@ -173,7 +190,17 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   };
 }
 
-export async function getGeneralDashboardData(year: number): Promise<GeneralDashboardData> {
+function formatDateYMD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+export async function getGeneralDashboardData(
+  year: number,
+  month: number = new Date().getMonth()
+): Promise<GeneralDashboardData> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -182,8 +209,89 @@ export async function getGeneralDashboardData(year: number): Promise<GeneralDash
   const startDate = `${year}-01-01`;
   const endDate = `${year}-12-31`;
 
-  const salesStartDate = `${year}-01-01T00:00:00.000Z`;
-  const salesEndDate = `${year}-12-31T23:59:59.999Z`;
+  // Calcula todas as semanas (Segunda a Domingo) que intersectam o mês selecionado
+  const firstDayOfMonth = new Date(year, month, 1);
+  const firstDayOfWeek = firstDayOfMonth.getDay(); // 0: Dom, 1: Seg, ..., 6: Sáb
+  const diffToMonday = (firstDayOfWeek === 0 ? -6 : 1) - firstDayOfWeek;
+  const initialMonday = new Date(year, month, 1 + diffToMonday);
+
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+
+  const calendarWeeks: {
+    index: number;
+    label: string;
+    shortLabel: string;
+    startDate: string;
+    endDate: string;
+    days: {
+      dateStr: string;
+      weekdayLabel: string;
+      fullLabel: string;
+    }[];
+  }[] = [];
+
+  const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const fullWeekdayNames = [
+    'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira',
+    'Quinta-feira', 'Sexta-feira', 'Sábado'
+  ];
+
+  const iterDate = new Date(initialMonday);
+  let wIdx = 0;
+
+  while (iterDate <= lastDayOfMonth) {
+    const weekStart = new Date(iterDate);
+    const mondayStr = formatDateYMD(weekStart);
+    const days = [];
+
+    // 7 dias: Segunda (0) até Domingo (6)
+    for (let d = 0; d < 7; d++) {
+      const cur = new Date(weekStart);
+      cur.setDate(cur.getDate() + d);
+      const dateStr = formatDateYMD(cur);
+      const dayNum = String(cur.getDate()).padStart(2, '0');
+      const mNum = String(cur.getMonth() + 1).padStart(2, '0');
+      const dayOfWeek = cur.getDay();
+
+      days.push({
+        dateStr,
+        weekdayLabel: weekdayNames[dayOfWeek],
+        fullLabel: `${fullWeekdayNames[dayOfWeek]} (${dayNum}/${mNum})`,
+      });
+    }
+
+    const sundayDate = new Date(weekStart);
+    sundayDate.setDate(sundayDate.getDate() + 6);
+    const sundayStr = formatDateYMD(sundayDate);
+
+    const startDisplay = `${String(weekStart.getDate()).padStart(2, '0')}/${String(weekStart.getMonth() + 1).padStart(2, '0')}`;
+    const endDisplay = `${String(sundayDate.getDate()).padStart(2, '0')}/${String(sundayDate.getMonth() + 1).padStart(2, '0')}`;
+
+    calendarWeeks.push({
+      index: wIdx,
+      label: `Semana ${wIdx + 1} (${startDisplay} a ${endDisplay})`,
+      shortLabel: `${startDisplay} a ${endDisplay}`,
+      startDate: mondayStr,
+      endDate: sundayStr,
+      days,
+    });
+
+    wIdx++;
+    iterDate.setDate(iterDate.getDate() + 7);
+  }
+
+  // Define os limites abrangentes para a query
+  const earliestDate = calendarWeeks.length > 0 && calendarWeeks[0].startDate < startDate
+    ? calendarWeeks[0].startDate
+    : startDate;
+  const latestDate = calendarWeeks.length > 0 && calendarWeeks[calendarWeeks.length - 1].endDate > endDate
+    ? calendarWeeks[calendarWeeks.length - 1].endDate
+    : endDate;
+
+  const queryStartDate = earliestDate;
+  const queryEndDate = latestDate;
+  const salesQueryStart = `${queryStartDate}T00:00:00.000Z`;
+  const salesQueryEnd = `${queryEndDate}T23:59:59.999Z`;
 
   const [
     { data: txData, error: txError },
@@ -191,89 +299,65 @@ export async function getGeneralDashboardData(year: number): Promise<GeneralDash
     { data: accountsData, error: accountsError },
     { data: accountTxData, error: accountTxError },
   ] = await Promise.all([
-    // Transações do ano para receitas/despesas gerais
     supabase
       .from('transactions')
       .select('id, amount, type, is_paid, due_date')
       .eq('user_id', user.id)
-      .gte('due_date', startDate)
-      .lte('due_date', endDate),
-    // Vendas do ano para saber o saldo de serviços mês a mês
+      .gte('due_date', queryStartDate)
+      .lte('due_date', queryEndDate),
     supabase
       .from('sales')
       .select('total_amount, sale_date')
       .eq('user_id', user.id)
-      .gte('sale_date', salesStartDate)
-      .lte('sale_date', salesEndDate),
-    // Contas bancárias/carteiras para somar saldo inicial
+      .gte('sale_date', salesQueryStart)
+      .lte('sale_date', salesQueryEnd),
     supabase
       .from('accounts')
       .select('id, initial_balance')
       .eq('user_id', user.id),
-    // Transações pagas vinculadas a contas até o final do ano em análise
     supabase
       .from('transactions')
       .select('amount, type, due_date')
       .eq('user_id', user.id)
       .eq('is_paid', true)
       .not('account_id', 'is', null)
-      .lte('due_date', endDate),
+      .lte('due_date', queryEndDate),
   ]);
 
-  if (txError) console.error('Erro ao buscar transações anuais:', txError);
-  if (salesError) console.error('Erro ao buscar vendas anuais:', salesError);
+  if (txError) console.error('Erro ao buscar transações:', txError);
+  if (salesError) console.error('Erro ao buscar vendas:', salesError);
   if (accountsError) console.error('Erro ao buscar contas:', accountsError);
   if (accountTxError) console.error('Erro ao buscar transações de contas:', accountTxError);
 
-  const monthlyStats: MonthlyGeneralStat[] = MONTH_LABELS.map((label, idx) => ({
-    month: idx,
-    monthLabel: label,
-    serviceRevenue: 0,
-    generalIncome: 0,
-    generalExpense: 0,
-    netBalance: 0,
-    accountBalance: 0,
-  }));
-
-  // Soma vendas (serviços)
+  // Mapeamento por data YYYY-MM-DD
+  const salesByDate = new Map<string, number>();
   if (salesData) {
     for (const s of salesData) {
-      const m = new Date(s.sale_date).getMonth();
-      if (m >= 0 && m < 12) {
-        monthlyStats[m].serviceRevenue += Number(s.total_amount) || 0;
-      }
+      if (!s.sale_date) continue;
+      const dStr = s.sale_date.split('T')[0];
+      salesByDate.set(dStr, (salesByDate.get(dStr) || 0) + (Number(s.total_amount) || 0));
     }
   }
 
-  // Soma transações gerais (apenas realizadas/pagas)
+  const txByDate = new Map<string, { income: number; expense: number }>();
   if (txData) {
     for (const t of txData) {
       if (!t.due_date || !t.is_paid) continue;
-      const m = parseInt(t.due_date.split('-')[1], 10) - 1;
+      const cur = txByDate.get(t.due_date) || { income: 0, expense: 0 };
       const amt = Number(t.amount) || 0;
-
-      if (m >= 0 && m < 12) {
-        if (t.type === 'income') {
-          monthlyStats[m].generalIncome += amt;
-        } else if (t.type === 'expense') {
-          monthlyStats[m].generalExpense += amt;
-        }
-      }
+      if (t.type === 'income') cur.income += amt;
+      else if (t.type === 'expense') cur.expense += amt;
+      txByDate.set(t.due_date, cur);
     }
   }
 
-  for (const stat of monthlyStats) {
-    stat.netBalance = stat.generalIncome - stat.generalExpense;
-  }
-
-  // Cálculo da evolução do saldo em contas (mês a mês)
   const initialBalanceSum = (accountsData || []).reduce(
     (acc, a) => acc + (Number(a.initial_balance) || 0),
     0
   );
 
-  let runningAccountBalance = initialBalanceSum;
-  const monthlyAccountDelta = new Array(12).fill(0);
+  const accountDeltasByDate = new Map<string, number>();
+  let basePriorBalance = initialBalanceSum;
 
   if (accountTxData) {
     for (const t of accountTxData) {
@@ -281,26 +365,162 @@ export async function getGeneralDashboardData(year: number): Promise<GeneralDash
       const amt = Number(t.amount) || 0;
       const signedAmt = t.type === 'income' ? amt : -amt;
 
-      // Se a transação paga ocorreu antes do início do ano selecionado, compõe o saldo de partida
-      if (t.due_date < startDate) {
-        runningAccountBalance += signedAmt;
+      if (t.due_date < queryStartDate) {
+        basePriorBalance += signedAmt;
       } else {
-        const m = parseInt(t.due_date.split('-')[1], 10) - 1;
-        if (m >= 0 && m < 12) {
-          monthlyAccountDelta[m] += signedAmt;
-        }
+        accountDeltasByDate.set(t.due_date, (accountDeltasByDate.get(t.due_date) || 0) + signedAmt);
       }
     }
   }
 
-  // Acumula mês a mês para refletir o saldo real em contas no encerramento de cada mês
-  for (let m = 0; m < 12; m++) {
-    runningAccountBalance += monthlyAccountDelta[m];
-    monthlyStats[m].accountBalance = runningAccountBalance;
+  const sortedDeltaDates = Array.from(accountDeltasByDate.keys()).sort();
+  const cumulativeBalanceAtDate = (targetDateStr: string): number => {
+    let bal = basePriorBalance;
+    for (const d of sortedDeltaDates) {
+      if (d <= targetDateStr) {
+        bal += accountDeltasByDate.get(d) || 0;
+      } else {
+        break;
+      }
+    }
+    return bal;
+  };
+
+  // 1. STATS ANUAIS (12 Meses)
+  const MONTH_FULL_NAMES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  const yearlyStats: PeriodStat[] = MONTH_LABELS.map((label, idx) => {
+    const mNum = String(idx + 1).padStart(2, '0');
+    const lastDayNum = new Date(year, idx + 1, 0).getDate();
+    const mEnd = `${year}-${mNum}-${String(lastDayNum).padStart(2, '0')}`;
+
+    let serviceRevenue = 0;
+    let generalIncome = 0;
+    let generalExpense = 0;
+
+    for (let day = 1; day <= lastDayNum; day++) {
+      const dStr = `${year}-${mNum}-${String(day).padStart(2, '0')}`;
+      serviceRevenue += salesByDate.get(dStr) || 0;
+      const tx = txByDate.get(dStr);
+      if (tx) {
+        generalIncome += tx.income;
+        generalExpense += tx.expense;
+      }
+    }
+
+    return {
+      label,
+      fullLabel: `${MONTH_FULL_NAMES[idx]} de ${year}`,
+      month: idx,
+      monthLabel: label,
+      serviceRevenue,
+      generalIncome,
+      generalExpense,
+      netBalance: generalIncome - generalExpense,
+      accountBalance: cumulativeBalanceAtDate(mEnd),
+    };
+  });
+
+  // 2. STATS MENSAIS (Semanas do Mês Selecionado)
+  const lastDayOfSelectedMonth = new Date(year, month + 1, 0).getDate();
+  const selectedMonthNum = String(month + 1).padStart(2, '0');
+
+  const monthIntervals: { startDay: number; endDay: number; label: string }[] = [
+    { startDay: 1, endDay: 7, label: 'Sem 1' },
+    { startDay: 8, endDay: 14, label: 'Sem 2' },
+    { startDay: 15, endDay: 21, label: 'Sem 3' },
+    { startDay: 22, endDay: 28, label: 'Sem 4' },
+  ];
+
+  if (lastDayOfSelectedMonth > 28) {
+    monthIntervals.push({
+      startDay: 29,
+      endDay: lastDayOfSelectedMonth,
+      label: 'Sem 5',
+    });
   }
 
+  const monthlyStats: PeriodStat[] = monthIntervals.map((interval, i) => {
+    let serviceRevenue = 0;
+    let generalIncome = 0;
+    let generalExpense = 0;
+
+    for (let day = interval.startDay; day <= interval.endDay; day++) {
+      const dStr = `${year}-${selectedMonthNum}-${String(day).padStart(2, '0')}`;
+      serviceRevenue += salesByDate.get(dStr) || 0;
+      const tx = txByDate.get(dStr);
+      if (tx) {
+        generalIncome += tx.income;
+        generalExpense += tx.expense;
+      }
+    }
+
+    const startPadded = String(interval.startDay).padStart(2, '0');
+    const endPadded = String(interval.endDay).padStart(2, '0');
+    const endStr = `${year}-${selectedMonthNum}-${endPadded}`;
+
+    return {
+      label: interval.label,
+      fullLabel: `Semana ${i + 1} (${startPadded}/${selectedMonthNum} a ${endPadded}/${selectedMonthNum})`,
+      serviceRevenue,
+      generalIncome,
+      generalExpense,
+      netBalance: generalIncome - generalExpense,
+      accountBalance: cumulativeBalanceAtDate(endStr),
+    };
+  });
+
+  // 3. STATS SEMANAIS (Dias da Semana Seg a Dom para cada semana do mês)
+  const weeklyStatsByWeek: Record<number, PeriodStat[]> = {};
+
+  for (const cw of calendarWeeks) {
+    const stats: PeriodStat[] = cw.days.map((day) => {
+      const serviceRevenue = salesByDate.get(day.dateStr) || 0;
+      const tx = txByDate.get(day.dateStr);
+      const generalIncome = tx?.income || 0;
+      const generalExpense = tx?.expense || 0;
+
+      return {
+        label: day.weekdayLabel,
+        fullLabel: day.fullLabel,
+        dateKey: day.dateStr,
+        serviceRevenue,
+        generalIncome,
+        generalExpense,
+        netBalance: generalIncome - generalExpense,
+        accountBalance: cumulativeBalanceAtDate(day.dateStr),
+      };
+    });
+
+    weeklyStatsByWeek[cw.index] = stats;
+  }
+
+  const todayStr = formatDateYMD(new Date());
+  let defaultWeekIndex = 0;
+  for (let i = 0; i < calendarWeeks.length; i++) {
+    if (todayStr >= calendarWeeks[i].startDate && todayStr <= calendarWeeks[i].endDate) {
+      defaultWeekIndex = i;
+      break;
+    }
+  }
+
+  const weeksMeta: WeekMeta[] = calendarWeeks.map((cw) => ({
+    index: cw.index,
+    label: cw.label,
+    shortLabel: cw.shortLabel,
+    startDate: cw.startDate,
+    endDate: cw.endDate,
+  }));
+
   return {
+    yearlyStats,
     monthlyStats,
+    weeklyStatsByWeek,
+    weeksMeta,
+    defaultWeekIndex,
   };
 }
 

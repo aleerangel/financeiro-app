@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Wallet,
@@ -7,6 +8,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ChevronRight,
+  ChevronLeft,
+  Calendar,
   Landmark,
   ArrowLeftRight,
   Pencil,
@@ -15,14 +18,17 @@ import {
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { Transaction } from '@/types/database';
-import { MonthlyGeneralStat } from '@/lib/actions/dashboard';
+import { GeneralDashboardData, MonthlyGeneralStat, PeriodStat } from '@/lib/actions/dashboard';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
 import { MonthlyBarChart } from './MonthlyBarChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
+export type ChartPeriod = 'weekly' | 'monthly' | 'yearly';
+
 interface GeneralDashboardViewProps {
-  yearlyStats: MonthlyGeneralStat[];
+  generalData?: GeneralDashboardData;
+  yearlyStats?: MonthlyGeneralStat[];
   transactions: Transaction[];
   accounts: AccountWithBalance[];
   cards: CreditCardWithUsage[];
@@ -32,7 +38,8 @@ interface GeneralDashboardViewProps {
 }
 
 export function GeneralDashboardView({
-  yearlyStats,
+  generalData,
+  yearlyStats = [],
   transactions,
   accounts,
   cards,
@@ -40,41 +47,91 @@ export function GeneralDashboardView({
   loading = false,
   onEditBalance,
 }: GeneralDashboardViewProps) {
-  // 1. Gráfico de Fluxo Mensal (3 curvas de receitas e balanço líquido)
+  const [period, setPeriod] = useState<ChartPeriod>('monthly');
+  const [userSelectedWeekIndex, setUserSelectedWeekIndex] = useState<number | null>(null);
+
+  // Deriva o índice da semana sem necessidade de setState em useEffect
+  const selectedWeekIndex =
+    userSelectedWeekIndex !== null &&
+    generalData?.weeksMeta &&
+    userSelectedWeekIndex < generalData.weeksMeta.length
+      ? userSelectedWeekIndex
+      : (generalData?.defaultWeekIndex ?? 0);
+
+  // Estatísticas ativas com base no período selecionado
+  const activeStats: PeriodStat[] = useMemo(() => {
+    if (!generalData) {
+      return yearlyStats || [];
+    }
+
+    if (period === 'yearly') {
+      return generalData.yearlyStats || [];
+    }
+
+    if (period === 'monthly') {
+      return generalData.monthlyStats || [];
+    }
+
+    // Modo 'weekly' (dias da semana)
+    const weekDays = generalData.weeklyStatsByWeek?.[selectedWeekIndex];
+    if (weekDays && weekDays.length > 0) {
+      return weekDays;
+    }
+
+    const firstAvailable = Object.values(generalData.weeklyStatsByWeek || {})[0];
+    return firstAvailable || generalData.monthlyStats || [];
+  }, [generalData, yearlyStats, period, selectedWeekIndex]);
+
+  const activeWeekMeta = generalData?.weeksMeta?.[selectedWeekIndex];
+
+  const periodSubtitle = useMemo(() => {
+    if (period === 'yearly') {
+      return 'Visão anual consolidada pelos 12 meses';
+    }
+    if (period === 'monthly') {
+      return `Visão mensal de ${formattedMonth} com as semanas`;
+    }
+    return `Visão semanal com os dias da semana (${activeWeekMeta?.shortLabel || 'Seg a Dom'})`;
+  }, [period, formattedMonth, activeWeekMeta]);
+
+  // 1. Gráfico de Fluxo (3 curvas)
   const flowSeries: ChartSeries[] = [
     {
       id: 'serviceRevenue',
       name: 'Saldo de Serviços',
       color: '#22c55e', // Verde esmeralda
-      values: yearlyStats.map((s) => s.serviceRevenue),
+      values: activeStats.map((s) => s.serviceRevenue),
       formatValue: (v) => formatCurrency(v),
     },
     {
       id: 'generalIncome',
       name: 'Saldo Geral (Entradas)',
       color: '#3b82f6', // Azul
-      values: yearlyStats.map((s) => s.generalIncome),
+      values: activeStats.map((s) => s.generalIncome),
       formatValue: (v) => formatCurrency(v),
     },
     {
       id: 'netBalance',
       name: 'Balanço Geral (Entrada - Saída)',
       color: '#f59e0b', // Âmbar
-      values: yearlyStats.map((s) => s.netBalance),
+      values: activeStats.map((s) => s.netBalance),
       formatValue: (v) => formatCurrency(v),
     },
   ];
 
-  // 2. Gráfico Dedicado: Evolução do Saldo em Contas (1 curva de caixa/patrimônio)
+  // 2. Gráfico Dedicado: Evolução do Saldo em Contas (1 curva)
   const balanceSeries: ChartSeries[] = [
     {
       id: 'accountBalance',
       name: 'Saldo em Contas',
       color: '#a855f7', // Roxo
-      values: yearlyStats.map((s) => s.accountBalance),
+      values: activeStats.map((s) => s.accountBalance),
       formatValue: (v) => formatCurrency(v),
     },
   ];
+
+  const chartLabels = activeStats.map((s) => s.label);
+  const chartTooltipLabels = activeStats.map((s) => s.fullLabel || s.label);
 
   // Cálculos do mês atual
   const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.current_balance || 0), 0);
@@ -118,19 +175,98 @@ export function GeneralDashboardView({
 
   return (
     <div className="space-y-6">
-      {/* Gráfico 1: Fluxo Mensal (Vendas, Receitas e Balanço) */}
+      {/* Seletor de Período dos Gráficos: Semanal, Mensal, Anual */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+            Visualização:
+          </span>
+
+          <div className="flex items-center bg-zinc-950 p-1 rounded-xl border border-zinc-800/80">
+            <button
+              type="button"
+              onClick={() => setPeriod('weekly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                period === 'weekly'
+                  ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Semanal
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriod('monthly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                period === 'monthly'
+                  ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Mensal
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriod('yearly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                period === 'yearly'
+                  ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Anual
+            </button>
+          </div>
+        </div>
+
+        {/* Navegador de Semana (apenas no modo 'Semanal') */}
+        {period === 'weekly' && generalData?.weeksMeta && generalData.weeksMeta.length > 0 && (
+          <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
+            <button
+              type="button"
+              disabled={selectedWeekIndex <= 0}
+              onClick={() => setUserSelectedWeekIndex(Math.max(0, selectedWeekIndex - 1))}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
+              title="Semana anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <span className="text-xs font-semibold text-zinc-200 px-2">
+              {activeWeekMeta?.label || `Semana ${selectedWeekIndex + 1}`}
+            </span>
+
+            <button
+              type="button"
+              disabled={selectedWeekIndex >= generalData.weeksMeta.length - 1}
+              onClick={() => setUserSelectedWeekIndex(Math.min(generalData.weeksMeta.length - 1, selectedWeekIndex + 1))}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
+              title="Próxima semana"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Gráfico 1: Fluxo (Vendas, Receitas e Balanço) */}
       <SmoothLineChart
-        title="Fluxo Mensal (Vendas, Receitas e Balanço)"
-        subtitle="Comparativo anual entre receitas de serviços, entradas gerais e balanço líquido mensal"
+        title="Fluxo (Vendas, Receitas e Balanço)"
+        subtitle={periodSubtitle}
         series={flowSeries}
+        labels={chartLabels}
+        tooltipLabels={chartTooltipLabels}
         height={260}
       />
 
       {/* Gráfico 2: Evolução do Saldo em Contas */}
       <SmoothLineChart
         title="Evolução do Saldo em Contas"
-        subtitle="Saldo financeiro acumulado em caixa e contas bancárias mês a mês"
+        subtitle={periodSubtitle}
         series={balanceSeries}
+        labels={chartLabels}
+        tooltipLabels={chartTooltipLabels}
         height={220}
       />
 

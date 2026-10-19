@@ -11,12 +11,15 @@ export interface ChartSeries {
   formatValue?: (val: number) => string;
 }
 
-interface SmoothLineChartProps {
+export interface SmoothLineChartProps {
   title: string;
   subtitle?: string;
   series: ChartSeries[];
+  labels?: string[];
   months?: string[];
+  tooltipLabels?: string[];
   height?: number;
+  rightAction?: React.ReactNode;
 }
 
 const DEFAULT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -25,10 +28,15 @@ export function SmoothLineChart({
   title,
   subtitle,
   series,
-  months = DEFAULT_MONTHS,
+  labels,
+  months,
+  tooltipLabels,
   height = 260,
+  rightAction,
 }: SmoothLineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const effectiveLabels = labels || months || DEFAULT_MONTHS;
 
   const { minVal, maxVal, yTicks } = useMemo(() => {
     let min = 0;
@@ -73,7 +81,10 @@ export function SmoothLineChart({
   const chartW = svgWidth - padLeft - padRight;
   const chartH = svgHeight - padTop - padBottom;
 
-  const getX = (idx: number) => padLeft + (idx / 11) * chartW;
+  const count = effectiveLabels.length;
+  const totalPoints = count > 1 ? count - 1 : 1;
+
+  const getX = (idx: number) => padLeft + (idx / totalPoints) * chartW;
   const getY = (val: number) => {
     const ratio = (val - minVal) / (maxVal - minVal || 1);
     return padTop + chartH - ratio * chartH;
@@ -113,15 +124,16 @@ export function SmoothLineChart({
       return { path: d, area: areaD, points };
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [series, minVal, maxVal, chartW, chartH]);
+  }, [series, minVal, maxVal, chartW, chartH, totalPoints]);
 
   return (
     <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
         <div>
           <h3 className="font-bold text-zinc-100 text-base">{title}</h3>
           {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
         </div>
+        {rightAction && <div className="shrink-0">{rightAction}</div>}
       </div>
 
       {/* SVG do Gráfico */}
@@ -176,13 +188,13 @@ export function SmoothLineChart({
             );
           })}
 
-          {/* Rótulos dos Meses */}
-          {months.map((m, idx) => {
+          {/* Rótulos do Eixo X */}
+          {effectiveLabels.map((m, idx) => {
             const xPos = getX(idx);
             const isHovered = hoveredIndex === idx;
             return (
               <text
-                key={`month-${idx}`}
+                key={`label-${idx}`}
                 x={xPos}
                 y={svgHeight - 10}
                 textAnchor="middle"
@@ -258,10 +270,10 @@ export function SmoothLineChart({
             );
           })}
 
-          {/* Zonas de interação transparente para hover em cada mês */}
-          {months.map((_, idx) => {
+          {/* Zonas de interação transparente para hover em cada ponto */}
+          {effectiveLabels.map((_, idx) => {
             const xPos = getX(idx);
-            const w = chartW / 11;
+            const w = chartW / totalPoints;
             return (
               <rect
                 key={`hit-${idx}`}
@@ -288,8 +300,7 @@ export function SmoothLineChart({
             }}
           >
             <div className="font-bold text-zinc-200 border-b border-zinc-800 pb-1 mb-1.5 flex items-center justify-between gap-3">
-              <span>{months[hoveredIndex]}</span>
-              <span className="text-[10px] text-zinc-500 font-normal">Mês {hoveredIndex + 1}</span>
+              <span>{tooltipLabels && tooltipLabels[hoveredIndex] ? tooltipLabels[hoveredIndex] : effectiveLabels[hoveredIndex]}</span>
             </div>
             <div className="space-y-1">
               {series.map((s) => {
