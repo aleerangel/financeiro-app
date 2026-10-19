@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, CreditCard as CardIcon, Wifi, Calendar, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, CreditCard as CardIcon, Wifi, Calendar, MoreVertical, Pencil, Trash2, Receipt } from 'lucide-react';
 import { CreditCardWithUsage, deleteCreditCard } from '@/lib/actions/credit-cards';
 import { formatCurrency } from '@/lib/utils';
 import { CreditCardModal } from './CreditCardModal';
+import { CreditCardInvoicesPanel } from './CreditCardInvoicesPanel';
 
 interface CreditCardsListProps {
   initialCards: CreditCardWithUsage[];
@@ -15,6 +16,22 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
   const [cardToEdit, setCardToEdit] = useState<CreditCardWithUsage | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const invoicesPanelRef = useRef<HTMLDivElement | null>(null);
+
+  const selectedCard = initialCards.find((c) => c.id === selectedCardId) || null;
+
+  const handleSelectCard = (cardId: string) => {
+    setSelectedCardId((prev) => {
+      const next = prev === cardId ? null : cardId;
+      if (next) {
+        setTimeout(() => {
+          invoicesPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 80);
+      }
+      return next;
+    });
+  };
 
   const totalLimit = initialCards.reduce((acc, curr) => acc + Number(curr.credit_limit), 0);
   const totalUsed = initialCards.reduce((acc, curr) => acc + curr.used_limit, 0);
@@ -91,11 +108,25 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
           const limitPercentage = card.credit_limit > 0
             ? Math.min(100, Math.round((card.used_limit / card.credit_limit) * 100))
             : 0;
+          const isSelected = selectedCard?.id === card.id;
 
           return (
             <div
               key={card.id}
-              className="relative p-6 rounded-2xl text-white shadow-xl flex flex-col justify-between h-56 overflow-hidden transition-transform hover:-translate-y-1"
+              onClick={() => handleSelectCard(card.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectCard(card.id);
+                }
+              }}
+              className={`relative p-6 rounded-2xl text-white shadow-xl flex flex-col justify-between h-56 overflow-hidden transition-all cursor-pointer select-none hover:-translate-y-1 ${
+                isSelected
+                  ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-zinc-950 scale-[1.01]'
+                  : 'opacity-95 hover:opacity-100'
+              }`}
               style={{
                 backgroundColor: card.color || '#8b5cf6',
                 backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.2) 0%, transparent 60%)',
@@ -109,9 +140,16 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
                     <div className="w-6 h-4 border border-amber-600/40 rounded-sm" />
                   </div>
                   <Wifi className="w-4 h-4 rotate-90 text-white/80" />
+                  <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/25 backdrop-blur-sm text-[10px] font-semibold text-white/90 border border-white/15">
+                    <Receipt className="w-3 h-3" />
+                    {isSelected ? 'Faturas abertas abaixo' : 'Ver faturas'}
+                  </span>
                 </div>
 
-                <div className="relative">
+                <div
+                  className="relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     onClick={() => setActiveMenuId(activeMenuId === card.id ? null : card.id)}
                     className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white/90 transition backdrop-blur-sm"
@@ -186,6 +224,17 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
           </div>
         )}
       </div>
+
+      {/* Aba / Painel de Faturas do Cartão Selecionado */}
+      {selectedCard && (
+        <div ref={invoicesPanelRef}>
+          <CreditCardInvoicesPanel
+            key={selectedCard.id}
+            card={selectedCard}
+            onClose={() => setSelectedCardId(null)}
+          />
+        </div>
+      )}
 
       <CreditCardModal
         isOpen={modalOpen}

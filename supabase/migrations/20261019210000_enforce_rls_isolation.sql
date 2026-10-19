@@ -167,3 +167,4 @@ CREATE POLICY "strict_isolation_clients"
     TO authenticated
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
+

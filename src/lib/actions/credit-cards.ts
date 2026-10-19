@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { CreditCard } from '@/types/database';
+import { CreditCard, Transaction } from '@/types/database';
 
 export interface CreditCardWithUsage extends CreditCard {
   used_limit: number;
@@ -146,4 +146,68 @@ export async function deleteCreditCard(id: string) {
   revalidatePath('/cartoes');
   revalidatePath('/dashboard');
 }
+
+export async function getCreditCardTransactions(cardId: string): Promise<Transaction[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select(`
+      *,
+      category:categories(*),
+      account:accounts(*),
+      credit_card:credit_cards(*)
+    `)
+    .eq('user_id', user.id)
+    .eq('credit_card_id', cardId)
+    .order('due_date', { ascending: true })
+    .order('transaction_date', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao buscar faturas do cartão:', error);
+    return [];
+  }
+
+  return (data as unknown as Transaction[]) || [];
+}
+
+export async function setCreditCardInvoicePaid(
+  cardId: string,
+  month: number,
+  year: number,
+  isPaid: boolean
+): Promise<void> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  const { error } = await supabase
+    .from('transactions')
+    .update({
+      is_paid: isPaid,
+      paid_at: isPaid ? new Date().toISOString() : null,
+    })
+    .eq('user_id', user.id)
+    .eq('credit_card_id', cardId)
+    .gte('due_date', startDate)
+    .lte('due_date', endDate);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath('/cartoes');
+  revalidatePath('/transacoes');
+  revalidatePath('/dashboard');
+}
+
 
