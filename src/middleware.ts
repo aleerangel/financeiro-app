@@ -35,8 +35,14 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthPage = request.nextUrl.pathname.startsWith('/login');
-  const isPublicRoute = isAuthPage || request.nextUrl.pathname.startsWith('/auth');
+  const pathname = request.nextUrl.pathname;
+  const isAuthPage = pathname.startsWith('/login');
+  const isPwaFile =
+    pathname === '/sw.js' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname.startsWith('/icons/') ||
+    pathname === '/favicon.ico';
+  const isPublicRoute = isAuthPage || pathname.startsWith('/auth') || isPwaFile;
 
   // Redireciona quem não está logado para o login se tentar acessar qualquer rota privada
   if (!user && !isPublicRoute) {
@@ -56,5 +62,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)',
+  ],
 };
