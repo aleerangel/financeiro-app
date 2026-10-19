@@ -6,6 +6,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('fetch', () => {
-  // Pass-through padrão para atender aos critérios de PWA do Chromium
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    fetch(event.request).catch((err) => {
+      return caches.match(event.request).then((res) => res || Promise.reject(err));
+    })
+  );
 });
