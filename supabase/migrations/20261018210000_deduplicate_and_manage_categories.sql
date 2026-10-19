@@ -37,7 +37,7 @@ BEGIN
         WHERE category_id = dup.duplicate_id;
 
         -- Deleta a categoria duplicada
-        DELETE FROM public.categoriesacho que
+        DELETE FROM public.categories
         WHERE id = dup.duplicate_id;
     END LOOP;
 END $$;

@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getCreditCards } from '@/lib/actions/credit-cards';
@@ -7,6 +8,7 @@ import { CreditCardsList } from '@/components/cards/CreditCardsList';
 export const instant = false;
 
 export default async function CartoesPage() {
+  await connection();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

@@ -12,7 +12,7 @@ interface AppShellProps {
 
 export function AppShell({ userEmail, children }: AppShellProps) {
   return (
-    <DateProvider>
+    <DateProvider key={userEmail || 'anonymous'}>
       <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-100">
         <Navbar userEmail={userEmail} />
         <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 pb-24 md:pb-10">

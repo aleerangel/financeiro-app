@@ -15,10 +15,16 @@ function LoginForm() {
       setLoading(true);
       setErrorMessage(null);
       const supabase = createClient();
+      // Garante limpeza de qualquer resquício de sessão local antes de iniciar novo OAuth
+      await supabase.auth.signOut({ scope: 'local' });
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account',
+          },
         },
       });
 

@@ -58,6 +58,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, { headers: response.headers });
   }
 
+  // Impede qualquer cache de páginas autenticadas no navegador, CDN ou proxy
+  if (!isPwaFile) {
+    response.headers.set(
+      'Cache-Control',
+      'private, no-cache, no-store, max-age=0, must-revalidate'
+    );
+  }
+
   return response;
 }
 

@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
@@ -9,6 +10,7 @@ import { TransactionsView } from '@/components/transactions/TransactionsView';
 export const instant = false;
 
 export default async function TransacoesPage() {
+  await connection();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

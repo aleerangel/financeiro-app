@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { useDateContext } from '@/context/DateContext';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { signOutServerAction } from '@/lib/actions/auth';
+import { useState } from 'react';
 
 interface NavbarProps {
   userEmail?: string;
@@ -26,14 +27,39 @@ interface NavbarProps {
 
 export function Navbar({ userEmail }: NavbarProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
   const { formattedMonth, nextMonth, prevMonth } = useDateContext();
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await Promise.allSettled([
+        supabase.auth.signOut(),
+        signOutServerAction(),
+      ]);
+
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.clear();
+          window.sessionStorage.clear();
+        } catch {
+          // Ignora erros de storage restrito
+        }
+
+        if ('caches' in window) {
+          try {
+            const keys = await window.caches.keys();
+            await Promise.all(keys.map((key) => window.caches.delete(key)));
+          } catch {
+            // Ignora erros de Cache API
+          }
+        }
+      }
+    } finally {
+      window.location.replace('/login');
+    }
   };
 
   const navLinks = [
@@ -104,16 +130,20 @@ export function Navbar({ userEmail }: NavbarProps) {
         </div>
 
         {/* Perfil & Logout */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {userEmail && (
-            <span className="hidden lg:inline text-xs text-zinc-400 max-w-[160px] truncate" title={userEmail}>
+            <span
+              className="text-[11px] sm:text-xs text-zinc-400 max-w-[100px] sm:max-w-[160px] truncate bg-zinc-900/80 border border-zinc-800/80 px-2 py-1 rounded-md"
+              title={`Logado como: ${userEmail}`}
+            >
               {userEmail}
             </span>
           )}
           <button
             onClick={handleLogout}
-            className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 rounded-lg transition"
-            title="Sair da conta"
+            disabled={loggingOut}
+            className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 rounded-lg transition disabled:opacity-50"
+            title={userEmail ? `Sair de ${userEmail}` : 'Sair da conta'}
             aria-label="Sair"
           >
             <LogOut className="w-4 h-4" />
