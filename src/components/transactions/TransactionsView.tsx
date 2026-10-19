@@ -10,6 +10,7 @@ import {
   Clock,
   Trash2,
   Filter,
+  Pencil,
 } from 'lucide-react';
 import { Transaction, Account, CreditCard, Category } from '@/types/database';
 import { useDateContext } from '@/context/DateContext';
@@ -35,6 +36,7 @@ export function TransactionsView({
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [modalOpen, setModalOpen] = useState(false);
+  const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const refreshData = useCallback(async () => {
@@ -223,7 +225,10 @@ export function TransactionsView({
         </div>
 
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={() => {
+            setTransactionToEdit(null);
+            setModalOpen(true);
+          }}
           className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
@@ -336,6 +341,18 @@ export function TransactionsView({
                     )}
                   </button>
 
+                  {/* Botão de Editar */}
+                  <button
+                    onClick={() => {
+                      setTransactionToEdit(t);
+                      setModalOpen(true);
+                    }}
+                    className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+                    title="Editar lançamento"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+
                   {/* Botão de Excluir */}
                   <button
                     onClick={() => handleDelete(t)}
@@ -354,7 +371,11 @@ export function TransactionsView({
 
       <TransactionModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setTransactionToEdit(null);
+        }}
+        transaction={transactionToEdit}
         accounts={initialAccounts}
         cards={initialCards}
         categories={initialCategories}

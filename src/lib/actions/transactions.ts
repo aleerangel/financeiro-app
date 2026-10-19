@@ -20,6 +20,20 @@ export interface CreateTransactionInput {
   notes?: string | null;
 }
 
+export interface UpdateTransactionInput {
+  description?: string;
+  amount?: number;
+  type?: TransactionType;
+  payment_method?: PaymentMethod;
+  transaction_date?: string;
+  due_date?: string;
+  category_id?: string | null;
+  account_id?: string | null;
+  credit_card_id?: string | null;
+  is_paid?: boolean;
+  notes?: string | null;
+}
+
 export async function getTransactions(month: number, year: number): Promise<Transaction[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -153,6 +167,51 @@ export async function createTransaction(input: CreateTransactionInput) {
   revalidatePath('/dashboard');
   revalidatePath('/contas');
   revalidatePath('/cartoes');
+}
+
+export async function updateTransaction(id: string, input: UpdateTransactionInput) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const updates: Record<string, unknown> = {};
+  if (input.description !== undefined) updates.description = input.description.trim();
+  if (input.amount !== undefined) updates.amount = input.amount;
+  if (input.type !== undefined) updates.type = input.type;
+  if (input.payment_method !== undefined) updates.payment_method = input.payment_method;
+  if (input.transaction_date !== undefined) updates.transaction_date = input.transaction_date;
+  if (input.due_date !== undefined) updates.due_date = input.due_date;
+  if (input.category_id !== undefined) updates.category_id = input.category_id;
+  if (input.account_id !== undefined) updates.account_id = input.account_id;
+  if (input.credit_card_id !== undefined) updates.credit_card_id = input.credit_card_id;
+  if (input.is_paid !== undefined) {
+    updates.is_paid = input.is_paid;
+    updates.paid_at = input.is_paid ? new Date().toISOString() : null;
+  }
+  if (input.notes !== undefined) updates.notes = input.notes;
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .update(updates)
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select(`
+      *,
+      category:categories(*),
+      account:accounts(*),
+      credit_card:credit_cards(*)
+    `)
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/transacoes');
+  revalidatePath('/dashboard');
+  revalidatePath('/contas');
+  revalidatePath('/cartoes');
+
+  return data;
 }
 
 export async function toggleTransactionPaid(id: string, is_paid: boolean) {

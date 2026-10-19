@@ -3,13 +3,14 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon } from 'lucide-react';
-import { Account, CreditCard, Category, TransactionType, PaymentMethod } from '@/types/database';
-import { createTransaction } from '@/lib/actions/transactions';
+import { Account, CreditCard, Category, Transaction, TransactionType, PaymentMethod } from '@/types/database';
+import { createTransaction, updateTransaction } from '@/lib/actions/transactions';
 import { formatCurrency } from '@/lib/utils';
 
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  transaction?: Transaction | null;
   accounts: Account[];
   cards: CreditCard[];
   categories: Category[];
@@ -18,24 +19,51 @@ interface TransactionModalProps {
 
 type TabType = 'expense' | 'income' | 'credit';
 
-export function TransactionModal({
-  isOpen,
+export function TransactionModal(props: TransactionModalProps) {
+  if (!props.isOpen) return null;
+
+  return (
+    <TransactionModalDialog
+      key={props.transaction ? props.transaction.id : 'new'}
+      {...props}
+    />
+  );
+}
+
+function TransactionModalDialog({
   onClose,
+  transaction,
   accounts,
   cards,
   categories,
   onSuccess,
 }: TransactionModalProps) {
-  const [tab, setTab] = useState<TabType>('expense');
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [categoryId, setCategoryId] = useState<string>('');
-  const [accountId, setAccountId] = useState<string>(accounts[0]?.id || '');
-  const [cardId, setCardId] = useState<string>(cards[0]?.id || '');
-  const [installments, setInstallments] = useState(1);
-  const [isPaid, setIsPaid] = useState(true);
-  const [notes, setNotes] = useState('');
+  const isEditing = !!transaction;
+
+  const initialTab: TabType = transaction
+    ? transaction.type === 'income'
+      ? 'income'
+      : transaction.payment_method === 'credit'
+      ? 'credit'
+      : 'expense'
+    : 'expense';
+
+  const [tab, setTab] = useState<TabType>(initialTab);
+  const [description, setDescription] = useState(transaction?.description || '');
+  const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : '');
+  const [date, setDate] = useState(
+    transaction?.due_date || transaction?.transaction_date || new Date().toISOString().split('T')[0]
+  );
+  const [categoryId, setCategoryId] = useState<string>(transaction?.category_id || '');
+  const [accountId, setAccountId] = useState<string>(
+    transaction?.account_id || accounts[0]?.id || ''
+  );
+  const [cardId, setCardId] = useState<string>(
+    transaction?.credit_card_id || cards[0]?.id || ''
+  );
+  const [installments, setInstallments] = useState(transaction?.total_installments || 1);
+  const [isPaid, setIsPaid] = useState(transaction ? transaction.is_paid : true);
+  const [notes, setNotes] = useState(transaction?.notes || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,8 +80,6 @@ export function TransactionModal({
       return true;
     });
   }, [categories, tab]);
-
-  if (!isOpen) return null;
 
   const parsedAmount = parseFloat(amount.replace(',', '.')) || 0;
 
@@ -86,30 +112,41 @@ export function TransactionModal({
         paymentMethod = 'debit';
       }
 
-      await createTransaction({
-        description,
-        amount: parsedAmount,
-        type: txType,
-        payment_method: paymentMethod,
-        transaction_date: date,
-        due_date: date,
-        category_id: categoryId || null,
-        account_id: tab !== 'credit' ? accountId || null : null,
-        credit_card_id: tab === 'credit' ? cardId || null : null,
-        total_installments: tab === 'credit' ? installments : 1,
-        is_paid: tab === 'credit' ? false : isPaid,
-        notes: notes.trim() || null,
-      });
+      if (isEditing && transaction) {
+        await updateTransaction(transaction.id, {
+          description: description.trim(),
+          amount: parsedAmount,
+          type: txType,
+          payment_method: paymentMethod,
+          transaction_date: date,
+          due_date: date,
+          category_id: categoryId || null,
+          account_id: tab !== 'credit' ? accountId || null : null,
+          credit_card_id: tab === 'credit' ? cardId || null : null,
+          is_paid: tab === 'credit' ? false : isPaid,
+          notes: notes.trim() || null,
+        });
+      } else {
+        await createTransaction({
+          description: description.trim(),
+          amount: parsedAmount,
+          type: txType,
+          payment_method: paymentMethod,
+          transaction_date: date,
+          due_date: date,
+          category_id: categoryId || null,
+          account_id: tab !== 'credit' ? accountId || null : null,
+          credit_card_id: tab === 'credit' ? cardId || null : null,
+          total_installments: tab === 'credit' ? installments : 1,
+          is_paid: tab === 'credit' ? false : isPaid,
+          notes: notes.trim() || null,
+        });
+      }
 
-      // Reset form
-      setDescription('');
-      setAmount('');
-      setNotes('');
-      setInstallments(1);
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao cadastrar transação.');
+      setError(err instanceof Error ? err.message : 'Erro ao salvar transação.');
     } finally {
       setLoading(false);
     }
@@ -125,17 +162,16 @@ export function TransactionModal({
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-bold text-zinc-100 mb-4">Nova Transação</h2>
+        <h2 className="text-lg font-bold text-zinc-100 mb-4">
+          {isEditing ? 'Editar Transação' : 'Nova Transação'}
+        </h2>
 
-        {/* Abas: Despesa, Receita, Cartão */}
+        {/* Abas de Tipo */}
         <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-5">
           <button
             type="button"
-            onClick={() => {
-              setTab('expense');
-              setIsPaid(true);
-            }}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+            onClick={() => setTab('expense')}
+            className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition ${
               tab === 'expense'
                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                 : 'text-zinc-400 hover:text-zinc-200'
@@ -147,11 +183,8 @@ export function TransactionModal({
 
           <button
             type="button"
-            onClick={() => {
-              setTab('credit');
-              setIsPaid(false);
-            }}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+            onClick={() => setTab('credit')}
+            className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition ${
               tab === 'credit'
                 ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                 : 'text-zinc-400 hover:text-zinc-200'
@@ -163,11 +196,8 @@ export function TransactionModal({
 
           <button
             type="button"
-            onClick={() => {
-              setTab('income');
-              setIsPaid(true);
-            }}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+            onClick={() => setTab('income')}
+            className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition ${
               tab === 'income'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                 : 'text-zinc-400 hover:text-zinc-200'
@@ -268,7 +298,6 @@ export function TransactionModal({
                   value={cardId}
                   onChange={(e) => setCardId(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 transition"
-                  required
                 >
                   {cards.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -278,29 +307,30 @@ export function TransactionModal({
                 </select>
               </div>
 
-              {/* Parcelamento Automático */}
-              <div>
-                <label className="block text-xs font-medium text-purple-200 mb-1.5">
-                  Número de Parcelas
-                </label>
-                <select
-                  value={installments}
-                  onChange={(e) => setInstallments(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 transition"
-                >
-                  <option value={1}>1x à vista (R$ {parsedAmount.toFixed(2)})</option>
-                  {[2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 18, 24].map((n) => (
-                    <option key={n} value={n}>
-                      {n}x de {formatCurrency(parsedAmount > 0 ? parsedAmount / n : 0)}
-                    </option>
-                  ))}
-                </select>
-                {installments > 1 && parsedAmount > 0 && (
-                  <p className="text-[11px] text-purple-300/80 mt-1.5">
-                    💡 O sistema gerará automaticamente as {installments} parcelas nos meses subsequentes.
-                  </p>
-                )}
-              </div>
+              {!isEditing && (
+                <div>
+                  <label className="block text-xs font-medium text-purple-200 mb-1.5">
+                    Número de Parcelas
+                  </label>
+                  <select
+                    value={installments}
+                    onChange={(e) => setInstallments(parseInt(e.target.value) || 1)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 transition"
+                  >
+                    <option value={1}>1x à vista ({formatCurrency(parsedAmount)})</option>
+                    {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24].map((num) => (
+                      <option key={num} value={num}>
+                        {num}x de {formatCurrency(parsedAmount > 0 ? parsedAmount / num : 0)}
+                      </option>
+                    ))}
+                  </select>
+                  {installments > 1 && (
+                    <p className="text-[11px] text-purple-300/80 mt-1.5">
+                      💡 O sistema gerará automaticamente as {installments} parcelas nos meses subsequentes.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -365,7 +395,7 @@ export function TransactionModal({
                   : 'bg-rose-400 hover:bg-rose-500'
               }`}
             >
-              {loading ? 'Salvando...' : 'Confirmar Lançamento'}
+              {loading ? 'Salvando...' : isEditing ? 'Atualizar Transação' : 'Confirmar Lançamento'}
             </button>
           </div>
         </form>

@@ -93,42 +93,56 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
   // 3. Identifica as que ainda não foram geradas neste mês
   const toInsert = recurrences.filter((rec) => !existingRecurrenceIds.has(rec.id));
 
-  if (toInsert.length === 0) return;
+  if (toInsert.length > 0) {
+    const newTransactions = toInsert.map((rec) => {
+      // Ajusta o dia de vencimento para o mês específico (ex: dia 31 em fevereiro)
+      const validDay = Math.min(rec.due_day, lastDay);
+      const dueDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
+      const paymentMethod = rec.credit_card_id ? 'credit' : rec.account_id ? 'debit' : 'pix';
 
-  const newTransactions = toInsert.map((rec) => {
-    // Ajusta o dia de vencimento para o mês específico (ex: dia 31 em fevereiro)
-    const validDay = Math.min(rec.due_day, lastDay);
-    const dueDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
-    const paymentMethod = rec.credit_card_id ? 'credit' : rec.account_id ? 'debit' : 'pix';
+      return {
+        user_id: user.id,
+        description: rec.description,
+        amount: rec.amount,
+        type: rec.type,
+        payment_method: paymentMethod,
+        transaction_date: dueDate,
+        due_date: dueDate,
+        category_id: rec.category_id || null,
+        account_id: rec.account_id || null,
+        credit_card_id: rec.credit_card_id || null,
+        recurrence_id: rec.id,
+        is_paid: false,
+        paid_at: null,
+        notes: 'Lançamento automático de conta fixa',
+      };
+    });
 
-    return {
-      user_id: user.id,
-      description: rec.description,
-      amount: rec.amount,
-      type: rec.type,
-      payment_method: paymentMethod,
-      transaction_date: dueDate,
-      due_date: dueDate,
-      category_id: rec.category_id || null,
-      account_id: rec.account_id || null,
-      credit_card_id: rec.credit_card_id || null,
-      recurrence_id: rec.id,
-      is_paid: false,
-      paid_at: null,
-      notes: 'Lançamento automático de conta fixa',
-    };
-  });
+    const { error: insertError } = await supabase
+      .from('transactions')
+      .insert(newTransactions);
 
-  const { error: insertError } = await supabase
-    .from('transactions')
-    .insert(newTransactions);
-
-  if (insertError) {
-    console.error('Erro ao sincronizar transações recorrentes:', insertError);
-  } else {
-    revalidatePath('/transacoes');
-    revalidatePath('/dashboard');
+    if (insertError) {
+      console.error('Erro ao sincronizar transações recorrentes:', insertError);
+    }
   }
+
+  // 4. Sincroniza categoria e descrição das transações deste mês caso a recorrência tenha sido editada
+  for (const rec of recurrences) {
+    await supabase
+      .from('transactions')
+      .update({
+        category_id: rec.category_id || null,
+        description: rec.description,
+      })
+      .eq('user_id', user.id)
+      .eq('recurrence_id', rec.id)
+      .gte('due_date', startDate)
+      .lte('due_date', endDate);
+  }
+
+  revalidatePath('/transacoes');
+  revalidatePath('/dashboard');
 }
 
 export async function createRecurrence(input: CreateRecurrenceInput) {
@@ -217,8 +231,7 @@ export async function updateRecurrence(id: string, input: UpdateRecurrenceInput)
       .from('transactions')
       .update(txUpdates)
       .eq('recurrence_id', id)
-      .eq('user_id', user.id)
-      .eq('is_paid', false);
+      .eq('user_id', user.id);
   }
 
   revalidatePath('/recorrencias');
