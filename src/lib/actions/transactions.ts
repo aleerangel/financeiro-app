@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Transaction, TransactionType, PaymentMethod } from '@/types/database';
 import { calculateInstallmentDueDates } from '@/lib/credit-card-utils';
+import { cleanupInvalidPastRecurrenceTransactions } from './recurrences';
 
 export interface CreateTransactionInput {
   description: string;
@@ -290,6 +291,8 @@ export async function getUpcomingAndOverdueBills(daysAhead: number = 3): Promise
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error('Não autenticado');
+
+  await cleanupInvalidPastRecurrenceTransactions();
 
   const now = new Date();
   const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysAhead);

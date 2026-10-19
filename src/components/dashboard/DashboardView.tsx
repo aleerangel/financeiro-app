@@ -75,10 +75,15 @@ export function DashboardView({
       setUpcomingBills(bills);
       setPendingReceipts(receipts);
 
-      // Sincroniza recorrências em segundo plano
-      syncMonthlyRecurrences(month, year).catch((err) => {
-        console.warn('Aviso ao sincronizar recorrências:', err);
-      });
+      const now = new Date();
+      const isPast = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth());
+
+      if (!isPast) {
+        // Sincroniza recorrências em segundo plano
+        syncMonthlyRecurrences(month, year).catch((err) => {
+          console.warn('Aviso ao sincronizar recorrências:', err);
+        });
+      }
     } catch (err) {
       console.error('Erro ao atualizar dados do dashboard:', err);
     } finally {
@@ -117,10 +122,15 @@ export function DashboardView({
         }
       });
 
-    // Sincroniza recorrências em segundo plano
-    syncMonthlyRecurrences(month, year).catch((err) => {
-      console.warn('Aviso ao sincronizar recorrências:', err);
-    });
+    const now = new Date();
+    const isPast = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth());
+
+    if (!isPast) {
+      // Sincroniza recorrências em segundo plano
+      syncMonthlyRecurrences(month, year).catch((err) => {
+        console.warn('Aviso ao sincronizar recorrências:', err);
+      });
+    }
 
     return () => {
       active = false;
