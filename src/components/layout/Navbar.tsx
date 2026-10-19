@@ -14,6 +14,7 @@ import {
   Scissors,
   Package,
   Users,
+  Tags,
 } from 'lucide-react';
 import { useDateContext } from '@/context/DateContext';
 import { createClient } from '@/lib/supabase/client';
@@ -44,6 +45,7 @@ export function Navbar({ userEmail }: NavbarProps) {
     { href: '/cartoes', label: 'Cartões', icon: CreditCard },
     { href: '/contas', label: 'Contas', icon: Wallet },
     { href: '/recorrencias', label: 'Fixas', icon: Repeat },
+    { href: '/categorias', label: 'Categorias', icon: Tags },
   ];
 
   return (

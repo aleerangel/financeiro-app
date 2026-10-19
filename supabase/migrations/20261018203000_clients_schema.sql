@@ -34,3 +34,4 @@ CREATE POLICY "Users can manage their own clients"
     ON public.clients FOR ALL
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
+

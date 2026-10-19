@@ -184,3 +184,4 @@ export function ClientModal({ isOpen, onClose, clientToEdit, onSuccess }: Client
     />
   );
 }
+

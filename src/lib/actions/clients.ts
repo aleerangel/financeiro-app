@@ -157,3 +157,4 @@ export async function deleteClient(id: string): Promise<void> {
   revalidatePath('/clientes');
   revalidatePath('/vendas');
 }
+

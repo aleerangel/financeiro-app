@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { X, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { Account, CreditCard, Category, TransactionType } from '@/types/database';
 import { createRecurrence } from '@/lib/actions/recurrences';
@@ -33,12 +34,21 @@ export function RecurrenceModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  const filteredCategories = useMemo(() => {
+    const list = categories.filter((c) => {
+      if (type === 'income') return c.type === 'income' || c.type === 'both';
+      return c.type === 'expense' || c.type === 'both';
+    });
+    const seen = new Set<string>();
+    return list.filter((c) => {
+      const key = `${c.name.trim().toLowerCase()}_${c.type}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [categories, type]);
 
-  const filteredCategories = categories.filter((c) => {
-    if (type === 'income') return c.type === 'income' || c.type === 'both';
-    return c.type === 'expense' || c.type === 'both';
-  });
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,7 +181,15 @@ export function RecurrenceModal({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Categoria</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-zinc-300">Categoria</label>
+              <Link
+                href="/categorias"
+                className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium"
+              >
+                Gerenciar
+              </Link>
+            </div>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
