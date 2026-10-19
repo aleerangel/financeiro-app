@@ -9,6 +9,7 @@ import {
   Calendar,
   Trash2,
   RefreshCw,
+  Pencil,
 } from 'lucide-react';
 import { Recurrence, Account, CreditCard, Category } from '@/types/database';
 import { toggleRecurrenceActive, deleteRecurrence, syncMonthlyRecurrences } from '@/lib/actions/recurrences';
@@ -32,6 +33,7 @@ export function RecurrencesList({
   const { month, year, formattedMonth } = useDateContext();
   const [recurrences, setRecurrences] = useState<Recurrence[]>(initialRecurrences);
   const [modalOpen, setModalOpen] = useState(false);
+  const [recurrenceToEdit, setRecurrenceToEdit] = useState<Recurrence | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -127,7 +129,10 @@ export function RecurrencesList({
         </button>
 
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={() => {
+            setRecurrenceToEdit(null);
+            setModalOpen(true);
+          }}
           className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
@@ -211,11 +216,25 @@ export function RecurrencesList({
                   {rec.active ? 'Ativa' : 'Pausada'}
                 </button>
 
+                {/* Botão Editar */}
+                <button
+                  onClick={() => {
+                    setRecurrenceToEdit(rec);
+                    setModalOpen(true);
+                  }}
+                  disabled={actionLoadingId === rec.id}
+                  className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                  title="Editar conta fixa"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+
                 {/* Botão Excluir */}
                 <button
                   onClick={() => handleDelete(rec.id)}
                   disabled={actionLoadingId === rec.id}
                   className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition"
+                  title="Excluir conta fixa"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -237,7 +256,11 @@ export function RecurrencesList({
 
       <RecurrenceModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setRecurrenceToEdit(null);
+        }}
+        recurrence={recurrenceToEdit}
         accounts={accounts}
         cards={cards}
         categories={categories}

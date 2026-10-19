@@ -3,12 +3,13 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { X, ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { Account, CreditCard, Category, TransactionType } from '@/types/database';
-import { createRecurrence } from '@/lib/actions/recurrences';
+import { Account, CreditCard, Category, TransactionType, Recurrence } from '@/types/database';
+import { createRecurrence, updateRecurrence } from '@/lib/actions/recurrences';
 
 interface RecurrenceModalProps {
   isOpen: boolean;
   onClose: () => void;
+  recurrence?: Recurrence | null;
   accounts: Account[];
   cards: CreditCard[];
   categories: Category[];
@@ -18,19 +19,52 @@ interface RecurrenceModalProps {
 export function RecurrenceModal({
   isOpen,
   onClose,
+  recurrence,
   accounts,
   cards,
   categories,
   onSuccess,
 }: RecurrenceModalProps) {
-  const [type, setType] = useState<TransactionType>('expense');
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [dueDay, setDueDay] = useState(5);
-  const [categoryId, setCategoryId] = useState('');
-  const [payMethodType, setPayMethodType] = useState<'account' | 'card'>('account');
-  const [accountId, setAccountId] = useState(accounts[0]?.id || '');
-  const [cardId, setCardId] = useState(cards[0]?.id || '');
+  if (!isOpen) return null;
+
+  return (
+    <RecurrenceModalDialog
+      key={recurrence ? recurrence.id : 'new'}
+      isOpen={isOpen}
+      onClose={onClose}
+      recurrence={recurrence}
+      accounts={accounts}
+      cards={cards}
+      categories={categories}
+      onSuccess={onSuccess}
+    />
+  );
+}
+
+function RecurrenceModalDialog({
+  onClose,
+  recurrence,
+  accounts,
+  cards,
+  categories,
+  onSuccess,
+}: RecurrenceModalProps) {
+  const isEditing = !!recurrence;
+
+  const [type, setType] = useState<TransactionType>(recurrence?.type || 'expense');
+  const [description, setDescription] = useState(recurrence?.description || '');
+  const [amount, setAmount] = useState(recurrence?.amount ? String(recurrence.amount) : '');
+  const [dueDay, setDueDay] = useState(recurrence?.due_day || 5);
+  const [categoryId, setCategoryId] = useState(recurrence?.category_id || '');
+  const [payMethodType, setPayMethodType] = useState<'account' | 'card'>(
+    recurrence?.credit_card_id ? 'card' : 'account'
+  );
+  const [accountId, setAccountId] = useState(
+    recurrence?.account_id || accounts[0]?.id || ''
+  );
+  const [cardId, setCardId] = useState(
+    recurrence?.credit_card_id || cards[0]?.id || ''
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,8 +82,6 @@ export function RecurrenceModal({
     });
   }, [categories, type]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsedAmount = parseFloat(amount.replace(',', '.')) || 0;
@@ -66,22 +98,32 @@ export function RecurrenceModal({
       setLoading(true);
       setError(null);
 
-      await createRecurrence({
-        description,
-        amount: parsedAmount,
-        type,
-        due_day: dueDay,
-        category_id: categoryId || null,
-        account_id: payMethodType === 'account' ? accountId || null : null,
-        credit_card_id: payMethodType === 'card' ? cardId || null : null,
-      });
+      if (isEditing && recurrence) {
+        await updateRecurrence(recurrence.id, {
+          description: description.trim(),
+          amount: parsedAmount,
+          type,
+          due_day: dueDay,
+          category_id: categoryId || null,
+          account_id: payMethodType === 'account' ? accountId || null : null,
+          credit_card_id: payMethodType === 'card' ? cardId || null : null,
+        });
+      } else {
+        await createRecurrence({
+          description: description.trim(),
+          amount: parsedAmount,
+          type,
+          due_day: dueDay,
+          category_id: categoryId || null,
+          account_id: payMethodType === 'account' ? accountId || null : null,
+          credit_card_id: payMethodType === 'card' ? cardId || null : null,
+        });
+      }
 
-      setDescription('');
-      setAmount('');
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao cadastrar recorrência.');
+      setError(err instanceof Error ? err.message : 'Erro ao salvar recorrência.');
     } finally {
       setLoading(false);
     }
@@ -97,9 +139,13 @@ export function RecurrenceModal({
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-bold text-zinc-100 mb-1">Nova Conta Fixa / Recorrência</h2>
+        <h2 className="text-lg font-bold text-zinc-100 mb-1">
+          {isEditing ? 'Editar Conta Fixa' : 'Nova Conta Fixa / Recorrência'}
+        </h2>
         <p className="text-xs text-zinc-400 mb-5">
-          Cadastre despesas ou receitas automáticas que se repetem todo mês.
+          {isEditing
+            ? 'Altere os dados da recorrência. Os lançamentos pendentes deste mês serão atualizados automaticamente.'
+            : 'Cadastre despesas ou receitas automáticas que se repetem todo mês.'}
         </p>
 
         {/* Tipo: Despesa Fixa ou Receita Fixa */}
@@ -142,12 +188,14 @@ export function RecurrenceModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Descrição</label>
+            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+              Nome / Descrição
+            </label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ex: Aluguel, Salário, Netflix, Internet"
+              placeholder="Ex: Aluguel, Internet, Salário, Netflix"
               className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
               required
             />
@@ -161,19 +209,21 @@ export function RecurrenceModal({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0,00"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition font-mono"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Dia do Mês</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Dia do Vencimento
+              </label>
               <input
                 type="number"
                 min="1"
                 max="31"
                 value={dueDay}
-                onChange={(e) => setDueDay(Number(e.target.value))}
+                onChange={(e) => setDueDay(parseInt(e.target.value) || 1)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
                 required
               />
@@ -274,7 +324,7 @@ export function RecurrenceModal({
               disabled={loading}
               className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-sm rounded-xl transition disabled:opacity-50"
             >
-              {loading ? 'Salvando...' : 'Salvar Recorrência'}
+              {loading ? 'Salvando...' : isEditing ? 'Atualizar Conta Fixa' : 'Salvar Recorrência'}
             </button>
           </div>
         </form>
@@ -282,4 +332,3 @@ export function RecurrenceModal({
     </div>
   );
 }
-

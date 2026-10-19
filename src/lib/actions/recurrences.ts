@@ -15,6 +15,18 @@ export interface CreateRecurrenceInput {
   frequency?: 'monthly' | 'yearly';
 }
 
+export interface UpdateRecurrenceInput {
+  description?: string;
+  amount?: number;
+  type?: TransactionType;
+  category_id?: string | null;
+  account_id?: string | null;
+  credit_card_id?: string | null;
+  due_day?: number;
+  frequency?: 'monthly' | 'yearly';
+  active?: boolean;
+}
+
 export async function getRecurrences(): Promise<Recurrence[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -151,6 +163,69 @@ export async function createRecurrence(input: CreateRecurrenceInput) {
   revalidatePath('/recorrencias');
   revalidatePath('/dashboard');
   return data;
+}
+
+export async function updateRecurrence(id: string, input: UpdateRecurrenceInput): Promise<Recurrence> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const updates: Record<string, unknown> = {};
+  if (input.description !== undefined) updates.description = input.description.trim();
+  if (input.amount !== undefined) updates.amount = input.amount;
+  if (input.type !== undefined) updates.type = input.type;
+  if (input.category_id !== undefined) updates.category_id = input.category_id;
+  if (input.account_id !== undefined) updates.account_id = input.account_id;
+  if (input.credit_card_id !== undefined) updates.credit_card_id = input.credit_card_id;
+  if (input.due_day !== undefined) updates.due_day = input.due_day;
+  if (input.frequency !== undefined) updates.frequency = input.frequency;
+  if (input.active !== undefined) updates.active = input.active;
+
+  const { data, error } = await supabase
+    .from('recurrences')
+    .update(updates)
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select(`
+      *,
+      category:categories(*),
+      account:accounts(*),
+      credit_card:credit_cards(*)
+    `)
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  // Sincroniza lançamentos pendentes (não pagos) gerados por esta recorrência
+  const txUpdates: Record<string, unknown> = {};
+  if (input.description !== undefined) txUpdates.description = input.description.trim();
+  if (input.amount !== undefined) txUpdates.amount = input.amount;
+  if (input.type !== undefined) txUpdates.type = input.type;
+  if (input.category_id !== undefined) txUpdates.category_id = input.category_id;
+  if (input.account_id !== undefined) txUpdates.account_id = input.account_id;
+  if (input.credit_card_id !== undefined) txUpdates.credit_card_id = input.credit_card_id;
+
+  if (input.credit_card_id) {
+    txUpdates.payment_method = 'credit';
+  } else if (input.account_id) {
+    txUpdates.payment_method = 'debit';
+  }
+
+  if (Object.keys(txUpdates).length > 0) {
+    await supabase
+      .from('transactions')
+      .update(txUpdates)
+      .eq('recurrence_id', id)
+      .eq('user_id', user.id)
+      .eq('is_paid', false);
+  }
+
+  revalidatePath('/recorrencias');
+  revalidatePath('/transacoes');
+  revalidatePath('/dashboard');
+
+  return data as unknown as Recurrence;
 }
 
 export async function toggleRecurrenceActive(id: string, active: boolean) {
