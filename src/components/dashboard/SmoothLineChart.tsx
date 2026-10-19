@@ -13,6 +13,7 @@ export interface ChartSeries {
 
 interface SmoothLineChartProps {
   title: string;
+  subtitle?: string;
   series: ChartSeries[];
   months?: string[];
   height?: number;
@@ -22,6 +23,7 @@ const DEFAULT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 
 
 export function SmoothLineChart({
   title,
+  subtitle,
   series,
   months = DEFAULT_MONTHS,
   height = 260,
@@ -115,8 +117,11 @@ export function SmoothLineChart({
 
   return (
     <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between relative">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-bold text-zinc-100 text-base">{title}</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1">
+        <div>
+          <h3 className="font-bold text-zinc-100 text-base">{title}</h3>
+          {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
+        </div>
       </div>
 
       {/* SVG do Gráfico */}

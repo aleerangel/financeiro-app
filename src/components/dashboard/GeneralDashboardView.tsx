@@ -40,12 +40,8 @@ export function GeneralDashboardView({
   loading = false,
   onEditBalance,
 }: GeneralDashboardViewProps) {
-  // Configuração das 4 curvas:
-  // 1. Saldo de serviços (verde)
-  // 2. Saldo geral (azul)
-  // 3. Balanço de entrada e saída geral (âmbar)
-  // 4. Saldo em contas (roxo)
-  const chartSeries: ChartSeries[] = [
+  // 1. Gráfico de Fluxo Mensal (3 curvas de receitas e balanço líquido)
+  const flowSeries: ChartSeries[] = [
     {
       id: 'serviceRevenue',
       name: 'Saldo de Serviços',
@@ -67,6 +63,10 @@ export function GeneralDashboardView({
       values: yearlyStats.map((s) => s.netBalance),
       formatValue: (v) => formatCurrency(v),
     },
+  ];
+
+  // 2. Gráfico Dedicado: Evolução do Saldo em Contas (1 curva de caixa/patrimônio)
+  const balanceSeries: ChartSeries[] = [
     {
       id: 'accountBalance',
       name: 'Saldo em Contas',
@@ -118,11 +118,20 @@ export function GeneralDashboardView({
 
   return (
     <div className="space-y-6">
-      {/* Gráfico Geral com as 4 Curvas */}
+      {/* Gráfico 1: Fluxo Mensal (Vendas, Receitas e Balanço) */}
       <SmoothLineChart
-        title="Vendas, Receitas, Balanço e Saldo em Contas"
-        series={chartSeries}
-        height={280}
+        title="Fluxo Mensal (Vendas, Receitas e Balanço)"
+        subtitle="Comparativo anual entre receitas de serviços, entradas gerais e balanço líquido mensal"
+        series={flowSeries}
+        height={260}
+      />
+
+      {/* Gráfico 2: Evolução do Saldo em Contas */}
+      <SmoothLineChart
+        title="Evolução do Saldo em Contas"
+        subtitle="Saldo financeiro acumulado em caixa e contas bancárias mês a mês"
+        series={balanceSeries}
+        height={220}
       />
 
       {/* Cards de Resumo Principal */}
