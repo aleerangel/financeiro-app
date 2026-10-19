@@ -42,3 +42,4 @@ describe('isPastMonth', () => {
     expect(isPastMonth(8, 2026, lateOct)).toBe(true);
   });
 });
+

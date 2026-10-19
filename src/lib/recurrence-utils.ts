@@ -36,3 +36,4 @@ export function buildDueDate(year: number, month: number, dueDay: number): strin
   const day = Math.min(dueDay, lastDay);
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
+

@@ -77,3 +77,4 @@ export function findDefaultWeekIndex(weeks: CalendarWeek[], now: Date = new Date
   const idx = weeks.findIndex((w) => today >= w.startDate && today <= w.endDate);
   return idx === -1 ? 0 : idx;
 }
+

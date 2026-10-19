@@ -9,13 +9,20 @@ import { SalesView } from '@/components/sales/SalesView';
 
 export const instant = false;
 
-export default async function VendasPage() {
+export default async function VendasPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ clientId?: string }>;
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     redirect('/login');
   }
+
+  const params = searchParams ? await searchParams : undefined;
+  const initialClientId = params?.clientId || null;
 
   const [sales, products, accounts, clients] = await Promise.all([
     getSales(),
@@ -41,6 +48,7 @@ export default async function VendasPage() {
           products={products}
           accounts={accounts}
           clients={clients}
+          initialClientId={initialClientId}
         />
       </div>
     </AppShell>

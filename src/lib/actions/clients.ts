@@ -3,6 +3,12 @@
 import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Client } from '@/types/database';
+import {
+  analyzeClientSales,
+  computeVipClientIds,
+  ClientAnalytics,
+  RawClientSale,
+} from '@/lib/client-analytics';
 
 export interface CreateClientInput {
   name: string;
@@ -15,6 +21,9 @@ export interface ClientWithStats extends Client {
   totalSalesCount: number;
   totalSpent: number;
   lastSaleDate: string | null;
+  isVip: boolean;
+  analytics: ClientAnalytics;
+  salesHistory: RawClientSale[];
 }
 
 export async function getClients(searchTerm?: string): Promise<ClientWithStats[]> {
@@ -27,7 +36,19 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
     .from('clients')
     .select(`
       *,
-      sales:sales(id, total_amount, sale_date)
+      sales:sales(
+        id,
+        total_amount,
+        sale_date,
+        payment_method,
+        notes,
+        items:sale_items(
+          product_name,
+          quantity,
+          unit_price,
+          total_price
+        )
+      )
     `)
     .eq('user_id', user.id)
     .order('name', { ascending: true });
@@ -45,12 +66,13 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
   }
 
   type RawClientWithSales = Client & {
-    sales?: { id: string; total_amount: number; sale_date: string }[];
+    sales?: RawClientSale[];
   };
 
   const rawList = (data as unknown as RawClientWithSales[]) || [];
+  const now = new Date();
 
-  return rawList.map((c) => {
+  const preliminary = rawList.map((c) => {
     const sales = c.sales || [];
     const totalSalesCount = sales.length;
     const totalSpent = sales.reduce((acc, s) => acc + Number(s.total_amount || 0), 0);
@@ -58,6 +80,7 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
       (a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime()
     );
     const lastSaleDate = sortedSales[0]?.sale_date || null;
+    const analytics = analyzeClientSales(sales, now);
 
     return {
       id: c.id,
@@ -71,8 +94,17 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
       totalSalesCount,
       totalSpent,
       lastSaleDate,
+      analytics,
+      salesHistory: sortedSales,
     };
   });
+
+  const vipIds = computeVipClientIds(preliminary);
+
+  return preliminary.map((item) => ({
+    ...item,
+    isVip: vipIds.has(item.id),
+  }));
 }
 
 export async function createClient(input: CreateClientInput): Promise<Client> {
@@ -157,4 +189,3 @@ export async function deleteClient(id: string): Promise<void> {
   revalidatePath('/clientes');
   revalidatePath('/vendas');
 }
-

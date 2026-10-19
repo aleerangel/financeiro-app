@@ -45,3 +45,4 @@ describe('findDefaultWeekIndex', () => {
     expect(findDefaultWeekIndex(weeks, new Date('2027-05-10T15:00:00Z'))).toBe(0);
   });
 });
+

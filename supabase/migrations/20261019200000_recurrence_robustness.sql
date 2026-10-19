@@ -34,3 +34,4 @@ WHERE id IN (
 -- 3. Unicidade
 CREATE UNIQUE INDEX IF NOT EXISTS uq_transactions_recurrence_due
     ON public.transactions (recurrence_id, due_date);
+

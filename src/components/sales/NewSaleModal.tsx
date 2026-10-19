@@ -13,6 +13,7 @@ interface NewSaleModalProps {
   products: Product[];
   accounts: Account[];
   clients?: Client[];
+  initialClientId?: string | null;
   onSuccess?: () => void;
 }
 
@@ -30,12 +31,18 @@ export function NewSaleModal({
   products,
   accounts,
   clients = [],
+  initialClientId = null,
   onSuccess,
 }: NewSaleModalProps) {
+  const initialClient = initialClientId
+    ? clients.find((c) => c.id === initialClientId) || null
+    : null;
   const [clientsList, setClientsList] = useState<Client[]>(clients);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(
+    initialClient ? initialClient.id : null
+  );
   const [clientModalOpen, setClientModalOpen] = useState(false);
-  const [clientName, setClientName] = useState('');
+  const [clientName, setClientName] = useState(initialClient ? initialClient.name : '');
   const [saleDate, setSaleDate] = useState(getTodayString());
   const [selectedItems, setSelectedItems] = useState<CreateSaleItemInput[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');

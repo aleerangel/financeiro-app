@@ -20,6 +20,7 @@ interface SalesViewProps {
   products: Product[];
   accounts: Account[];
   clients?: Client[];
+  initialClientId?: string | null;
 }
 
 export function SalesView({
@@ -27,9 +28,10 @@ export function SalesView({
   products,
   accounts,
   clients,
+  initialClientId = null,
 }: SalesViewProps) {
   const [sales, setSales] = useState<Sale[]>(initialSales);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(Boolean(initialClientId));
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filterMode, setFilterMode] = useState<'today' | 'all'>('today');
 
@@ -269,6 +271,7 @@ export function SalesView({
         products={products}
         accounts={accounts}
         clients={clients}
+        initialClientId={initialClientId}
         onSuccess={() => window.location.reload()}
       />
     </div>
