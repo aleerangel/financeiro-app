@@ -47,7 +47,7 @@ export function GeneralDashboardView({
   loading = false,
   onEditBalance,
 }: GeneralDashboardViewProps) {
-  const [period, setPeriod] = useState<ChartPeriod>('monthly');
+  const [period, setPeriod] = useState<ChartPeriod>('yearly');
   const [userSelectedWeekIndex, setUserSelectedWeekIndex] = useState<number | null>(null);
 
   // Deriva o índice da semana sem necessidade de setState em useEffect

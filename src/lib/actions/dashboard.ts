@@ -429,17 +429,18 @@ export async function getGeneralDashboardData(
   const selectedMonthNum = String(month + 1).padStart(2, '0');
 
   const monthIntervals: { startDay: number; endDay: number; label: string }[] = [
-    { startDay: 1, endDay: 7, label: 'Sem 1' },
-    { startDay: 8, endDay: 14, label: 'Sem 2' },
-    { startDay: 15, endDay: 21, label: 'Sem 3' },
-    { startDay: 22, endDay: 28, label: 'Sem 4' },
+    { startDay: 1, endDay: 7, label: '01-07' },
+    { startDay: 8, endDay: 14, label: '08-14' },
+    { startDay: 15, endDay: 21, label: '15-21' },
+    { startDay: 22, endDay: 28, label: '22-28' },
   ];
 
   if (lastDayOfSelectedMonth > 28) {
+    const endStr = String(lastDayOfSelectedMonth).padStart(2, '0');
     monthIntervals.push({
       startDay: 29,
       endDay: lastDayOfSelectedMonth,
-      label: 'Sem 5',
+      label: `29-${endStr}`,
     });
   }
 
