@@ -99,9 +99,9 @@ export function GeneralDashboardView({
       return 'Visão anual consolidada pelos 12 meses';
     }
     if (period === 'monthly') {
-      return `Visão mensal de ${formattedMonth} com as semanas`;
+      return `Visão mensal de ${formattedMonth} com as semanas (Dom a Sáb)`;
     }
-    return `Visão semanal com os dias da semana (${activeWeekMeta?.shortLabel || 'Seg a Dom'})`;
+    return `Visão semanal com os dias da semana (${activeWeekMeta?.shortLabel || 'Dom a Sáb'})`;
   }, [period, formattedMonth, activeWeekMeta]);
 
   // 1. Gráfico de Fluxo (3 curvas)

@@ -84,10 +84,10 @@ export function BusinessDashboardView({
     }
     if (period === 'monthly') {
       return formattedMonth
-        ? `Visão mensal de ${formattedMonth} com as semanas`
-        : 'Visão mensal com as semanas';
+        ? `Visão mensal de ${formattedMonth} com as semanas (Dom a Sáb)`
+        : 'Visão mensal com as semanas (Dom a Sáb)';
     }
-    return `Visão semanal com os dias da semana (${activeWeekMeta?.shortLabel || 'Seg a Dom'})`;
+    return `Visão semanal com os dias da semana (${activeWeekMeta?.shortLabel || 'Dom a Sáb'})`;
   }, [period, formattedMonth, activeWeekMeta]);
 
   // Configura as séries do gráfico no estilo do mockup:

@@ -96,11 +96,11 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   const startDate = `${year}-01-01`;
   const endDate = `${year}-12-31`;
 
-  // Calcula semanas de Segunda a Domingo do mês atual
+  // Calcula semanas de Domingo a Sábado do mês atual
   const firstDayOfMonth = new Date(year, currentMonth, 1);
-  const firstDayOfWeek = firstDayOfMonth.getDay();
-  const diffToMonday = (firstDayOfWeek === 0 ? -6 : 1) - firstDayOfWeek;
-  const initialMonday = new Date(year, currentMonth, 1 + diffToMonday);
+  const firstDayOfWeek = firstDayOfMonth.getDay(); // 0: Dom, 1: Seg, ..., 6: Sáb
+  const diffToSunday = -firstDayOfWeek;
+  const initialSunday = new Date(year, currentMonth, 1 + diffToSunday);
   const lastDayOfMonth = new Date(year, currentMonth + 1, 0);
 
   const calendarWeeks: {
@@ -122,14 +122,15 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     'Quinta-feira', 'Sexta-feira', 'Sábado'
   ];
 
-  const iterDate = new Date(initialMonday);
+  const iterDate = new Date(initialSunday);
   let wIdx = 0;
 
   while (iterDate <= lastDayOfMonth) {
-    const weekStart = new Date(iterDate);
-    const mondayStr = formatDateYMD(weekStart);
+    const weekStart = new Date(iterDate); // Domingo
+    const sundayStr = formatDateYMD(weekStart);
     const days = [];
 
+    // 7 dias: Domingo (0) até Sábado (6)
     for (let d = 0; d < 7; d++) {
       const cur = new Date(weekStart);
       cur.setDate(cur.getDate() + d);
@@ -145,19 +146,19 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       });
     }
 
-    const sundayDate = new Date(weekStart);
-    sundayDate.setDate(sundayDate.getDate() + 6);
-    const sundayStr = formatDateYMD(sundayDate);
+    const saturdayDate = new Date(weekStart);
+    saturdayDate.setDate(saturdayDate.getDate() + 6);
+    const saturdayStr = formatDateYMD(saturdayDate);
 
     const startDisplay = `${String(weekStart.getDate()).padStart(2, '0')}/${String(weekStart.getMonth() + 1).padStart(2, '0')}`;
-    const endDisplay = `${String(sundayDate.getDate()).padStart(2, '0')}/${String(sundayDate.getMonth() + 1).padStart(2, '0')}`;
+    const endDisplay = `${String(saturdayDate.getDate()).padStart(2, '0')}/${String(saturdayDate.getMonth() + 1).padStart(2, '0')}`;
 
     calendarWeeks.push({
       index: wIdx,
       label: `Semana ${wIdx + 1} (${startDisplay} a ${endDisplay})`,
       shortLabel: `${startDisplay} a ${endDisplay}`,
-      startDate: mondayStr,
-      endDate: sundayStr,
+      startDate: sundayStr,
+      endDate: saturdayStr,
       days,
     });
 
@@ -274,51 +275,28 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     };
   });
 
-  // 2. STATS MENSAIS (Faixas de Dias do Mês Selecionado)
-  const lastDayOfSelectedMonth = new Date(year, currentMonth + 1, 0).getDate();
-  const selectedMonthNum = String(currentMonth + 1).padStart(2, '0');
-
-  const monthIntervals: { startDay: number; endDay: number; label: string }[] = [
-    { startDay: 1, endDay: 7, label: '01-07' },
-    { startDay: 8, endDay: 14, label: '08-14' },
-    { startDay: 15, endDay: 21, label: '15-21' },
-    { startDay: 22, endDay: 28, label: '22-28' },
-  ];
-
-  if (lastDayOfSelectedMonth > 28) {
-    const endPadded = String(lastDayOfSelectedMonth).padStart(2, '0');
-    monthIntervals.push({
-      startDay: 29,
-      endDay: lastDayOfSelectedMonth,
-      label: `29-${endPadded}`,
-    });
-  }
-
-  const monthlyStats: BusinessPeriodStat[] = monthIntervals.map((interval, i) => {
+  // 2. STATS MENSAIS (Semanas de Domingo a Sábado do Mês Selecionado)
+  const monthlyStats: BusinessPeriodStat[] = calendarWeeks.map((cw, i) => {
     let revenue = 0;
     let salesCount = 0;
 
-    for (let day = interval.startDay; day <= interval.endDay; day++) {
-      const dStr = `${year}-${selectedMonthNum}-${String(day).padStart(2, '0')}`;
-      const dayData = salesByDate.get(dStr);
+    for (const day of cw.days) {
+      const dayData = salesByDate.get(day.dateStr);
       if (dayData) {
         revenue += dayData.revenue;
         salesCount += dayData.salesCount;
       }
     }
 
-    const startPadded = String(interval.startDay).padStart(2, '0');
-    const endPadded = String(interval.endDay).padStart(2, '0');
-
     return {
-      label: interval.label,
-      fullLabel: `Semana ${i + 1} (${startPadded}/${selectedMonthNum} a ${endPadded}/${selectedMonthNum})`,
+      label: `Sem ${i + 1}`,
+      fullLabel: cw.label,
       revenue,
       salesCount,
     };
   });
 
-  // 3. STATS SEMANAIS (Dias da Semana Seg a Dom)
+  // 3. STATS SEMANAIS (Dias da Semana Dom a Sáb)
   const weeklyStatsByWeek: Record<number, BusinessPeriodStat[]> = {};
 
   for (const cw of calendarWeeks) {
@@ -404,11 +382,11 @@ export async function getGeneralDashboardData(
   const startDate = `${year}-01-01`;
   const endDate = `${year}-12-31`;
 
-  // Calcula todas as semanas (Segunda a Domingo) que intersectam o mês selecionado
+  // Calcula todas as semanas (Domingo a Sábado) que intersectam o mês selecionado
   const firstDayOfMonth = new Date(year, month, 1);
   const firstDayOfWeek = firstDayOfMonth.getDay(); // 0: Dom, 1: Seg, ..., 6: Sáb
-  const diffToMonday = (firstDayOfWeek === 0 ? -6 : 1) - firstDayOfWeek;
-  const initialMonday = new Date(year, month, 1 + diffToMonday);
+  const diffToSunday = -firstDayOfWeek;
+  const initialSunday = new Date(year, month, 1 + diffToSunday);
 
   const lastDayOfMonth = new Date(year, month + 1, 0);
 
@@ -431,15 +409,15 @@ export async function getGeneralDashboardData(
     'Quinta-feira', 'Sexta-feira', 'Sábado'
   ];
 
-  const iterDate = new Date(initialMonday);
+  const iterDate = new Date(initialSunday);
   let wIdx = 0;
 
   while (iterDate <= lastDayOfMonth) {
-    const weekStart = new Date(iterDate);
-    const mondayStr = formatDateYMD(weekStart);
+    const weekStart = new Date(iterDate); // Domingo
+    const sundayStr = formatDateYMD(weekStart);
     const days = [];
 
-    // 7 dias: Segunda (0) até Domingo (6)
+    // 7 dias: Domingo (0) até Sábado (6)
     for (let d = 0; d < 7; d++) {
       const cur = new Date(weekStart);
       cur.setDate(cur.getDate() + d);
@@ -455,19 +433,19 @@ export async function getGeneralDashboardData(
       });
     }
 
-    const sundayDate = new Date(weekStart);
-    sundayDate.setDate(sundayDate.getDate() + 6);
-    const sundayStr = formatDateYMD(sundayDate);
+    const saturdayDate = new Date(weekStart);
+    saturdayDate.setDate(saturdayDate.getDate() + 6);
+    const saturdayStr = formatDateYMD(saturdayDate);
 
     const startDisplay = `${String(weekStart.getDate()).padStart(2, '0')}/${String(weekStart.getMonth() + 1).padStart(2, '0')}`;
-    const endDisplay = `${String(sundayDate.getDate()).padStart(2, '0')}/${String(sundayDate.getMonth() + 1).padStart(2, '0')}`;
+    const endDisplay = `${String(saturdayDate.getDate()).padStart(2, '0')}/${String(saturdayDate.getMonth() + 1).padStart(2, '0')}`;
 
     calendarWeeks.push({
       index: wIdx,
       label: `Semana ${wIdx + 1} (${startDisplay} a ${endDisplay})`,
       shortLabel: `${startDisplay} a ${endDisplay}`,
-      startDate: mondayStr,
-      endDate: sundayStr,
+      startDate: sundayStr,
+      endDate: saturdayStr,
       days,
     });
 
@@ -619,57 +597,33 @@ export async function getGeneralDashboardData(
     };
   });
 
-  // 2. STATS MENSAIS (Semanas do Mês Selecionado)
-  const lastDayOfSelectedMonth = new Date(year, month + 1, 0).getDate();
-  const selectedMonthNum = String(month + 1).padStart(2, '0');
-
-  const monthIntervals: { startDay: number; endDay: number; label: string }[] = [
-    { startDay: 1, endDay: 7, label: '01-07' },
-    { startDay: 8, endDay: 14, label: '08-14' },
-    { startDay: 15, endDay: 21, label: '15-21' },
-    { startDay: 22, endDay: 28, label: '22-28' },
-  ];
-
-  if (lastDayOfSelectedMonth > 28) {
-    const endStr = String(lastDayOfSelectedMonth).padStart(2, '0');
-    monthIntervals.push({
-      startDay: 29,
-      endDay: lastDayOfSelectedMonth,
-      label: `29-${endStr}`,
-    });
-  }
-
-  const monthlyStats: PeriodStat[] = monthIntervals.map((interval, i) => {
+  // 2. STATS MENSAIS (Semanas de Domingo a Sábado do Mês Selecionado)
+  const monthlyStats: PeriodStat[] = calendarWeeks.map((cw, i) => {
     let serviceRevenue = 0;
     let generalIncome = 0;
     let generalExpense = 0;
 
-    for (let day = interval.startDay; day <= interval.endDay; day++) {
-      const dStr = `${year}-${selectedMonthNum}-${String(day).padStart(2, '0')}`;
-      serviceRevenue += salesByDate.get(dStr) || 0;
-      const tx = txByDate.get(dStr);
+    for (const day of cw.days) {
+      serviceRevenue += salesByDate.get(day.dateStr) || 0;
+      const tx = txByDate.get(day.dateStr);
       if (tx) {
         generalIncome += tx.income;
         generalExpense += tx.expense;
       }
     }
 
-    const startPadded = String(interval.startDay).padStart(2, '0');
-    const endPadded = String(interval.endDay).padStart(2, '0');
-    const endStr = `${year}-${selectedMonthNum}-${endPadded}`;
-
     return {
-      label: interval.label,
-      fullLabel: `Semana ${i + 1} (${startPadded}/${selectedMonthNum} a ${endPadded}/${selectedMonthNum})`,
+      label: `Sem ${i + 1}`,
+      fullLabel: cw.label,
       serviceRevenue,
       generalIncome,
       generalExpense,
       netBalance: generalIncome - generalExpense,
-      accountBalance: cumulativeBalanceAtDate(endStr),
+      accountBalance: cumulativeBalanceAtDate(cw.endDate),
     };
   });
 
-  // 3. STATS SEMANAIS (Dias da Semana Seg a Dom para cada semana do mês)
+  // 3. STATS SEMANAIS (Dias da Semana Dom a Sáb para cada semana do mês)
   const weeklyStatsByWeek: Record<number, PeriodStat[]> = {};
 
   for (const cw of calendarWeeks) {
