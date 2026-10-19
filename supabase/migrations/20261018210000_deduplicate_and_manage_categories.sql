@@ -37,7 +37,7 @@ BEGIN
         WHERE category_id = dup.duplicate_id;
 
         -- Deleta a categoria duplicada
-        DELETE FROM public.categories
+        DELETE FROM public.categoriesacho que
         WHERE id = dup.duplicate_id;
     END LOOP;
 END $$;
@@ -76,3 +76,4 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+

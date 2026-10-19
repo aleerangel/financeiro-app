@@ -82,3 +82,4 @@ export function CategoryIcon({ name, className = 'w-4 h-4' }: CategoryIconProps)
   const IconComponent = (name && ICON_MAP[name]) ? ICON_MAP[name] : Tag;
   return <IconComponent className={className} />;
 }
+

@@ -47,7 +47,8 @@ export async function getCategories(): Promise<Category[]> {
       { user_id: user.id, name: 'Saúde', type: 'expense', icon: 'activity', color: '#ec4899', is_default: true },
       { user_id: user.id, name: 'Educação', type: 'expense', icon: 'book-open', color: '#06b6d4', is_default: true },
       { user_id: user.id, name: 'Outras Despesas', type: 'expense', icon: 'more-horizontal', color: '#64748b', is_default: true },
-      { user_id: user.id, name: 'Salário', type: 'income', icon: 'briefcase', color: '#10b981', is_default: true },
+      { user_id: user.id, name: 'Barbearia', type: 'income', icon: 'scissors', color: '#10b981', is_default: true },
+      { user_id: user.id, name: 'Salário', type: 'income', icon: 'briefcase', color: '#3b82f6', is_default: true },
       { user_id: user.id, name: 'Investimentos', type: 'income', icon: 'trending-up', color: '#059669', is_default: true },
       { user_id: user.id, name: 'Outras Receitas', type: 'income', icon: 'plus-circle', color: '#34d399', is_default: true },
     ];
@@ -176,4 +177,56 @@ export async function deleteCategory(id: string): Promise<void> {
   revalidatePath('/transacoes');
   revalidatePath('/dashboard');
   revalidatePath('/recorrencias');
+}
+
+export async function getOrCreateBarbeariaCategory(userId: string): Promise<string> {
+  const supabase = await createClient();
+
+  // 1. Procura categoria existente com nome Barbearia
+  const { data: existing } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('type', 'income')
+    .ilike('name', 'Barbearia')
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    return existing.id;
+  }
+
+  // 2. Se não existir, cria a categoria Barbearia
+  const { data: created, error } = await supabase
+    .from('categories')
+    .insert({
+      user_id: userId,
+      name: 'Barbearia',
+      type: 'income',
+      icon: 'scissors',
+      color: '#10b981',
+      is_default: true,
+    })
+    .select('id')
+    .maybeSingle();
+
+  if (created?.id) {
+    return created.id;
+  }
+
+  // Caso já tenha sido criada em outra chamada paralela
+  const { data: fallback } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('type', 'income')
+    .ilike('name', 'Barbearia')
+    .limit(1)
+    .maybeSingle();
+
+  if (fallback?.id) {
+    return fallback.id;
+  }
+
+  throw new Error(error?.message || 'Não foi possível encontrar ou criar a categoria Barbearia.');
 }

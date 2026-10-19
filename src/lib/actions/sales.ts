@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Sale, PaymentMethod } from '@/types/database';
+import { getOrCreateBarbeariaCategory } from '@/lib/actions/categories';
 
 export interface CreateSaleItemInput {
   product_id?: string | null;
@@ -58,6 +59,19 @@ export async function getSales(month?: number, year?: number): Promise<Sale[]> {
   if (error) {
     console.error('Erro ao buscar vendas:', error);
     return [];
+  }
+
+  // Auto-correção: associa transações antigas de atendimentos que ficaram sem categoria à Barbearia
+  try {
+    const barbeariaCatId = await getOrCreateBarbeariaCategory(user.id);
+    await supabase
+      .from('transactions')
+      .update({ category_id: barbeariaCatId })
+      .eq('user_id', user.id)
+      .is('category_id', null)
+      .ilike('description', 'Atendimento:%');
+  } catch (err) {
+    console.warn('Aviso ao sincronizar categoria de vendas:', err);
   }
 
   return (data as unknown as Sale[]) || [];
@@ -148,7 +162,10 @@ export async function createSale(input: CreateSaleInput) {
     dateOnlyStr = now.toISOString().split('T')[0];
   }
 
-  // 3. Cria a transação financeira de receita
+  // 3. Obtém ou cria a categoria padrão "Barbearia" para vincular ao atendimento
+  const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);
+
+  // 4. Cria a transação financeira de receita vinculada à Barbearia
   const { data: transaction, error: txError } = await supabase
     .from('transactions')
     .insert({
@@ -159,6 +176,7 @@ export async function createSale(input: CreateSaleInput) {
       payment_method: input.payment_method,
       transaction_date: dateOnlyStr,
       due_date: dateOnlyStr,
+      category_id: barbeariaCategoryId,
       account_id: input.account_id,
       is_paid: true,
       paid_at: saleDateIso,

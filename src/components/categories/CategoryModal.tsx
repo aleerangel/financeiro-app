@@ -257,3 +257,4 @@ function CategoryModalDialog({
     </div>
   );
 }
+
