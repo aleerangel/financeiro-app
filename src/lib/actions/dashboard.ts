@@ -156,7 +156,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     calendarWeeks.push({
       index: wIdx,
       label: `Semana ${wIdx + 1} (${startDisplay} a ${endDisplay})`,
-      shortLabel: `${startDisplay} a ${endDisplay}`,
+      shortLabel: `${startDisplay} - ${endDisplay}`,
       startDate: sundayStr,
       endDate: saturdayStr,
       days,
@@ -289,7 +289,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     }
 
     return {
-      label: `Sem ${i + 1}`,
+      label: cw.shortLabel,
       fullLabel: cw.label,
       revenue,
       salesCount,
@@ -443,7 +443,7 @@ export async function getGeneralDashboardData(
     calendarWeeks.push({
       index: wIdx,
       label: `Semana ${wIdx + 1} (${startDisplay} a ${endDisplay})`,
-      shortLabel: `${startDisplay} a ${endDisplay}`,
+      shortLabel: `${startDisplay} - ${endDisplay}`,
       startDate: sundayStr,
       endDate: saturdayStr,
       days,
@@ -613,7 +613,7 @@ export async function getGeneralDashboardData(
     }
 
     return {
-      label: `Sem ${i + 1}`,
+      label: cw.shortLabel,
       fullLabel: cw.label,
       serviceRevenue,
       generalIncome,
