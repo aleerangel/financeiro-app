@@ -11,7 +11,7 @@ import { AccountWithBalance, getAccounts } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { Category, Transaction } from '@/types/database';
 import { useDateContext } from '@/context/DateContext';
-import { getTransactions, getUpcomingAndOverdueBills } from '@/lib/actions/transactions';
+import { getTransactions, getUpcomingAndOverdueBills, getPendingIncomeReceipts } from '@/lib/actions/transactions';
 import { syncMonthlyRecurrences } from '@/lib/actions/recurrences';
 import {
   BusinessDashboardData,
@@ -31,6 +31,7 @@ interface DashboardViewProps {
   initialBusinessData: BusinessDashboardData;
   initialGeneralData: GeneralDashboardData;
   initialUpcomingBills?: Transaction[];
+  initialPendingReceipts?: Transaction[];
 }
 
 export function DashboardView({
@@ -40,6 +41,7 @@ export function DashboardView({
   initialBusinessData,
   initialGeneralData,
   initialUpcomingBills = [],
+  initialPendingReceipts = [],
 }: DashboardViewProps) {
   const { month, year, formattedMonth } = useDateContext();
 
@@ -49,6 +51,7 @@ export function DashboardView({
   const [businessData, setBusinessData] = useState<BusinessDashboardData>(initialBusinessData);
   const [generalData, setGeneralData] = useState<GeneralDashboardData>(initialGeneralData);
   const [upcomingBills, setUpcomingBills] = useState<Transaction[]>(initialUpcomingBills);
+  const [pendingReceipts, setPendingReceipts] = useState<Transaction[]>(initialPendingReceipts);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
@@ -58,18 +61,20 @@ export function DashboardView({
     try {
       setLoading(true);
       await syncMonthlyRecurrences(month, year);
-      const [txs, bData, gData, accs, bills] = await Promise.all([
+      const [txs, bData, gData, accs, bills, receipts] = await Promise.all([
         getTransactions(month, year),
         getBusinessDashboardData(year, month),
         getGeneralDashboardData(year, month),
         getAccounts(),
         getUpcomingAndOverdueBills(3),
+        getPendingIncomeReceipts(),
       ]);
       setTransactions(txs);
       setBusinessData(bData);
       setGeneralData(gData);
       setAccounts(accs);
       setUpcomingBills(bills);
+      setPendingReceipts(receipts);
     } catch (err) {
       console.error('Erro ao atualizar dados do dashboard:', err);
     } finally {
@@ -86,14 +91,16 @@ export function DashboardView({
         getGeneralDashboardData(year, month),
         getAccounts(),
         getUpcomingAndOverdueBills(3),
+        getPendingIncomeReceipts(),
       ]))
-      .then(([txs, bData, gData, accs, bills]) => {
+      .then(([txs, bData, gData, accs, bills, receipts]) => {
         if (active) {
           setTransactions(txs);
           setBusinessData(bData);
           setGeneralData(gData);
           setAccounts(accs);
           setUpcomingBills(bills);
+          setPendingReceipts(receipts);
         }
       })
       .catch((err) => {
@@ -206,6 +213,11 @@ export function DashboardView({
           upcomingBills={upcomingBills}
           onBillPaid={(id) => {
             setUpcomingBills((prev) => prev.filter((b) => b.id !== id));
+            refreshData();
+          }}
+          pendingReceipts={pendingReceipts}
+          onReceiptConfirmed={(id) => {
+            setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
             refreshData();
           }}
           transactions={transactions}

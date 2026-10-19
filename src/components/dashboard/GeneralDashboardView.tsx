@@ -23,6 +23,7 @@ import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
 import { MonthlyBarChart } from './MonthlyBarChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
 import { UpcomingBillsAlert } from './UpcomingBillsAlert';
+import { PendingReceiptsAlert } from './PendingReceiptsAlert';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export type ChartPeriod = 'weekly' | 'monthly' | 'yearly';
@@ -32,6 +33,8 @@ interface GeneralDashboardViewProps {
   yearlyStats?: MonthlyGeneralStat[];
   upcomingBills?: Transaction[];
   onBillPaid?: (billId: string) => void;
+  pendingReceipts?: Transaction[];
+  onReceiptConfirmed?: (receiptId: string) => void;
   transactions: Transaction[];
   accounts: AccountWithBalance[];
   cards: CreditCardWithUsage[];
@@ -45,6 +48,8 @@ export function GeneralDashboardView({
   yearlyStats = [],
   upcomingBills = [],
   onBillPaid,
+  pendingReceipts = [],
+  onReceiptConfirmed,
   transactions,
   accounts,
   cards,
@@ -182,6 +187,9 @@ export function GeneralDashboardView({
     <div className="space-y-6">
       {/* Alerta de Contas a Vencer e Pendências */}
       <UpcomingBillsAlert bills={upcomingBills} onBillPaid={onBillPaid} />
+
+      {/* Alerta de Recebimentos Previstos Pendentes de Confirmação */}
+      <PendingReceiptsAlert receipts={pendingReceipts} onReceiptConfirmed={onReceiptConfirmed} />
 
       {/* Seletor de Período dos Gráficos: Semanal, Mensal, Anual */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">

@@ -5,7 +5,7 @@ import { getAccounts } from '@/lib/actions/accounts';
 import { getCreditCards } from '@/lib/actions/credit-cards';
 import { getCategories } from '@/lib/actions/categories';
 import { getBusinessDashboardData, getGeneralDashboardData } from '@/lib/actions/dashboard';
-import { getUpcomingAndOverdueBills } from '@/lib/actions/transactions';
+import { getUpcomingAndOverdueBills, getPendingIncomeReceipts } from '@/lib/actions/transactions';
 import { AppShell } from '@/components/layout/AppShell';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 
@@ -25,13 +25,14 @@ export default async function DashboardPage() {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  const [accounts, cards, categories, businessData, generalData, upcomingBills] = await Promise.all([
+  const [accounts, cards, categories, businessData, generalData, upcomingBills, pendingReceipts] = await Promise.all([
     getAccounts(),
     getCreditCards(),
     getCategories(),
     getBusinessDashboardData(currentYear, currentMonth),
     getGeneralDashboardData(currentYear, currentMonth),
     getUpcomingAndOverdueBills(3),
+    getPendingIncomeReceipts(),
   ]);
 
   return (
@@ -43,6 +44,7 @@ export default async function DashboardPage() {
         initialBusinessData={businessData}
         initialGeneralData={generalData}
         initialUpcomingBills={upcomingBills}
+        initialPendingReceipts={pendingReceipts}
       />
     </AppShell>
   );
