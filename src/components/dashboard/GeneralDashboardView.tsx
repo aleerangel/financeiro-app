@@ -185,7 +185,9 @@ export function GeneralDashboardView({
 
   const totalIncome = receivedIncome + pendingIncome;
 
-  const recentTransactions = transactions.slice(0, 5);
+  const recentTransactions = transactions
+    .filter((t) => !(t.recurrence_id && !t.is_paid))
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
