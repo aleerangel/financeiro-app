@@ -10,6 +10,7 @@ import {
   Landmark,
   ArrowLeftRight,
   Pencil,
+  Scissors,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -74,12 +75,27 @@ export function GeneralDashboardView({
 
   let receivedIncome = 0;
   let pendingIncome = 0;
+  let barberShopIncome = 0;
+  let otherIncome = 0;
   let paidExpense = 0;
   let pendingExpense = 0;
 
   for (const t of transactions) {
     const amt = Number(t.amount);
     if (t.type === 'income') {
+      const isBarber =
+        t.description.startsWith('Atendimento:') ||
+        Boolean(t.notes?.includes('Atendimento')) ||
+        Boolean(t.notes?.includes('Comanda:')) ||
+        Boolean(t.category?.name?.toLowerCase().includes('barbearia')) ||
+        Boolean(t.category?.name?.toLowerCase().includes('serviço'));
+
+      if (isBarber) {
+        barberShopIncome += amt;
+      } else {
+        otherIncome += amt;
+      }
+
       if (t.is_paid) receivedIncome += amt;
       else pendingIncome += amt;
     } else if (t.type === 'expense') {
@@ -87,6 +103,8 @@ export function GeneralDashboardView({
       else pendingExpense += amt;
     }
   }
+
+  const totalIncome = receivedIncome + pendingIncome;
 
   const recentTransactions = transactions.slice(0, 5);
 
@@ -141,21 +159,31 @@ export function GeneralDashboardView({
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-400 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">
-              Receitas Recebidas
+              Receitas do Mês
             </span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(receivedIncome)}</h2>
-            <span className="text-[11px] text-zinc-400 mt-1 block">
-              {loading
-                ? 'Calculando...'
-                : pendingIncome > 0
-                ? `+ ${formatCurrency(pendingIncome)} a receber`
-                : 'Nenhuma receita pendente'}
-            </span>
+            <div className="flex items-baseline justify-between gap-1">
+              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(receivedIncome)}</h2>
+              {pendingIncome > 0 && (
+                <span className="text-xs font-semibold text-zinc-400">
+                  Total: {formatCurrency(totalIncome)}
+                </span>
+              )}
+            </div>
+            <div className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px]">
+              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                <Scissors className="w-3 h-3" /> Barbearia: {formatCurrency(barberShopIncome)}
+              </span>
+              {otherIncome > 0 && (
+                <span className="text-zinc-400 font-medium">
+                  Outras: {formatCurrency(otherIncome)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

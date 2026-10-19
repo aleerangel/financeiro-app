@@ -20,14 +20,25 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
     realizedNet,
     projectedNet,
     receivedIncomePct,
-    pendingIncomePct,
     paidExpensePct,
     pendingExpensePct,
+    incomeSegments,
   } = useMemo(() => {
     let recInc = 0;
     let pendInc = 0;
     let paidExp = 0;
     let pendExp = 0;
+
+    const incomeMap = new Map<
+      string,
+      {
+        name: string;
+        color: string;
+        received: number;
+        pending: number;
+        total: number;
+      }
+    >();
 
     for (const t of transactions) {
       const amt = Number(t.amount);
@@ -37,6 +48,33 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
         } else {
           pendInc += amt;
         }
+
+        // Identifica se a receita veio de Atendimentos / Barbearia
+        const isBarber =
+          t.description.startsWith('Atendimento:') ||
+          Boolean(t.notes?.includes('Atendimento')) ||
+          Boolean(t.notes?.includes('Comanda:')) ||
+          Boolean(t.category?.name?.toLowerCase().includes('barbearia')) ||
+          Boolean(t.category?.name?.toLowerCase().includes('serviço'));
+
+        const catName = isBarber ? 'Barbearia (Serviços)' : (t.category?.name || 'Outras Receitas');
+        const catColor = isBarber ? '#10b981' : (t.category?.color || '#3b82f6');
+
+        const current = incomeMap.get(catName) || {
+          name: catName,
+          color: catColor,
+          received: 0,
+          pending: 0,
+          total: 0,
+        };
+
+        if (t.is_paid) {
+          current.received += amt;
+        } else {
+          current.pending += amt;
+        }
+        current.total += amt;
+        incomeMap.set(catName, current);
       } else if (t.type === 'expense') {
         if (t.is_paid) {
           paidExp += amt;
@@ -52,10 +90,20 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
     const pNet = tIncome - tExpense;
 
     const recIncPct = tIncome > 0 ? Math.min(100, Math.max(0, Math.round((recInc / tIncome) * 100))) : 0;
-    const pendIncPct = tIncome > 0 ? Math.max(0, 100 - recIncPct) : 0;
-
     const paidExpPct = tExpense > 0 ? Math.min(100, Math.max(0, Math.round((paidExp / tExpense) * 100))) : 0;
     const pendExpPct = tExpense > 0 ? Math.max(0, 100 - paidExpPct) : 0;
+
+    const segments = Array.from(incomeMap.values())
+      .map((seg) => ({
+        ...seg,
+        percentage: tIncome > 0 ? (seg.total / tIncome) * 100 : 0,
+      }))
+      .sort((a, b) => {
+        // Barbearia primeiro, depois por valor decrescente
+        if (a.name.includes('Barbearia')) return -1;
+        if (b.name.includes('Barbearia')) return 1;
+        return b.total - a.total;
+      });
 
     return {
       receivedIncome: recInc,
@@ -67,9 +115,9 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
       realizedNet: rNet,
       projectedNet: pNet,
       receivedIncomePct: recIncPct,
-      pendingIncomePct: pendIncPct,
       paidExpensePct: paidExpPct,
       pendingExpensePct: pendExpPct,
+      incomeSegments: segments,
     };
   }, [transactions]);
 
@@ -93,17 +141,17 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
             </span>
           )}
         </div>
-        <p className="text-xs text-zinc-400">Fluxo realizado e previsão do mês</p>
+        <p className="text-xs text-zinc-400">Fluxo realizado e composição por categoria</p>
       </div>
 
-      {/* Barras de Comparação com Segmentação Real */}
+      {/* Barras de Comparação com Cores por Categoria */}
       <div className="space-y-4 py-2">
-        {/* Barra de Receitas */}
-        <div className="space-y-1.5">
+        {/* Barra de Receitas com Divisão por Categoria */}
+        <div className="space-y-2">
           <div className="flex justify-between items-center text-xs">
             <span className="flex items-center gap-1.5 font-medium text-emerald-400">
               <TrendingUp className="w-3.5 h-3.5" />
-              Receitas
+              Receitas (Composição)
               <span className="text-[11px] text-zinc-400 font-normal">
                 ({receivedIncomePct}% recebido)
               </span>
@@ -114,32 +162,52 @@ export function MonthlyBarChart({ transactions }: MonthlyBarChartProps) {
             </span>
           </div>
 
-          <div className="w-full h-3.5 bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-zinc-800 flex gap-0.5">
+          {/* Barra multi-cores */}
+          <div className="w-full h-4 bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-zinc-800 flex gap-1">
             {totalIncome > 0 ? (
-              <>
-                {receivedIncomePct > 0 && (
-                  <div
-                    className="h-full bg-emerald-400 rounded-full transition-all duration-700 shadow-sm shadow-emerald-400/20"
-                    style={{ width: `${receivedIncomePct}%` }}
-                    title={`Recebido: ${formatCurrency(receivedIncome)} (${receivedIncomePct}%)`}
-                  />
-                )}
-                {pendingIncomePct > 0 && (
-                  <div
-                    className="h-full bg-emerald-500/25 border border-dashed border-emerald-400/40 rounded-full transition-all duration-700"
-                    style={{ width: `${pendingIncomePct}%` }}
-                    title={`A receber: ${formatCurrency(pendingIncome)} (${pendingIncomePct}%)`}
-                  />
-                )}
-              </>
+              incomeSegments.map((seg) => (
+                <div
+                  key={seg.name}
+                  className="h-full rounded-full transition-all duration-700 shadow-sm relative group"
+                  style={{
+                    width: `${seg.percentage}%`,
+                    backgroundColor: seg.color,
+                  }}
+                  title={`${seg.name}: ${formatCurrency(seg.total)} (${seg.percentage.toFixed(0)}%)\nRecebido: ${formatCurrency(seg.received)}${seg.pending > 0 ? ` | A receber: ${formatCurrency(seg.pending)}` : ''}`}
+                />
+              ))
             ) : (
               <div className="h-full w-full bg-zinc-800/40 rounded-full" />
             )}
           </div>
+
+          {/* Legenda com Barbearia vs Outras Receitas */}
+          {incomeSegments.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs">
+              {incomeSegments.map((seg) => (
+                <div key={seg.name} className="flex items-center gap-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                    style={{ backgroundColor: seg.color }}
+                  />
+                  <span className="font-semibold text-zinc-200">{seg.name}:</span>
+                  <span className="font-bold text-zinc-100">{formatCurrency(seg.total)}</span>
+                  <span className="text-[11px] text-zinc-500 font-normal">
+                    ({seg.percentage.toFixed(0)}%)
+                  </span>
+                  {seg.pending > 0 && (
+                    <span className="text-[10px] text-amber-400 font-medium">
+                      ({formatCurrency(seg.pending)} a receber)
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Barra de Despesas */}
-        <div className="space-y-1.5">
+        <div className="space-y-2 pt-1">
           <div className="flex justify-between items-center text-xs">
             <span className="flex items-center gap-1.5 font-medium text-rose-400">
               <TrendingDown className="w-3.5 h-3.5" />
