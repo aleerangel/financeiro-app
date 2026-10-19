@@ -285,3 +285,36 @@ export async function deleteTransaction(id: string, deleteEntireGroup: boolean =
   revalidatePath('/cartoes');
 }
 
+export async function getUpcomingAndOverdueBills(daysAhead: number = 3): Promise<Transaction[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const now = new Date();
+  const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysAhead);
+  const maxDueDate = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select(`
+      *,
+      category:categories(*),
+      account:accounts(*),
+      credit_card:credit_cards(*)
+    `)
+    .eq('user_id', user.id)
+    .eq('type', 'expense')
+    .eq('is_paid', false)
+    .lte('due_date', maxDueDate)
+    .order('due_date', { ascending: true })
+    .limit(10);
+
+  if (error) {
+    console.error('Erro ao buscar contas a vencer:', error);
+    return [];
+  }
+
+  return (data as unknown as Transaction[]) || [];
+}
+

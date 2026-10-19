@@ -22,6 +22,7 @@ import { GeneralDashboardData, MonthlyGeneralStat, PeriodStat } from '@/lib/acti
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
 import { MonthlyBarChart } from './MonthlyBarChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
+import { UpcomingBillsAlert } from './UpcomingBillsAlert';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export type ChartPeriod = 'weekly' | 'monthly' | 'yearly';
@@ -29,6 +30,8 @@ export type ChartPeriod = 'weekly' | 'monthly' | 'yearly';
 interface GeneralDashboardViewProps {
   generalData?: GeneralDashboardData;
   yearlyStats?: MonthlyGeneralStat[];
+  upcomingBills?: Transaction[];
+  onBillPaid?: (billId: string) => void;
   transactions: Transaction[];
   accounts: AccountWithBalance[];
   cards: CreditCardWithUsage[];
@@ -40,6 +43,8 @@ interface GeneralDashboardViewProps {
 export function GeneralDashboardView({
   generalData,
   yearlyStats = [],
+  upcomingBills = [],
+  onBillPaid,
   transactions,
   accounts,
   cards,
@@ -175,6 +180,9 @@ export function GeneralDashboardView({
 
   return (
     <div className="space-y-6">
+      {/* Alerta de Contas a Vencer e Pendências */}
+      <UpcomingBillsAlert bills={upcomingBills} onBillPaid={onBillPaid} />
+
       {/* Seletor de Período dos Gráficos: Semanal, Mensal, Anual */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
         <div className="flex items-center gap-3">
