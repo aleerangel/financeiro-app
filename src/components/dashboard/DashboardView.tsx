@@ -200,6 +200,7 @@ export function DashboardView({
         <BusinessDashboardView
           data={businessData}
           accounts={accounts}
+          formattedMonth={formattedMonth}
           loading={loading}
           onEditBalance={(acc) => {
             setAccountToAdjustBalance(acc);

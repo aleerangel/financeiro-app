@@ -2,12 +2,17 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-export interface MonthlyBusinessStat {
-  month: number;
-  monthLabel: string;
+export interface BusinessPeriodStat {
+  label: string; // Ex: 'Jan', '01-07', 'Seg'
+  fullLabel: string; // Ex: 'Janeiro de 2026', '01 a 07 de Outubro', 'Segunda-feira (12/10)'
+  dateKey?: string;
+  month?: number;
+  monthLabel?: string;
   salesCount: number;
   revenue: number;
 }
+
+export type MonthlyBusinessStat = BusinessPeriodStat;
 
 export interface TopProductStat {
   name: string;
@@ -25,7 +30,11 @@ export interface RecentBusinessSale {
 }
 
 export interface BusinessDashboardData {
-  monthlyStats: MonthlyBusinessStat[];
+  yearlyStats: BusinessPeriodStat[];
+  monthlyStats: BusinessPeriodStat[];
+  weeklyStatsByWeek: Record<number, BusinessPeriodStat[]>;
+  weeksMeta: WeekMeta[];
+  defaultWeekIndex: number;
   topProducts: TopProductStat[];
   recentSales: RecentBusinessSale[];
 }
@@ -66,16 +75,104 @@ const MONTH_LABELS = [
   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
 ];
 
+const MONTH_FULL_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
+function formatDateYMD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export async function getBusinessDashboardData(year: number, currentMonth: number): Promise<BusinessDashboardData> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error('Não autenticado');
 
-  const startDate = `${year}-01-01T00:00:00.000Z`;
-  const endDate = `${year}-12-31T23:59:59.999Z`;
+  const startDate = `${year}-01-01`;
+  const endDate = `${year}-12-31`;
 
-  // 1. Vendas do ano com conta
+  // Calcula semanas de Segunda a Domingo do mês atual
+  const firstDayOfMonth = new Date(year, currentMonth, 1);
+  const firstDayOfWeek = firstDayOfMonth.getDay();
+  const diffToMonday = (firstDayOfWeek === 0 ? -6 : 1) - firstDayOfWeek;
+  const initialMonday = new Date(year, currentMonth, 1 + diffToMonday);
+  const lastDayOfMonth = new Date(year, currentMonth + 1, 0);
+
+  const calendarWeeks: {
+    index: number;
+    label: string;
+    shortLabel: string;
+    startDate: string;
+    endDate: string;
+    days: {
+      dateStr: string;
+      weekdayLabel: string;
+      fullLabel: string;
+    }[];
+  }[] = [];
+
+  const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const fullWeekdayNames = [
+    'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira',
+    'Quinta-feira', 'Sexta-feira', 'Sábado'
+  ];
+
+  const iterDate = new Date(initialMonday);
+  let wIdx = 0;
+
+  while (iterDate <= lastDayOfMonth) {
+    const weekStart = new Date(iterDate);
+    const mondayStr = formatDateYMD(weekStart);
+    const days = [];
+
+    for (let d = 0; d < 7; d++) {
+      const cur = new Date(weekStart);
+      cur.setDate(cur.getDate() + d);
+      const dateStr = formatDateYMD(cur);
+      const dayNum = String(cur.getDate()).padStart(2, '0');
+      const mNum = String(cur.getMonth() + 1).padStart(2, '0');
+      const dayOfWeek = cur.getDay();
+
+      days.push({
+        dateStr,
+        weekdayLabel: weekdayNames[dayOfWeek],
+        fullLabel: `${fullWeekdayNames[dayOfWeek]} (${dayNum}/${mNum})`,
+      });
+    }
+
+    const sundayDate = new Date(weekStart);
+    sundayDate.setDate(sundayDate.getDate() + 6);
+    const sundayStr = formatDateYMD(sundayDate);
+
+    const startDisplay = `${String(weekStart.getDate()).padStart(2, '0')}/${String(weekStart.getMonth() + 1).padStart(2, '0')}`;
+    const endDisplay = `${String(sundayDate.getDate()).padStart(2, '0')}/${String(sundayDate.getMonth() + 1).padStart(2, '0')}`;
+
+    calendarWeeks.push({
+      index: wIdx,
+      label: `Semana ${wIdx + 1} (${startDisplay} a ${endDisplay})`,
+      shortLabel: `${startDisplay} a ${endDisplay}`,
+      startDate: mondayStr,
+      endDate: sundayStr,
+      days,
+    });
+
+    wIdx++;
+    iterDate.setDate(iterDate.getDate() + 7);
+  }
+
+  const earliestDate = calendarWeeks.length > 0 && calendarWeeks[0].startDate < startDate
+    ? calendarWeeks[0].startDate
+    : startDate;
+  const latestDate = calendarWeeks.length > 0 && calendarWeeks[calendarWeeks.length - 1].endDate > endDate
+    ? calendarWeeks[calendarWeeks.length - 1].endDate
+    : endDate;
+
+  // 1. Busca vendas no período abrangente
   const { data: salesData, error: salesError } = await supabase
     .from('sales')
     .select(`
@@ -91,8 +188,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       )
     `)
     .eq('user_id', user.id)
-    .gte('sale_date', startDate)
-    .lte('sale_date', endDate)
+    .gte('sale_date', `${earliestDate}T00:00:00.000Z`)
+    .lte('sale_date', `${latestDate}T23:59:59.999Z`)
     .order('sale_date', { ascending: false });
 
   if (salesError || !salesData) {
@@ -101,15 +198,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
 
   const sales = salesData || [];
 
-  // 2. Mapeia as 12 estatísticas mensais
-  const monthlyStats: MonthlyBusinessStat[] = MONTH_LABELS.map((label, idx) => ({
-    month: idx,
-    monthLabel: label,
-    salesCount: 0,
-    revenue: 0,
-  }));
-
-  // Agrupamento para produtos mais vendidos
+  // Mapeamento diário
+  const salesByDate = new Map<string, { revenue: number; salesCount: number }>();
   const productAgg = new Map<string, {
     totalQuantity: number;
     totalRevenue: number;
@@ -118,16 +208,18 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   }>();
 
   for (const s of sales) {
+    if (!s.sale_date) continue;
+    const dateStr = s.sale_date.split('T')[0];
     const saleDate = new Date(s.sale_date);
     const m = saleDate.getMonth();
     const amount = Number(s.total_amount) || 0;
 
-    if (m >= 0 && m < 12) {
-      monthlyStats[m].salesCount += 1;
-      monthlyStats[m].revenue += amount;
-    }
+    const curDay = salesByDate.get(dateStr) || { revenue: 0, salesCount: 0 };
+    curDay.revenue += amount;
+    curDay.salesCount += 1;
+    salesByDate.set(dateStr, curDay);
 
-    // Processa itens
+    // Processa itens para ranking de produtos
     if (s.items && Array.isArray(s.items)) {
       for (const item of s.items) {
         const pName = item.product_name;
@@ -155,7 +247,113 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     }
   }
 
-  // 3. Top 5 Produtos/Serviços
+  // 1. STATS ANUAIS (12 Meses)
+  const yearlyStats: BusinessPeriodStat[] = MONTH_LABELS.map((label, idx) => {
+    const mNum = String(idx + 1).padStart(2, '0');
+    const lastDayNum = new Date(year, idx + 1, 0).getDate();
+
+    let revenue = 0;
+    let salesCount = 0;
+
+    for (let day = 1; day <= lastDayNum; day++) {
+      const dStr = `${year}-${mNum}-${String(day).padStart(2, '0')}`;
+      const dayData = salesByDate.get(dStr);
+      if (dayData) {
+        revenue += dayData.revenue;
+        salesCount += dayData.salesCount;
+      }
+    }
+
+    return {
+      label,
+      fullLabel: `${MONTH_FULL_NAMES[idx]} de ${year}`,
+      month: idx,
+      monthLabel: label,
+      revenue,
+      salesCount,
+    };
+  });
+
+  // 2. STATS MENSAIS (Faixas de Dias do Mês Selecionado)
+  const lastDayOfSelectedMonth = new Date(year, currentMonth + 1, 0).getDate();
+  const selectedMonthNum = String(currentMonth + 1).padStart(2, '0');
+
+  const monthIntervals: { startDay: number; endDay: number; label: string }[] = [
+    { startDay: 1, endDay: 7, label: '01-07' },
+    { startDay: 8, endDay: 14, label: '08-14' },
+    { startDay: 15, endDay: 21, label: '15-21' },
+    { startDay: 22, endDay: 28, label: '22-28' },
+  ];
+
+  if (lastDayOfSelectedMonth > 28) {
+    const endPadded = String(lastDayOfSelectedMonth).padStart(2, '0');
+    monthIntervals.push({
+      startDay: 29,
+      endDay: lastDayOfSelectedMonth,
+      label: `29-${endPadded}`,
+    });
+  }
+
+  const monthlyStats: BusinessPeriodStat[] = monthIntervals.map((interval, i) => {
+    let revenue = 0;
+    let salesCount = 0;
+
+    for (let day = interval.startDay; day <= interval.endDay; day++) {
+      const dStr = `${year}-${selectedMonthNum}-${String(day).padStart(2, '0')}`;
+      const dayData = salesByDate.get(dStr);
+      if (dayData) {
+        revenue += dayData.revenue;
+        salesCount += dayData.salesCount;
+      }
+    }
+
+    const startPadded = String(interval.startDay).padStart(2, '0');
+    const endPadded = String(interval.endDay).padStart(2, '0');
+
+    return {
+      label: interval.label,
+      fullLabel: `Semana ${i + 1} (${startPadded}/${selectedMonthNum} a ${endPadded}/${selectedMonthNum})`,
+      revenue,
+      salesCount,
+    };
+  });
+
+  // 3. STATS SEMANAIS (Dias da Semana Seg a Dom)
+  const weeklyStatsByWeek: Record<number, BusinessPeriodStat[]> = {};
+
+  for (const cw of calendarWeeks) {
+    const stats: BusinessPeriodStat[] = cw.days.map((day) => {
+      const dayData = salesByDate.get(day.dateStr);
+      return {
+        label: day.weekdayLabel,
+        fullLabel: day.fullLabel,
+        dateKey: day.dateStr,
+        revenue: dayData?.revenue || 0,
+        salesCount: dayData?.salesCount || 0,
+      };
+    });
+
+    weeklyStatsByWeek[cw.index] = stats;
+  }
+
+  const todayStr = formatDateYMD(new Date());
+  let defaultWeekIndex = 0;
+  for (let i = 0; i < calendarWeeks.length; i++) {
+    if (todayStr >= calendarWeeks[i].startDate && todayStr <= calendarWeeks[i].endDate) {
+      defaultWeekIndex = i;
+      break;
+    }
+  }
+
+  const weeksMeta: WeekMeta[] = calendarWeeks.map((cw) => ({
+    index: cw.index,
+    label: cw.label,
+    shortLabel: cw.shortLabel,
+    startDate: cw.startDate,
+    endDate: cw.endDate,
+  }));
+
+  // Top 5 Produtos/Serviços
   const topProducts: TopProductStat[] = Array.from(productAgg.entries())
     .map(([name, stat]) => {
       let growth = 0;
@@ -174,7 +372,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     .sort((a, b) => b.salesCount - a.salesCount || b.revenue - a.revenue)
     .slice(0, 5);
 
-  // 4. Últimas 5 vendas
+  // Últimas 5 vendas
   const recentSales: RecentBusinessSale[] = sales.slice(0, 5).map((s) => ({
     id: s.id,
     client_name: s.client_name,
@@ -184,17 +382,14 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   }));
 
   return {
+    yearlyStats,
     monthlyStats,
+    weeklyStatsByWeek,
+    weeksMeta,
+    defaultWeekIndex,
     topProducts,
     recentSales,
   };
-}
-
-function formatDateYMD(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
 }
 
 export async function getGeneralDashboardData(
