@@ -845,6 +845,7 @@ export function TransactionsView({
         categories={
           evolutionModalType === 'income' ? incomeEvolution : expenseEvolution
         }
+        transactions={transactions}
         currentMonth={month}
         year={year}
         formattedMonth={formattedMonth}

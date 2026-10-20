@@ -416,6 +416,7 @@ export function GeneralDashboardView({
             ? generalData?.incomeCategoryEvolution || []
             : generalData?.expenseCategoryEvolution || []
         }
+        transactions={transactions}
         currentMonth={month}
         year={year}
         formattedMonth={formattedMonth}

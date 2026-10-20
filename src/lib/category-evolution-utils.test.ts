@@ -104,3 +104,4 @@ describe('category-evolution-utils', () => {
     expect(metricsAug.averageStatus).toBe('below');
   });
 });
+

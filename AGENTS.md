@@ -7,3 +7,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Regras do Projeto e Git
+
+- **Commits sempre em Português (pt-BR):** Todas as mensagens de commit do Git (`git commit -m "..."`) devem ser escritas obrigatoriamente em português (ex.: `feat(modulo): adiciona nova funcionalidade...`, `fix(auth): corrige isolamento de sessao...`, `docs(readme): atualiza documentacao...`).
+
