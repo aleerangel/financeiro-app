@@ -61,19 +61,6 @@ export async function getSales(month?: number, year?: number): Promise<Sale[]> {
     return [];
   }
 
-  // Auto-correção: associa transações antigas de atendimentos que ficaram sem categoria à Barbearia
-  try {
-    const barbeariaCatId = await getOrCreateBarbeariaCategory(user.id);
-    await supabase
-      .from('transactions')
-      .update({ category_id: barbeariaCatId })
-      .eq('user_id', user.id)
-      .is('category_id', null)
-      .ilike('description', 'Atendimento:%');
-  } catch (err) {
-    console.warn('Aviso ao sincronizar categoria de vendas:', err);
-  }
-
   return (data as unknown as Sale[]) || [];
 }
 
@@ -165,22 +152,106 @@ export async function createSale(input: CreateSaleInput) {
   // 3. Obtém ou cria a categoria padrão "Barbearia" para vincular ao atendimento
   const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);
 
-  // 4. Cria a transação financeira de receita vinculada à Barbearia
+  const transactionNotes = input.notes
+    ? `Comanda: ${input.notes}`
+    : 'Atendimento registrado no módulo de vendas';
+
+  // 4. Registra receita + venda + itens de forma ATÔMICA (tudo ou nada) via RPC
+  const { data: saleId, error: rpcError } = await supabase.rpc('create_sale_atomic', {
+    p_client_id: input.client_id || null,
+    p_client_name: input.client_name.trim(),
+    p_payment_method: input.payment_method,
+    p_account_id: input.account_id,
+    p_category_id: barbeariaCategoryId,
+    p_description: transactionDesc,
+    p_notes_transaction: transactionNotes,
+    p_notes_sale: input.notes?.trim() || null,
+    p_sale_date: saleDateIso,
+    p_date_only: dateOnlyStr,
+    p_items: input.items.map((item) => ({
+      product_id: item.product_id || null,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+    })),
+  });
+
+  let sale: { id: string } | null = null;
+
+  if (!rpcError && saleId) {
+    sale = { id: saleId as string };
+  } else if (rpcError && isMissingRpcError(rpcError)) {
+    // Compatibilidade: migration ainda não aplicada no banco -> fluxo legado com rollback completo
+    sale = await createSaleLegacy({
+      supabase,
+      userId: user.id,
+      input,
+      totalAmount,
+      transactionDesc,
+      transactionNotes,
+      categoryId: barbeariaCategoryId,
+      saleDateIso,
+      dateOnlyStr,
+    });
+  } else {
+    throw new Error(rpcError?.message || 'Erro ao registrar atendimento.');
+  }
+
+  revalidatePath('/vendas');
+  revalidatePath('/dashboard');
+  revalidatePath('/transacoes');
+  revalidatePath('/contas');
+  revalidatePath('/clientes');
+
+  return sale;
+}
+
+function isMissingRpcError(error: { code?: string; message?: string }): boolean {
+  return (
+    error.code === 'PGRST202' ||
+    error.code === '42883' ||
+    Boolean(error.message?.includes('create_sale_atomic'))
+  );
+}
+
+async function createSaleLegacy(params: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  userId: string;
+  input: CreateSaleInput;
+  totalAmount: number;
+  transactionDesc: string;
+  transactionNotes: string;
+  categoryId: string;
+  saleDateIso: string;
+  dateOnlyStr: string;
+}): Promise<{ id: string }> {
+  const {
+    supabase,
+    userId,
+    input,
+    totalAmount,
+    transactionDesc,
+    transactionNotes,
+    categoryId,
+    saleDateIso,
+    dateOnlyStr,
+  } = params;
+
   const { data: transaction, error: txError } = await supabase
     .from('transactions')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       description: transactionDesc,
       amount: totalAmount,
       type: 'income',
       payment_method: input.payment_method,
       transaction_date: dateOnlyStr,
       due_date: dateOnlyStr,
-      category_id: barbeariaCategoryId,
+      category_id: categoryId,
       account_id: input.account_id,
       is_paid: true,
       paid_at: saleDateIso,
-      notes: input.notes ? `Comanda: ${input.notes}` : 'Atendimento registrado no módulo de vendas',
+      notes: transactionNotes,
     })
     .select('id')
     .single();
@@ -189,11 +260,10 @@ export async function createSale(input: CreateSaleInput) {
     throw new Error(txError?.message || 'Erro ao gerar receita do atendimento.');
   }
 
-  // 4. Cria o registro de venda
   const { data: sale, error: saleError } = await supabase
     .from('sales')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       client_id: input.client_id || null,
       client_name: input.client_name.trim(),
       total_amount: totalAmount,
@@ -207,34 +277,27 @@ export async function createSale(input: CreateSaleInput) {
     .single();
 
   if (saleError || !sale) {
-    // Reverte a transação financeira em caso de erro
     await supabase.from('transactions').delete().eq('id', transaction.id);
     throw new Error(saleError?.message || 'Erro ao registrar atendimento.');
   }
 
-  // 5. Cria os itens da venda
-  const saleItemsToInsert = input.items.map((item) => ({
-    sale_id: sale.id,
-    product_id: item.product_id || null,
-    product_name: item.product_name,
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total_price: item.quantity * item.unit_price,
-  }));
-
-  const { error: itemsError } = await supabase
-    .from('sale_items')
-    .insert(saleItemsToInsert);
+  const { error: itemsError } = await supabase.from('sale_items').insert(
+    input.items.map((item) => ({
+      sale_id: sale.id,
+      product_id: item.product_id || null,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.quantity * item.unit_price,
+    }))
+  );
 
   if (itemsError) {
-    console.error('Erro ao salvar itens da venda:', itemsError);
+    // Reverte venda (cascade nos itens) e receita para não deixar dados órfãos
+    await supabase.from('sales').delete().eq('id', sale.id);
+    await supabase.from('transactions').delete().eq('id', transaction.id);
+    throw new Error(itemsError.message || 'Erro ao salvar itens do atendimento.');
   }
-
-  revalidatePath('/vendas');
-  revalidatePath('/dashboard');
-  revalidatePath('/transacoes');
-  revalidatePath('/contas');
-  revalidatePath('/clientes');
 
   return sale;
 }

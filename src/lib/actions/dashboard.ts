@@ -510,7 +510,7 @@ export async function getGeneralDashboardData(
   const [
     { data: txData, error: txError },
     { data: salesData, error: salesError },
-    { data: accountsData, error: accountsError },
+    { data: priorBalanceData, error: priorBalanceError },
     { data: accountTxData, error: accountTxError },
   ] = await Promise.all([
     supabase
@@ -525,22 +525,21 @@ export async function getGeneralDashboardData(
       .eq('user_id', user.id)
       .gte('sale_date', salesQueryStart)
       .lte('sale_date', salesQueryEnd),
-    supabase
-      .from('accounts')
-      .select('id, initial_balance')
-      .eq('user_id', user.id),
+    // Saldo acumulado anterior ao período, calculado no banco (sem trafegar todo o histórico)
+    supabase.rpc('get_account_prior_balance', { p_before: queryStartDate }),
+    // Apenas movimentações pagas dentro do período exibido
     supabase
       .from('transactions')
       .select('amount, type, due_date')
       .eq('user_id', user.id)
       .eq('is_paid', true)
       .not('account_id', 'is', null)
+      .gte('due_date', queryStartDate)
       .lte('due_date', queryEndDate),
   ]);
 
   if (txError) console.error('Erro ao buscar transações:', txError);
   if (salesError) console.error('Erro ao buscar vendas:', salesError);
-  if (accountsError) console.error('Erro ao buscar contas:', accountsError);
   if (accountTxError) console.error('Erro ao buscar transações de contas:', accountTxError);
 
   // Mapeamento por data YYYY-MM-DD
@@ -565,25 +564,48 @@ export async function getGeneralDashboardData(
     }
   }
 
-  const initialBalanceSum = (accountsData || []).reduce(
-    (acc, a) => acc + (Number(a.initial_balance) || 0),
-    0
-  );
+  let basePriorBalance = 0;
+
+  if (!priorBalanceError && priorBalanceData !== null && priorBalanceData !== undefined) {
+    basePriorBalance = Number(priorBalanceData) || 0;
+  } else {
+    // Compatibilidade: migration ainda não aplicada -> calcula o saldo anterior no servidor
+    if (priorBalanceError) {
+      console.warn(
+        'RPC get_account_prior_balance indisponível, usando cálculo local:',
+        priorBalanceError.message
+      );
+    }
+
+    const [{ data: accountsData }, { data: priorTxData }] = await Promise.all([
+      supabase.from('accounts').select('id, initial_balance').eq('user_id', user.id),
+      supabase
+        .from('transactions')
+        .select('amount, type')
+        .eq('user_id', user.id)
+        .eq('is_paid', true)
+        .not('account_id', 'is', null)
+        .lt('due_date', queryStartDate),
+    ]);
+
+    basePriorBalance = (accountsData || []).reduce(
+      (acc, a) => acc + (Number(a.initial_balance) || 0),
+      0
+    );
+    for (const t of priorTxData || []) {
+      const amt = Number(t.amount) || 0;
+      basePriorBalance += t.type === 'income' ? amt : -amt;
+    }
+  }
 
   const accountDeltasByDate = new Map<string, number>();
-  let basePriorBalance = initialBalanceSum;
 
   if (accountTxData) {
     for (const t of accountTxData) {
       if (!t.due_date) continue;
       const amt = Number(t.amount) || 0;
       const signedAmt = t.type === 'income' ? amt : -amt;
-
-      if (t.due_date < queryStartDate) {
-        basePriorBalance += signedAmt;
-      } else {
-        accountDeltasByDate.set(t.due_date, (accountDeltasByDate.get(t.due_date) || 0) + signedAmt);
-      }
+      accountDeltasByDate.set(t.due_date, (accountDeltasByDate.get(t.due_date) || 0) + signedAmt);
     }
   }
 

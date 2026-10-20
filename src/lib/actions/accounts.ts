@@ -42,14 +42,6 @@ export async function getAccounts(): Promise<AccountWithBalance[]> {
     return [];
   }
 
-  // Busca as transações pagas dessas contas para calcular o saldo real atual e rendimentos
-  const { data: transactions } = await supabase
-    .from('transactions')
-    .select('account_id, type, amount, is_paid, description, notes, due_date, transaction_date')
-    .eq('user_id', user.id)
-    .eq('is_paid', true)
-    .not('account_id', 'is', null);
-
   const balanceByAccount = new Map<string, number>();
   const yieldAllTimeByAccount = new Map<string, number>();
   const yieldMonthByAccount = new Map<string, number>();
@@ -57,29 +49,60 @@ export async function getAccounts(): Promise<AccountWithBalance[]> {
   const { year: curYear, month: curMonth } = getZonedParts();
   const curMonthPrefix = `${curYear}-${String(curMonth + 1).padStart(2, '0')}`;
 
-  if (transactions) {
-    for (const t of transactions) {
-      if (!t.account_id) continue;
-      const current = balanceByAccount.get(t.account_id) || 0;
-      const amount = Number(t.amount);
-      if (t.type === 'income') {
-        balanceByAccount.set(t.account_id, current + amount);
+  // Caminho rápido: agregação feita no banco (RPC get_account_aggregates)
+  const { data: aggregates, error: aggError } = await supabase.rpc(
+    'get_account_aggregates',
+    { p_month_prefix: curMonthPrefix }
+  );
 
-        if (isYieldTransaction(t)) {
-          yieldAllTimeByAccount.set(
-            t.account_id,
-            (yieldAllTimeByAccount.get(t.account_id) || 0) + amount
-          );
-          const dateRef = t.due_date || t.transaction_date || '';
-          if (dateRef.startsWith(curMonthPrefix)) {
-            yieldMonthByAccount.set(
+  if (!aggError && aggregates) {
+    for (const row of aggregates as Array<{
+      account_id: string;
+      transaction_sum: number | string;
+      yield_all_time: number | string;
+      yield_current_month: number | string;
+    }>) {
+      balanceByAccount.set(row.account_id, Number(row.transaction_sum) || 0);
+      yieldAllTimeByAccount.set(row.account_id, Number(row.yield_all_time) || 0);
+      yieldMonthByAccount.set(row.account_id, Number(row.yield_current_month) || 0);
+    }
+  } else {
+    // Compatibilidade: migration ainda não aplicada -> agrega no servidor (comportamento anterior)
+    if (aggError) {
+      console.warn('RPC get_account_aggregates indisponível, usando cálculo local:', aggError.message);
+    }
+
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('account_id, type, amount, is_paid, description, notes, due_date, transaction_date')
+      .eq('user_id', user.id)
+      .eq('is_paid', true)
+      .not('account_id', 'is', null);
+
+    if (transactions) {
+      for (const t of transactions) {
+        if (!t.account_id) continue;
+        const current = balanceByAccount.get(t.account_id) || 0;
+        const amount = Number(t.amount);
+        if (t.type === 'income') {
+          balanceByAccount.set(t.account_id, current + amount);
+
+          if (isYieldTransaction(t)) {
+            yieldAllTimeByAccount.set(
               t.account_id,
-              (yieldMonthByAccount.get(t.account_id) || 0) + amount
+              (yieldAllTimeByAccount.get(t.account_id) || 0) + amount
             );
+            const dateRef = t.due_date || t.transaction_date || '';
+            if (dateRef.startsWith(curMonthPrefix)) {
+              yieldMonthByAccount.set(
+                t.account_id,
+                (yieldMonthByAccount.get(t.account_id) || 0) + amount
+              );
+            }
           }
+        } else if (t.type === 'expense') {
+          balanceByAccount.set(t.account_id, current - amount);
         }
-      } else if (t.type === 'expense') {
-        balanceByAccount.set(t.account_id, current - amount);
       }
     }
   }
