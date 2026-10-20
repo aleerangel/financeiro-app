@@ -217,11 +217,7 @@ export function MonthlyBarChart({
         ...seg,
         percentage: tIncome > 0 ? (seg.total / tIncome) * 100 : 0,
       }))
-      .sort((a, b) => {
-        if (a.name.includes('Barbearia')) return -1;
-        if (b.name.includes('Barbearia')) return 1;
-        return b.total - a.total;
-      });
+      .sort((a, b) => b.total - a.total);
 
     return {
       receivedIncome: recInc,

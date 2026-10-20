@@ -3,7 +3,7 @@
 -- ==============================================================================
 
 -- 1. Adiciona colunas de configuração de rendimento na tabela accounts
-ALTER TABLE public.accounts
+ALTER TABLE public.accountsem r
 ADD COLUMN IF NOT EXISTS yield_type TEXT NOT NULL DEFAULT 'none'
 CHECK (yield_type IN ('none', 'cdi_percent', 'monthly_percent'));
 
