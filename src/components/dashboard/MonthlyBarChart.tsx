@@ -269,7 +269,11 @@ export function MonthlyBarChart({
                             ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                             : 'bg-amber-500/15 text-amber-300 border border-amber-500/25'
                         }`}
-                        title={`Média mensal desta categoria: ${formatCurrency(evo.monthlyAverage)}`}
+                        title={
+                          evo.isSameDayComparison && evo.comparisonCutoffDay
+                            ? `Comparado à média acumulada até o dia ${evo.comparisonCutoffDay} dos outros meses (${formatCurrency(evo.monthlyAverage)})`
+                            : `Média mensal desta categoria: ${formatCurrency(evo.monthlyAverage)}`
+                        }
                       >
                         {evo.averageStatus === 'above' ? (
                           <ArrowUpRight className="w-2.5 h-2.5" />
@@ -278,6 +282,9 @@ export function MonthlyBarChart({
                         )}
                         {evo.averageStatus === 'above' ? '+' : '-'}
                         {Math.round(Math.abs(evo.vsAveragePct || 0))}% média
+                        {evo.isSameDayComparison && evo.comparisonCutoffDay
+                          ? ` (d.${evo.comparisonCutoffDay})`
+                          : ''}
                       </span>
                     )}
 

@@ -65,10 +65,14 @@ export function CategoryEvolutionModal({
 
   const metricsList = useMemo(() => {
     return categories
-      .map((cat) => computeCategoryEvolutionMetrics(cat, currentMonth, accountingMode))
+      .map((cat) =>
+        computeCategoryEvolutionMetrics(cat, currentMonth, accountingMode, {
+          selectedYear: year,
+        })
+      )
       .filter((m) => m.yearlyTotal > 0 || m.currentValue > 0)
       .sort((a, b) => b.currentValue - a.currentValue || b.yearlyTotal - a.yearlyTotal);
-  }, [categories, currentMonth, accountingMode]);
+  }, [categories, currentMonth, accountingMode, year]);
 
   const activeCategoryKey = useMemo(() => {
     if (selectedCategoryKey === 'all') return 'all';
@@ -375,18 +379,22 @@ export function CategoryEvolutionModal({
                   // - Em Despesas: Acima da média = Rosa/Âmbar (alerta de gasto alto), Abaixo da média = Verde (economia)
                   let avgBadgeClass =
                     'bg-zinc-800 text-zinc-300 border-zinc-700';
-                  let avgBadgeLabel = 'Na média mensal';
+                  const sameDaySuffix =
+                    m.isSameDayComparison && m.comparisonCutoffDay
+                      ? ` (até dia ${m.comparisonCutoffDay})`
+                      : '';
+                  let avgBadgeLabel = `Na média${sameDaySuffix || ' mensal'}`;
 
                   if (m.averageStatus === 'above' && m.vsAveragePct !== null) {
                     avgBadgeClass = isIncome
                       ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                       : 'bg-rose-500/15 text-rose-400 border-rose-500/30';
-                    avgBadgeLabel = `+${Math.round(Math.abs(m.vsAveragePct))}% acima da média`;
+                    avgBadgeLabel = `+${Math.round(Math.abs(m.vsAveragePct))}% acima da média${sameDaySuffix}`;
                   } else if (m.averageStatus === 'below' && m.vsAveragePct !== null) {
                     avgBadgeClass = isIncome
                       ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                       : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-                    avgBadgeLabel = `-${Math.round(Math.abs(m.vsAveragePct))}% abaixo da média`;
+                    avgBadgeLabel = `-${Math.round(Math.abs(m.vsAveragePct))}% abaixo da média${sameDaySuffix}`;
                   } else if (m.averageStatus === 'no_history') {
                     avgBadgeLabel = '1º mês com registro';
                   }
@@ -458,19 +466,34 @@ export function CategoryEvolutionModal({
 
                         <div>
                           <span className="text-[10px] text-zinc-500 uppercase block">
-                            Média da Categoria
+                            {m.isSameDayComparison && m.comparisonCutoffDay
+                              ? `Média (até dia ${m.comparisonCutoffDay})`
+                              : 'Média da Categoria'}
                           </span>
-                          <span className="text-sm font-semibold text-zinc-200 block mt-0.5">
+                          <span
+                            className="text-sm font-semibold text-zinc-200 block mt-0.5"
+                            title={
+                              m.isSameDayComparison && m.comparisonCutoffDay
+                                ? `Média acumulada do dia 1 ao dia ${m.comparisonCutoffDay} nos outros meses. Média de mês inteiro: ${formatCurrency(m.fullMonthlyAverage)}`
+                                : undefined
+                            }
+                          >
                             {formatCurrency(m.monthlyAverage)}
                             <span className="text-[10px] text-zinc-500 font-normal">
-                              /mês
+                              {m.isSameDayComparison && m.comparisonCutoffDay
+                                ? ` (1-${m.comparisonCutoffDay})`
+                                : '/mês'}
                             </span>
                           </span>
                         </div>
 
                         <div className="text-right">
                           <span className="text-[10px] text-zinc-500 uppercase block">
-                            {prevMonthName ? `vs. ${prevMonthName}` : 'Mês Anterior'}
+                            {prevMonthName
+                              ? m.isSameDayComparison && m.comparisonCutoffDay
+                                ? `vs. ${prevMonthName} (até dia ${m.comparisonCutoffDay})`
+                                : `vs. ${prevMonthName}`
+                              : 'Mês Anterior'}
                           </span>
                           {m.hasPreviousMonth ? (
                             <span

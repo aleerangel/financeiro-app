@@ -103,5 +103,75 @@ describe('category-evolution-utils', () => {
     expect(metricsAug.currentValue).toBe(400);
     expect(metricsAug.averageStatus).toBe('below');
   });
+
+  it('compares variable income categories (e.g. Barbearia) against the average accumulated up to the same day of other months', () => {
+    const { incomeCategories } = buildYearlyCategoryEvolution(
+      [
+        // Agosto: R$ 2.800 até dia 20, + R$ 1.400 no dia 28 (Total mês = R$ 4.200)
+        {
+          amount: 2800,
+          type: 'income',
+          is_paid: true,
+          due_date: '2026-08-15',
+          description: 'Atendimento: Cortes Agosto 1a quinzena',
+        },
+        {
+          amount: 1400,
+          type: 'income',
+          is_paid: true,
+          due_date: '2026-08-28',
+          description: 'Atendimento: Cortes Agosto final do mês',
+        },
+        // Setembro: R$ 3.000 até dia 20, + R$ 1.500 no dia 29 (Total mês = R$ 4.500)
+        {
+          amount: 3000,
+          type: 'income',
+          is_paid: true,
+          due_date: '2026-09-18',
+          description: 'Atendimento: Cortes Setembro até dia 20',
+        },
+        {
+          amount: 1500,
+          type: 'income',
+          is_paid: true,
+          due_date: '2026-09-29',
+          description: 'Atendimento: Cortes Setembro final do mês',
+        },
+        // Outubro (mês atual em andamento, dia 20): R$ 3.190 até dia 20
+        {
+          amount: 3190,
+          type: 'income',
+          is_paid: true,
+          due_date: '2026-10-19',
+          description: 'Atendimento: Cortes Outubro até dia 20',
+        },
+      ],
+      2026
+    );
+
+    // Simulando referência em 20 de Outubro de 2026 (month index 9, day 20)
+    const metricsOct = computeCategoryEvolutionMetrics(
+      incomeCategories[0],
+      9,
+      'realized',
+      {
+        referenceDate: new Date(2026, 9, 20),
+        selectedYear: 2026,
+      }
+    );
+
+    expect(metricsOct.isVariable).toBe(true);
+    expect(metricsOct.isSameDayComparison).toBe(true);
+    expect(metricsOct.comparisonCutoffDay).toBe(20);
+    // Média até dia 20 dos outros meses (Agosto = 2800, Setembro = 3000) -> 2900
+    expect(metricsOct.monthlyAverage).toBe(2900);
+    // Apesar de 3190 ser menor que os meses inteiros (4200 e 4500), até o dia 20 está 10% ACIMA da média (2900)!
+    expect(metricsOct.averageStatus).toBe('above');
+    expect(metricsOct.vsAveragePct).toBeCloseTo(10, 1);
+    // Comparação com mês anterior até dia 20 (Setembro até dia 20 = 3000) -> +190
+    expect(metricsOct.previousValue).toBe(3000);
+    expect(metricsOct.momDelta).toBe(190);
+  });
 });
+
 
