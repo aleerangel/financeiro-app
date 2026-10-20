@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
-import { AccountType } from '@/types/database';
+import { X, TrendingUp } from 'lucide-react';
+import { AccountType, AccountYieldType } from '@/types/database';
 import { AccountWithBalance, createAccount, updateAccount } from '@/lib/actions/accounts';
 
 interface AccountModalProps {
@@ -40,8 +40,23 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
     String(accountToEdit?.current_balance ?? accountToEdit?.initial_balance ?? 0)
   );
   const [color, setColor] = useState(accountToEdit?.color || '#3b82f6');
+  const [yieldType, setYieldType] = useState<AccountYieldType>(
+    accountToEdit?.yield_type || 'none'
+  );
+  const [yieldRate, setYieldRate] = useState<string>(
+    accountToEdit?.yield_rate ? String(accountToEdit.yield_rate) : '100'
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleYieldTypeChange = (nextType: AccountYieldType) => {
+    setYieldType(nextType);
+    if (nextType === 'cdi_percent' && (!yieldRate || parseFloat(yieldRate) < 10)) {
+      setYieldRate('100');
+    } else if (nextType === 'monthly_percent' && (!yieldRate || parseFloat(yieldRate) > 10)) {
+      setYieldRate('0.85');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +69,10 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
       setLoading(true);
       setError(null);
       const parsedBalance = parseFloat(balance.replace(/\./g, '').replace(',', '.')) || 0;
+      const parsedYieldRate =
+        yieldType === 'none'
+          ? 0
+          : parseFloat(yieldRate.replace(',', '.')) || 0;
 
       if (accountToEdit) {
         await updateAccount(accountToEdit.id, {
@@ -61,6 +80,8 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
           type,
           current_balance: parsedBalance,
           color,
+          yield_type: yieldType,
+          yield_rate: parsedYieldRate,
         });
       } else {
         await createAccount({
@@ -68,6 +89,8 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
           type,
           initial_balance: parsedBalance,
           color,
+          yield_type: yieldType,
+          yield_rate: parsedYieldRate,
         });
       }
 
@@ -147,6 +170,74 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
               />
             </div>
+          </div>
+
+          {/* Configuração de Rendimento de Juros (ex: Nubank / CDI) */}
+          <div className="p-3.5 bg-zinc-950/70 border border-zinc-800 rounded-2xl space-y-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-semibold text-zinc-200">
+                Rendimento de Juros (ex: Nubank / Caixinha / CDI)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1.5 bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+              <button
+                type="button"
+                onClick={() => handleYieldTypeChange('none')}
+                className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold transition ${
+                  yieldType === 'none'
+                    ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Sem juros
+              </button>
+              <button
+                type="button"
+                onClick={() => handleYieldTypeChange('cdi_percent')}
+                className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold transition ${
+                  yieldType === 'cdi_percent'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                % do CDI
+              </button>
+              <button
+                type="button"
+                onClick={() => handleYieldTypeChange('monthly_percent')}
+                className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold transition ${
+                  yieldType === 'monthly_percent'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                % ao Mês
+              </button>
+            </div>
+
+            {yieldType !== 'none' && (
+              <div>
+                <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                  {yieldType === 'cdi_percent'
+                    ? 'Percentual do CDI (ex: 100 para 100% do CDI no Nubank)'
+                    : 'Taxa Mensal Líquida % (ex: 0,85 para 0,85% a.m.)'}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={yieldRate}
+                    onChange={(e) => setYieldRate(e.target.value)}
+                    placeholder={yieldType === 'cdi_percent' ? '100' : '0,85'}
+                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-bold text-emerald-400 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-zinc-500 font-semibold">
+                    {yieldType === 'cdi_percent' ? '% do CDI' : '% a.m.'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

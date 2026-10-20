@@ -7,6 +7,7 @@ export type Json =
   | Json[];
 
 export type AccountType = 'checking' | 'wallet' | 'savings' | 'investment';
+export type AccountYieldType = 'none' | 'cdi_percent' | 'monthly_percent';
 export type TransactionType = 'income' | 'expense' | 'transfer';
 export type PaymentMethod = 'cash' | 'debit' | 'credit' | 'pix' | 'transfer';
 export type CategoryType = 'income' | 'expense' | 'both';
@@ -20,6 +21,8 @@ export interface Account {
   type: AccountType;
   initial_balance: number;
   color: string;
+  yield_type?: AccountYieldType;
+  yield_rate?: number;
   created_at: string;
   updated_at: string;
 }

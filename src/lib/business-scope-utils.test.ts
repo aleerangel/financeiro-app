@@ -43,3 +43,4 @@ describe('business-scope-utils', () => {
     expect(applyScopeToNotes(tagged, 'personal')).toBe('Pacote 100 lâminas');
   });
 });
+

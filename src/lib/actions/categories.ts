@@ -285,3 +285,39 @@ export async function getOrCreateBarbeariaCategory(userId: string): Promise<stri
 
   throw new Error(error?.message || 'Não foi possível encontrar ou criar a categoria Barbearia.');
 }
+
+export async function getOrCreateInvestimentosCategory(userId: string): Promise<string> {
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from('categories')
+    .select('id, name')
+    .eq('user_id', userId)
+    .eq('type', 'income')
+    .or('name.ilike.%Investimento%,name.ilike.%Rendimento%')
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    return existing.id;
+  }
+
+  const { data: created, error } = await supabase
+    .from('categories')
+    .insert({
+      user_id: userId,
+      name: 'Investimentos',
+      type: 'income',
+      icon: 'trending-up',
+      color: '#059669',
+      is_default: true,
+    })
+    .select('id')
+    .maybeSingle();
+
+  if (created?.id) {
+    return created.id;
+  }
+
+  throw new Error(error?.message || 'Não foi possível encontrar ou criar a categoria de Rendimentos.');
+}
