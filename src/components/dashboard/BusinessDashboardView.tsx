@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { BusinessDashboardData, BusinessPeriodStat } from '@/lib/actions/dashboard';
+import { useDateContext } from '@/context/DateContext';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 
@@ -50,6 +51,7 @@ export function BusinessDashboardView({
   onEditBalance,
   onAddBusinessExpense,
 }: BusinessDashboardViewProps) {
+  const { prevMonth, nextMonth } = useDateContext();
   const [period, setPeriod] = useState<ChartPeriod>('yearly');
   // Seleção de semana vinculada ao mês em que foi feita: ao trocar de mês, é descartada
   const [weekSelection, setWeekSelection] = useState<{ month: string | undefined; index: number } | null>(null);
@@ -298,34 +300,59 @@ export function BusinessDashboardView({
           </div>
         </div>
 
-        {/* Navegador de Semana (apenas no modo 'Semanal') */}
-        {period === 'weekly' && data?.weeksMeta && data.weeksMeta.length > 0 && (
-          <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Seletor de Mês dentro da barra do gráfico */}
+          <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
             <button
               type="button"
-              disabled={selectedWeekIndex <= 0}
-              onClick={() => setUserSelectedWeekIndex(Math.max(0, selectedWeekIndex - 1))}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
-              title="Semana anterior"
+              onClick={prevMonth}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Mês anterior"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-
-            <span className="text-xs font-semibold text-zinc-200 px-2">
-              {activeWeekMeta?.label || `Semana ${selectedWeekIndex + 1}`}
+            <span className="text-xs font-semibold text-zinc-200 px-2 capitalize">
+              {formattedMonth}
             </span>
-
             <button
               type="button"
-              disabled={selectedWeekIndex >= data.weeksMeta.length - 1}
-              onClick={() => setUserSelectedWeekIndex(Math.min(data.weeksMeta.length - 1, selectedWeekIndex + 1))}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
-              title="Próxima semana"
+              onClick={nextMonth}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Próximo mês"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-        )}
+
+          {/* Navegador de Semana (apenas no modo 'Semanal') */}
+          {period === 'weekly' && data?.weeksMeta && data.weeksMeta.length > 0 && (
+            <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
+              <button
+                type="button"
+                disabled={selectedWeekIndex <= 0}
+                onClick={() => setUserSelectedWeekIndex(Math.max(0, selectedWeekIndex - 1))}
+                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
+                title="Semana anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <span className="text-xs font-semibold text-zinc-200 px-2">
+                {activeWeekMeta?.label || `Semana ${selectedWeekIndex + 1}`}
+              </span>
+
+              <button
+                type="button"
+                disabled={selectedWeekIndex >= data.weeksMeta.length - 1}
+                onClick={() => setUserSelectedWeekIndex(Math.min(data.weeksMeta.length - 1, selectedWeekIndex + 1))}
+                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
+                title="Próxima semana"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Linha Superior: Gráfico de Vendas e Receita + Saldo das Contas */}

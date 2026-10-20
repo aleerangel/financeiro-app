@@ -59,7 +59,7 @@ export function GeneralDashboardView({
   loading = false,
   onEditBalance,
 }: GeneralDashboardViewProps) {
-  const { month, year } = useDateContext();
+  const { month, year, prevMonth, nextMonth } = useDateContext();
   const [period, setPeriod] = useState<ChartPeriod>('yearly');
   const [evolutionModalState, setEvolutionModalState] = useState<{
     type: 'income' | 'expense';
@@ -366,34 +366,59 @@ export function GeneralDashboardView({
           </div>
         </div>
 
-        {/* Navegador de Semana (apenas no modo 'Semanal') */}
-        {period === 'weekly' && generalData?.weeksMeta && generalData.weeksMeta.length > 0 && (
-          <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Seletor de Mês dentro da barra dos gráficos */}
+          <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
             <button
               type="button"
-              disabled={selectedWeekIndex <= 0}
-              onClick={() => setUserSelectedWeekIndex(Math.max(0, selectedWeekIndex - 1))}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
-              title="Semana anterior"
+              onClick={prevMonth}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Mês anterior"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-
-            <span className="text-xs font-semibold text-zinc-200 px-2">
-              {activeWeekMeta?.label || `Semana ${selectedWeekIndex + 1}`}
+            <span className="text-xs font-semibold text-zinc-200 px-2 capitalize">
+              {formattedMonth}
             </span>
-
             <button
               type="button"
-              disabled={selectedWeekIndex >= generalData.weeksMeta.length - 1}
-              onClick={() => setUserSelectedWeekIndex(Math.min(generalData.weeksMeta.length - 1, selectedWeekIndex + 1))}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
-              title="Próxima semana"
+              onClick={nextMonth}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Próximo mês"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-        )}
+
+          {/* Navegador de Semana (apenas no modo 'Semanal') */}
+          {period === 'weekly' && generalData?.weeksMeta && generalData.weeksMeta.length > 0 && (
+            <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
+              <button
+                type="button"
+                disabled={selectedWeekIndex <= 0}
+                onClick={() => setUserSelectedWeekIndex(Math.max(0, selectedWeekIndex - 1))}
+                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
+                title="Semana anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <span className="text-xs font-semibold text-zinc-200 px-2">
+                {activeWeekMeta?.label || `Semana ${selectedWeekIndex + 1}`}
+              </span>
+
+              <button
+                type="button"
+                disabled={selectedWeekIndex >= generalData.weeksMeta.length - 1}
+                onClick={() => setUserSelectedWeekIndex(Math.min(generalData.weeksMeta.length - 1, selectedWeekIndex + 1))}
+                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
+                title="Próxima semana"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Gráfico 1: Fluxo (Vendas, Receitas e Balanço) */}

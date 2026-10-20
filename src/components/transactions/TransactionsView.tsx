@@ -18,6 +18,8 @@ import {
   TrendingUp,
   TrendingDown,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Transaction,
@@ -80,7 +82,7 @@ export function TransactionsView({
   initialCards,
   initialCategories,
 }: TransactionsViewProps) {
-  const { month, year, formattedMonth } = useDateContext();
+  const { month, year, formattedMonth, prevMonth, nextMonth } = useDateContext();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [incomeEvolution, setIncomeEvolution] = useState<
     CategoryMonthlyEvolutionItem[]
@@ -690,32 +692,56 @@ export function TransactionsView({
             )}
           </div>
 
-          {/* Alternador Agrupar por Dia vs Lista Simples */}
-          <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs self-end sm:self-center shrink-0">
-            <button
-              type="button"
-              onClick={() => setGroupByDay(true)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
-                groupByDay
-                  ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <CalendarDays className="w-3.5 h-3.5" />
-              <span>Por Dia</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setGroupByDay(false)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
-                !groupByDay
-                  ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <List className="w-3.5 h-3.5" />
-              <span>Lista Corrida</span>
-            </button>
+          {/* Seletor de Mês + Alternador Agrupar por Dia vs Lista Simples */}
+          <div className="flex flex-wrap items-center gap-2 self-end sm:self-center shrink-0">
+            <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 px-2 py-1 rounded-xl text-xs">
+              <button
+                type="button"
+                onClick={prevMonth}
+                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+                title="Mês anterior"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <span className="font-semibold text-zinc-200 px-1.5 capitalize">
+                {formattedMonth}
+              </span>
+              <button
+                type="button"
+                onClick={nextMonth}
+                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+                title="Próximo mês"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs">
+              <button
+                type="button"
+                onClick={() => setGroupByDay(true)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
+                  groupByDay
+                    ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span>Por Dia</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGroupByDay(false)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
+                  !groupByDay
+                    ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Lista Corrida</span>
+              </button>
+            </div>
           </div>
         </div>
 

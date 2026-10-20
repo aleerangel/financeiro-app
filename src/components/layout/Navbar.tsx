@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  ChevronLeft,
-  ChevronRight,
   LogOut,
   Wallet,
   CreditCard,
@@ -16,7 +14,6 @@ import {
   Users,
   Tags,
 } from 'lucide-react';
-import { useDateContext } from '@/context/DateContext';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
 import { useState } from 'react';
@@ -28,7 +25,6 @@ interface NavbarProps {
 export function Navbar({ userEmail }: NavbarProps) {
   const pathname = usePathname();
   const [loggingOut, setLoggingOut] = useState(false);
-  const { formattedMonth, nextMonth, prevMonth } = useDateContext();
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -106,27 +102,6 @@ export function Navbar({ userEmail }: NavbarProps) {
               );
             })}
           </nav>
-        </div>
-
-        {/* Seletor de Mês */}
-        <div className="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 rounded-full px-2 py-1 shadow-sm">
-          <button
-            onClick={prevMonth}
-            className="p-1 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-200 transition"
-            aria-label="Mês anterior"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-xs sm:text-sm font-medium text-zinc-200 px-2 min-w-[110px] sm:min-w-[130px] text-center select-none capitalize">
-            {formattedMonth}
-          </span>
-          <button
-            onClick={nextMonth}
-            className="p-1 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-200 transition"
-            aria-label="Próximo mês"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Perfil & Logout */}
