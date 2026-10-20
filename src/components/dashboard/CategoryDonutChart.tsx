@@ -2,11 +2,24 @@
 
 import { useMemo } from 'react';
 import { Transaction } from '@/types/database';
+import {
+  CategoryMonthlyEvolutionItem,
+  computeCategoryEvolutionMetrics,
+} from '@/lib/category-evolution-utils';
 import { formatCurrency } from '@/lib/utils';
-import { PieChart } from 'lucide-react';
+import {
+  PieChart,
+  TrendingDown,
+  Maximize2,
+  ArrowUpRight,
+  ArrowDownRight,
+} from 'lucide-react';
 
 interface CategoryDonutChartProps {
   transactions: Transaction[];
+  expenseEvolution?: CategoryMonthlyEvolutionItem[];
+  currentMonth?: number;
+  onExpandEvolution?: () => void;
 }
 
 interface CategoryTotal {
@@ -18,20 +31,67 @@ interface CategoryTotal {
   strokeDashoffset: number;
 }
 
-export function CategoryDonutChart({ transactions }: CategoryDonutChartProps) {
-  const { categoryTotals, totalExpense, radius } = useMemo(() => {
+export function CategoryDonutChart({
+  transactions,
+  expenseEvolution = [],
+  currentMonth = new Date().getMonth(),
+  onExpandEvolution,
+}: CategoryDonutChartProps) {
+  const evolutionMetricsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      ReturnType<typeof computeCategoryEvolutionMetrics>
+    >();
+    for (const item of expenseEvolution) {
+      map.set(
+        item.name.toLowerCase(),
+        computeCategoryEvolutionMetrics(item, currentMonth, 'total')
+      );
+    }
+    return map;
+  }, [expenseEvolution, currentMonth]);
+
+  const {
+    categoryTotals,
+    paidExpense,
+    pendingExpense,
+    totalExpense,
+    paidExpensePct,
+    pendingExpensePct,
+    radius,
+  } = useMemo(() => {
     const expenseTxs = transactions.filter((t) => t.type === 'expense');
-    const total = expenseTxs.reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+    let paidExp = 0;
+    let pendExp = 0;
 
     const map = new Map<string, { name: string; color: string; total: number }>();
 
     for (const t of expenseTxs) {
+      const amt = Number(t.amount);
+      if (t.is_paid) {
+        paidExp += amt;
+      } else {
+        pendExp += amt;
+      }
+
       const catName = t.category?.name || 'Outras Despesas';
       const catColor = t.category?.color || '#64748b';
-      const current = map.get(catName) || { name: catName, color: catColor, total: 0 };
-      current.total += Number(t.amount);
+      const current = map.get(catName) || {
+        name: catName,
+        color: catColor,
+        total: 0,
+      };
+      current.total += amt;
       map.set(catName, current);
     }
+
+    const total = paidExp + pendExp;
+    const paidPct =
+      total > 0
+        ? Math.min(100, Math.max(0, Math.round((paidExp / total) * 100)))
+        : 0;
+    const pendPct = total > 0 ? Math.max(0, 100 - paidPct) : 0;
 
     const totals = Array.from(map.values())
       .map((item) => ({
@@ -40,7 +100,7 @@ export function CategoryDonutChart({ transactions }: CategoryDonutChartProps) {
       }))
       .sort((a, b) => b.total - a.total);
 
-    const radius = 64;
+    const radius = 60;
     const circumference = 2 * Math.PI * radius;
 
     const totalsWithArcs: CategoryTotal[] = totals.reduce<{
@@ -64,96 +124,201 @@ export function CategoryDonutChart({ transactions }: CategoryDonutChartProps) {
       { acc: 0, items: [] }
     ).items;
 
-    return { categoryTotals: totalsWithArcs, totalExpense: total, radius };
+    return {
+      categoryTotals: totalsWithArcs,
+      paidExpense: paidExp,
+      pendingExpense: pendExp,
+      totalExpense: total,
+      paidExpensePct: paidPct,
+      pendingExpensePct: pendPct,
+      radius,
+    };
   }, [transactions]);
 
-  if (totalExpense === 0 || categoryTotals.length === 0) {
-    return (
-      <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col items-center justify-center min-h-[300px] text-center text-zinc-500">
-        <PieChart className="w-10 h-10 mb-2 opacity-30 text-zinc-400" />
-        <p className="text-sm font-semibold text-zinc-300">Sem despesas no mês</p>
-        <p className="text-xs text-zinc-500 mt-1">
-          Lançamentos de despesa aparecerão aqui categorizados.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-5 flex flex-col justify-between">
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <h3 className="font-bold text-zinc-100 text-base">Gastos por Categoria</h3>
-          <p className="text-xs text-zinc-400">Distribuição percentual das despesas</p>
+          <h3 className="font-bold text-zinc-100 text-base">
+            Gastos por Categoria
+          </h3>
+          <p className="text-xs text-zinc-400">
+            Execução de pagamentos e distribuição das despesas
+          </p>
         </div>
-        <span className="text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">
-          Total: {formatCurrency(totalExpense)}
-        </span>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">
+            Total: {formatCurrency(totalExpense)}
+          </span>
+
+          {onExpandEvolution && (
+            <button
+              type="button"
+              onClick={onExpandEvolution}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-rose-400 border border-zinc-700/80 rounded-xl text-xs font-semibold transition"
+              title="Expandir evolução de despesas por categoria"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+              <span>Evolução</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-        {/* SVG Donut Chart */}
-        <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
-          <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 160 160">
-            {/* Círculo de fundo */}
-            <circle
-              cx="80"
-              cy="80"
-              r={radius}
-              className="text-zinc-800/80 stroke-current"
-              strokeWidth="20"
-              fill="transparent"
-            />
-            {/* Segmentos de categoria */}
-            {categoryTotals.map((cat, index) => (
+      {/* Barra de Progresso das Despesas (Pago vs. A Pagar) */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between items-center text-xs">
+          <span className="flex items-center gap-1.5 font-medium text-rose-400">
+            <TrendingDown className="w-3.5 h-3.5" />
+            Despesas do Mês
+            <span className="text-[11px] text-zinc-400 font-normal">
+              ({paidExpensePct}% pago)
+            </span>
+          </span>
+          <span className="text-xs font-bold text-zinc-200">
+            {formatCurrency(paidExpense)}{' '}
+            <span className="text-zinc-500 font-normal">
+              / {formatCurrency(totalExpense)}
+            </span>
+          </span>
+        </div>
+
+        <div className="w-full h-3.5 bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-zinc-800 flex gap-0.5">
+          {totalExpense > 0 ? (
+            <>
+              {paidExpensePct > 0 && (
+                <div
+                  className="h-full bg-rose-400 rounded-full transition-all duration-700 shadow-sm shadow-rose-400/20"
+                  style={{ width: `${paidExpensePct}%` }}
+                  title={`Pago: ${formatCurrency(paidExpense)} (${paidExpensePct}%)`}
+                />
+              )}
+              {pendingExpensePct > 0 && (
+                <div
+                  className="h-full bg-amber-500/25 border border-dashed border-amber-400/40 rounded-full transition-all duration-700"
+                  style={{ width: `${pendingExpensePct}%` }}
+                  title={`A pagar: ${formatCurrency(pendingExpense)} (${pendingExpensePct}%)`}
+                />
+              )}
+            </>
+          ) : (
+            <div className="h-full w-full bg-zinc-800/40 rounded-full" />
+          )}
+        </div>
+      </div>
+
+      {/* Donut Chart + Legenda de Categorias com Indicador de Média */}
+      {totalExpense === 0 || categoryTotals.length === 0 ? (
+        <div className="py-8 flex flex-col items-center justify-center text-center text-zinc-500">
+          <PieChart className="w-9 h-9 mb-2 opacity-30 text-zinc-400" />
+          <p className="text-sm font-semibold text-zinc-300">
+            Sem despesas no mês
+          </p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Lançamentos de despesa aparecerão aqui categorizados.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-5 pt-1">
+          {/* SVG Donut Chart */}
+          <div className="relative w-40 h-40 shrink-0 flex items-center justify-center">
+            <svg
+              className="w-full h-full -rotate-90 transform"
+              viewBox="0 0 160 160"
+            >
               <circle
-                key={index}
                 cx="80"
                 cy="80"
                 r={radius}
-                stroke={cat.color}
+                className="text-zinc-800/80 stroke-current"
                 strokeWidth="20"
-                strokeDasharray={cat.strokeDasharray}
-                strokeDashoffset={cat.strokeDashoffset}
                 fill="transparent"
-                className="transition-all duration-500 hover:opacity-80"
               />
-            ))}
-          </svg>
+              {categoryTotals.map((cat, index) => (
+                <circle
+                  key={index}
+                  cx="80"
+                  cy="80"
+                  r={radius}
+                  stroke={cat.color}
+                  strokeWidth="20"
+                  strokeDasharray={cat.strokeDasharray}
+                  strokeDashoffset={cat.strokeDashoffset}
+                  fill="transparent"
+                  className="transition-all duration-500 hover:opacity-80"
+                />
+              ))}
+            </svg>
 
-          {/* Centro do Donut */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-            <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-              Despesas
-            </span>
-            <span className="text-sm font-extrabold text-zinc-100">
-              {formatCurrency(totalExpense)}
-            </span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+              <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
+                Despesas
+              </span>
+              <span className="text-sm font-extrabold text-zinc-100">
+                {formatCurrency(totalExpense)}
+              </span>
+            </div>
+          </div>
+
+          {/* Legenda de Categorias */}
+          <div className="w-full space-y-2 max-h-44 overflow-y-auto pr-1 scrollbar-thin">
+            {categoryTotals.map((cat, index) => {
+              const evo = evolutionMetricsMap.get(cat.name.toLowerCase());
+              const hasAvgComparison =
+                evo &&
+                (evo.averageStatus === 'above' || evo.averageStatus === 'below') &&
+                evo.vsAveragePct !== null;
+
+              return (
+                <div
+                  key={index}
+                  className="flex items-center justify-between text-xs gap-2 py-0.5"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: cat.color }}
+                    />
+                    <span className="font-medium text-zinc-200 truncate">
+                      {cat.name}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {hasAvgComparison && evo && (
+                      <span
+                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                          evo.averageStatus === 'above'
+                            ? 'bg-rose-500/15 text-rose-400 border border-rose-500/25'
+                            : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                        }`}
+                        title={`Média mensal desta categoria: ${formatCurrency(evo.monthlyAverage)}`}
+                      >
+                        {evo.averageStatus === 'above' ? (
+                          <ArrowUpRight className="w-2.5 h-2.5" />
+                        ) : (
+                          <ArrowDownRight className="w-2.5 h-2.5" />
+                        )}
+                        {evo.averageStatus === 'above' ? '+' : '-'}
+                        {Math.round(Math.abs(evo.vsAveragePct || 0))}% média
+                      </span>
+                    )}
+
+                    <span className="font-bold text-zinc-100">
+                      {formatCurrency(cat.total)}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 w-8 text-right font-semibold">
+                      {cat.percentage.toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-
-        {/* Legenda de Categorias */}
-        <div className="w-full space-y-2.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
-          {categoryTotals.map((cat, index) => (
-            <div key={index} className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: cat.color }}
-                />
-                <span className="font-medium text-zinc-200 truncate">{cat.name}</span>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="font-bold text-zinc-100">{formatCurrency(cat.total)}</span>
-                <span className="text-[10px] text-zinc-400 w-9 text-right font-semibold">
-                  {cat.percentage.toFixed(0)}%
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

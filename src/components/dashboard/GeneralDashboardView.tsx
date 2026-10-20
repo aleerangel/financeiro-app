@@ -19,9 +19,11 @@ import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { Transaction } from '@/types/database';
 import { GeneralDashboardData, MonthlyGeneralStat, PeriodStat } from '@/lib/actions/dashboard';
+import { useDateContext } from '@/context/DateContext';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
 import { MonthlyBarChart } from './MonthlyBarChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
+import { CategoryEvolutionModal } from './CategoryEvolutionModal';
 import { UpcomingBillsAlert } from './UpcomingBillsAlert';
 import { PendingReceiptsAlert } from './PendingReceiptsAlert';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -57,7 +59,9 @@ export function GeneralDashboardView({
   loading = false,
   onEditBalance,
 }: GeneralDashboardViewProps) {
+  const { month, year } = useDateContext();
   const [period, setPeriod] = useState<ChartPeriod>('yearly');
+  const [evolutionModalType, setEvolutionModalType] = useState<'income' | 'expense' | null>(null);
   // Seleção de semana vinculada ao mês em que foi feita: ao trocar de mês, é descartada
   const [weekSelection, setWeekSelection] = useState<{ month: string; index: number } | null>(null);
   const userSelectedWeekIndex =
@@ -388,9 +392,34 @@ export function GeneralDashboardView({
 
       {/* Gráficos Visuais do Mês */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MonthlyBarChart transactions={transactions} />
-        <CategoryDonutChart transactions={transactions} />
+        <MonthlyBarChart
+          transactions={transactions}
+          incomeEvolution={generalData?.incomeCategoryEvolution || []}
+          currentMonth={month}
+          onExpandEvolution={() => setEvolutionModalType('income')}
+        />
+        <CategoryDonutChart
+          transactions={transactions}
+          expenseEvolution={generalData?.expenseCategoryEvolution || []}
+          currentMonth={month}
+          onExpandEvolution={() => setEvolutionModalType('expense')}
+        />
       </div>
+
+      {/* Modal de Evolução de Receitas ou Despesas por Categoria */}
+      <CategoryEvolutionModal
+        isOpen={evolutionModalType !== null}
+        onClose={() => setEvolutionModalType(null)}
+        type={evolutionModalType || 'expense'}
+        categories={
+          evolutionModalType === 'income'
+            ? generalData?.incomeCategoryEvolution || []
+            : generalData?.expenseCategoryEvolution || []
+        }
+        currentMonth={month}
+        year={year}
+        formattedMonth={formattedMonth}
+      />
 
       {/* Grid: Contas, Cartões e Últimas Transações */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

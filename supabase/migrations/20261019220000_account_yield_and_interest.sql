@@ -30,3 +30,4 @@ SET yield_type = 'monthly_percent',
     yield_rate = 0.60
 WHERE yield_type = 'none'
   AND type = 'savings';
+

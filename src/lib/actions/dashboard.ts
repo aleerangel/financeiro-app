@@ -3,6 +3,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { buildCalendarWeeks, findDefaultWeekIndex } from '@/lib/week-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
+import {
+  buildYearlyCategoryEvolution,
+  CategoryMonthlyEvolutionItem,
+  RawEvolutionTransaction,
+} from '@/lib/category-evolution-utils';
 import { Transaction } from '@/types/database';
 
 export interface BusinessPeriodStat {
@@ -110,6 +115,8 @@ export interface GeneralDashboardData {
   weeklyStatsByWeek: Record<number, PeriodStat[]>;
   weeksMeta: WeekMeta[];
   defaultWeekIndex: number;
+  incomeCategoryEvolution: CategoryMonthlyEvolutionItem[];
+  expenseCategoryEvolution: CategoryMonthlyEvolutionItem[];
 }
 
 const MONTH_LABELS = [
@@ -508,7 +515,7 @@ export async function getGeneralDashboardData(
   ] = await Promise.all([
     supabase
       .from('transactions')
-      .select('id, amount, type, is_paid, due_date')
+      .select('id, amount, type, is_paid, due_date, description, notes, category:categories(id, name, color)')
       .eq('user_id', user.id)
       .gte('due_date', queryStartDate)
       .lte('due_date', queryEndDate),
@@ -692,12 +699,54 @@ export async function getGeneralDashboardData(
     endDate: cw.endDate,
   }));
 
+  const { incomeCategories, expenseCategories } = buildYearlyCategoryEvolution(
+    (txData as unknown as RawEvolutionTransaction[]) || [],
+    year
+  );
+
   return {
     yearlyStats,
     monthlyStats,
     weeklyStatsByWeek,
     weeksMeta,
     defaultWeekIndex,
+    incomeCategoryEvolution: incomeCategories,
+    expenseCategoryEvolution: expenseCategories,
   };
 }
+
+export async function getYearlyCategoryEvolution(year: number): Promise<{
+  incomeCategories: CategoryMonthlyEvolutionItem[];
+  expenseCategories: CategoryMonthlyEvolutionItem[];
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const startDate = `${year}-01-01`;
+  const endDate = `${year}-12-31`;
+
+  const { data: txData, error } = await supabase
+    .from('transactions')
+    .select(
+      'id, amount, type, is_paid, due_date, description, notes, category:categories(id, name, color)'
+    )
+    .eq('user_id', user.id)
+    .gte('due_date', startDate)
+    .lte('due_date', endDate);
+
+  if (error) {
+    console.error('Erro ao buscar evolução por categorias:', error);
+    return { incomeCategories: [], expenseCategories: [] };
+  }
+
+  return buildYearlyCategoryEvolution(
+    (txData as unknown as RawEvolutionTransaction[]) || [],
+    year
+  );
+}
+
 
