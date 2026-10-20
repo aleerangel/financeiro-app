@@ -1,0 +1,34 @@
+name: CI - Qualidade e Testes
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate:
+    name: Lint, TypeScript e Testes Unitários
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar ESLint
+        run: npm run lint
+
+      - name: Verificar Tipagem TypeScript
+        run: npx tsc --noEmit
+
+      - name: Executar Testes Unitários (Vitest)
+        run: npm test
