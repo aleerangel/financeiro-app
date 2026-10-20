@@ -41,6 +41,43 @@ export function isBusinessTransaction(
 }
 
 /**
+ * Determina se uma transação de receita é um faturamento de atendimento/serviço da Barbearia.
+ */
+export function isBarbeariaServiceIncome(
+  tx: Omit<Partial<Transaction>, 'category'> & { category?: Partial<Category> | null }
+): boolean {
+  if (tx.description && tx.description.startsWith('Atendimento:')) return true;
+  if (tx.notes && (tx.notes.includes('Atendimento') || tx.notes.includes('Comanda:'))) {
+    return true;
+  }
+  const lowerCat = (tx.category?.name || '').trim().toLowerCase();
+  if (lowerCat.includes('barbearia') || lowerCat.includes('serviço')) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Resolve o nome e a cor padronizados da categoria de uma transação de receita.
+ */
+export function resolveIncomeCategoryMeta(
+  tx: Omit<Partial<Transaction>, 'category'> & { category?: Partial<Category> | null }
+): { id: string; name: string; color: string } {
+  if (isBarbeariaServiceIncome(tx)) {
+    return {
+      id: 'barbearia-servicos',
+      name: 'Barbearia (Serviços)',
+      color: '#10b981',
+    };
+  }
+  return {
+    id: tx.category?.id || tx.category?.name?.toLowerCase() || 'outras-receitas',
+    name: tx.category?.name || 'Outras Receitas',
+    color: tx.category?.color || '#3b82f6',
+  };
+}
+
+/**
  * Determina se uma conta fixa/recorrência pertence à Barbearia ('business').
  */
 export function isBusinessRecurrence(

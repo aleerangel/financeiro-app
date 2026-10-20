@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   isBusinessCategory,
   isBusinessTransaction,
+  isBarbeariaServiceIncome,
+  resolveIncomeCategoryMeta,
   applyScopeToNotes,
   stripScopeTagFromNotes,
 } from './business-scope-utils';
@@ -41,6 +43,33 @@ describe('business-scope-utils', () => {
     expect(tagged).toBe('[Barbearia] Pacote 100 lâminas');
     expect(stripScopeTagFromNotes(tagged)).toBe('Pacote 100 lâminas');
     expect(applyScopeToNotes(tagged, 'personal')).toBe('Pacote 100 lâminas');
+  });
+
+  it('detects barbearia service income and resolves category metadata', () => {
+    expect(
+      isBarbeariaServiceIncome({
+        description: 'Atendimento: João (Corte)',
+      })
+    ).toBe(true);
+    expect(
+      resolveIncomeCategoryMeta({
+        description: 'Atendimento: João (Corte)',
+      })
+    ).toEqual({
+      id: 'barbearia-servicos',
+      name: 'Barbearia (Serviços)',
+      color: '#10b981',
+    });
+    expect(
+      resolveIncomeCategoryMeta({
+        description: 'Salário Mensal',
+        category: { id: 'cat-sal', name: 'Salário', color: '#3b82f6' },
+      })
+    ).toEqual({
+      id: 'cat-sal',
+      name: 'Salário',
+      color: '#3b82f6',
+    });
   });
 });
 

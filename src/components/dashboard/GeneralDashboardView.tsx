@@ -33,6 +33,7 @@ import { CategoryDonutChart } from './CategoryDonutChart';
 import { CategoryEvolutionModal } from './CategoryEvolutionModal';
 import { UpcomingBillsAlert } from './UpcomingBillsAlert';
 import { PendingReceiptsAlert } from './PendingReceiptsAlert';
+import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export type ChartPeriod = ChartViewPeriod;
@@ -148,14 +149,7 @@ export function GeneralDashboardView({
   for (const t of transactions) {
     const amt = Number(t.amount);
     if (t.type === 'income') {
-      const isBarber =
-        t.description.startsWith('Atendimento:') ||
-        Boolean(t.notes?.includes('Atendimento')) ||
-        Boolean(t.notes?.includes('Comanda:')) ||
-        Boolean(t.category?.name?.toLowerCase().includes('barbearia')) ||
-        Boolean(t.category?.name?.toLowerCase().includes('serviço'));
-
-      if (isBarber) {
+      if (isBarbeariaServiceIncome(t)) {
         barberShopIncome += amt;
       } else {
         otherIncome += amt;
