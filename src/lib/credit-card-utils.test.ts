@@ -36,3 +36,4 @@ describe('credit-card-utils - calculateInstallmentDueDates', () => {
     ]);
   });
 });
+

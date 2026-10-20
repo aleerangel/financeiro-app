@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { getZonedParts, getTodayYMD, isPastMonth } from './date-utils';
+import {
+  getZonedParts,
+  getTodayYMD,
+  getZonedYMD,
+  getZonedRangeBoundsIso,
+  resolveSaleTimestamps,
+  isPastMonth,
+} from './date-utils';
+import { formatDateTime } from './utils';
 
 describe('getZonedParts', () => {
   it('usa o fuso de São Paulo, não o do servidor (UTC)', () => {
@@ -13,13 +21,33 @@ describe('getZonedParts', () => {
   });
 });
 
-describe('getTodayYMD', () => {
+describe('getTodayYMD e getZonedYMD', () => {
   it('formata com zero à esquerda no fuso do app', () => {
     expect(getTodayYMD(new Date('2026-03-05T12:00:00Z'))).toBe('2026-03-05');
   });
 
   it('não avança o dia após 21h no Brasil', () => {
     expect(getTodayYMD(new Date('2026-10-20T01:00:00Z'))).toBe('2026-10-19');
+    expect(getZonedYMD('2026-10-21T00:30:00Z')).toBe('2026-10-20');
+  });
+
+  it('preserva strings YYYY-MM-DD puras', () => {
+    expect(getZonedYMD('2026-10-20')).toBe('2026-10-20');
+  });
+});
+
+describe('getZonedRangeBoundsIso e resolveSaleTimestamps', () => {
+  it('gera limites de dia no fuso -03:00', () => {
+    const bounds = getZonedRangeBoundsIso('2026-10-20');
+    expect(bounds.startIso).toBe('2026-10-20T00:00:00.000-03:00');
+    expect(bounds.endIso).toBe('2026-10-20T23:59:59.999-03:00');
+  });
+
+  it('mantém a data da venda no fuso de São Paulo mesmo após 21h (00h UTC)', () => {
+    const lateNightNow = new Date('2026-10-21T00:30:00Z'); // 20/10 às 21:30 BRT
+    const res = resolveSaleTimestamps(undefined, lateNightNow);
+    expect(res.dateOnlyStr).toBe('2026-10-20');
+    expect(formatDateTime('2026-10-21T00:30:00Z')).toBe('20/10/2026, 21:30');
   });
 });
 

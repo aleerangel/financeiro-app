@@ -11,6 +11,7 @@ import {
   isBusinessTransaction,
   stripScopeTagFromNotes,
 } from '@/lib/business-scope-utils';
+import { getTodayYMD } from '@/lib/date-utils';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -70,7 +71,7 @@ function TransactionModalDialog({
   const [description, setDescription] = useState(transaction?.description || '');
   const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : '');
   const [date, setDate] = useState(
-    transaction?.due_date || transaction?.transaction_date || new Date().toISOString().split('T')[0]
+    transaction?.due_date || transaction?.transaction_date || getTodayYMD()
   );
   const [categoryId, setCategoryId] = useState<string>(
     transaction?.category_id ||

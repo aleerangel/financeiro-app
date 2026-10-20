@@ -120,3 +120,4 @@ export function groupTransactionsByDay(
 
   return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
 }
+

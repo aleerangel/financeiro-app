@@ -5,6 +5,7 @@ import { X, Plus, Minus, Trash2, CheckCircle2, UserPlus } from 'lucide-react';
 import { Product, Account, PaymentMethod, Client } from '@/types/database';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
+import { getTodayYMD } from '@/lib/date-utils';
 import { ClientModal } from '@/components/clients/ClientModal';
 
 interface NewSaleModalProps {
@@ -16,14 +17,6 @@ interface NewSaleModalProps {
   initialClientId?: string | null;
   onSuccess?: () => void;
 }
-
-const getTodayString = () => {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 export function NewSaleModal({
   isOpen,
@@ -43,7 +36,7 @@ export function NewSaleModal({
   );
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const [clientName, setClientName] = useState(initialClient ? initialClient.name : '');
-  const [saleDate, setSaleDate] = useState(getTodayString());
+  const [saleDate, setSaleDate] = useState(getTodayYMD());
   const [selectedItems, setSelectedItems] = useState<CreateSaleItemInput[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -140,7 +133,7 @@ export function NewSaleModal({
       setSelectedClientId(null);
       setSelectedItems([]);
       setNotes('');
-      setSaleDate(getTodayString());
+      setSaleDate(getTodayYMD());
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: unknown) {

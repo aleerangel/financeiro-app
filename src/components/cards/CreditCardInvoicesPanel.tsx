@@ -25,6 +25,7 @@ import {
 } from '@/lib/actions/credit-cards';
 import { toggleTransactionPaid, deleteTransaction } from '@/lib/actions/transactions';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { getTodayYMD } from '@/lib/date-utils';
 import { useDateContext } from '@/context/DateContext';
 import { useRouter } from 'next/navigation';
 
@@ -189,7 +190,7 @@ export function CreditCardInvoicesPanel({
     const finalClosingDay = Math.min(card.closing_day, daysInClosingMonth);
     const closingDateStr = `${closingYear}-${String(closingMonth + 1).padStart(2, '0')}-${String(finalClosingDay).padStart(2, '0')}`;
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayYMD();
 
     let statusLabel = 'Sem lançamentos';
     let statusColor = 'bg-zinc-800 text-zinc-400 border-zinc-700';

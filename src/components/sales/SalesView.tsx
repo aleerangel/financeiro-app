@@ -13,6 +13,7 @@ import {
 import { Sale, Product, Account, Client } from '@/types/database';
 import { deleteSale } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
+import { getTodayYMD, getZonedYMD, getZonedTimeParts } from '@/lib/date-utils';
 import { NewSaleModal } from './NewSaleModal';
 
 interface SalesViewProps {
@@ -35,11 +36,10 @@ export function SalesView({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filterMode, setFilterMode] = useState<'today' | 'all'>('today');
 
-  const now = new Date();
-  const todayDateStr = now.toISOString().split('T')[0];
+  const todayDateStr = getTodayYMD();
 
-  // Filtra as vendas de hoje
-  const todaySales = sales.filter((s) => s.sale_date.startsWith(todayDateStr));
+  // Filtra as vendas de hoje no fuso de São Paulo
+  const todaySales = sales.filter((s) => getZonedYMD(s.sale_date) === todayDateStr);
   const todayTotal = todaySales.reduce((acc, curr) => acc + Number(curr.total_amount), 0);
   const todayClientsCount = todaySales.length;
   const todayAverageTicket = todayClientsCount > 0 ? todayTotal / todayClientsCount : 0;
@@ -65,15 +65,16 @@ export function SalesView({
 
   const formatSaleTime = (dateStr: string) => {
     const d = new Date(dateStr);
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const { month, day, hour, minute } = getZonedTimeParts(d);
+    const hours = String(hour).padStart(2, '0');
+    const minutes = String(minute).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    const mm = String(month + 1).padStart(2, '0');
 
-    if (dateStr.startsWith(todayDateStr)) {
+    if (getZonedYMD(dateStr) === todayDateStr) {
       return `Hoje às ${hours}:${minutes}`;
     }
-    return `${day}/${month} às ${hours}:${minutes}`;
+    return `${dd}/${mm} às ${hours}:${minutes}`;
   };
 
   return (

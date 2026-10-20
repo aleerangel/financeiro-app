@@ -4,6 +4,11 @@ import { createClient } from '@/lib/supabase/server';
 import { buildCalendarWeeks, findDefaultWeekIndex } from '@/lib/week-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import {
+  getZonedParts,
+  getZonedRangeBoundsIso,
+  getZonedYMD,
+} from '@/lib/date-utils';
+import {
   buildYearlyCategoryEvolution,
   CategoryMonthlyEvolutionItem,
   RawEvolutionTransaction,
@@ -149,6 +154,9 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     ? calendarWeeks[calendarWeeks.length - 1].endDate
     : endDate;
 
+  const { startIso: bizSalesStartIso, endIso: bizSalesEndIso } =
+    getZonedRangeBoundsIso(earliestDate, latestDate);
+
   // 1. Busca vendas e despesas no período abrangente em paralelo
   const [
     { data: salesData, error: salesError },
@@ -169,8 +177,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
         )
       `)
       .eq('user_id', user.id)
-      .gte('sale_date', `${earliestDate}T00:00:00.000Z`)
-      .lte('sale_date', `${latestDate}T23:59:59.999Z`)
+      .gte('sale_date', bizSalesStartIso)
+      .lte('sale_date', bizSalesEndIso)
       .order('sale_date', { ascending: false }),
     supabase
       .from('transactions')
@@ -217,9 +225,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
 
   for (const s of sales) {
     if (!s.sale_date) continue;
-    const dateStr = s.sale_date.split('T')[0];
-    const saleDate = new Date(s.sale_date);
-    const m = saleDate.getMonth();
+    const dateStr = getZonedYMD(s.sale_date);
+    const m = getZonedParts(new Date(s.sale_date)).month;
     const amount = Number(s.total_amount) || 0;
 
     const curDay = salesByDate.get(dateStr) || { revenue: 0, salesCount: 0 };
@@ -481,7 +488,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
 
 export async function getGeneralDashboardData(
   year: number,
-  month: number = new Date().getMonth()
+  month: number = getZonedParts().month
 ): Promise<GeneralDashboardData> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -504,8 +511,8 @@ export async function getGeneralDashboardData(
 
   const queryStartDate = earliestDate;
   const queryEndDate = latestDate;
-  const salesQueryStart = `${queryStartDate}T00:00:00.000Z`;
-  const salesQueryEnd = `${queryEndDate}T23:59:59.999Z`;
+  const { startIso: salesQueryStart, endIso: salesQueryEnd } =
+    getZonedRangeBoundsIso(queryStartDate, queryEndDate);
 
   const [
     { data: txData, error: txError },
@@ -542,12 +549,12 @@ export async function getGeneralDashboardData(
   if (salesError) console.error('Erro ao buscar vendas:', salesError);
   if (accountTxError) console.error('Erro ao buscar transações de contas:', accountTxError);
 
-  // Mapeamento por data YYYY-MM-DD
+  // Mapeamento por data YYYY-MM-DD (no fuso de São Paulo)
   const salesByDate = new Map<string, number>();
   if (salesData) {
     for (const s of salesData) {
       if (!s.sale_date) continue;
-      const dStr = s.sale_date.split('T')[0];
+      const dStr = getZonedYMD(s.sale_date);
       salesByDate.set(dStr, (salesByDate.get(dStr) || 0) + (Number(s.total_amount) || 0));
     }
   }

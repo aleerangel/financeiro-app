@@ -4,6 +4,11 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Sale, PaymentMethod } from '@/types/database';
 import { getOrCreateBarbeariaCategory } from '@/lib/actions/categories';
+import {
+  getTodayYMD,
+  getZonedRangeBoundsIso,
+  resolveSaleTimestamps,
+} from '@/lib/date-utils';
 
 export interface CreateSaleItemInput {
   product_id?: string | null;
@@ -47,11 +52,12 @@ export async function getSales(month?: number, year?: number): Promise<Sale[]> {
     .order('sale_date', { ascending: false });
 
   if (month !== undefined && year !== undefined) {
-    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01T00:00:00.000Z`;
+    const startYmd = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month + 1, 0).getDate();
-    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
+    const endYmd = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const { startIso, endIso } = getZonedRangeBoundsIso(startYmd, endYmd);
 
-    query = query.gte('sale_date', startDate).lte('sale_date', endDate);
+    query = query.gte('sale_date', startIso).lte('sale_date', endIso);
   }
 
   const { data, error } = await query;
@@ -70,9 +76,8 @@ export async function getTodaySalesSummary(): Promise<TodaySalesSummary> {
 
   if (!user) throw new Error('Não autenticado');
 
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
-  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+  const todayYmd = getTodayYMD();
+  const { startIso: startOfDay, endIso: endOfDay } = getZonedRangeBoundsIso(todayYmd);
 
   const { data: sales, error } = await supabase
     .from('sales')
@@ -129,25 +134,7 @@ export async function createSale(input: CreateSaleInput) {
     .join(', ');
 
   const transactionDesc = `Atendimento: ${input.client_name.trim()} (${itemsSummary})`;
-  const now = new Date();
-  let saleDateIso: string;
-  let dateOnlyStr: string;
-
-  if (input.sale_date) {
-    if (input.sale_date.includes('T')) {
-      const parsed = new Date(input.sale_date);
-      saleDateIso = parsed.toISOString();
-      dateOnlyStr = saleDateIso.split('T')[0];
-    } else {
-      const [year, month, day] = input.sale_date.split('-').map(Number);
-      const customDate = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
-      saleDateIso = customDate.toISOString();
-      dateOnlyStr = input.sale_date;
-    }
-  } else {
-    saleDateIso = now.toISOString();
-    dateOnlyStr = now.toISOString().split('T')[0];
-  }
+  const { saleDateIso, dateOnlyStr } = resolveSaleTimestamps(input.sale_date);
 
   // 3. Obtém ou cria a categoria padrão "Barbearia" para vincular ao atendimento
   const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);

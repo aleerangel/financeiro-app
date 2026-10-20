@@ -1,3 +1,5 @@
+import { getZonedTimeParts } from './date-utils';
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -14,11 +16,12 @@ export function formatDate(dateString: string): string {
 export function formatDateTime(isoString: string): string {
   if (!isoString) return '';
   const d = new Date(isoString);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  return `${day}/${month}/${year}, ${hours}:${minutes}`;
+  if (Number.isNaN(d.getTime())) return '';
+  const { year, month, day, hour, minute } = getZonedTimeParts(d);
+  const dd = String(day).padStart(2, '0');
+  const mm = String(month + 1).padStart(2, '0');
+  const hh = String(hour).padStart(2, '0');
+  const min = String(minute).padStart(2, '0');
+  return `${dd}/${mm}/${year}, ${hh}:${min}`;
 }
 
