@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Eye,
@@ -10,9 +9,6 @@ import {
   Minus,
   Scissors,
   Pencil,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
   TrendingUp,
   TrendingDown,
   Wallet,
@@ -20,12 +16,21 @@ import {
   Plus,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
-import { BusinessDashboardData, BusinessPeriodStat } from '@/lib/actions/dashboard';
+import {
+  BusinessDashboardData,
+  BusinessPeriodStat,
+  getBusinessDashboardData,
+} from '@/lib/actions/dashboard';
 import { useDateContext } from '@/context/DateContext';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
+import {
+  ChartPeriodToolbar,
+  ChartViewPeriod,
+  useIndependentChartPeriod,
+} from './ChartPeriodToolbar';
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 
-export type ChartPeriod = 'weekly' | 'monthly' | 'yearly';
+export type ChartPeriod = ChartViewPeriod;
 
 interface BusinessDashboardViewProps {
   data: BusinessDashboardData;
@@ -43,6 +48,8 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   investment: 'Investimento',
 };
 
+const EMPTY_BUSINESS_STATS: BusinessPeriodStat[] = [];
+
 export function BusinessDashboardView({
   data,
   accounts,
@@ -51,58 +58,11 @@ export function BusinessDashboardView({
   onEditBalance,
   onAddBusinessExpense,
 }: BusinessDashboardViewProps) {
-  const { prevMonth, nextMonth } = useDateContext();
-  const [period, setPeriod] = useState<ChartPeriod>('yearly');
-  // Seleção de semana vinculada ao mês em que foi feita: ao trocar de mês, é descartada
-  const [weekSelection, setWeekSelection] = useState<{ month: string | undefined; index: number } | null>(null);
-  const userSelectedWeekIndex =
-    weekSelection && weekSelection.month === formattedMonth ? weekSelection.index : null;
-  const setUserSelectedWeekIndex = (index: number) =>
-    setWeekSelection({ month: formattedMonth, index });
-
-  // Deriva o índice da semana sem setState em useEffect
-  const selectedWeekIndex =
-    userSelectedWeekIndex !== null &&
-    data?.weeksMeta &&
-    userSelectedWeekIndex < data.weeksMeta.length
-      ? userSelectedWeekIndex
-      : (data?.defaultWeekIndex ?? 0);
-
-  // Estatísticas ativas com base no período selecionado
-  const activeStats: BusinessPeriodStat[] = useMemo(() => {
-    if (!data) return [];
-
-    if (period === 'yearly') {
-      return data.yearlyStats || [];
-    }
-
-    if (period === 'monthly') {
-      return data.monthlyStats || [];
-    }
-
-    // Modo 'weekly' (dias da semana)
-    const weekDays = data.weeklyStatsByWeek?.[selectedWeekIndex];
-    if (weekDays && weekDays.length > 0) {
-      return weekDays;
-    }
-
-    const firstAvailable = Object.values(data.weeklyStatsByWeek || {})[0];
-    return firstAvailable || data.monthlyStats || [];
-  }, [data, period, selectedWeekIndex]);
-
-  const activeWeekMeta = data?.weeksMeta?.[selectedWeekIndex];
-
-  const periodSubtitle = useMemo(() => {
-    if (period === 'yearly') {
-      return 'Visão anual consolidada pelos 12 meses';
-    }
-    if (period === 'monthly') {
-      return formattedMonth
-        ? `Visão mensal de ${formattedMonth} com as semanas (Dom a Sáb)`
-        : 'Visão mensal com as semanas (Dom a Sáb)';
-    }
-    return `Visão semanal com os dias da semana (${activeWeekMeta?.shortLabel || 'Dom a Sáb'})`;
-  }, [period, formattedMonth, activeWeekMeta]);
+  const { month, year } = useDateContext();
+  const businessChart = useIndependentChartPeriod<
+    BusinessDashboardData,
+    BusinessPeriodStat
+  >(year, month, data, EMPTY_BUSINESS_STATS, getBusinessDashboardData);
 
   // Configura as séries do gráfico: Faturamento, Gastos da Barbearia e Lucro Líquido
   const chartSeries: ChartSeries[] = [
@@ -110,27 +70,31 @@ export function BusinessDashboardView({
       id: 'revenue',
       name: 'Faturamento',
       color: '#22c55e', // Verde
-      values: activeStats.map((s) => s.revenue),
+      values: businessChart.activeStats.map((s) => s.revenue),
       formatValue: (v) => formatCurrency(v),
     },
     {
       id: 'expenses',
       name: 'Gastos Barbearia',
       color: '#f43f5e', // Rosa/Vermelho
-      values: activeStats.map((s) => s.expenses || 0),
+      values: businessChart.activeStats.map((s) => s.expenses || 0),
       formatValue: (v) => formatCurrency(v),
     },
     {
       id: 'netProfit',
       name: 'Lucro Líquido',
       color: '#eab308', // Amarelo/Dourado
-      values: activeStats.map((s) => s.netProfit ?? s.revenue - (s.expenses || 0)),
+      values: businessChart.activeStats.map(
+        (s) => s.netProfit ?? s.revenue - (s.expenses || 0)
+      ),
       formatValue: (v) => formatCurrency(v),
     },
   ];
 
-  const chartLabels = activeStats.map((s) => s.label);
-  const chartTooltipLabels = activeStats.map((s) => s.fullLabel || s.label);
+  const chartLabels = businessChart.activeStats.map((s) => s.label);
+  const chartTooltipLabels = businessChart.activeStats.map(
+    (s) => s.fullLabel || s.label
+  );
 
   const summary = data?.monthSummary || {
     revenue: 0,
@@ -255,117 +219,31 @@ export function BusinessDashboardView({
           </div>
         </div>
       </div>
-      {/* Seletor de Período dos Gráficos: Semanal, Mensal, Anual */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-            Visualização:
-          </span>
-
-          <div className="flex items-center bg-zinc-950 p-1 rounded-xl border border-zinc-800/80">
-            <button
-              type="button"
-              onClick={() => setPeriod('weekly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                period === 'weekly'
-                  ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Semanal
-            </button>
-            <button
-              type="button"
-              onClick={() => setPeriod('monthly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                period === 'monthly'
-                  ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Mensal
-            </button>
-            <button
-              type="button"
-              onClick={() => setPeriod('yearly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                period === 'yearly'
-                  ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Anual
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Seletor de Mês dentro da barra do gráfico */}
-          <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-              title="Mês anterior"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-xs font-semibold text-zinc-200 px-2 capitalize">
-              {formattedMonth}
-            </span>
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-              title="Próximo mês"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Navegador de Semana (apenas no modo 'Semanal') */}
-          {period === 'weekly' && data?.weeksMeta && data.weeksMeta.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800/80 px-2 py-1 rounded-xl">
-              <button
-                type="button"
-                disabled={selectedWeekIndex <= 0}
-                onClick={() => setUserSelectedWeekIndex(Math.max(0, selectedWeekIndex - 1))}
-                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
-                title="Semana anterior"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <span className="text-xs font-semibold text-zinc-200 px-2">
-                {activeWeekMeta?.label || `Semana ${selectedWeekIndex + 1}`}
-              </span>
-
-              <button
-                type="button"
-                disabled={selectedWeekIndex >= data.weeksMeta.length - 1}
-                onClick={() => setUserSelectedWeekIndex(Math.min(data.weeksMeta.length - 1, selectedWeekIndex + 1))}
-                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:pointer-events-none transition"
-                title="Próxima semana"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Linha Superior: Gráfico de Vendas e Receita + Saldo das Contas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico (Ocupa 2 colunas no desktop) */}
         <div className="lg:col-span-2">
           <SmoothLineChart
             title="Faturamento, Gastos e Lucro da Barbearia"
-            subtitle={periodSubtitle}
+            subtitle={businessChart.subtitle}
             series={chartSeries}
             labels={chartLabels}
             tooltipLabels={chartTooltipLabels}
             height={270}
+            rightAction={
+              <ChartPeriodToolbar
+                period={businessChart.period}
+                onPeriodChange={businessChart.setPeriod}
+                year={businessChart.year}
+                month={businessChart.month}
+                onYearChange={businessChart.handleYearChange}
+                onMonthChange={businessChart.handleMonthChange}
+                weeksMeta={businessChart.weeksMeta}
+                selectedWeekIndex={businessChart.selectedWeekIndex}
+                onWeekChange={businessChart.handleWeekChange}
+                loading={businessChart.loading}
+              />
+            }
           />
         </div>
 
