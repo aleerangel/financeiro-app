@@ -16,3 +16,4 @@ CREATE INDEX IF NOT EXISTS idx_transactions_pending_due
 -- 3. Acelera agregações de itens de venda por produto no dashboard
 CREATE INDEX IF NOT EXISTS idx_sale_items_product_perf
     ON public.sale_items(sale_id, product_name);
+

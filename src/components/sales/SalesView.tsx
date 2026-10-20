@@ -17,6 +17,8 @@ import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD, getZonedYMD, getZonedTimeParts } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { ExportDropdown } from '@/components/ui/ExportDropdown';
+import { exportSalesReport, ExportFormat } from '@/lib/export-utils';
 
 const NewSaleModal = dynamic(
   () => import('./NewSaleModal').then((m) => m.NewSaleModal),
@@ -56,6 +58,19 @@ export function SalesView({
   const monthTotal = sales.reduce((acc, curr) => acc + Number(curr.total_amount), 0);
 
   const displayedSales = filterMode === 'today' ? todaySales : sales;
+
+  const handleExport = (format: ExportFormat) => {
+    const periodLabel =
+      filterMode === 'today'
+        ? `Hoje (${todayDateStr.split('-').reverse().join('/')})`
+        : 'Todas as Comandas Registradas';
+
+    exportSalesReport({
+      format,
+      periodLabel,
+      sales: displayedSales,
+    });
+  };
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
@@ -203,13 +218,22 @@ export function SalesView({
           </button>
         </div>
 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          Novo Atendimento
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportDropdown
+            onExport={handleExport}
+            buttonLabel="Exportar"
+            title="Exportar Atendimentos"
+            disabled={displayedSales.length === 0}
+          />
+
+          <button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            Novo Atendimento
+          </button>
+        </div>
       </div>
 
       {/* Histórico de Comandas */}

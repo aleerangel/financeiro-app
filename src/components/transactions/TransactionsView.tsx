@@ -40,6 +40,8 @@ import { CategoryMonthlyEvolutionItem } from '@/lib/category-evolution-utils';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { ExportDropdown } from '@/components/ui/ExportDropdown';
+import { exportTransactionsReport, ExportFormat } from '@/lib/export-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import {
   TransactionFilterType,
@@ -298,6 +300,27 @@ export function TransactionsView({
     () => groupTransactionsByDay(filteredTransactions),
     [filteredTransactions]
   );
+
+  const handleExport = (format: ExportFormat) => {
+    let filterLabel = 'Todas as movimentações';
+    if (filter === 'income') filterLabel = 'Apenas Receitas';
+    else if (filter === 'expense') filterLabel = 'Apenas Despesas';
+    else if (filter === 'business') filterLabel = 'Apenas Barbearia';
+    else if (filter === 'personal') filterLabel = 'Apenas Pessoal';
+    else if (filter === 'credit') filterLabel = 'Cartão de Crédito';
+    else if (filter === 'pending') filterLabel = 'Apenas Pendentes';
+
+    if (searchTerm.trim()) {
+      filterLabel += ` • Busca: "${searchTerm.trim()}"`;
+    }
+
+    exportTransactionsReport({
+      format,
+      periodLabel: formattedMonth,
+      transactions: filteredTransactions,
+      filterLabel: hasActiveFilter ? filterLabel : undefined,
+    });
+  };
 
   const renderTransactionRow = (t: Transaction) => {
     const isCredit = t.payment_method === 'credit';
@@ -597,8 +620,15 @@ export function TransactionsView({
             </select>
           </div>
 
-          {/* Botões de Nova Transação */}
+          {/* Botões de Nova Transação e Exportação */}
           <div className="flex items-center gap-2 shrink-0">
+            <ExportDropdown
+              onExport={handleExport}
+              buttonLabel="Exportar"
+              title="Exportar Extrato"
+              disabled={filteredTransactions.length === 0}
+            />
+
             <button
               onClick={() => {
                 setTransactionToEdit(null);

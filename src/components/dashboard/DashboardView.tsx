@@ -19,6 +19,9 @@ import {
   getBusinessDashboardData,
   getGeneralDashboardData,
 } from '@/lib/actions/dashboard';
+import { ExportDropdown } from '@/components/ui/ExportDropdown';
+import { exportTransactionsReport, ExportFormat } from '@/lib/export-utils';
+import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { BusinessDashboardView } from './BusinessDashboardView';
 import { GeneralDashboardView } from './GeneralDashboardView';
 
@@ -135,6 +138,25 @@ export function DashboardView({
     };
   }, [month, year, monthKey]);
 
+  const handleExport = (format: ExportFormat) => {
+    if (viewMode === 'business') {
+      const bizTxs = transactions.filter((t) => isBusinessTransaction(t));
+      exportTransactionsReport({
+        format,
+        periodLabel: `${formattedMonth} • Barbearia`,
+        transactions: bizTxs,
+        filterLabel: 'Movimentações da Barbearia',
+      });
+    } else {
+      exportTransactionsReport({
+        format,
+        periodLabel: formattedMonth,
+        transactions,
+        filterLabel: 'Visão Geral Consolidada',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Topo: Título, Alternador (Negócio / Geral) e Ações Rápidas */}
@@ -187,6 +209,17 @@ export function DashboardView({
               <span>Geral</span>
             </button>
           </div>
+
+          {/* Botão de Exportação */}
+          <ExportDropdown
+            onExport={handleExport}
+            buttonLabel="Exportar"
+            title={
+              viewMode === 'business'
+                ? 'Exportar Fechamento Barbearia'
+                : 'Exportar Extrato Consolidado'
+            }
+          />
 
           {/* Botões de Ação Rápida */}
           {viewMode === 'business' ? (
