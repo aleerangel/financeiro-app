@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Transaction } from '@/types/database';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
 import { toggleTransactionPaid } from '@/lib/actions/transactions';
 
 interface UpcomingBillsAlertProps {
@@ -85,11 +86,13 @@ export function UpcomingBillsAlert({ bills, onBillPaid }: UpcomingBillsAlertProp
     try {
       setPayingId(billId);
       await toggleTransactionPaid(billId, true);
+      toast.success('Conta marcada como paga!');
       if (onBillPaid) {
         onBillPaid(billId);
       }
     } catch (err) {
       console.error('Erro ao marcar conta como paga:', err);
+      toast.error('Erro ao marcar conta como paga.');
     } finally {
       setPayingId(null);
     }

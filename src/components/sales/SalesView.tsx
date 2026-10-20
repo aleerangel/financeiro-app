@@ -14,6 +14,8 @@ import { Sale, Product, Account, Client } from '@/types/database';
 import { deleteSale } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD, getZonedYMD, getZonedTimeParts } from '@/lib/date-utils';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { NewSaleModal } from './NewSaleModal';
 
 interface SalesViewProps {
@@ -31,6 +33,7 @@ export function SalesView({
   clients,
   initialClientId = null,
 }: SalesViewProps) {
+  const { confirm } = useConfirm();
   const [sales, setSales] = useState<Sale[]>(initialSales);
   const [modalOpen, setModalOpen] = useState(Boolean(initialClientId));
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -50,13 +53,21 @@ export function SalesView({
   const displayedSales = filterMode === 'today' ? todaySales : sales;
 
   const handleDelete = async (id: string) => {
-    if (confirm('Deseja estornar e excluir este atendimento? A receita correspondente será removida do financeiro.')) {
+    const ok = await confirm({
+      title: 'Estornar Atendimento',
+      description: 'Deseja estornar e excluir este atendimento? A receita correspondente será removida do financeiro.',
+      confirmLabel: 'Estornar e Excluir',
+      variant: 'danger',
+    });
+
+    if (ok) {
       try {
         setDeletingId(id);
         await deleteSale(id);
         setSales((prev) => prev.filter((s) => s.id !== id));
+        toast.success('Atendimento estornado e excluído com sucesso!');
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Erro ao excluir atendimento');
+        toast.error(err instanceof Error ? err.message : 'Erro ao excluir atendimento');
       } finally {
         setDeletingId(null);
       }

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -59,7 +61,22 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-100">
         <RegisterServiceWorker />
-        {children}
+        <Toaster
+          position="top-right"
+          richColors
+          theme="dark"
+          closeButton
+          toastOptions={{
+            style: {
+              background: '#18181b',
+              borderColor: '#27272a',
+              color: '#f4f4f5',
+            },
+          }}
+        />
+        <ConfirmProvider>
+          {children}
+        </ConfirmProvider>
       </body>
     </html>
   );

@@ -23,6 +23,8 @@ import {
 import { ClientWithStats, deleteClient } from '@/lib/actions/clients';
 import { ClientReturnStatus, getReturnPriorityScore } from '@/lib/client-analytics';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ClientModal } from './ClientModal';
 import {
   ClientHistoryModal,
@@ -39,6 +41,7 @@ type StatusFilter = 'all' | ClientReturnStatus | 'vip';
 type SortOption = 'priority' | 'spent' | 'visits' | 'recent' | 'name';
 
 export function ClientsList({ initialClients }: ClientsListProps) {
+  const { confirm } = useConfirm();
   const [clients, setClients] = useState<ClientWithStats[]>(initialClients);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -142,17 +145,21 @@ export function ClientsList({ initialClients }: ClientsListProps) {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (
-      confirm(
-        `Tem certeza que deseja remover o cliente "${name}"? Os atendimentos anteriores permanecerão no histórico.`
-      )
-    ) {
+    const ok = await confirm({
+      title: 'Remover Cliente',
+      description: `Tem certeza que deseja remover o cliente "${name}"? Os atendimentos anteriores permanecerão no histórico.`,
+      confirmLabel: 'Remover Cliente',
+      variant: 'danger',
+    });
+
+    if (ok) {
       try {
         setDeletingId(id);
         await deleteClient(id);
         setClients((prev) => prev.filter((c) => c.id !== id));
+        toast.success(`Cliente "${name}" removido com sucesso!`);
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Erro ao excluir cliente.');
+        toast.error(err instanceof Error ? err.message : 'Erro ao excluir cliente.');
       } finally {
         setDeletingId(null);
       }

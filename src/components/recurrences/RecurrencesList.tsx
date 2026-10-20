@@ -14,6 +14,8 @@ import {
 import { Recurrence, Account, CreditCard, Category } from '@/types/database';
 import { toggleRecurrenceActive, deleteRecurrence, syncMonthlyRecurrences } from '@/lib/actions/recurrences';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { RecurrenceModal } from './RecurrenceModal';
 import { useDateContext } from '@/context/DateContext';
 import { isBusinessRecurrence } from '@/lib/business-scope-utils';
@@ -32,6 +34,7 @@ export function RecurrencesList({
   cards,
   categories,
 }: RecurrencesListProps) {
+  const { confirm } = useConfirm();
   const { month, year, formattedMonth } = useDateContext();
   const [recurrences, setRecurrences] = useState<Recurrence[]>(initialRecurrences);
   const [modalOpen, setModalOpen] = useState(false);
@@ -54,21 +57,34 @@ export function RecurrencesList({
       setRecurrences((prev) =>
         prev.map((r) => (r.id === rec.id ? { ...r, active: !r.active } : r))
       );
+      toast.success(
+        !rec.active
+          ? `Conta fixa "${rec.description}" ativada!`
+          : `Conta fixa "${rec.description}" pausada!`
+      );
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao alterar status');
+      toast.error(err instanceof Error ? err.message : 'Erro ao alterar status');
     } finally {
       setActionLoadingId(null);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Deseja excluir esta conta fixa? Os lançamentos já gerados não serão apagados.')) {
+  const handleDelete = async (id: string, description: string) => {
+    const ok = await confirm({
+      title: 'Excluir Conta Fixa',
+      description: `Deseja excluir a conta fixa "${description}"? Os lançamentos já gerados nos meses anteriores não serão apagados.`,
+      confirmLabel: 'Excluir Conta Fixa',
+      variant: 'danger',
+    });
+
+    if (ok) {
       try {
         setActionLoadingId(id);
         await deleteRecurrence(id);
         setRecurrences((prev) => prev.filter((r) => r.id !== id));
+        toast.success(`Conta fixa "${description}" excluída com sucesso!`);
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Erro ao excluir');
+        toast.error(err instanceof Error ? err.message : 'Erro ao excluir');
       } finally {
         setActionLoadingId(null);
       }
@@ -79,9 +95,9 @@ export function RecurrencesList({
     try {
       setSyncing(true);
       await syncMonthlyRecurrences(month, year);
-      alert(`Contas fixas sincronizadas com sucesso para ${formattedMonth}!`);
+      toast.success(`Contas fixas sincronizadas com sucesso para ${formattedMonth}!`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao sincronizar');
+      toast.error(err instanceof Error ? err.message : 'Erro ao sincronizar');
     } finally {
       setSyncing(false);
     }
@@ -239,7 +255,7 @@ export function RecurrencesList({
 
                 {/* Botão Excluir */}
                 <button
-                  onClick={() => handleDelete(rec.id)}
+                  onClick={() => handleDelete(rec.id, rec.description)}
                   disabled={actionLoadingId === rec.id}
                   className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition"
                   title="Excluir conta fixa"

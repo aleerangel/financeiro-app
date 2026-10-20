@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Product, ProductType } from '@/types/database';
 import { createProduct, updateProduct } from '@/lib/actions/products';
+import { toast } from 'sonner';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -58,6 +59,7 @@ export function ProductModal({
           default_price: parsedPrice,
           color,
         });
+        toast.success(`"${name}" atualizado com sucesso!`);
       } else {
         await createProduct({
           name,
@@ -65,12 +67,15 @@ export function ProductModal({
           default_price: parsedPrice,
           color,
         });
+        toast.success(`"${name}" adicionado ao catálogo!`);
       }
 
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar item.');
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar item.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

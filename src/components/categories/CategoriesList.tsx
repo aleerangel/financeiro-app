@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { Category } from '@/types/database';
 import { deleteCategory } from '@/lib/actions/categories';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { CategoryIcon } from './CategoryIcon';
 import { CategoryModal } from './CategoryModal';
 import { isBusinessCategory } from '@/lib/business-scope-utils';
@@ -22,6 +24,7 @@ interface CategoriesListProps {
 }
 
 export function CategoriesList({ initialCategories }: CategoriesListProps) {
+  const { confirm } = useConfirm();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'expense' | 'income'>('all');
@@ -46,13 +49,21 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (confirm(`Tem certeza que deseja excluir a categoria "${name}"? As transações vinculadas continuarão no histórico, mas sem categoria.`)) {
+    const ok = await confirm({
+      title: 'Excluir Categoria',
+      description: `Tem certeza que deseja excluir a categoria "${name}"? As transações vinculadas continuarão no histórico, mas sem categoria.`,
+      confirmLabel: 'Excluir Categoria',
+      variant: 'danger',
+    });
+
+    if (ok) {
       try {
         setDeletingId(id);
         await deleteCategory(id);
         setCategories((prev) => prev.filter((c) => c.id !== id));
+        toast.success(`Categoria "${name}" excluída com sucesso!`);
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Erro ao excluir categoria.');
+        toast.error(err instanceof Error ? err.message : 'Erro ao excluir categoria.');
       } finally {
         setDeletingId(null);
       }

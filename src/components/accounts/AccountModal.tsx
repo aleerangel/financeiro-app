@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, TrendingUp } from 'lucide-react';
 import { AccountType, AccountYieldType } from '@/types/database';
 import { AccountWithBalance, createAccount, updateAccount } from '@/lib/actions/accounts';
+import { toast } from 'sonner';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -83,6 +84,7 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
           yield_type: yieldType,
           yield_rate: parsedYieldRate,
         });
+        toast.success('Conta atualizada com sucesso!');
       } else {
         await createAccount({
           name,
@@ -92,11 +94,14 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
           yield_type: yieldType,
           yield_rate: parsedYieldRate,
         });
+        toast.success('Conta criada com sucesso!');
       }
 
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar conta.');
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar conta.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

@@ -5,6 +5,8 @@ import { Plus, Scissors, Package, MoreVertical, Pencil, Trash2 } from 'lucide-re
 import { Product } from '@/types/database';
 import { toggleProductActive, deleteProduct } from '@/lib/actions/products';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ProductModal } from './ProductModal';
 
 interface ProductsListProps {
@@ -12,6 +14,7 @@ interface ProductsListProps {
 }
 
 export function ProductsList({ initialProducts }: ProductsListProps) {
+  const { confirm } = useConfirm();
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [modalOpen, setModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
@@ -25,21 +28,34 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
       setProducts((prev) =>
         prev.map((p) => (p.id === prod.id ? { ...p, active: !p.active } : p))
       );
+      toast.success(
+        !prod.active
+          ? `"${prod.name}" ativado com sucesso!`
+          : `"${prod.name}" desativado do catálogo!`
+      );
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao alterar status');
+      toast.error(err instanceof Error ? err.message : 'Erro ao alterar status');
     } finally {
       setActionLoadingId(null);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este item do catálogo?')) {
+  const handleDelete = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: 'Excluir Item',
+      description: `Tem certeza que deseja excluir "${name}" do catálogo?`,
+      confirmLabel: 'Excluir Item',
+      variant: 'danger',
+    });
+
+    if (ok) {
       try {
         setActionLoadingId(id);
         await deleteProduct(id);
         setProducts((prev) => prev.filter((p) => p.id !== id));
+        toast.success(`"${name}" excluído com sucesso!`);
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Erro ao excluir');
+        toast.error(err instanceof Error ? err.message : 'Erro ao excluir');
       } finally {
         setActionLoadingId(null);
       }
@@ -131,7 +147,7 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                         {prod.active ? 'Pausar' : 'Ativar'}
                       </button>
                       <button
-                        onClick={() => handleDelete(prod.id)}
+                        onClick={() => handleDelete(prod.id, prod.name)}
                         disabled={actionLoadingId === prod.id}
                         className="w-full px-3 py-2 text-left text-red-400 hover:bg-zinc-900 flex items-center gap-2"
                       >

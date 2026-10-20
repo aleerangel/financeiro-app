@@ -26,6 +26,8 @@ import {
 import { toggleTransactionPaid, deleteTransaction } from '@/lib/actions/transactions';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useDateContext } from '@/context/DateContext';
 import { useRouter } from 'next/navigation';
 
@@ -49,6 +51,7 @@ export function CreditCardInvoicesPanel({
   onClose,
 }: CreditCardInvoicesPanelProps) {
   const router = useRouter();
+  const { confirm } = useConfirm();
   const { month: globalMonth, year: globalYear } = useDateContext();
 
   const [selectedMonth, setSelectedMonth] = useState<number>(globalMonth);
@@ -241,10 +244,11 @@ export function CreditCardInvoicesPanel({
     try {
       setActionLoading(true);
       await setCreditCardInvoicePaid(card.id, selectedMonth, selectedYear, markAsPaid);
+      toast.success(markAsPaid ? 'Fatura marcada como paga com sucesso!' : 'Fatura reaberta!');
       await refreshCardTransactions();
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao atualizar fatura.');
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar fatura.');
     } finally {
       setActionLoading(false);
     }
@@ -254,10 +258,11 @@ export function CreditCardInvoicesPanel({
     try {
       setItemLoadingId(tx.id);
       await toggleTransactionPaid(tx.id, !tx.is_paid);
+      toast.success(!tx.is_paid ? 'Lançamento marcado como pago!' : 'Lançamento desmarcado!');
       await refreshCardTransactions();
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao atualizar lançamento.');
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar lançamento.');
     } finally {
       setItemLoadingId(null);
     }
@@ -267,24 +272,32 @@ export function CreditCardInvoicesPanel({
     let deleteEntireGroup = false;
 
     if (tx.installment_group_id && tx.total_installments && tx.total_installments > 1) {
-      deleteEntireGroup = confirm(
-        `Esta compra é parcelada em ${tx.total_installments}x.\n\n` +
-          `Clique em OK para excluir TODAS as parcelas desta compra.\n` +
-          `Clique em CANCELAR para excluir SOMENTE a parcela desta fatura.`
-      );
+      const choice = await confirm({
+        title: 'Excluir Compra Parcelada',
+        description: `Esta compra é parcelada em ${tx.total_installments}x. Deseja excluir todas as parcelas ou somente a parcela desta fatura?`,
+        confirmLabel: 'Excluir Todas',
+        cancelLabel: 'Excluir Só Esta',
+        variant: 'danger',
+      });
+      deleteEntireGroup = choice;
     } else {
-      if (!confirm(`Deseja excluir "${tx.description}" desta fatura?`)) {
-        return;
-      }
+      const ok = await confirm({
+        title: 'Excluir Lançamento da Fatura',
+        description: `Deseja excluir "${tx.description}" desta fatura?`,
+        confirmLabel: 'Excluir',
+        variant: 'danger',
+      });
+      if (!ok) return;
     }
 
     try {
       setItemLoadingId(tx.id);
       await deleteTransaction(tx.id, deleteEntireGroup);
+      toast.success('Lançamento excluído com sucesso!');
       await refreshCardTransactions();
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao excluir compra.');
+      toast.error(err instanceof Error ? err.message : 'Erro ao excluir compra.');
     } finally {
       setItemLoadingId(null);
     }

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Wallet, Landmark, PiggyBank, TrendingUp, MoreVertical, Pencil, Trash2, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { AccountWithBalance, deleteAccount } from '@/lib/actions/accounts';
 import { formatCurrency } from '@/lib/utils';
 import { AccountModal } from './AccountModal';
@@ -14,6 +16,7 @@ interface AccountsListProps {
 
 export function AccountsList({ initialAccounts }: AccountsListProps) {
   const router = useRouter();
+  const { confirm } = useConfirm();
   const [modalOpen, setModalOpen] = useState(false);
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [balanceModalMode, setBalanceModalMode] = useState<'yield' | 'adjust'>('yield');
@@ -68,13 +71,21 @@ export function AccountsList({ initialAccounts }: AccountsListProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta conta? As transações vinculadas perderão a referência da conta.')) {
+    const ok = await confirm({
+      title: 'Excluir Conta',
+      description: 'Tem certeza que deseja excluir esta conta? As transações vinculadas perderão a referência da conta.',
+      confirmLabel: 'Excluir Conta',
+      variant: 'danger',
+    });
+
+    if (ok) {
       try {
         setDeletingId(id);
         await deleteAccount(id);
+        toast.success('Conta excluída com sucesso!');
         router.refresh();
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Erro ao excluir conta');
+        toast.error(err instanceof Error ? err.message : 'Erro ao excluir conta');
       } finally {
         setDeletingId(null);
         setActiveMenuId(null);

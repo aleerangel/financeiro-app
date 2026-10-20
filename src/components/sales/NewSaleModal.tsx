@@ -6,6 +6,7 @@ import { Product, Account, PaymentMethod, Client } from '@/types/database';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { toast } from 'sonner';
 import { ClientModal } from '@/components/clients/ClientModal';
 
 interface NewSaleModalProps {
@@ -134,10 +135,13 @@ export function NewSaleModal({
       setSelectedItems([]);
       setNotes('');
       setSaleDate(getTodayYMD());
+      toast.success(`Atendimento de "${clientName}" registrado com sucesso!`);
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao registrar atendimento.');
+      const msg = err instanceof Error ? err.message : 'Erro ao registrar atendimento.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

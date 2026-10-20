@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Transaction } from '@/types/database';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
 import { toggleTransactionPaid } from '@/lib/actions/transactions';
 
 interface PendingReceiptsAlertProps {
@@ -67,11 +68,13 @@ export function PendingReceiptsAlert({
     try {
       setConfirmingId(receiptId);
       await toggleTransactionPaid(receiptId, true);
+      toast.success('Recebimento confirmado com sucesso!');
       if (onReceiptConfirmed) {
         onReceiptConfirmed(receiptId);
       }
     } catch (err) {
       console.error('Erro ao confirmar recebimento:', err);
+      toast.error('Erro ao confirmar recebimento.');
     } finally {
       setConfirmingId(null);
     }

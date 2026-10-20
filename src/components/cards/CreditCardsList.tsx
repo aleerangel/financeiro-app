@@ -4,6 +4,8 @@ import { useState, useRef } from 'react';
 import { Plus, CreditCard as CardIcon, Wifi, Calendar, MoreVertical, Pencil, Trash2, Receipt } from 'lucide-react';
 import { CreditCardWithUsage, deleteCreditCard } from '@/lib/actions/credit-cards';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { CreditCardModal } from './CreditCardModal';
 import { CreditCardInvoicesPanel } from './CreditCardInvoicesPanel';
 
@@ -12,6 +14,7 @@ interface CreditCardsListProps {
 }
 
 export function CreditCardsList({ initialCards }: CreditCardsListProps) {
+  const { confirm } = useConfirm();
   const [modalOpen, setModalOpen] = useState(false);
   const [cardToEdit, setCardToEdit] = useState<CreditCardWithUsage | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -44,12 +47,20 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este cartão?')) {
+    const ok = await confirm({
+      title: 'Excluir Cartão',
+      description: 'Tem certeza que deseja excluir este cartão de crédito?',
+      confirmLabel: 'Excluir Cartão',
+      variant: 'danger',
+    });
+
+    if (ok) {
       try {
         setDeletingId(id);
         await deleteCreditCard(id);
+        toast.success('Cartão excluído com sucesso!');
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Erro ao excluir cartão');
+        toast.error(err instanceof Error ? err.message : 'Erro ao excluir cartão');
       } finally {
         setDeletingId(null);
         setActiveMenuId(null);

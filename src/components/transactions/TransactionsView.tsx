@@ -37,6 +37,8 @@ import {
 import { getYearlyCategoryEvolution } from '@/lib/actions/dashboard';
 import { CategoryMonthlyEvolutionItem } from '@/lib/category-evolution-utils';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { TransactionModal } from './TransactionModal';
 import { CategoryEvolutionModal } from '@/components/dashboard/CategoryEvolutionModal';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
@@ -60,6 +62,7 @@ export function TransactionsView({
   initialCards,
   initialCategories,
 }: TransactionsViewProps) {
+  const { confirm } = useConfirm();
   const { month, year, formattedMonth, prevMonth, nextMonth } = useDateContext();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [incomeEvolution, setIncomeEvolution] = useState<
@@ -134,8 +137,15 @@ export function TransactionsView({
           item.id === t.id ? { ...item, is_paid: !t.is_paid } : item
         )
       );
+      toast.success(
+        !t.is_paid
+          ? t.type === 'income'
+            ? 'Receita marcada como recebida!'
+            : 'Despesa marcada como paga!'
+          : 'Lançamento desmarcado (pendente)!'
+      );
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao atualizar status');
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar status');
     } finally {
       setActionLoadingId(null);
     }
@@ -149,24 +159,31 @@ export function TransactionsView({
       t.total_installments &&
       t.total_installments > 1
     ) {
-      const choice = confirm(
-        `Esta despesa faz parte de uma compra parcelada em ${t.total_installments}x.\n\n` +
-          `Clique em OK para excluir TODAS as parcelas desta compra.\n` +
-          `Clique em CANCELAR para excluir SOMENTE esta parcela.`
-      );
+      const choice = await confirm({
+        title: 'Excluir Compra Parcelada',
+        description: `Esta despesa faz parte de uma compra parcelada em ${t.total_installments}x. Deseja excluir todas as parcelas ou somente esta?`,
+        confirmLabel: 'Excluir Todas',
+        cancelLabel: 'Excluir Só Esta',
+        variant: 'danger',
+      });
       deleteEntireGroup = choice;
     } else {
-      if (!confirm('Deseja realmente excluir este lançamento?')) {
-        return;
-      }
+      const ok = await confirm({
+        title: 'Excluir Lançamento',
+        description: `Deseja realmente excluir "${t.description}"?`,
+        confirmLabel: 'Excluir',
+        variant: 'danger',
+      });
+      if (!ok) return;
     }
 
     try {
       setActionLoadingId(t.id);
       await deleteTransaction(t.id, deleteEntireGroup);
+      toast.success('Lançamento excluído com sucesso!');
       await refreshData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao excluir');
+      toast.error(err instanceof Error ? err.message : 'Erro ao excluir');
     } finally {
       setActionLoadingId(null);
     }
