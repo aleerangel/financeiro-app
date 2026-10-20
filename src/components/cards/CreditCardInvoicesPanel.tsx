@@ -14,8 +14,10 @@ import {
   Sparkles,
   Repeat,
   Layers,
+  Scissors,
 } from 'lucide-react';
 import { Transaction } from '@/types/database';
+import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import {
   CreditCardWithUsage,
   getCreditCardTransactions,
@@ -405,7 +407,7 @@ export function CreditCardInvoicesPanel({
 
       {/* Resumo Financeiro da Fatura do Mês + Botão de Pagamento Total */}
       <div className="p-5 bg-zinc-950/30 border-b border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="grid grid-cols-3 gap-3 sm:gap-6 flex-1">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 flex-1">
           <div>
             <span className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold block">
               Total da Fatura
@@ -430,6 +432,20 @@ export function CreditCardInvoicesPanel({
             </span>
             <span className="text-base sm:text-xl font-bold text-emerald-400 mt-0.5 block">
               {formatCurrency(currentInvoice.paidTotal)}
+            </span>
+          </div>
+
+          <div>
+            <span className="text-[11px] uppercase tracking-wider text-amber-300 font-semibold flex items-center gap-1">
+              <Scissors className="w-3 h-3" />
+              Gasto Barbearia
+            </span>
+            <span className="text-base sm:text-xl font-bold text-amber-300 mt-0.5 block">
+              {formatCurrency(
+                currentInvoice.items
+                  .filter((i) => isBusinessTransaction(i))
+                  .reduce((sum, i) => sum + (Number(i.amount) || 0), 0)
+              )}
             </span>
           </div>
         </div>
@@ -512,6 +528,13 @@ export function CreditCardInvoicesPanel({
                       <span className="font-semibold text-sm text-zinc-100 truncate">
                         {tx.description}
                       </span>
+
+                      {isBusinessTransaction(tx) && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          <Scissors className="w-2.5 h-2.5" />
+                          Barbearia
+                        </span>
+                      )}
 
                       {isInstallment && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-violet-500/15 text-violet-300 border border-violet-500/20">

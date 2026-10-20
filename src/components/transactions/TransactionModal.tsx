@@ -2,10 +2,15 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon } from 'lucide-react';
-import { Account, CreditCard, Category, Transaction, TransactionType, PaymentMethod } from '@/types/database';
+import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, Scissors, User } from 'lucide-react';
+import { Account, CreditCard, Category, Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { createTransaction, updateTransaction } from '@/lib/actions/transactions';
 import { formatCurrency } from '@/lib/utils';
+import {
+  isBusinessCategory,
+  isBusinessTransaction,
+  stripScopeTagFromNotes,
+} from '@/lib/business-scope-utils';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -14,6 +19,7 @@ interface TransactionModalProps {
   accounts: Account[];
   cards: CreditCard[];
   categories: Category[];
+  defaultScope?: FinancialScope;
   onSuccess?: () => void;
 }
 
@@ -24,7 +30,7 @@ export function TransactionModal(props: TransactionModalProps) {
 
   return (
     <TransactionModalDialog
-      key={props.transaction ? props.transaction.id : 'new'}
+      key={props.transaction ? props.transaction.id : `new-${props.defaultScope || 'personal'}`}
       {...props}
     />
   );
@@ -36,9 +42,16 @@ function TransactionModalDialog({
   accounts,
   cards,
   categories,
+  defaultScope = 'personal',
   onSuccess,
 }: TransactionModalProps) {
   const isEditing = !!transaction;
+
+  const initialScope: FinancialScope = transaction
+    ? isBusinessTransaction(transaction)
+      ? 'business'
+      : 'personal'
+    : defaultScope;
 
   const initialTab: TabType = transaction
     ? transaction.type === 'income'
@@ -48,13 +61,21 @@ function TransactionModalDialog({
       : 'expense'
     : 'expense';
 
+  const defaultBizCategory = categories.find(
+    (c) => c.type === 'expense' && isBusinessCategory(c)
+  );
+
+  const [scope, setScope] = useState<FinancialScope>(initialScope);
   const [tab, setTab] = useState<TabType>(initialTab);
   const [description, setDescription] = useState(transaction?.description || '');
   const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : '');
   const [date, setDate] = useState(
     transaction?.due_date || transaction?.transaction_date || new Date().toISOString().split('T')[0]
   );
-  const [categoryId, setCategoryId] = useState<string>(transaction?.category_id || '');
+  const [categoryId, setCategoryId] = useState<string>(
+    transaction?.category_id ||
+      (initialScope === 'business' && defaultBizCategory ? defaultBizCategory.id : '')
+  );
   const [accountId, setAccountId] = useState<string>(
     transaction?.account_id || accounts[0]?.id || ''
   );
@@ -63,9 +84,27 @@ function TransactionModalDialog({
   );
   const [installments, setInstallments] = useState(transaction?.total_installments || 1);
   const [isPaid, setIsPaid] = useState(transaction ? transaction.is_paid : true);
-  const [notes, setNotes] = useState(transaction?.notes || '');
+  const [notes, setNotes] = useState(stripScopeTagFromNotes(transaction?.notes));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleScopeChange = (nextScope: FinancialScope) => {
+    setScope(nextScope);
+    if (nextScope === 'business' && tab !== 'income' && defaultBizCategory) {
+      const currentCat = categories.find((c) => c.id === categoryId);
+      if (!currentCat || !isBusinessCategory(currentCat)) {
+        setCategoryId(defaultBizCategory.id);
+      }
+    }
+  };
+
+  const handleCategoryChange = (nextCatId: string) => {
+    setCategoryId(nextCatId);
+    const chosen = categories.find((c) => c.id === nextCatId);
+    if (chosen && isBusinessCategory(chosen)) {
+      setScope('business');
+    }
+  };
 
   const filteredCategories = useMemo(() => {
     const list = categories.filter((c) => {
@@ -125,6 +164,7 @@ function TransactionModalDialog({
           credit_card_id: tab === 'credit' ? cardId || null : null,
           is_paid: tab === 'credit' ? false : isPaid,
           notes: notes.trim() || null,
+          scope,
         });
       } else {
         await createTransaction({
@@ -140,6 +180,7 @@ function TransactionModalDialog({
           total_installments: tab === 'credit' ? installments : 1,
           is_paid: tab === 'credit' ? false : isPaid,
           notes: notes.trim() || null,
+          scope,
         });
       }
 
@@ -162,9 +203,43 @@ function TransactionModalDialog({
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-bold text-zinc-100 mb-4">
+        <h2 className="text-lg font-bold text-zinc-100 mb-3">
           {isEditing ? 'Editar Transação' : 'Nova Transação'}
         </h2>
+
+        {/* Seletor de Escopo: Pessoal vs Barbearia (Negócio) */}
+        <div className="mb-3">
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+            Destino do Lançamento
+          </label>
+          <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
+            <button
+              type="button"
+              onClick={() => handleScopeChange('personal')}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+                scope === 'personal'
+                  ? 'bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              Pessoal
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleScopeChange('business')}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+                scope === 'business'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <Scissors className="w-3.5 h-3.5" />
+              Barbearia (Negócio)
+            </button>
+          </div>
+        </div>
 
         {/* Abas de Tipo */}
         <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-5">
@@ -274,13 +349,13 @@ function TransactionModalDialog({
               </div>
               <select
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
               >
                 <option value="">Selecione...</option>
                 {filteredCategories.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {isBusinessCategory(c) ? `✂️ ${c.name}` : c.name}
                   </option>
                 ))}
               </select>

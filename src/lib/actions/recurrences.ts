@@ -2,9 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { Recurrence, TransactionType } from '@/types/database';
+import { Recurrence, TransactionType, FinancialScope } from '@/types/database';
 import { isPastMonth, getZonedParts } from '@/lib/date-utils';
 import { isRecurrenceEligible, buildDueDate } from '@/lib/recurrence-utils';
+import { isBusinessRecurrence, applyScopeToNotes } from '@/lib/business-scope-utils';
 
 export interface CreateRecurrenceInput {
   description: string;
@@ -15,6 +16,7 @@ export interface CreateRecurrenceInput {
   credit_card_id?: string | null;
   due_day: number;
   frequency?: 'monthly' | 'yearly';
+  scope?: FinancialScope;
 }
 
 export interface UpdateRecurrenceInput {
@@ -27,6 +29,7 @@ export interface UpdateRecurrenceInput {
   due_day?: number;
   frequency?: 'monthly' | 'yearly';
   active?: boolean;
+  scope?: FinancialScope;
 }
 
 export async function getRecurrences(): Promise<Recurrence[]> {
@@ -74,7 +77,10 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
 
   const { data: recurrences, error: recError } = await supabase
     .from('recurrences')
-    .select('*')
+    .select(`
+      *,
+      category:categories(*)
+    `)
     .eq('user_id', user.id)
     .eq('active', true);
 
@@ -101,6 +107,8 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
   if (toInsert.length > 0) {
     const rows = toInsert.map((rec) => {
       const dueDate = buildDueDate(year, month, rec.due_day);
+      const isBiz = isBusinessRecurrence(rec as unknown as Recurrence);
+      const scope: FinancialScope = isBiz ? 'business' : 'personal';
       return {
         user_id: user.id,
         description: rec.description,
@@ -115,14 +123,26 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
         recurrence_id: rec.id,
         is_paid: false,
         paid_at: null,
-        notes: 'Lançamento automático de conta fixa',
+        notes: applyScopeToNotes('Lançamento automático de conta fixa', scope),
+        scope,
       };
     });
 
     // ignoreDuplicates => ON CONFLICT DO NOTHING (corrida entre abas/dispositivos)
-    const { error: insertError } = await supabase
+    let { error: insertError } = await supabase
       .from('transactions')
       .upsert(rows, { onConflict: 'recurrence_id,due_date', ignoreDuplicates: true });
+
+    if (insertError && insertError.message?.includes('scope')) {
+      const fallbackRows = rows.map(({ scope: _s, ...rest }) => {
+        void _s;
+        return rest;
+      });
+      const retry = await supabase
+        .from('transactions')
+        .upsert(fallbackRows, { onConflict: 'recurrence_id,due_date', ignoreDuplicates: true });
+      insertError = retry.error;
+    }
 
     if (insertError) {
       console.error('Erro ao sincronizar transações recorrentes:', insertError);
@@ -150,22 +170,37 @@ export async function createRecurrence(input: CreateRecurrenceInput) {
 
   if (!user) throw new Error('Não autenticado');
 
-  const { data, error } = await supabase
+  const baseRecRow = {
+    user_id: user.id,
+    description: input.description.trim(),
+    amount: input.amount,
+    type: input.type,
+    category_id: input.category_id || null,
+    account_id: input.account_id || null,
+    credit_card_id: input.credit_card_id || null,
+    due_day: input.due_day,
+    frequency: input.frequency || 'monthly',
+    active: true,
+  };
+
+  let { data, error } = await supabase
     .from('recurrences')
     .insert({
-      user_id: user.id,
-      description: input.description.trim(),
-      amount: input.amount,
-      type: input.type,
-      category_id: input.category_id || null,
-      account_id: input.account_id || null,
-      credit_card_id: input.credit_card_id || null,
-      due_day: input.due_day,
-      frequency: input.frequency || 'monthly',
-      active: true,
+      ...baseRecRow,
+      ...(input.scope ? { scope: input.scope } : {}),
     })
     .select()
     .single();
+
+  if (error && input.scope && error.message?.includes('scope')) {
+    const retry = await supabase
+      .from('recurrences')
+      .insert(baseRecRow)
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw new Error(error.message);
 
@@ -194,8 +229,9 @@ export async function updateRecurrence(id: string, input: UpdateRecurrenceInput)
   if (input.due_day !== undefined) updates.due_day = input.due_day;
   if (input.frequency !== undefined) updates.frequency = input.frequency;
   if (input.active !== undefined) updates.active = input.active;
+  if (input.scope !== undefined) updates.scope = input.scope;
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('recurrences')
     .update(updates)
     .eq('id', id)
@@ -207,6 +243,24 @@ export async function updateRecurrence(id: string, input: UpdateRecurrenceInput)
       credit_card:credit_cards(*)
     `)
     .single();
+
+  if (error && input.scope !== undefined && error.message?.includes('scope')) {
+    delete updates.scope;
+    const retry = await supabase
+      .from('recurrences')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select(`
+        *,
+        category:categories(*),
+        account:accounts(*),
+        credit_card:credit_cards(*)
+      `)
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw new Error(error.message);
 

@@ -11,6 +11,7 @@ export type TransactionType = 'income' | 'expense' | 'transfer';
 export type PaymentMethod = 'cash' | 'debit' | 'credit' | 'pix' | 'transfer';
 export type CategoryType = 'income' | 'expense' | 'both';
 export type RecurrenceFrequency = 'monthly' | 'yearly';
+export type FinancialScope = 'personal' | 'business';
 
 export interface Account {
   id: string;
@@ -43,6 +44,7 @@ export interface Category {
   icon: string;
   color: string;
   is_default: boolean;
+  scope?: FinancialScope;
   created_at: string;
 }
 
@@ -58,6 +60,7 @@ export interface Recurrence {
   due_day: number;
   frequency: RecurrenceFrequency;
   active: boolean;
+  scope?: FinancialScope;
   created_at: string;
   updated_at: string;
   // Campos populados via joins
@@ -85,6 +88,7 @@ export interface Transaction {
   is_paid: boolean;
   paid_at: string | null;
   notes: string | null;
+  scope?: FinancialScope;
   created_at: string;
   updated_at: string;
   // Campos populados via joins

@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { X, ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { Account, CreditCard, Category, TransactionType, Recurrence } from '@/types/database';
+import { X, ArrowDownRight, ArrowUpRight, Scissors, User } from 'lucide-react';
+import { Account, CreditCard, Category, TransactionType, Recurrence, FinancialScope } from '@/types/database';
 import { createRecurrence, updateRecurrence } from '@/lib/actions/recurrences';
+import { isBusinessCategory, isBusinessRecurrence } from '@/lib/business-scope-utils';
 
 interface RecurrenceModalProps {
   isOpen: boolean;
@@ -51,6 +52,9 @@ function RecurrenceModalDialog({
 }: RecurrenceModalProps) {
   const isEditing = !!recurrence;
 
+  const [scope, setScope] = useState<FinancialScope>(
+    recurrence && isBusinessRecurrence(recurrence) ? 'business' : 'personal'
+  );
   const [type, setType] = useState<TransactionType>(recurrence?.type || 'expense');
   const [description, setDescription] = useState(recurrence?.description || '');
   const [amount, setAmount] = useState(recurrence?.amount ? String(recurrence.amount) : '');
@@ -107,6 +111,7 @@ function RecurrenceModalDialog({
           category_id: categoryId || null,
           account_id: payMethodType === 'account' ? accountId || null : null,
           credit_card_id: payMethodType === 'card' ? cardId || null : null,
+          scope,
         });
       } else {
         await createRecurrence({
@@ -117,6 +122,7 @@ function RecurrenceModalDialog({
           category_id: categoryId || null,
           account_id: payMethodType === 'account' ? accountId || null : null,
           credit_card_id: payMethodType === 'card' ? cardId || null : null,
+          scope,
         });
       }
 
@@ -147,6 +153,35 @@ function RecurrenceModalDialog({
             ? 'Altere os dados da recorrência. Os lançamentos pendentes deste mês serão atualizados automaticamente.'
             : 'Cadastre despesas ou receitas automáticas que se repetem todo mês.'}
         </p>
+
+        {/* Escopo: Pessoal ou Barbearia */}
+        <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-3">
+          <button
+            type="button"
+            onClick={() => setScope('personal')}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+              scope === 'personal'
+                ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            Pessoal
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setScope('business')}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+              scope === 'business'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Scissors className="w-3.5 h-3.5" />
+            Barbearia (Negócio)
+          </button>
+        </div>
 
         {/* Tipo: Despesa Fixa ou Receita Fixa */}
         <div className="grid grid-cols-2 gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-4">
@@ -242,13 +277,20 @@ function RecurrenceModalDialog({
             </div>
             <select
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setCategoryId(nextId);
+                const chosen = categories.find((c) => c.id === nextId);
+                if (chosen && isBusinessCategory(chosen)) {
+                  setScope('business');
+                }
+              }}
               className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
             >
               <option value="">Selecione...</option>
               {filteredCategories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {isBusinessCategory(c) ? `✂️ ${c.name}` : c.name}
                 </option>
               ))}
             </select>

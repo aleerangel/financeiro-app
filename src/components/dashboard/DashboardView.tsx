@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { AccountWithBalance, getAccounts } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
-import { Category, Transaction } from '@/types/database';
+import { Category, Transaction, FinancialScope } from '@/types/database';
 import { useDateContext } from '@/context/DateContext';
 import { getTransactions, getUpcomingAndOverdueBills, getPendingIncomeReceipts } from '@/lib/actions/transactions';
 import {
@@ -57,6 +57,7 @@ export function DashboardView({
   const [refreshing, setRefreshing] = useState(false);
   const loading = refreshing || loadedKey !== monthKey;
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalDefaultScope, setModalDefaultScope] = useState<FinancialScope>('personal');
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [accountToAdjustBalance, setAccountToAdjustBalance] = useState<AccountWithBalance | null>(null);
 
@@ -174,13 +175,25 @@ export function DashboardView({
 
           {/* Botões de Ação Rápida */}
           {viewMode === 'business' ? (
-            <Link
-              href="/vendas"
-              className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
-            >
-              <Scissors className="w-4 h-4 stroke-[2.5]" />
-              Novo Atendimento
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setModalDefaultScope('business');
+                  setModalOpen(true);
+                }}
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs sm:text-sm rounded-xl transition"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                Gasto Barbearia
+              </button>
+              <Link
+                href="/vendas"
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+              >
+                <Scissors className="w-4 h-4 stroke-[2.5]" />
+                Novo Atendimento
+              </Link>
+            </div>
           ) : (
             <div className="flex items-center gap-2">
               <Link
@@ -191,7 +204,10 @@ export function DashboardView({
                 Atendimento
               </Link>
               <button
-                onClick={() => setModalOpen(true)}
+                onClick={() => {
+                  setModalDefaultScope('personal');
+                  setModalOpen(true);
+                }}
                 className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
@@ -212,6 +228,10 @@ export function DashboardView({
           onEditBalance={(acc) => {
             setAccountToAdjustBalance(acc);
             setBalanceModalOpen(true);
+          }}
+          onAddBusinessExpense={() => {
+            setModalDefaultScope('business');
+            setModalOpen(true);
           }}
         />
       ) : (
@@ -247,6 +267,7 @@ export function DashboardView({
         accounts={accounts}
         cards={initialCards}
         categories={categories}
+        defaultScope={modalDefaultScope}
         onSuccess={refreshData}
       />
 

@@ -14,6 +14,8 @@ import { Category } from '@/types/database';
 import { deleteCategory } from '@/lib/actions/categories';
 import { CategoryIcon } from './CategoryIcon';
 import { CategoryModal } from './CategoryModal';
+import { isBusinessCategory } from '@/lib/business-scope-utils';
+import { Scissors } from 'lucide-react';
 
 interface CategoriesListProps {
   initialCategories: Category[];
@@ -205,6 +207,12 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
                     >
                       {isExpense ? 'Despesa' : 'Receita'}
                     </span>
+                    {isBusinessCategory(category) && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        <Scissors className="w-2.5 h-2.5" />
+                        Barbearia
+                      </span>
+                    )}
                     {category.is_default && (
                       <span className="text-[10px] text-zinc-500 font-medium">
                         Padrão

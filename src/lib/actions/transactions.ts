@@ -2,9 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { Transaction, TransactionType, PaymentMethod } from '@/types/database';
+import { Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { calculateInstallmentDueDates } from '@/lib/credit-card-utils';
 import { getZonedParts, getTodayYMD } from '@/lib/date-utils';
+import { applyScopeToNotes } from '@/lib/business-scope-utils';
 
 export interface CreateTransactionInput {
   description: string;
@@ -19,6 +20,7 @@ export interface CreateTransactionInput {
   total_installments?: number;
   is_paid?: boolean;
   notes?: string | null;
+  scope?: FinancialScope;
 }
 
 export interface UpdateTransactionInput {
@@ -33,6 +35,7 @@ export interface UpdateTransactionInput {
   credit_card_id?: string | null;
   is_paid?: boolean;
   notes?: string | null;
+  scope?: FinancialScope;
 }
 
 export async function getTransactions(month: number, year: number): Promise<Transaction[]> {
@@ -103,6 +106,8 @@ export async function createTransaction(input: CreateTransactionInput) {
 
     const installmentGroupId = totalInstallments > 1 ? crypto.randomUUID() : null;
     const installmentAmount = Math.round((input.amount / totalInstallments) * 100) / 100;
+    const scope: FinancialScope = input.scope || 'personal';
+    const taggedNotes = applyScopeToNotes(input.notes, scope);
 
     const transactionsToInsert = dueDates.map((dueDate, index) => {
       const currentNumber = index + 1;
@@ -126,40 +131,59 @@ export async function createTransaction(input: CreateTransactionInput) {
         total_installments: totalInstallments,
         is_paid: false,
         paid_at: null,
-        notes: input.notes || null,
+        notes: taggedNotes,
+        scope,
       };
     });
 
-    const { error: insertError } = await supabase
+    let { error: insertError } = await supabase
       .from('transactions')
       .insert(transactionsToInsert);
+
+    if (insertError && insertError.message?.includes('scope')) {
+      const fallbackRows = transactionsToInsert.map(({ scope: _s, ...rest }) => {
+        void _s;
+        return rest;
+      });
+      const retry = await supabase.from('transactions').insert(fallbackRows);
+      insertError = retry.error;
+    }
 
     if (insertError) throw new Error(insertError.message);
   } else {
     // Transação comum (Receita, Pix, Débito, Dinheiro)
     const dueDate = input.due_date || input.transaction_date;
     const isPaid = input.is_paid ?? true;
+    const scope: FinancialScope = input.scope || 'personal';
+    const taggedNotes = applyScopeToNotes(input.notes, scope);
 
-    const { error: insertError } = await supabase
+    const baseRow = {
+      user_id: user.id,
+      description: input.description.trim(),
+      amount: input.amount,
+      type: input.type,
+      payment_method: input.payment_method,
+      transaction_date: input.transaction_date,
+      due_date: dueDate,
+      category_id: input.category_id || null,
+      account_id: input.account_id || null,
+      credit_card_id: null,
+      installment_group_id: null,
+      current_installment: 1,
+      total_installments: 1,
+      is_paid: isPaid,
+      paid_at: isPaid ? new Date().toISOString() : null,
+      notes: taggedNotes,
+    };
+
+    let { error: insertError } = await supabase
       .from('transactions')
-      .insert({
-        user_id: user.id,
-        description: input.description.trim(),
-        amount: input.amount,
-        type: input.type,
-        payment_method: input.payment_method,
-        transaction_date: input.transaction_date,
-        due_date: dueDate,
-        category_id: input.category_id || null,
-        account_id: input.account_id || null,
-        credit_card_id: null,
-        installment_group_id: null,
-        current_installment: 1,
-        total_installments: 1,
-        is_paid: isPaid,
-        paid_at: isPaid ? new Date().toISOString() : null,
-        notes: input.notes || null,
-      });
+      .insert({ ...baseRow, scope });
+
+    if (insertError && insertError.message?.includes('scope')) {
+      const retry = await supabase.from('transactions').insert(baseRow);
+      insertError = retry.error;
+    }
 
     if (insertError) throw new Error(insertError.message);
   }
@@ -190,9 +214,14 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
     updates.is_paid = input.is_paid;
     updates.paid_at = input.is_paid ? new Date().toISOString() : null;
   }
-  if (input.notes !== undefined) updates.notes = input.notes;
+  if (input.notes !== undefined || input.scope !== undefined) {
+    updates.notes = applyScopeToNotes(input.notes, input.scope || 'personal');
+  }
+  if (input.scope !== undefined) {
+    updates.scope = input.scope;
+  }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('transactions')
     .update(updates)
     .eq('id', id)
@@ -204,6 +233,24 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
       credit_card:credit_cards(*)
     `)
     .single();
+
+  if (error && input.scope !== undefined && error.message?.includes('scope')) {
+    delete updates.scope;
+    const retry = await supabase
+      .from('transactions')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select(`
+        *,
+        category:categories(*),
+        account:accounts(*),
+        credit_card:credit_cards(*)
+      `)
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw new Error(error.message);
 

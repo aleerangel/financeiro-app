@@ -13,11 +13,16 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Percent,
+  Plus,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { BusinessDashboardData, BusinessPeriodStat } from '@/lib/actions/dashboard';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
-import { formatCurrency, formatDateTime } from '@/lib/utils';
+import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 
 export type ChartPeriod = 'weekly' | 'monthly' | 'yearly';
 
@@ -27,6 +32,7 @@ interface BusinessDashboardViewProps {
   formattedMonth?: string;
   loading?: boolean;
   onEditBalance?: (account: AccountWithBalance) => void;
+  onAddBusinessExpense?: () => void;
 }
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -42,6 +48,7 @@ export function BusinessDashboardView({
   formattedMonth,
   loading = false,
   onEditBalance,
+  onAddBusinessExpense,
 }: BusinessDashboardViewProps) {
   const [period, setPeriod] = useState<ChartPeriod>('yearly');
   // Seleção de semana vinculada ao mês em que foi feita: ao trocar de mês, é descartada
@@ -95,21 +102,27 @@ export function BusinessDashboardView({
     return `Visão semanal com os dias da semana (${activeWeekMeta?.shortLabel || 'Dom a Sáb'})`;
   }, [period, formattedMonth, activeWeekMeta]);
 
-  // Configura as séries do gráfico no estilo do mockup:
-  // Receita (amarelo) e Vendas (verde)
+  // Configura as séries do gráfico: Faturamento, Gastos da Barbearia e Lucro Líquido
   const chartSeries: ChartSeries[] = [
     {
       id: 'revenue',
-      name: 'Receita',
-      color: '#eab308', // Amarelo
+      name: 'Faturamento',
+      color: '#22c55e', // Verde
       values: activeStats.map((s) => s.revenue),
       formatValue: (v) => formatCurrency(v),
     },
     {
-      id: 'sales',
-      name: 'Vendas',
-      color: '#22c55e', // Verde
-      values: activeStats.map((s) => s.revenue), // Curva de vendas em R$
+      id: 'expenses',
+      name: 'Gastos Barbearia',
+      color: '#f43f5e', // Rosa/Vermelho
+      values: activeStats.map((s) => s.expenses || 0),
+      formatValue: (v) => formatCurrency(v),
+    },
+    {
+      id: 'netProfit',
+      name: 'Lucro Líquido',
+      color: '#eab308', // Amarelo/Dourado
+      values: activeStats.map((s) => s.netProfit ?? s.revenue - (s.expenses || 0)),
       formatValue: (v) => formatCurrency(v),
     },
   ];
@@ -117,8 +130,129 @@ export function BusinessDashboardView({
   const chartLabels = activeStats.map((s) => s.label);
   const chartTooltipLabels = activeStats.map((s) => s.fullLabel || s.label);
 
+  const summary = data?.monthSummary || {
+    revenue: 0,
+    paidExpenses: 0,
+    pendingExpenses: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+    projectedProfit: 0,
+    profitMargin: 0,
+    salesCount: 0,
+    averageTicket: 0,
+  };
+
   return (
     <div className="space-y-6">
+      {/* KPIs de Resultado Real da Barbearia no Mês Selecionado */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* 1. Faturamento Bruto */}
+        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">
+              Faturamento ({formattedMonth || 'Mês'})
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <TrendingUp className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <span className="text-lg sm:text-2xl font-extrabold text-emerald-400 block">
+              {formatCurrency(summary.revenue)}
+            </span>
+            <span className="text-[11px] text-zinc-400 mt-1 block">
+              {summary.salesCount} atendimentos • Ticket {formatCurrency(summary.averageTicket)}
+            </span>
+          </div>
+        </div>
+
+        {/* 2. Gastos da Barbearia */}
+        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400">
+              Gastos da Barbearia
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+              <TrendingDown className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <span className="text-lg sm:text-2xl font-extrabold text-rose-400 block">
+              {formatCurrency(summary.paidExpenses)}
+            </span>
+            <span className="text-[11px] text-zinc-400 mt-1 block">
+              {summary.pendingExpenses > 0
+                ? `+ ${formatCurrency(summary.pendingExpenses)} em aberto/fatura`
+                : 'Nenhum custo pendente'}
+            </span>
+          </div>
+        </div>
+
+        {/* 3. Lucro Líquido Real */}
+        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-400">
+              Lucro Líquido Real
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <Wallet className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <span
+              className={`text-lg sm:text-2xl font-extrabold block ${
+                summary.netProfit >= 0 ? 'text-zinc-100' : 'text-rose-400'
+              }`}
+            >
+              {formatCurrency(summary.netProfit)}
+            </span>
+            <span className="text-[11px] text-zinc-400 mt-1 block">
+              Após faturas: {formatCurrency(summary.projectedProfit)}
+            </span>
+          </div>
+        </div>
+
+        {/* 4. Margem de Lucro (%) */}
+        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">
+              Margem de Lucro
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+              <Percent className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <span
+              className={`text-lg sm:text-2xl font-extrabold block ${
+                summary.profitMargin >= 70
+                  ? 'text-emerald-400'
+                  : summary.profitMargin >= 40
+                  ? 'text-amber-300'
+                  : summary.revenue > 0
+                  ? 'text-rose-400'
+                  : 'text-zinc-400'
+              }`}
+            >
+              {summary.revenue > 0 ? `${summary.profitMargin}%` : '—'}
+            </span>
+            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-2">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  summary.profitMargin >= 70
+                    ? 'bg-emerald-400'
+                    : summary.profitMargin >= 40
+                    ? 'bg-amber-400'
+                    : 'bg-rose-400'
+                }`}
+                style={{
+                  width: `${Math.max(0, Math.min(100, summary.profitMargin))}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Seletor de Período dos Gráficos: Semanal, Mensal, Anual */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
         <div className="flex items-center gap-3">
@@ -199,7 +333,7 @@ export function BusinessDashboardView({
         {/* Gráfico (Ocupa 2 colunas no desktop) */}
         <div className="lg:col-span-2">
           <SmoothLineChart
-            title="Vendas e receita"
+            title="Faturamento, Gastos e Lucro da Barbearia"
             subtitle={periodSubtitle}
             series={chartSeries}
             labels={chartLabels}
@@ -274,6 +408,139 @@ export function BusinessDashboardView({
                 accounts.reduce((sum, a) => sum + Number(a.current_balance || 0), 0)
               )}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Controle de Gastos da Barbearia: Consumo por Cartão/Conta + Últimos Gastos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Consumo da Barbearia por Conta / Cartão */}
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-zinc-100 text-base">
+                  Consumo da Barbearia por Cartão / Conta
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Quanto os gastos da barbearia utilizaram de cada meio em {formattedMonth || 'mês atual'}
+                </p>
+              </div>
+              {onAddBusinessExpense && (
+                <button
+                  type="button"
+                  onClick={onAddBusinessExpense}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Novo Gasto
+                </button>
+              )}
+            </div>
+
+            {data.expensesBySource && data.expensesBySource.length > 0 ? (
+              <div className="space-y-3">
+                {data.expensesBySource.map((src) => (
+                  <div
+                    key={src.id}
+                    className="p-3.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0"
+                        style={{ backgroundColor: src.color || '#f59e0b' }}
+                      >
+                        <CreditCard className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-zinc-100 truncate">
+                            {src.name}
+                          </span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300">
+                            {src.type === 'card' ? 'Cartão' : 'Conta'}
+                          </span>
+                        </div>
+                        <span className="text-xs text-zinc-400 block mt-0.5">
+                          Pago: {formatCurrency(src.paidAmount)}
+                          {src.pendingAmount > 0
+                            ? ` • Na fatura/pendente: ${formatCurrency(src.pendingAmount)}`
+                            : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="text-sm sm:text-base font-extrabold text-rose-400 shrink-0">
+                      - {formatCurrency(src.totalAmount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-10 text-center text-xs text-zinc-500">
+                Nenhum gasto da barbearia registrado neste mês.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Últimos Gastos da Barbearia (Insumos, Lâminas, Produtos, etc.) */}
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-zinc-100 text-base">
+                  Últimos Gastos da Barbearia
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Insumos, descartáveis, produtos e contas fixas do negócio
+                </p>
+              </div>
+              <Link
+                href="/transacoes"
+                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium shrink-0"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Ver todos
+              </Link>
+            </div>
+
+            {data.recentExpenses && data.recentExpenses.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
+                      <th className="pb-2.5 font-semibold">Insumo / Gasto</th>
+                      <th className="pb-2.5 font-semibold">Meio</th>
+                      <th className="pb-2.5 font-semibold text-right">Valor</th>
+                      <th className="pb-2.5 font-semibold text-right">Vencimento</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800/60">
+                    {data.recentExpenses.map((exp) => (
+                      <tr key={exp.id} className="hover:bg-zinc-800/30 transition">
+                        <td className="py-3 font-semibold text-zinc-100 max-w-[140px] truncate">
+                          {exp.description}
+                        </td>
+                        <td className="py-3 text-zinc-400">
+                          {exp.source_name}
+                        </td>
+                        <td className="py-3 text-right font-bold text-rose-400">
+                          - {formatCurrency(exp.amount)}
+                        </td>
+                        <td className="py-3 text-right text-zinc-400 font-mono text-[11px]">
+                          {formatDate(exp.due_date)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-10 text-center text-xs text-zinc-500">
+                Nenhuma despesa da barbearia lançada neste mês.
+              </div>
+            )}
           </div>
         </div>
       </div>

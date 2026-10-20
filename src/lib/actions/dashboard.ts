@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { buildCalendarWeeks, findDefaultWeekIndex } from '@/lib/week-utils';
+import { isBusinessTransaction } from '@/lib/business-scope-utils';
+import { Transaction } from '@/types/database';
 
 export interface BusinessPeriodStat {
   label: string; // Ex: 'Jan', '01-07', 'Seg'
@@ -11,6 +13,8 @@ export interface BusinessPeriodStat {
   monthLabel?: string;
   salesCount: number;
   revenue: number;
+  expenses: number;
+  netProfit: number;
 }
 
 export type MonthlyBusinessStat = BusinessPeriodStat;
@@ -30,6 +34,40 @@ export interface RecentBusinessSale {
   sale_date: string;
 }
 
+export interface RecentBusinessExpense {
+  id: string;
+  description: string;
+  category_name: string;
+  category_color: string;
+  source_name: string;
+  source_type: 'account' | 'card';
+  amount: number;
+  due_date: string;
+  is_paid: boolean;
+}
+
+export interface BusinessExpenseSourceStat {
+  id: string;
+  name: string;
+  type: 'account' | 'card';
+  color: string;
+  paidAmount: number;
+  pendingAmount: number;
+  totalAmount: number;
+}
+
+export interface BusinessMonthSummary {
+  revenue: number;
+  paidExpenses: number;
+  pendingExpenses: number;
+  totalExpenses: number;
+  netProfit: number;
+  projectedProfit: number;
+  profitMargin: number;
+  salesCount: number;
+  averageTicket: number;
+}
+
 export interface BusinessDashboardData {
   yearlyStats: BusinessPeriodStat[];
   monthlyStats: BusinessPeriodStat[];
@@ -38,6 +76,9 @@ export interface BusinessDashboardData {
   defaultWeekIndex: number;
   topProducts: TopProductStat[];
   recentSales: RecentBusinessSale[];
+  recentExpenses: RecentBusinessExpense[];
+  expensesBySource: BusinessExpenseSourceStat[];
+  monthSummary: BusinessMonthSummary;
 }
 
 export interface PeriodStat {
@@ -101,33 +142,64 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     ? calendarWeeks[calendarWeeks.length - 1].endDate
     : endDate;
 
-  // 1. Busca vendas no período abrangente
-  const { data: salesData, error: salesError } = await supabase
-    .from('sales')
-    .select(`
-      id,
-      client_name,
-      total_amount,
-      sale_date,
-      account:accounts(name),
-      items:sale_items(
-        product_name,
-        quantity,
-        total_price
-      )
-    `)
-    .eq('user_id', user.id)
-    .gte('sale_date', `${earliestDate}T00:00:00.000Z`)
-    .lte('sale_date', `${latestDate}T23:59:59.999Z`)
-    .order('sale_date', { ascending: false });
+  // 1. Busca vendas e despesas no período abrangente em paralelo
+  const [
+    { data: salesData, error: salesError },
+    { data: txData, error: txError },
+  ] = await Promise.all([
+    supabase
+      .from('sales')
+      .select(`
+        id,
+        client_name,
+        total_amount,
+        sale_date,
+        account:accounts(name),
+        items:sale_items(
+          product_name,
+          quantity,
+          total_price
+        )
+      `)
+      .eq('user_id', user.id)
+      .gte('sale_date', `${earliestDate}T00:00:00.000Z`)
+      .lte('sale_date', `${latestDate}T23:59:59.999Z`)
+      .order('sale_date', { ascending: false }),
+    supabase
+      .from('transactions')
+      .select(`
+        *,
+        category:categories(*),
+        account:accounts(id, name, color),
+        credit_card:credit_cards(id, name, color)
+      `)
+      .eq('user_id', user.id)
+      .eq('type', 'expense')
+      .gte('due_date', earliestDate)
+      .lte('due_date', latestDate)
+      .order('due_date', { ascending: false }),
+  ]);
 
   if (salesError || !salesData) {
     console.error('Erro ao buscar dados de vendas do dashboard:', salesError);
   }
+  if (txError) {
+    console.error('Erro ao buscar despesas do dashboard:', txError);
+  }
 
   const sales = salesData || [];
+  const allExpenses = (txData as unknown as Transaction[]) || [];
+  const businessExpenses = allExpenses.filter((t) => isBusinessTransaction(t));
 
-  // Mapeamento diário
+  // Mapeamento diário de despesas pagas da Barbearia para os gráficos
+  const bizExpenseByDate = new Map<string, number>();
+  for (const tx of businessExpenses) {
+    if (!tx.due_date || !tx.is_paid) continue;
+    const amt = Number(tx.amount) || 0;
+    bizExpenseByDate.set(tx.due_date, (bizExpenseByDate.get(tx.due_date) || 0) + amt);
+  }
+
+  // Mapeamento diário de vendas
   const salesByDate = new Map<string, { revenue: number; salesCount: number }>();
   const productAgg = new Map<string, {
     totalQuantity: number;
@@ -182,6 +254,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     const lastDayNum = new Date(year, idx + 1, 0).getDate();
 
     let revenue = 0;
+    let expenses = 0;
     let salesCount = 0;
 
     for (let day = 1; day <= lastDayNum; day++) {
@@ -191,6 +264,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
         revenue += dayData.revenue;
         salesCount += dayData.salesCount;
       }
+      expenses += bizExpenseByDate.get(dStr) || 0;
     }
 
     return {
@@ -199,6 +273,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       month: idx,
       monthLabel: label,
       revenue,
+      expenses,
+      netProfit: revenue - expenses,
       salesCount,
     };
   });
@@ -206,6 +282,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   // 2. STATS MENSAIS (Semanas de Domingo a Sábado do Mês Selecionado)
   const monthlyStats: BusinessPeriodStat[] = calendarWeeks.map((cw) => {
     let revenue = 0;
+    let expenses = 0;
     let salesCount = 0;
 
     for (const day of cw.days) {
@@ -214,12 +291,15 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
         revenue += dayData.revenue;
         salesCount += dayData.salesCount;
       }
+      expenses += bizExpenseByDate.get(day.dateStr) || 0;
     }
 
     return {
       label: cw.shortLabel,
       fullLabel: cw.label,
       revenue,
+      expenses,
+      netProfit: revenue - expenses,
       salesCount,
     };
   });
@@ -230,17 +310,115 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   for (const cw of calendarWeeks) {
     const stats: BusinessPeriodStat[] = cw.days.map((day) => {
       const dayData = salesByDate.get(day.dateStr);
+      const rev = dayData?.revenue || 0;
+      const exp = bizExpenseByDate.get(day.dateStr) || 0;
       return {
         label: day.weekdayLabel,
         fullLabel: day.fullLabel,
         dateKey: day.dateStr,
-        revenue: dayData?.revenue || 0,
+        revenue: rev,
+        expenses: exp,
+        netProfit: rev - exp,
         salesCount: dayData?.salesCount || 0,
       };
     });
 
     weeklyStatsByWeek[cw.index] = stats;
   }
+
+  // 4. RESUMO DO MÊS SELECIONADO (Faturamento, Gastos da Barbearia, Lucro Líquido e Margem %)
+  const selectedMonthStart = `${year}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+  const selectedMonthLastDay = new Date(year, currentMonth + 1, 0).getDate();
+  const selectedMonthEnd = `${year}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedMonthLastDay).padStart(2, '0')}`;
+
+  const currentMonthStat = yearlyStats[currentMonth] || { revenue: 0, salesCount: 0 };
+  const monthRevenue = currentMonthStat.revenue;
+  const monthSalesCount = currentMonthStat.salesCount;
+
+  const monthBizExpenses = businessExpenses.filter(
+    (t) => t.due_date >= selectedMonthStart && t.due_date <= selectedMonthEnd
+  );
+
+  let paidExpenses = 0;
+  let pendingExpenses = 0;
+  const sourceMap = new Map<string, BusinessExpenseSourceStat>();
+
+  for (const tx of monthBizExpenses) {
+    const amt = Number(tx.amount) || 0;
+    if (tx.is_paid) {
+      paidExpenses += amt;
+    } else {
+      pendingExpenses += amt;
+    }
+
+    const isCard = Boolean(tx.credit_card_id);
+    const sourceId = (isCard ? tx.credit_card_id : tx.account_id) || 'other';
+    const sourceName = isCard
+      ? tx.credit_card?.name || 'Cartão de Crédito'
+      : tx.account?.name || 'Conta / Caixa';
+    const sourceColor = isCard
+      ? tx.credit_card?.color || '#8b5cf6'
+      : tx.account?.color || '#3b82f6';
+
+    const curSource = sourceMap.get(sourceId) || {
+      id: sourceId,
+      name: sourceName,
+      type: isCard ? 'card' : 'account',
+      color: sourceColor,
+      paidAmount: 0,
+      pendingAmount: 0,
+      totalAmount: 0,
+    };
+
+    if (tx.is_paid) {
+      curSource.paidAmount += amt;
+    } else {
+      curSource.pendingAmount += amt;
+    }
+    curSource.totalAmount += amt;
+    sourceMap.set(sourceId, curSource);
+  }
+
+  const totalExpenses = paidExpenses + pendingExpenses;
+  const netProfit = monthRevenue - paidExpenses;
+  const projectedProfit = monthRevenue - totalExpenses;
+  const profitMargin =
+    monthRevenue > 0 ? Math.round((netProfit / monthRevenue) * 100) : 0;
+  const averageTicket =
+    monthSalesCount > 0 ? monthRevenue / monthSalesCount : 0;
+
+  const monthSummary: BusinessMonthSummary = {
+    revenue: monthRevenue,
+    paidExpenses,
+    pendingExpenses,
+    totalExpenses,
+    netProfit,
+    projectedProfit,
+    profitMargin,
+    salesCount: monthSalesCount,
+    averageTicket,
+  };
+
+  const expensesBySource = Array.from(sourceMap.values()).sort(
+    (a, b) => b.totalAmount - a.totalAmount
+  );
+
+  const recentExpenses: RecentBusinessExpense[] = monthBizExpenses.slice(0, 6).map((tx) => {
+    const isCard = Boolean(tx.credit_card_id);
+    return {
+      id: tx.id,
+      description: tx.description,
+      category_name: tx.category?.name || 'Insumos & Barbearia',
+      category_color: tx.category?.color || '#f59e0b',
+      source_name: isCard
+        ? tx.credit_card?.name || 'Cartão'
+        : tx.account?.name || 'Conta',
+      source_type: isCard ? 'card' : 'account',
+      amount: Number(tx.amount) || 0,
+      due_date: tx.due_date,
+      is_paid: tx.is_paid,
+    };
+  });
 
   const defaultWeekIndex = findDefaultWeekIndex(calendarWeeks);
 
@@ -288,6 +466,9 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     defaultWeekIndex,
     topProducts,
     recentSales,
+    recentExpenses,
+    expensesBySource,
+    monthSummary,
   };
 }
 

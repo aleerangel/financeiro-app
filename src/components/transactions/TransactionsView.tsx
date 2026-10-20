@@ -11,12 +11,14 @@ import {
   Trash2,
   Filter,
   Pencil,
+  Scissors,
 } from 'lucide-react';
-import { Transaction, Account, CreditCard, Category } from '@/types/database';
+import { Transaction, Account, CreditCard, Category, FinancialScope } from '@/types/database';
 import { useDateContext } from '@/context/DateContext';
 import { getTransactions, toggleTransactionPaid, deleteTransaction } from '@/lib/actions/transactions';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { TransactionModal } from './TransactionModal';
+import { isBusinessTransaction } from '@/lib/business-scope-utils';
 
 interface TransactionsViewProps {
   initialAccounts: Account[];
@@ -24,7 +26,7 @@ interface TransactionsViewProps {
   initialCategories: Category[];
 }
 
-type FilterType = 'all' | 'expense' | 'income' | 'credit' | 'pending';
+type FilterType = 'all' | 'business' | 'expense' | 'income' | 'credit' | 'pending';
 
 export function TransactionsView({
   initialAccounts,
@@ -36,6 +38,7 @@ export function TransactionsView({
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalDefaultScope, setModalDefaultScope] = useState<FinancialScope>('personal');
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -135,6 +138,7 @@ export function TransactionsView({
 
   // Filtros
   const filteredTransactions = transactions.filter((t) => {
+    if (filter === 'business') return isBusinessTransaction(t);
     if (filter === 'expense') return t.type === 'expense' && t.payment_method !== 'credit';
     if (filter === 'income') return t.type === 'income';
     if (filter === 'credit') return t.payment_method === 'credit';
@@ -205,6 +209,7 @@ export function TransactionsView({
           <Filter className="w-3.5 h-3.5 text-zinc-500 mr-1 hidden sm:inline" />
           {[
             { id: 'all', label: 'Todos' },
+            { id: 'business', label: '✂️ Barbearia' },
             { id: 'expense', label: 'Despesas' },
             { id: 'credit', label: 'Cartão' },
             { id: 'income', label: 'Receitas' },
@@ -224,16 +229,31 @@ export function TransactionsView({
           ))}
         </div>
 
-        <button
-          onClick={() => {
-            setTransactionToEdit(null);
-            setModalOpen(true);
-          }}
-          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          Nova Transação
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setTransactionToEdit(null);
+              setModalDefaultScope('business');
+              setModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs sm:text-sm rounded-xl transition"
+          >
+            <Scissors className="w-3.5 h-3.5" />
+            + Gasto Barbearia
+          </button>
+
+          <button
+            onClick={() => {
+              setTransactionToEdit(null);
+              setModalDefaultScope('personal');
+              setModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            Nova Transação
+          </button>
+        </div>
       </div>
 
       {/* Lista de Transações */}
@@ -283,10 +303,16 @@ export function TransactionsView({
                   </div>
 
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm font-semibold text-zinc-100 truncate">
                         {t.description}
                       </h4>
+                      {isBusinessTransaction(t) && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
+                          <Scissors className="w-2.5 h-2.5" />
+                          Barbearia
+                        </span>
+                      )}
                       {t.total_installments && t.total_installments > 1 && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 font-medium shrink-0">
                           {t.current_installment}/{t.total_installments}
@@ -379,6 +405,7 @@ export function TransactionsView({
         accounts={initialAccounts}
         cards={initialCards}
         categories={initialCategories}
+        defaultScope={modalDefaultScope}
         onSuccess={refreshData}
       />
     </div>

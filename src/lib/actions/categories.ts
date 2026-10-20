@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { Category, CategoryType } from '@/types/database';
+import { Category, CategoryType, FinancialScope } from '@/types/database';
 import { revalidatePath } from 'next/cache';
 
 export interface CreateCategoryInput {
@@ -9,6 +9,7 @@ export interface CreateCategoryInput {
   type: CategoryType;
   color?: string;
   icon?: string;
+  scope?: FinancialScope;
 }
 
 export interface UpdateCategoryInput {
@@ -16,6 +17,7 @@ export interface UpdateCategoryInput {
   type?: CategoryType;
   color?: string;
   icon?: string;
+  scope?: FinancialScope;
 }
 
 export async function getCategories(): Promise<Category[]> {
@@ -40,6 +42,7 @@ export async function getCategories(): Promise<Category[]> {
   // Se o usuário não tiver categorias (ex: conta criada antes do trigger), cria as categorias padrão
   if (!categories || categories.length === 0) {
     const defaultCategories = [
+      { user_id: user.id, name: 'Insumos & Barbearia', type: 'expense', icon: 'scissors', color: '#f59e0b', is_default: true },
       { user_id: user.id, name: 'Alimentação', type: 'expense', icon: 'utensils', color: '#ef4444', is_default: true },
       { user_id: user.id, name: 'Moradia', type: 'expense', icon: 'home', color: '#f97316', is_default: true },
       { user_id: user.id, name: 'Transporte', type: 'expense', icon: 'car', color: '#f59e0b', is_default: true },
@@ -59,6 +62,33 @@ export async function getCategories(): Promise<Category[]> {
       .select();
 
     return inserted || [];
+  }
+
+  // Garante que a categoria de despesa "Insumos & Barbearia" exista para usuários existentes
+  const hasInsumosCategory = categories.some(
+    (c) =>
+      c.type === 'expense' &&
+      (c.name.trim().toLowerCase() === 'insumos & barbearia' ||
+        c.name.trim().toLowerCase() === 'insumos barbearia')
+  );
+
+  if (!hasInsumosCategory) {
+    const { data: createdInsumos } = await supabase
+      .from('categories')
+      .insert({
+        user_id: user.id,
+        name: 'Insumos & Barbearia',
+        type: 'expense',
+        icon: 'scissors',
+        color: '#f59e0b',
+        is_default: true,
+      })
+      .select()
+      .maybeSingle();
+
+    if (createdInsumos) {
+      categories.unshift(createdInsumos);
+    }
   }
 
   // Deduplicação defensiva em memória (por nome e tipo) para garantir que nunca apareçam duplicadas na interface
@@ -86,20 +116,31 @@ export async function createCategory(input: CreateCategoryInput): Promise<Catego
     throw new Error('O nome da categoria é obrigatório.');
   }
 
-  const { data, error } = await supabase
+  const baseRow = {
+    user_id: user.id,
+    name: input.name.trim(),
+    type: input.type,
+    color: input.color || '#10b981',
+    icon: input.icon || 'tag',
+    is_default: false,
+  };
+
+  let { data, error } = await supabase
     .from('categories')
-    .insert([
-      {
-        user_id: user.id,
-        name: input.name.trim(),
-        type: input.type,
-        color: input.color || '#10b981',
-        icon: input.icon || 'tag',
-        is_default: false,
-      },
-    ])
+    .insert([{ ...baseRow, ...(input.scope ? { scope: input.scope } : {}) }])
     .select()
     .single();
+
+  // Fallback caso a coluna scope ainda não tenha sido migrada no banco
+  if (error && input.scope && error.message?.includes('scope')) {
+    const retry = await supabase
+      .from('categories')
+      .insert([baseRow])
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     if (error.code === '23505') {
@@ -131,14 +172,28 @@ export async function updateCategory(id: string, input: UpdateCategoryInput): Pr
   if (input.type !== undefined) updates.type = input.type;
   if (input.color !== undefined) updates.color = input.color;
   if (input.icon !== undefined) updates.icon = input.icon;
+  if (input.scope !== undefined) updates.scope = input.scope;
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('categories')
     .update(updates)
     .eq('id', id)
     .eq('user_id', user.id)
     .select()
     .single();
+
+  if (error && input.scope !== undefined && error.message?.includes('scope')) {
+    delete updates.scope;
+    const retry = await supabase
+      .from('categories')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     if (error.code === '23505') {

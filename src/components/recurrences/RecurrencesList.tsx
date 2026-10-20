@@ -16,6 +16,8 @@ import { toggleRecurrenceActive, deleteRecurrence, syncMonthlyRecurrences } from
 import { formatCurrency } from '@/lib/utils';
 import { RecurrenceModal } from './RecurrenceModal';
 import { useDateContext } from '@/context/DateContext';
+import { isBusinessRecurrence } from '@/lib/business-scope-utils';
+import { Scissors } from 'lucide-react';
 
 interface RecurrencesListProps {
   initialRecurrences: Recurrence[];
@@ -170,10 +172,16 @@ export function RecurrencesList({
                 </div>
 
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-sm font-semibold text-zinc-100 truncate">
                       {rec.description}
                     </h4>
+                    {isBusinessRecurrence(rec) && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        <Scissors className="w-2.5 h-2.5" />
+                        Barbearia
+                      </span>
+                    )}
                     {!rec.active && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-400">
                         Pausada
