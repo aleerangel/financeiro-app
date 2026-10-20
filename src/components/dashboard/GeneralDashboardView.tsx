@@ -206,7 +206,122 @@ export function GeneralDashboardView({
       {/* Alerta de Recebimentos Previstos Pendentes de Confirmação */}
       <PendingReceiptsAlert receipts={pendingReceipts} onReceiptConfirmed={onReceiptConfirmed} />
 
-      {/* Seletor de Período dos Gráficos: Semanal, Mensal, Anual */}
+      {/* 1. Topo: Cards de Resumo Principal */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card Saldo em Contas */}
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Saldo Total em Contas
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-zinc-100">{formatCurrency(totalBalance)}</h2>
+            <span className="text-[11px] text-zinc-500 mt-1 block">
+              {accounts.length} {accounts.length === 1 ? 'conta cadastrada' : 'contas cadastradas'}
+            </span>
+          </div>
+        </div>
+
+        {/* Card Faturas de Cartão */}
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Faturas / Limite Usado
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+              <CreditCard className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-purple-300">{formatCurrency(totalCardUsed)}</h2>
+            <span className="text-[11px] text-zinc-500 mt-1 block">
+              de {formatCurrency(totalCardLimit)} limite total
+            </span>
+          </div>
+        </div>
+
+        {/* Card Receitas do Mês */}
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Receitas do Mês
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <ArrowUpRight className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline justify-between gap-1">
+              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(receivedIncome)}</h2>
+              {pendingIncome > 0 && (
+                <span className="text-xs font-semibold text-zinc-400">
+                  Total: {formatCurrency(totalIncome)}
+                </span>
+              )}
+            </div>
+            <div className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px]">
+              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                <Scissors className="w-3 h-3" /> Barbearia: {formatCurrency(barberShopIncome)}
+              </span>
+              {otherIncome > 0 && (
+                <span className="text-zinc-400 font-medium">
+                  Outras: {formatCurrency(otherIncome)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card Despesas do Mês */}
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Despesas Pagas
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400">
+              <ArrowDownRight className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-rose-400">{formatCurrency(paidExpense)}</h2>
+            <span className="text-[11px] text-zinc-400 mt-1 block">
+              {loading
+                ? 'Calculando...'
+                : pendingExpense > 0
+                ? `+ ${formatCurrency(pendingExpense)} a pagar`
+                : 'Todas as contas pagas'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Painéis de Receitas & Balanço Geral e Gastos por Categoria */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MonthlyBarChart
+          transactions={transactions}
+          incomeEvolution={generalData?.incomeCategoryEvolution || []}
+          currentMonth={month}
+          year={year}
+          onExpandEvolution={(refMonth, refYear) =>
+            setEvolutionModalState({ type: 'income', refMonth, refYear })
+          }
+        />
+        <CategoryDonutChart
+          transactions={transactions}
+          expenseEvolution={generalData?.expenseCategoryEvolution || []}
+          currentMonth={month}
+          year={year}
+          onExpandEvolution={(refMonth, refYear) =>
+            setEvolutionModalState({ type: 'expense', refMonth, refYear })
+          }
+        />
+      </div>
+
+      {/* 3. Seletor de Período e Gráficos de Fluxo e Evolução de Saldo em Contas */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
         <div className="flex items-center gap-3">
           <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -300,121 +415,6 @@ export function GeneralDashboardView({
         tooltipLabels={chartTooltipLabels}
         height={220}
       />
-
-      {/* Cards de Resumo Principal */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card Saldo em Contas */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Saldo Total em Contas
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-              <Wallet className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-zinc-100">{formatCurrency(totalBalance)}</h2>
-            <span className="text-[11px] text-zinc-500 mt-1 block">
-              {accounts.length} {accounts.length === 1 ? 'conta cadastrada' : 'contas cadastradas'}
-            </span>
-          </div>
-        </div>
-
-        {/* Card Faturas de Cartão */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Faturas / Limite Usado
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
-              <CreditCard className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-purple-300">{formatCurrency(totalCardUsed)}</h2>
-            <span className="text-[11px] text-zinc-500 mt-1 block">
-              de {formatCurrency(totalCardLimit)} limite total
-            </span>
-          </div>
-        </div>
-
-        {/* Card Receitas do Mês */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Receitas do Mês
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-              <ArrowUpRight className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-baseline justify-between gap-1">
-              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(receivedIncome)}</h2>
-              {pendingIncome > 0 && (
-                <span className="text-xs font-semibold text-zinc-400">
-                  Total: {formatCurrency(totalIncome)}
-                </span>
-              )}
-            </div>
-            <div className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px]">
-              <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                <Scissors className="w-3 h-3" /> Barbearia: {formatCurrency(barberShopIncome)}
-              </span>
-              {otherIncome > 0 && (
-                <span className="text-zinc-400 font-medium">
-                  Outras: {formatCurrency(otherIncome)}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Card Despesas do Mês */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Despesas Pagas
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400">
-              <ArrowDownRight className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-rose-400">{formatCurrency(paidExpense)}</h2>
-            <span className="text-[11px] text-zinc-400 mt-1 block">
-              {loading
-                ? 'Calculando...'
-                : pendingExpense > 0
-                ? `+ ${formatCurrency(pendingExpense)} a pagar`
-                : 'Todas as contas pagas'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Gráficos Visuais do Mês */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MonthlyBarChart
-          transactions={transactions}
-          incomeEvolution={generalData?.incomeCategoryEvolution || []}
-          currentMonth={month}
-          year={year}
-          onExpandEvolution={(refMonth, refYear) =>
-            setEvolutionModalState({ type: 'income', refMonth, refYear })
-          }
-        />
-        <CategoryDonutChart
-          transactions={transactions}
-          expenseEvolution={generalData?.expenseCategoryEvolution || []}
-          currentMonth={month}
-          year={year}
-          onExpandEvolution={(refMonth, refYear) =>
-            setEvolutionModalState({ type: 'expense', refMonth, refYear })
-          }
-        />
-      </div>
 
       {/* Modal de Evolução de Receitas ou Despesas por Categoria */}
       <CategoryEvolutionModal
