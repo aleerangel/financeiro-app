@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Transaction } from '@/types/database';
 import {
   CategoryMonthlyEvolutionItem,
   computeCategoryEvolutionMetrics,
 } from '@/lib/category-evolution-utils';
+import { getTransactions } from '@/lib/actions/transactions';
 import { formatCurrency } from '@/lib/utils';
 import {
   PieChart,
@@ -13,13 +14,21 @@ import {
   Maximize2,
   ArrowUpRight,
   ArrowDownRight,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+
+const MONTH_SHORT_NAMES = [
+  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+];
 
 interface CategoryDonutChartProps {
   transactions: Transaction[];
   expenseEvolution?: CategoryMonthlyEvolutionItem[];
   currentMonth?: number;
-  onExpandEvolution?: () => void;
+  year?: number;
+  onExpandEvolution?: (refMonth: number, refYear: number) => void;
 }
 
 interface CategoryTotal {
@@ -35,8 +44,85 @@ export function CategoryDonutChart({
   transactions,
   expenseEvolution = [],
   currentMonth = new Date().getMonth(),
+  year = new Date().getFullYear(),
   onExpandEvolution,
 }: CategoryDonutChartProps) {
+  const parentKey = `${year}-${currentMonth}`;
+  const [overrideState, setOverrideState] = useState<{
+    parentKey: string;
+    month: number;
+    year: number;
+    transactions: Transaction[] | null;
+    loading: boolean;
+  } | null>(null);
+
+  const activeOverride =
+    overrideState && overrideState.parentKey === parentKey ? overrideState : null;
+
+  const refMonth = activeOverride ? activeOverride.month : currentMonth;
+  const refYear = activeOverride ? activeOverride.year : year;
+  const loadingCustom = activeOverride ? activeOverride.loading : false;
+  const activeTransactions =
+    activeOverride && activeOverride.transactions !== null
+      ? activeOverride.transactions
+      : transactions;
+
+  const selectReferencePeriod = (nextMonth: number, nextYear: number) => {
+    if (nextMonth === currentMonth && nextYear === year) {
+      setOverrideState(null);
+      return;
+    }
+
+    setOverrideState({
+      parentKey,
+      month: nextMonth,
+      year: nextYear,
+      transactions: activeOverride?.transactions ?? null,
+      loading: true,
+    });
+
+    getTransactions(nextMonth, nextYear)
+      .then((data) => {
+        setOverrideState((prev) => {
+          if (
+            !prev ||
+            prev.parentKey !== parentKey ||
+            prev.month !== nextMonth ||
+            prev.year !== nextYear
+          ) {
+            return prev;
+          }
+          return {
+            ...prev,
+            transactions: data,
+            loading: false,
+          };
+        });
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar despesas do mês de referência:', err);
+        setOverrideState((prev) =>
+          prev ? { ...prev, loading: false } : null
+        );
+      });
+  };
+
+  const handlePrevMonth = () => {
+    if (refMonth === 0) {
+      selectReferencePeriod(11, refYear - 1);
+    } else {
+      selectReferencePeriod(refMonth - 1, refYear);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (refMonth === 11) {
+      selectReferencePeriod(0, refYear + 1);
+    } else {
+      selectReferencePeriod(refMonth + 1, refYear);
+    }
+  };
+
   const evolutionMetricsMap = useMemo(() => {
     const map = new Map<
       string,
@@ -45,11 +131,13 @@ export function CategoryDonutChart({
     for (const item of expenseEvolution) {
       map.set(
         item.name.toLowerCase(),
-        computeCategoryEvolutionMetrics(item, currentMonth, 'total')
+        computeCategoryEvolutionMetrics(item, refMonth, 'total', {
+          selectedYear: refYear,
+        })
       );
     }
     return map;
-  }, [expenseEvolution, currentMonth]);
+  }, [expenseEvolution, refMonth, refYear]);
 
   const {
     categoryTotals,
@@ -60,7 +148,7 @@ export function CategoryDonutChart({
     pendingExpensePct,
     radius,
   } = useMemo(() => {
-    const expenseTxs = transactions.filter((t) => t.type === 'expense');
+    const expenseTxs = activeTransactions.filter((t) => t.type === 'expense');
 
     let paidExp = 0;
     let pendExp = 0;
@@ -133,7 +221,7 @@ export function CategoryDonutChart({
       pendingExpensePct: pendPct,
       radius,
     };
-  }, [transactions]);
+  }, [activeTransactions]);
 
   return (
     <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-5 flex flex-col justify-between">
@@ -148,7 +236,43 @@ export function CategoryDonutChart({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Seletor de Mês de Referência do Painel */}
+          <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl px-1 py-0.5 text-xs">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+              title="Mês anterior"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <select
+              value={refMonth}
+              onChange={(e) => selectReferencePeriod(Number(e.target.value), refYear)}
+              className="bg-transparent text-zinc-200 font-semibold text-xs px-1 py-0.5 focus:outline-none cursor-pointer"
+              title="Selecionar mês de referência"
+            >
+              {MONTH_SHORT_NAMES.map((mName, idx) => (
+                <option
+                  key={mName}
+                  value={idx}
+                  className="bg-zinc-900 text-zinc-100"
+                >
+                  {mName}/{refYear}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+              title="Próximo mês"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <span className="text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">
             Total: {formatCurrency(totalExpense)}
           </span>
@@ -156,7 +280,7 @@ export function CategoryDonutChart({
           {onExpandEvolution && (
             <button
               type="button"
-              onClick={onExpandEvolution}
+              onClick={() => onExpandEvolution(refMonth, refYear)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-rose-400 border border-zinc-700/80 rounded-xl text-xs font-semibold transition"
               title="Expandir evolução de despesas por categoria"
             >
@@ -168,11 +292,11 @@ export function CategoryDonutChart({
       </div>
 
       {/* Barra de Progresso das Despesas (Pago vs. A Pagar) */}
-      <div className="space-y-1.5">
+      <div className={`space-y-1.5 transition-opacity ${loadingCustom ? 'opacity-60' : 'opacity-100'}`}>
         <div className="flex justify-between items-center text-xs">
           <span className="flex items-center gap-1.5 font-medium text-rose-400">
             <TrendingDown className="w-3.5 h-3.5" />
-            Despesas do Mês
+            Despesas ({MONTH_SHORT_NAMES[refMonth]})
             <span className="text-[11px] text-zinc-400 font-normal">
               ({paidExpensePct}% pago)
             </span>
@@ -214,14 +338,14 @@ export function CategoryDonutChart({
         <div className="py-8 flex flex-col items-center justify-center text-center text-zinc-500">
           <PieChart className="w-9 h-9 mb-2 opacity-30 text-zinc-400" />
           <p className="text-sm font-semibold text-zinc-300">
-            Sem despesas no mês
+            Sem despesas em {MONTH_SHORT_NAMES[refMonth]}/{refYear}
           </p>
           <p className="text-xs text-zinc-500 mt-0.5">
             Lançamentos de despesa aparecerão aqui categorizados.
           </p>
         </div>
       ) : (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-5 pt-1">
+        <div className={`flex flex-col sm:flex-row items-center justify-between gap-5 pt-1 transition-opacity ${loadingCustom ? 'opacity-60' : 'opacity-100'}`}>
           {/* SVG Donut Chart */}
           <div className="relative w-40 h-40 shrink-0 flex items-center justify-center">
             <svg
@@ -254,7 +378,7 @@ export function CategoryDonutChart({
 
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
               <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                Despesas
+                Despesas ({MONTH_SHORT_NAMES[refMonth]})
               </span>
               <span className="text-sm font-extrabold text-zinc-100">
                 {formatCurrency(totalExpense)}

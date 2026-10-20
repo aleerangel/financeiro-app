@@ -15,6 +15,9 @@ import {
   Scissors,
   Search,
   Receipt,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Transaction } from '@/types/database';
 import {
@@ -22,6 +25,8 @@ import {
   computeCategoryEvolutionMetrics,
   resolveTransactionCategoryInfo,
 } from '@/lib/category-evolution-utils';
+import { getTransactions } from '@/lib/actions/transactions';
+import { getYearlyCategoryEvolution } from '@/lib/actions/dashboard';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -55,24 +60,124 @@ export function CategoryEvolutionModal({
   transactions = [],
   currentMonth,
   year,
-  formattedMonth,
 }: CategoryEvolutionModalProps) {
   const [accountingMode, setAccountingMode] = useState<'realized' | 'total'>('realized');
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('all');
   const [txSearch, setTxSearch] = useState('');
 
+  const parentKey = `${type}-${year}-${currentMonth}`;
+  const [overrideState, setOverrideState] = useState<{
+    parentKey: string;
+    month: number;
+    year: number;
+    transactions: Transaction[] | null;
+    categories: CategoryMonthlyEvolutionItem[] | null;
+    loading: boolean;
+  } | null>(null);
+
+  const activeOverride =
+    overrideState && overrideState.parentKey === parentKey ? overrideState : null;
+
+  const refMonth = activeOverride ? activeOverride.month : currentMonth;
+  const refYear = activeOverride ? activeOverride.year : year;
+  const loadingMonthData = activeOverride ? activeOverride.loading : false;
+  const activeCategories =
+    activeOverride && activeOverride.categories !== null
+      ? activeOverride.categories
+      : categories;
+  const activeTransactions =
+    activeOverride && activeOverride.transactions !== null
+      ? activeOverride.transactions
+      : transactions;
+  const activeFormattedMonth = `${MONTH_FULL_LABELS[refMonth]} de ${refYear}`;
+
   const isIncome = type === 'income';
 
+  const selectReferencePeriod = (nextMonth: number, nextYear: number) => {
+    if (nextMonth === currentMonth && nextYear === year) {
+      setOverrideState(null);
+      return;
+    }
+
+    setOverrideState({
+      parentKey,
+      month: nextMonth,
+      year: nextYear,
+      transactions: activeOverride?.transactions ?? null,
+      categories: nextYear === refYear ? activeOverride?.categories ?? null : null,
+      loading: true,
+    });
+
+    const fetchPromises: Promise<unknown>[] = [getTransactions(nextMonth, nextYear)];
+    if (nextYear !== year) {
+      fetchPromises.push(getYearlyCategoryEvolution(nextYear));
+    }
+
+    Promise.all(fetchPromises)
+      .then((results) => {
+        const txs = results[0] as Transaction[];
+        let nextCats: CategoryMonthlyEvolutionItem[] | null = null;
+
+        if (nextYear !== year && results[1]) {
+          const evo = results[1] as {
+            incomeCategories: CategoryMonthlyEvolutionItem[];
+            expenseCategories: CategoryMonthlyEvolutionItem[];
+          };
+          nextCats =
+            type === 'income' ? evo.incomeCategories : evo.expenseCategories;
+        }
+
+        setOverrideState((prev) => {
+          if (
+            !prev ||
+            prev.parentKey !== parentKey ||
+            prev.month !== nextMonth ||
+            prev.year !== nextYear
+          ) {
+            return prev;
+          }
+          return {
+            ...prev,
+            transactions: txs,
+            categories: nextCats,
+            loading: false,
+          };
+        });
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar transações do mês de referência:', err);
+        setOverrideState((prev) =>
+          prev ? { ...prev, loading: false } : null
+        );
+      });
+  };
+
+  const handlePrevMonth = () => {
+    if (refMonth === 0) {
+      selectReferencePeriod(11, refYear - 1);
+    } else {
+      selectReferencePeriod(refMonth - 1, refYear);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (refMonth === 11) {
+      selectReferencePeriod(0, refYear + 1);
+    } else {
+      selectReferencePeriod(refMonth + 1, refYear);
+    }
+  };
+
   const metricsList = useMemo(() => {
-    return categories
+    return activeCategories
       .map((cat) =>
-        computeCategoryEvolutionMetrics(cat, currentMonth, accountingMode, {
-          selectedYear: year,
+        computeCategoryEvolutionMetrics(cat, refMonth, accountingMode, {
+          selectedYear: refYear,
         })
       )
       .filter((m) => m.yearlyTotal > 0 || m.currentValue > 0)
       .sort((a, b) => b.currentValue - a.currentValue || b.yearlyTotal - a.yearlyTotal);
-  }, [categories, currentMonth, accountingMode, year]);
+  }, [activeCategories, refMonth, accountingMode, refYear]);
 
   const activeCategoryKey = useMemo(() => {
     if (selectedCategoryKey === 'all') return 'all';
@@ -118,14 +223,14 @@ export function CategoryEvolutionModal({
   }, [metricsList, activeCategoryKey, isIncome]);
 
   const tooltipLabels = useMemo(
-    () => MONTH_FULL_LABELS.map((m) => `${m} de ${year}`),
-    [year]
+    () => MONTH_FULL_LABELS.map((m) => `${m} de ${refYear}`),
+    [refYear]
   );
 
   const filteredModalTransactions = useMemo(() => {
     const q = txSearch.trim().toLowerCase();
 
-    return transactions
+    return activeTransactions
       .filter((t) => {
         if (t.type !== type) return false;
         if (accountingMode === 'realized' && !t.is_paid) return false;
@@ -133,7 +238,7 @@ export function CategoryEvolutionModal({
         if (activeCategoryKey !== 'all') {
           const catInfo = resolveTransactionCategoryInfo({
             amount: Number(t.amount),
-            type: t.type,
+            type,
             is_paid: t.is_paid,
             due_date: t.due_date,
             description: t.description,
@@ -153,7 +258,7 @@ export function CategoryEvolutionModal({
         return true;
       })
       .sort((a, b) => b.due_date.localeCompare(a.due_date));
-  }, [transactions, type, accountingMode, activeCategoryKey, txSearch]);
+  }, [activeTransactions, type, accountingMode, activeCategoryKey, txSearch]);
 
   const filteredModalTransactionsSum = useMemo(
     () =>
@@ -166,78 +271,136 @@ export function CategoryEvolutionModal({
 
   if (!isOpen) return null;
 
-  const prevMonthName = currentMonth > 0 ? MONTH_SHORT_LABELS[currentMonth - 1] : null;
+  const prevMonthName = refMonth > 0 ? MONTH_SHORT_LABELS[refMonth - 1] : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
       <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Cabeçalho */}
-        <div className="p-4 sm:p-6 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/60 shrink-0">
-          <div className="flex items-start gap-3">
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                isIncome
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-              }`}
-            >
-              {isIncome ? (
-                <TrendingUp className="w-5 h-5" />
-              ) : (
-                <TrendingDown className="w-5 h-5" />
-              )}
+        <div className="p-4 sm:p-6 border-b border-zinc-800 flex flex-col gap-4 bg-zinc-900/60 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  isIncome
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                }`}
+              >
+                {isIncome ? (
+                  <TrendingUp className="w-5 h-5" />
+                ) : (
+                  <TrendingDown className="w-5 h-5" />
+                )}
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-zinc-100">
+                  {isIncome
+                    ? 'Evolução de Receitas por Categoria'
+                    : 'Evolução de Despesas por Categoria'}
+                </h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Acompanhamento mensal em {refYear}, média histórica e desempenho em{' '}
+                  <strong className="text-zinc-200">{activeFormattedMonth}</strong>
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-zinc-100">
-                {isIncome
-                  ? 'Evolução de Receitas por Categoria'
-                  : 'Evolução de Despesas por Categoria'}
-              </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Acompanhamento mensal em {year}, média histórica e desempenho em {formattedMonth}
-              </p>
+
+            <div className="flex items-center gap-3 self-end sm:self-center">
+              {/* Alternador: Realizado vs Total com Pendentes */}
+              <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs">
+                <button
+                  type="button"
+                  onClick={() => setAccountingMode('realized')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
+                    accountingMode === 'realized'
+                      ? isIncome
+                        ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                        : 'bg-rose-500 text-zinc-950 shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{isIncome ? 'Apenas Recebido' : 'Apenas Pago'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAccountingMode('total')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
+                    accountingMode === 'total'
+                      ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Total (c/ Previstos)</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-center">
-            {/* Alternador: Realizado vs Total com Pendentes */}
-            <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs">
-              <button
-                type="button"
-                onClick={() => setAccountingMode('realized')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
-                  accountingMode === 'realized'
-                    ? isIncome
-                      ? 'bg-emerald-500 text-zinc-950 shadow-sm'
-                      : 'bg-rose-500 text-zinc-950 shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{isIncome ? 'Apenas Recebido' : 'Apenas Pago'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setAccountingMode('total')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
-                  accountingMode === 'total'
-                    ? 'bg-zinc-100 text-zinc-950 shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5" />
-                <span>Total (c/ Previstos)</span>
-              </button>
+          {/* Seletor de Mês de Referência */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-zinc-800/80">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                Mês de Referência:
+              </span>
+
+              <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-xl px-1.5 py-1">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                  title="Mês anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-bold text-zinc-100 px-2 min-w-[125px] text-center">
+                  {activeFormattedMonth}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                  title="Próximo mês"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
-              title="Fechar"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {/* Pílulas rápidas dos 12 meses */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              {MONTH_SHORT_LABELS.map((mLabel, idx) => {
+                const isSelected = idx === refMonth;
+                return (
+                  <button
+                    key={mLabel}
+                    type="button"
+                    onClick={() => selectReferencePeriod(idx, refYear)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition shrink-0 ${
+                      isSelected
+                        ? isIncome
+                          ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                          : 'bg-rose-500 text-zinc-950 shadow-sm'
+                        : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80'
+                    }`}
+                  >
+                    {mLabel}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -247,7 +410,7 @@ export function CategoryEvolutionModal({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
               <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block">
-                {isIncome ? 'Receitas em' : 'Despesas em'} {formattedMonth}
+                {isIncome ? 'Receitas em' : 'Despesas em'} {activeFormattedMonth}
               </span>
               <span
                 className={`text-xl font-extrabold mt-1 block ${
@@ -267,13 +430,13 @@ export function CategoryEvolutionModal({
 
             <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
               <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block">
-                Acumulado no Ano ({year})
+                Acumulado no Ano ({refYear})
               </span>
               <span className="text-xl font-extrabold text-zinc-100 mt-1 block">
                 {formatCurrency(totalYearly)}
               </span>
               <span className="text-[11px] text-zinc-500 mt-0.5 block">
-                Soma das {metricsList.length} categorias ativas em {year}
+                Soma das {metricsList.length} categorias ativas em {refYear}
               </span>
             </div>
 
@@ -334,10 +497,10 @@ export function CategoryEvolutionModal({
           <SmoothLineChart
             title={
               activeCategoryKey === 'all'
-                ? `Curva de Evolução Anual por Categoria (${year})`
+                ? `Curva de Evolução Anual por Categoria (${refYear})`
                 : `Evolução Anual: ${
                     metricsList.find((m) => m.key === activeCategoryKey)?.name || ''
-                  } (${year})`
+                  } (${refYear})`
             }
             subtitle={
               accountingMode === 'realized'
@@ -354,16 +517,16 @@ export function CategoryEvolutionModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-zinc-200 uppercase tracking-wider">
-                Desempenho & Média Mensal por Categoria
+                Desempenho &amp; Média Mensal por Categoria
               </h3>
               <span className="text-xs text-zinc-400">
-                Referência: {formattedMonth}
+                Referência: <strong className="text-zinc-200">{activeFormattedMonth}</strong>
               </span>
             </div>
 
             {metricsList.length === 0 ? (
               <div className="p-8 text-center text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs">
-                Nenhuma movimentação encontrada para este modo no ano de {year}.
+                Nenhuma movimentação encontrada para este modo no ano de {refYear}.
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -374,9 +537,6 @@ export function CategoryEvolutionModal({
                       : 0;
                   const maxMonthly = Math.max(...m.monthlyValues, 1);
 
-                  // Cores semânticas para Acima / Abaixo da Média:
-                  // - Em Receitas: Acima da média = Verde (bom), Abaixo da média = Âmbar (alerta)
-                  // - Em Despesas: Acima da média = Rosa/Âmbar (alerta de gasto alto), Abaixo da média = Verde (economia)
                   let avgBadgeClass =
                     'bg-zinc-800 text-zinc-300 border-zinc-700';
                   const sameDaySuffix =
@@ -425,7 +585,7 @@ export function CategoryEvolutionModal({
                               {m.name}
                             </h4>
                             <span className="text-[11px] text-zinc-400">
-                              {sharePct.toFixed(0)}% do total do mês • Acumulado {year}:{' '}
+                              {sharePct.toFixed(0)}% do total do mês • Acumulado {refYear}:{' '}
                               <strong className="text-zinc-200">
                                 {formatCurrency(m.yearlyTotal)}
                               </strong>
@@ -453,7 +613,7 @@ export function CategoryEvolutionModal({
                       <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/80 text-xs">
                         <div>
                           <span className="text-[10px] text-zinc-500 uppercase block">
-                            No Mês ({MONTH_SHORT_LABELS[currentMonth]})
+                            No Mês ({MONTH_SHORT_LABELS[refMonth]})
                           </span>
                           <span
                             className={`text-sm font-bold block mt-0.5 ${
@@ -522,26 +682,31 @@ export function CategoryEvolutionModal({
                         </div>
                       </div>
 
-                      {/* Linha 3: Mini Sparkbar de Jan a Dez */}
+                      {/* Linha 3: Mini Sparkbar de Jan a Dez (Clicar na barra seleciona o mês de referência!) */}
                       <div className="pt-2">
                         <div className="grid grid-cols-12 gap-1 items-end h-10 pt-2">
                           {m.monthlyValues.map((val, mIdx) => {
                             const heightPct =
                               val > 0 ? Math.max(16, Math.round((val / maxMonthly) * 100)) : 6;
-                            const isCurrent = mIdx === currentMonth;
+                            const isCurrent = mIdx === refMonth;
 
                             return (
-                              <div
+                              <button
                                 key={mIdx}
-                                className="flex flex-col items-center gap-1 h-full justify-end group/bar"
-                                title={`${MONTH_FULL_LABELS[mIdx]}: ${formatCurrency(val)}`}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  selectReferencePeriod(mIdx, refYear);
+                                }}
+                                className="flex flex-col items-center gap-1 h-full justify-end group/bar focus:outline-none"
+                                title={`Selecionar ${MONTH_FULL_LABELS[mIdx]}: ${formatCurrency(val)}`}
                               >
                                 <div
                                   className={`w-full rounded-sm transition-all ${
                                     val === 0
                                       ? 'bg-zinc-800/60'
                                       : isCurrent
-                                      ? 'opacity-100 ring-1 ring-white/40'
+                                      ? 'opacity-100 ring-1 ring-white/50'
                                       : 'opacity-55 group-hover/bar:opacity-90'
                                   }`}
                                   style={{
@@ -553,12 +718,12 @@ export function CategoryEvolutionModal({
                                   className={`text-[9px] leading-none ${
                                     isCurrent
                                       ? 'text-zinc-100 font-bold'
-                                      : 'text-zinc-500'
+                                      : 'text-zinc-500 group-hover/bar:text-zinc-300'
                                   }`}
                                 >
                                   {MONTH_SHORT_LABELS[mIdx].charAt(0)}
                                 </span>
-                              </div>
+                              </button>
                             );
                           })}
                         </div>
@@ -570,7 +735,7 @@ export function CategoryEvolutionModal({
             )}
           </div>
 
-          {/* Lista Completa de Transações (Receitas ou Despesas) */}
+          {/* Lista Completa de Transações (Receitas ou Despesas) do Mês de Referência */}
           <div className="space-y-3 pt-2 border-t border-zinc-800">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -578,8 +743,8 @@ export function CategoryEvolutionModal({
                   <Receipt className="w-4 h-4 text-emerald-400" />
                   <span>
                     {isIncome
-                      ? `Todas as Receitas de ${formattedMonth}`
-                      : `Todas as Despesas de ${formattedMonth}`}
+                      ? `Todas as Receitas de ${activeFormattedMonth}`
+                      : `Todas as Despesas de ${activeFormattedMonth}`}
                     {activeCategoryKey !== 'all' &&
                       ` • ${
                         metricsList.find((m) => m.key === activeCategoryKey)
@@ -588,16 +753,22 @@ export function CategoryEvolutionModal({
                   </span>
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  {filteredModalTransactions.length}{' '}
-                  {filteredModalTransactions.length === 1
-                    ? 'lançamento listado'
-                    : 'lançamentos listados'}{' '}
-                  • Total:{' '}
-                  <strong
-                    className={isIncome ? 'text-emerald-400' : 'text-rose-400'}
-                  >
-                    {formatCurrency(filteredModalTransactionsSum)}
-                  </strong>
+                  {loadingMonthData ? (
+                    'Carregando lançamentos do mês selecionado...'
+                  ) : (
+                    <>
+                      {filteredModalTransactions.length}{' '}
+                      {filteredModalTransactions.length === 1
+                        ? 'lançamento listado'
+                        : 'lançamentos listados'}{' '}
+                      • Total:{' '}
+                      <strong
+                        className={isIncome ? 'text-emerald-400' : 'text-rose-400'}
+                      >
+                        {formatCurrency(filteredModalTransactionsSum)}
+                      </strong>
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -613,10 +784,14 @@ export function CategoryEvolutionModal({
               </div>
             </div>
 
-            {filteredModalTransactions.length === 0 ? (
+            {loadingMonthData ? (
+              <div className="p-8 text-center text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs">
+                Carregando transações de {activeFormattedMonth}...
+              </div>
+            ) : filteredModalTransactions.length === 0 ? (
               <div className="p-8 text-center text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs">
                 Nenhuma transação encontrada para os filtros selecionados em{' '}
-                {formattedMonth}.
+                {activeFormattedMonth}.
               </div>
             ) : (
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl divide-y divide-zinc-800/80 overflow-hidden max-h-96 overflow-y-auto scrollbar-thin">
@@ -733,4 +908,3 @@ export function CategoryEvolutionModal({
     </div>
   );
 }
-

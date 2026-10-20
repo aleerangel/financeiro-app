@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Transaction } from '@/types/database';
 import {
   CategoryMonthlyEvolutionItem,
   computeCategoryEvolutionMetrics,
 } from '@/lib/category-evolution-utils';
+import { getTransactions } from '@/lib/actions/transactions';
 import { formatCurrency } from '@/lib/utils';
 import {
   TrendingUp,
@@ -13,21 +14,106 @@ import {
   Maximize2,
   ArrowUpRight,
   ArrowDownRight,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+
+const MONTH_SHORT_NAMES = [
+  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+];
 
 interface MonthlyBarChartProps {
   transactions: Transaction[];
   incomeEvolution?: CategoryMonthlyEvolutionItem[];
   currentMonth?: number;
-  onExpandEvolution?: () => void;
+  year?: number;
+  onExpandEvolution?: (refMonth: number, refYear: number) => void;
 }
 
 export function MonthlyBarChart({
   transactions,
   incomeEvolution = [],
   currentMonth = new Date().getMonth(),
+  year = new Date().getFullYear(),
   onExpandEvolution,
 }: MonthlyBarChartProps) {
+  const parentKey = `${year}-${currentMonth}`;
+  const [overrideState, setOverrideState] = useState<{
+    parentKey: string;
+    month: number;
+    year: number;
+    transactions: Transaction[] | null;
+    loading: boolean;
+  } | null>(null);
+
+  const activeOverride =
+    overrideState && overrideState.parentKey === parentKey ? overrideState : null;
+
+  const refMonth = activeOverride ? activeOverride.month : currentMonth;
+  const refYear = activeOverride ? activeOverride.year : year;
+  const loadingCustom = activeOverride ? activeOverride.loading : false;
+  const activeTransactions =
+    activeOverride && activeOverride.transactions !== null
+      ? activeOverride.transactions
+      : transactions;
+
+  const selectReferencePeriod = (nextMonth: number, nextYear: number) => {
+    if (nextMonth === currentMonth && nextYear === year) {
+      setOverrideState(null);
+      return;
+    }
+
+    setOverrideState({
+      parentKey,
+      month: nextMonth,
+      year: nextYear,
+      transactions: activeOverride?.transactions ?? null,
+      loading: true,
+    });
+
+    getTransactions(nextMonth, nextYear)
+      .then((data) => {
+        setOverrideState((prev) => {
+          if (
+            !prev ||
+            prev.parentKey !== parentKey ||
+            prev.month !== nextMonth ||
+            prev.year !== nextYear
+          ) {
+            return prev;
+          }
+          return {
+            ...prev,
+            transactions: data,
+            loading: false,
+          };
+        });
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar receitas do mês de referência:', err);
+        setOverrideState((prev) =>
+          prev ? { ...prev, loading: false } : null
+        );
+      });
+  };
+
+  const handlePrevMonth = () => {
+    if (refMonth === 0) {
+      selectReferencePeriod(11, refYear - 1);
+    } else {
+      selectReferencePeriod(refMonth - 1, refYear);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (refMonth === 11) {
+      selectReferencePeriod(0, refYear + 1);
+    } else {
+      selectReferencePeriod(refMonth + 1, refYear);
+    }
+  };
+
   const evolutionMetricsMap = useMemo(() => {
     const map = new Map<
       string,
@@ -36,11 +122,13 @@ export function MonthlyBarChart({
     for (const item of incomeEvolution) {
       map.set(
         item.name.toLowerCase(),
-        computeCategoryEvolutionMetrics(item, currentMonth, 'total')
+        computeCategoryEvolutionMetrics(item, refMonth, 'total', {
+          selectedYear: refYear,
+        })
       );
     }
     return map;
-  }, [incomeEvolution, currentMonth]);
+  }, [incomeEvolution, refMonth, refYear]);
 
   const {
     receivedIncome,
@@ -69,7 +157,7 @@ export function MonthlyBarChart({
       }
     >();
 
-    for (const t of transactions) {
+    for (const t of activeTransactions) {
       const amt = Number(t.amount);
       if (t.type === 'income') {
         if (t.is_paid) {
@@ -78,7 +166,6 @@ export function MonthlyBarChart({
           pendInc += amt;
         }
 
-        // Identifica se a receita veio de Atendimentos / Barbearia
         const isBarber =
           t.description.startsWith('Atendimento:') ||
           Boolean(t.notes?.includes('Atendimento')) ||
@@ -142,13 +229,12 @@ export function MonthlyBarChart({
       totalIncome: tIncome,
       paidExpense: paidExp,
       pendingExpense: pendExp,
-      totalExpense: tExpense,
       realizedNet: rNet,
       projectedNet: pNet,
       receivedIncomePct: recIncPct,
       incomeSegments: segments,
     };
-  }, [transactions]);
+  }, [activeTransactions]);
 
   return (
     <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-5 flex flex-col justify-between">
@@ -163,7 +249,43 @@ export function MonthlyBarChart({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Seletor de Mês de Referência do Painel */}
+            <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl px-1 py-0.5 text-xs">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                title="Mês anterior"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <select
+                value={refMonth}
+                onChange={(e) => selectReferencePeriod(Number(e.target.value), refYear)}
+                className="bg-transparent text-zinc-200 font-semibold text-xs px-1 py-0.5 focus:outline-none cursor-pointer"
+                title="Selecionar mês de referência"
+              >
+                {MONTH_SHORT_NAMES.map((mName, idx) => (
+                  <option
+                    key={mName}
+                    value={idx}
+                    className="bg-zinc-900 text-zinc-100"
+                  >
+                    {mName}/{refYear}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                title="Próximo mês"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             {(receivedIncome > 0 || paidExpense > 0) && (
               <span
                 className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -182,7 +304,7 @@ export function MonthlyBarChart({
             {onExpandEvolution && (
               <button
                 type="button"
-                onClick={onExpandEvolution}
+                onClick={() => onExpandEvolution(refMonth, refYear)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-zinc-700/80 rounded-xl text-xs font-semibold transition"
                 title="Expandir evolução de receitas por categoria"
               >
@@ -195,11 +317,11 @@ export function MonthlyBarChart({
       </div>
 
       {/* Composição de Receitas por Categoria */}
-      <div className="space-y-3 py-1">
+      <div className={`space-y-3 py-1 transition-opacity ${loadingCustom ? 'opacity-60' : 'opacity-100'}`}>
         <div className="flex justify-between items-center text-xs">
           <span className="flex items-center gap-1.5 font-medium text-emerald-400">
             <TrendingUp className="w-3.5 h-3.5" />
-            Receitas (Composição)
+            Receitas ({MONTH_SHORT_NAMES[refMonth]})
             <span className="text-[11px] text-zinc-400 font-normal">
               ({receivedIncomePct}% recebido)
             </span>
@@ -301,7 +423,7 @@ export function MonthlyBarChart({
           </div>
         ) : (
           <p className="text-xs text-zinc-500 py-2">
-            Nenhuma receita registrada neste mês.
+            Nenhuma receita registrada em {MONTH_SHORT_NAMES[refMonth]}/{refYear}.
           </p>
         )}
       </div>
@@ -310,7 +432,7 @@ export function MonthlyBarChart({
       <div className="border-t border-zinc-800/80 pt-3.5 grid grid-cols-2 gap-4">
         <div>
           <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">
-            Balanço Realizado Atual
+            Balanço Realizado ({MONTH_SHORT_NAMES[refMonth]})
           </span>
           <span
             className={`text-base font-bold mt-0.5 block ${
@@ -328,7 +450,7 @@ export function MonthlyBarChart({
 
         <div className="text-right">
           <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">
-            Projeção Final do Mês
+            Projeção Final ({MONTH_SHORT_NAMES[refMonth]})
           </span>
           <span
             className={`text-base font-bold mt-0.5 block ${

@@ -61,7 +61,11 @@ export function GeneralDashboardView({
 }: GeneralDashboardViewProps) {
   const { month, year } = useDateContext();
   const [period, setPeriod] = useState<ChartPeriod>('yearly');
-  const [evolutionModalType, setEvolutionModalType] = useState<'income' | 'expense' | null>(null);
+  const [evolutionModalState, setEvolutionModalState] = useState<{
+    type: 'income' | 'expense';
+    refMonth: number;
+    refYear: number;
+  } | null>(null);
   // Seleção de semana vinculada ao mês em que foi feita: ao trocar de mês, é descartada
   const [weekSelection, setWeekSelection] = useState<{ month: string; index: number } | null>(null);
   const userSelectedWeekIndex =
@@ -396,29 +400,35 @@ export function GeneralDashboardView({
           transactions={transactions}
           incomeEvolution={generalData?.incomeCategoryEvolution || []}
           currentMonth={month}
-          onExpandEvolution={() => setEvolutionModalType('income')}
+          year={year}
+          onExpandEvolution={(refMonth, refYear) =>
+            setEvolutionModalState({ type: 'income', refMonth, refYear })
+          }
         />
         <CategoryDonutChart
           transactions={transactions}
           expenseEvolution={generalData?.expenseCategoryEvolution || []}
           currentMonth={month}
-          onExpandEvolution={() => setEvolutionModalType('expense')}
+          year={year}
+          onExpandEvolution={(refMonth, refYear) =>
+            setEvolutionModalState({ type: 'expense', refMonth, refYear })
+          }
         />
       </div>
 
       {/* Modal de Evolução de Receitas ou Despesas por Categoria */}
       <CategoryEvolutionModal
-        isOpen={evolutionModalType !== null}
-        onClose={() => setEvolutionModalType(null)}
-        type={evolutionModalType || 'expense'}
+        isOpen={evolutionModalState !== null}
+        onClose={() => setEvolutionModalState(null)}
+        type={evolutionModalState?.type || 'expense'}
         categories={
-          evolutionModalType === 'income'
+          evolutionModalState?.type === 'income'
             ? generalData?.incomeCategoryEvolution || []
             : generalData?.expenseCategoryEvolution || []
         }
         transactions={transactions}
-        currentMonth={month}
-        year={year}
+        currentMonth={evolutionModalState?.refMonth ?? month}
+        year={evolutionModalState?.refYear ?? year}
         formattedMonth={formattedMonth}
       />
 
