@@ -20,6 +20,7 @@ export interface SmoothLineChartProps {
   tooltipLabels?: string[];
   height?: number;
   rightAction?: React.ReactNode;
+  dynamicYScale?: boolean;
 }
 
 const DEFAULT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -33,21 +34,80 @@ export function SmoothLineChart({
   tooltipLabels,
   height = 260,
   rightAction,
+  dynamicYScale = false,
 }: SmoothLineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const effectiveLabels = labels || months || DEFAULT_MONTHS;
 
   const { minVal, maxVal, yTicks } = useMemo(() => {
-    let min = 0;
-    let max = 100;
+    let dataMin = Infinity;
+    let dataMax = -Infinity;
 
     for (const s of series) {
       for (const v of s.values) {
-        if (v < min) min = v;
-        if (v > max) max = v;
+        if (v < dataMin) dataMin = v;
+        if (v > dataMax) dataMax = v;
       }
     }
+
+    if (!Number.isFinite(dataMin) || !Number.isFinite(dataMax)) {
+      dataMin = 0;
+      dataMax = 100;
+    }
+
+    const tickCount = 5;
+
+    if (dynamicYScale) {
+      const spread = dataMax - dataMin;
+      // Quando todos os valores são iguais ou variação é mínima, aplica margem proporcional
+      const effectiveSpread =
+        spread > 0
+          ? spread
+          : Math.max(Math.abs(dataMax) * 0.08, 40);
+
+      const pad = effectiveSpread * 0.25;
+      const rawMin = dataMin >= 0 ? Math.max(0, dataMin - pad) : dataMin - pad;
+      const rawMax = dataMax + pad;
+      const rawRange = Math.max(rawMax - rawMin, 4);
+
+      // Calcula passo limpo entre as 4 divisões (5 ticks)
+      const rawStep = rawRange / (tickCount - 1);
+      const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+      const normalized = rawStep / magnitude;
+      const niceMultiplier =
+        normalized <= 1
+          ? 1
+          : normalized <= 2
+          ? 2
+          : normalized <= 2.5
+          ? 2.5
+          : normalized <= 5
+          ? 5
+          : 10;
+      const tickStep = Math.max(1, niceMultiplier * magnitude);
+
+      const niceMin = Math.floor(rawMin / tickStep) * tickStep;
+      const niceMax = Math.max(
+        niceMin + tickStep * (tickCount - 1),
+        Math.ceil(rawMax / tickStep) * tickStep
+      );
+      const finalTickStep = (niceMax - niceMin) / (tickCount - 1);
+
+      const ticks: number[] = [];
+      for (let i = 0; i < tickCount; i++) {
+        ticks.push(niceMin + i * finalTickStep);
+      }
+
+      return {
+        minVal: niceMin,
+        maxVal: niceMax,
+        yTicks: ticks,
+      };
+    }
+
+    const min = Math.min(0, dataMin);
+    const max = Math.max(100, dataMax);
 
     // Arredonda max para cima para criar divisões limpas
     const range = max - min;
@@ -56,7 +116,6 @@ export function SmoothLineChart({
     const niceMax = Math.ceil(max / step) * step;
     const niceMin = min < 0 ? Math.floor(min / step) * step : 0;
 
-    const tickCount = 5;
     const tickStep = (niceMax - niceMin) / (tickCount - 1);
     const ticks: number[] = [];
     for (let i = 0; i < tickCount; i++) {
@@ -68,7 +127,7 @@ export function SmoothLineChart({
       maxVal: niceMax || 100,
       yTicks: ticks,
     };
-  }, [series]);
+  }, [series, dynamicYScale]);
 
   // Dimensões SVG internas
   const svgWidth = 650;
@@ -108,18 +167,19 @@ export function SmoothLineChart({
         const p3 = points[i + 2] || points[i + 1];
 
         const cp1x = p1.x + (p2.x - p0.x) / 6;
-        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp1y = Math.max(padTop, Math.min(padTop + chartH, p1.y + (p2.y - p0.y) / 6));
         const cp2x = p2.x - (p3.x - p1.x) / 6;
-        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        const cp2y = Math.max(padTop, Math.min(padTop + chartH, p2.y - (p3.y - p1.y) / 6));
 
         d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
       }
 
-      // Área sombreada
-      const zeroY = getY(0);
+      // Área sombreada ancorada no piso visível (zero ou minVal quando escala dinâmica > 0)
+      const baseVal = Math.max(minVal, Math.min(0, maxVal));
+      const baseY = getY(baseVal);
       const lastX = points[points.length - 1].x;
       const firstX = points[0].x;
-      const areaD = `${d} L ${lastX.toFixed(1)} ${zeroY.toFixed(1)} L ${firstX.toFixed(1)} ${zeroY.toFixed(1)} Z`;
+      const areaD = `${d} L ${lastX.toFixed(1)} ${baseY.toFixed(1)} L ${firstX.toFixed(1)} ${baseY.toFixed(1)} Z`;
 
       return { path: d, area: areaD, points };
     });
@@ -305,17 +365,32 @@ export function SmoothLineChart({
             <div className="space-y-1">
               {series.map((s) => {
                 const val = s.values[hoveredIndex];
+                const prevVal = hoveredIndex > 0 ? s.values[hoveredIndex - 1] : null;
+                const diff = prevVal !== null ? val - prevVal : 0;
                 const formatted = s.formatValue ? s.formatValue(val) : formatCurrency(val);
                 return (
-                  <div key={s.id} className="flex items-center justify-between gap-4">
-                    <span className="flex items-center gap-1.5 text-zinc-400">
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: s.color }}
-                      />
-                      {s.name}:
-                    </span>
-                    <span className="font-semibold text-zinc-100">{formatted}</span>
+                  <div key={s.id} className="space-y-0.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="flex items-center gap-1.5 text-zinc-400">
+                        <span
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: s.color }}
+                        />
+                        {s.name}:
+                      </span>
+                      <span className="font-semibold text-zinc-100">{formatted}</span>
+                    </div>
+                    {dynamicYScale && prevVal !== null && diff !== 0 && (
+                      <div className="flex items-center justify-end text-[10px]">
+                        <span
+                          className={`font-semibold ${
+                            diff > 0 ? 'text-emerald-400' : 'text-rose-400'
+                          }`}
+                        >
+                          {diff > 0 ? '+' : '-'} {formatCurrency(Math.abs(diff))} vs anterior
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}

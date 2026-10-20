@@ -330,7 +330,8 @@ export function GeneralDashboardView({
         series={balanceSeries}
         labels={balanceLabels}
         tooltipLabels={balanceTooltipLabels}
-        height={220}
+        height={260}
+        dynamicYScale
         rightAction={
           <ChartPeriodToolbar
             period={balanceChart.period}
