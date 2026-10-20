@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { buildCalendarWeeks, findDefaultWeekIndex } from '@/lib/week-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import {
@@ -137,7 +137,7 @@ const MONTH_FULL_NAMES = [
 
 export async function getBusinessDashboardData(year: number, currentMonth: number): Promise<BusinessDashboardData> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) throw new Error('Não autenticado');
 
@@ -491,7 +491,7 @@ export async function getGeneralDashboardData(
   month: number = getZonedParts().month
 ): Promise<GeneralDashboardData> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) throw new Error('Não autenticado');
 
@@ -749,9 +749,7 @@ export async function getYearlyCategoryEvolution(year: number): Promise<{
   expenseCategories: CategoryMonthlyEvolutionItem[];
 }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) throw new Error('Não autenticado');
 

@@ -22,6 +22,7 @@ import {
   getGeneralDashboardData,
 } from '@/lib/actions/dashboard';
 import { useDateContext } from '@/context/DateContext';
+import dynamic from 'next/dynamic';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
 import {
   ChartPeriodToolbar,
@@ -30,11 +31,15 @@ import {
 } from './ChartPeriodToolbar';
 import { MonthlyBarChart } from './MonthlyBarChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
-import { CategoryEvolutionModal } from './CategoryEvolutionModal';
 import { UpcomingBillsAlert } from './UpcomingBillsAlert';
 import { PendingReceiptsAlert } from './PendingReceiptsAlert';
 import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
 import { formatCurrency, formatDate } from '@/lib/utils';
+
+const CategoryEvolutionModal = dynamic(
+  () => import('./CategoryEvolutionModal').then((m) => m.CategoryEvolutionModal),
+  { ssr: false }
+);
 
 export type ChartPeriod = ChartViewPeriod;
 

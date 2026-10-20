@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { Category, CategoryType, FinancialScope } from '@/types/database';
 import { revalidatePath } from 'next/cache';
 
@@ -22,7 +22,7 @@ export interface UpdateCategoryInput {
 
 export async function getCategories(): Promise<Category[]> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     throw new Error('Não autenticado');

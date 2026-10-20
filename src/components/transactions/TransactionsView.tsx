@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Plus,
   ArrowDownRight,
@@ -39,8 +40,6 @@ import { CategoryMonthlyEvolutionItem } from '@/lib/category-evolution-utils';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
-import { TransactionModal } from './TransactionModal';
-import { CategoryEvolutionModal } from '@/components/dashboard/CategoryEvolutionModal';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import {
   TransactionFilterType,
@@ -49,10 +48,26 @@ import {
   groupTransactionsByDay,
 } from '@/lib/transaction-filter-utils';
 
+const TransactionModal = dynamic(
+  () => import('./TransactionModal').then((m) => m.TransactionModal),
+  { ssr: false }
+);
+
+const CategoryEvolutionModal = dynamic(
+  () =>
+    import('@/components/dashboard/CategoryEvolutionModal').then(
+      (m) => m.CategoryEvolutionModal
+    ),
+  { ssr: false }
+);
+
 interface TransactionsViewProps {
   initialAccounts: Account[];
   initialCards: CreditCard[];
   initialCategories: Category[];
+  initialTransactions?: Transaction[];
+  initialMonth?: number;
+  initialYear?: number;
 }
 
 type FilterType = TransactionFilterType;
@@ -61,17 +76,25 @@ export function TransactionsView({
   initialAccounts,
   initialCards,
   initialCategories,
+  initialTransactions,
+  initialMonth,
+  initialYear,
 }: TransactionsViewProps) {
   const { confirm } = useConfirm();
   const { month, year, formattedMonth, prevMonth, nextMonth } = useDateContext();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const isInitialMount = useRef(true);
+  const [transactions, setTransactions] = useState<Transaction[]>(
+    initialTransactions || []
+  );
   const [incomeEvolution, setIncomeEvolution] = useState<
     CategoryMonthlyEvolutionItem[]
   >([]);
   const [expenseEvolution, setExpenseEvolution] = useState<
     CategoryMonthlyEvolutionItem[]
   >([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(
+    initialTransactions && initialMonth === month && initialYear === year ? false : true
+  );
 
   // Filtros e visualização
   const [filter, setFilter] = useState<FilterType>('all');
@@ -93,13 +116,8 @@ export function TransactionsView({
   const refreshData = useCallback(async () => {
     try {
       setLoading(true);
-      const [data, evo] = await Promise.all([
-        getTransactions(month, year),
-        getYearlyCategoryEvolution(year),
-      ]);
+      const data = await getTransactions(month, year);
       setTransactions(data);
-      setIncomeEvolution(evo.incomeCategories);
-      setExpenseEvolution(evo.expenseCategories);
     } catch (err) {
       console.error('Erro ao carregar transações:', err);
     } finally {
@@ -108,13 +126,24 @@ export function TransactionsView({
   }, [month, year]);
 
   useEffect(() => {
+    // Se for o mount inicial e já tivermos os dados do mês/ano vindos do SSR, não re-busca
+    if (
+      isInitialMount.current &&
+      initialTransactions &&
+      initialMonth === month &&
+      initialYear === year
+    ) {
+      isInitialMount.current = false;
+      return;
+    }
+    isInitialMount.current = false;
+
     let active = true;
-    Promise.all([getTransactions(month, year), getYearlyCategoryEvolution(year)])
-      .then(([data, evo]) => {
+    setLoading(true);
+    getTransactions(month, year)
+      .then((data) => {
         if (active) {
           setTransactions(data);
-          setIncomeEvolution(evo.incomeCategories);
-          setExpenseEvolution(evo.expenseCategories);
           setLoading(false);
         }
       })
@@ -126,7 +155,27 @@ export function TransactionsView({
     return () => {
       active = false;
     };
-  }, [month, year]);
+  }, [month, year, initialTransactions, initialMonth, initialYear]);
+
+  // Carrega a evolução anual de categorias sob demanda SOMENTE quando o usuário abre o modal
+  useEffect(() => {
+    if (!evolutionModalType) return;
+    let active = true;
+    getYearlyCategoryEvolution(year)
+      .then((evo) => {
+        if (active) {
+          setIncomeEvolution(evo.incomeCategories);
+          setExpenseEvolution(evo.expenseCategories);
+        }
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar evolução por categoria:', err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [evolutionModalType, year]);
 
   const handleTogglePaid = async (t: Transaction) => {
     try {

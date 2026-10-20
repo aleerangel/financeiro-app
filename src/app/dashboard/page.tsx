@@ -1,5 +1,5 @@
 import { connection } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAccounts } from '@/lib/actions/accounts';
 import { getCreditCards } from '@/lib/actions/credit-cards';
@@ -16,22 +16,22 @@ export const instant = false;
 export default async function DashboardPage() {
   await connection();
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect('/login');
   }
 
   const { year: currentYear, month: currentMonth } = getZonedParts();
+  const nextMonth = (currentMonth + 1) % 12;
+  const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
 
   // Gera as contas fixas do mês atual (e do próximo, para alertas de vencimento
-  // na virada do mês) uma única vez por carregamento, no servidor.
-  await syncMonthlyRecurrences(currentMonth, currentYear);
-  await syncMonthlyRecurrences(
-    (currentMonth + 1) % 12,
-    currentMonth === 11 ? currentYear + 1 : currentYear
-  );
+  // na virada do mês) em paralelo no servidor, antes de consultar os dados.
+  await Promise.all([
+    syncMonthlyRecurrences(currentMonth, currentYear),
+    syncMonthlyRecurrences(nextMonth, nextYear),
+  ]);
 
   const [accounts, cards, categories, businessData, generalData, upcomingBills, pendingReceipts] = await Promise.all([
     getAccounts(),

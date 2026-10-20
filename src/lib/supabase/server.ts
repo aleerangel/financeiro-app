@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -25,3 +26,22 @@ export async function createClient() {
     }
   );
 }
+
+/**
+ * Obtém o usuário autenticado com cache na mesma requisição de renderização (React cache).
+ * Evita múltiplas chamadas repetidas de rede ao endpoint de Auth do Supabase quando várias
+ * Server Actions rodam em paralelo (ex: Promise.all nas páginas).
+ */
+export const getAuthenticatedUser = cache(async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
+});

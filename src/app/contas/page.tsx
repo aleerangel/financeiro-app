@@ -1,5 +1,5 @@
 import { connection } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAccounts } from '@/lib/actions/accounts';
 import { AppShell } from '@/components/layout/AppShell';
@@ -9,8 +9,7 @@ export const instant = false;
 
 export default async function ContasPage() {
   await connection();
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect('/login');

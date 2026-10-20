@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { calculateInstallmentDueDates } from '@/lib/credit-card-utils';
@@ -40,7 +40,7 @@ export interface UpdateTransactionInput {
 
 export async function getTransactions(month: number, year: number): Promise<Transaction[]> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     throw new Error('Não autenticado');
@@ -335,7 +335,7 @@ export async function deleteTransaction(id: string, deleteEntireGroup: boolean =
 
 export async function getUpcomingAndOverdueBills(daysAhead: number = 3): Promise<Transaction[]> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) throw new Error('Não autenticado');
 
@@ -368,7 +368,7 @@ export async function getUpcomingAndOverdueBills(daysAhead: number = 3): Promise
 
 export async function getPendingIncomeReceipts(): Promise<Transaction[]> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) throw new Error('Não autenticado');
 

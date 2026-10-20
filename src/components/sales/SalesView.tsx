@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Plus,
   Scissors,
@@ -16,7 +17,11 @@ import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD, getZonedYMD, getZonedTimeParts } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
-import { NewSaleModal } from './NewSaleModal';
+
+const NewSaleModal = dynamic(
+  () => import('./NewSaleModal').then((m) => m.NewSaleModal),
+  { ssr: false }
+);
 
 interface SalesViewProps {
   initialSales: Sale[];

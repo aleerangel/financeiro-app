@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   Plus,
   Scissors,
@@ -18,10 +19,24 @@ import {
   getBusinessDashboardData,
   getGeneralDashboardData,
 } from '@/lib/actions/dashboard';
-import { TransactionModal } from '@/components/transactions/TransactionModal';
-import { EditAccountBalanceModal } from '@/components/accounts/EditAccountBalanceModal';
 import { BusinessDashboardView } from './BusinessDashboardView';
 import { GeneralDashboardView } from './GeneralDashboardView';
+
+const TransactionModal = dynamic(
+  () =>
+    import('@/components/transactions/TransactionModal').then(
+      (m) => m.TransactionModal
+    ),
+  { ssr: false }
+);
+
+const EditAccountBalanceModal = dynamic(
+  () =>
+    import('@/components/accounts/EditAccountBalanceModal').then(
+      (m) => m.EditAccountBalanceModal
+    ),
+  { ssr: false }
+);
 
 interface DashboardViewProps {
   initialAccounts: AccountWithBalance[];

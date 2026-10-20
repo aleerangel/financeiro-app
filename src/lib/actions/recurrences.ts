@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Recurrence, TransactionType, FinancialScope } from '@/types/database';
 import { isPastMonth, getZonedParts } from '@/lib/date-utils';
@@ -34,7 +34,7 @@ export interface UpdateRecurrenceInput {
 
 export async function getRecurrences(): Promise<Recurrence[]> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) throw new Error('Não autenticado');
 
@@ -71,7 +71,7 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
   if (isPastMonth(month, year)) return;
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) throw new Error('Não autenticado');
 

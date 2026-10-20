@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Account, AccountType, AccountYieldType, FinancialScope } from '@/types/database';
 import {
@@ -24,7 +24,7 @@ export interface AccountWithBalance extends Account {
 
 export async function getAccounts(): Promise<AccountWithBalance[]> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     throw new Error('Não autenticado');
