@@ -39,7 +39,7 @@ describe('export-utils', () => {
   });
 
   it('exportTransactionsReport gera CSV com o padrão correto', () => {
-    const mockTransactions: Transaction[] = [
+    const mockTransactions = [
       {
         id: '1',
         user_id: 'u1',
@@ -51,8 +51,26 @@ describe('export-utils', () => {
         due_date: '2026-10-20',
         is_paid: true,
         created_at: '2026-10-20T10:00:00Z',
-        category: { id: 'c1', user_id: 'u1', name: 'Barbearia', type: 'income', color: '#10b981', created_at: '' },
-        account: { id: 'a1', user_id: 'u1', name: 'Nubank', type: 'checking', initial_balance: 0, color: '#8b5cf6', active: true, created_at: '', updated_at: '' },
+        category: {
+          id: 'c1',
+          user_id: 'u1',
+          name: 'Barbearia',
+          type: 'income',
+          icon: 'scissors',
+          color: '#10b981',
+          is_default: false,
+          created_at: '',
+        },
+        account: {
+          id: 'a1',
+          user_id: 'u1',
+          name: 'Nubank',
+          type: 'checking',
+          initial_balance: 0,
+          color: '#8b5cf6',
+          created_at: '',
+          updated_at: '',
+        },
       },
       {
         id: '2',
@@ -65,9 +83,18 @@ describe('export-utils', () => {
         due_date: '2026-10-20',
         is_paid: false,
         created_at: '2026-10-20T11:00:00Z',
-        category: { id: 'c2', user_id: 'u1', name: 'Suprimentos', type: 'expense', color: '#ef4444', created_at: '' },
+        category: {
+          id: 'c2',
+          user_id: 'u1',
+          name: 'Suprimentos',
+          type: 'expense',
+          icon: 'package',
+          color: '#ef4444',
+          is_default: false,
+          created_at: '',
+        },
       },
-    ];
+    ] as unknown as Transaction[];
 
     exportTransactionsReport({
       format: 'csv',
@@ -81,7 +108,7 @@ describe('export-utils', () => {
   });
 
   it('exportSalesReport gera CSV de atendimentos corretamente', () => {
-    const mockSales: Sale[] = [
+    const mockSales = [
       {
         id: 's1',
         user_id: 'u1',
@@ -94,6 +121,7 @@ describe('export-utils', () => {
           {
             id: 'i1',
             sale_id: 's1',
+            product_id: null,
             product_name: 'Corte Degradê',
             quantity: 1,
             unit_price: 50,
@@ -103,6 +131,7 @@ describe('export-utils', () => {
           {
             id: 'i2',
             sale_id: 's1',
+            product_id: null,
             product_name: 'Pomada Matte',
             quantity: 1,
             unit_price: 30,
@@ -111,7 +140,7 @@ describe('export-utils', () => {
           },
         ],
       },
-    ];
+    ] as unknown as Sale[];
 
     exportSalesReport({
       format: 'csv',
@@ -124,3 +153,4 @@ describe('export-utils', () => {
     expect(mockLink.click).toHaveBeenCalled();
   });
 });
+
