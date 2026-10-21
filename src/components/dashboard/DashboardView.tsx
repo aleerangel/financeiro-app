@@ -22,6 +22,8 @@ import {
 import { ExportDropdown } from '@/components/ui/ExportDropdown';
 import { exportTransactionsReport, ExportFormat } from '@/lib/export-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
+import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
+import { getZonedParts } from '@/lib/date-utils';
 import { BusinessDashboardView } from './BusinessDashboardView';
 import { GeneralDashboardView } from './GeneralDashboardView';
 
@@ -148,11 +150,14 @@ export function DashboardView({
         filterLabel: 'Movimentações da Barbearia',
       });
     } else {
+      const { month: curM, year: curY } = getZonedParts();
+      const pendingYield = calculatePendingProjectedYield(accounts, month, year, curM, curY);
       exportTransactionsReport({
         format,
         periodLabel: formattedMonth,
         transactions,
         filterLabel: 'Visão Geral Consolidada',
+        projectedYield: pendingYield,
       });
     }
   };

@@ -43,6 +43,9 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ExportDropdown } from '@/components/ui/ExportDropdown';
 import { exportTransactionsReport, ExportFormat } from '@/lib/export-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
+import { AccountWithBalance } from '@/lib/actions/accounts';
+import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
+import { getZonedParts } from '@/lib/date-utils';
 import {
   TransactionFilterType,
   formatDayGroupLabel,
@@ -64,7 +67,7 @@ const CategoryEvolutionModal = dynamic(
 );
 
 interface TransactionsViewProps {
-  initialAccounts: Account[];
+  initialAccounts: (Account | AccountWithBalance)[];
   initialCards: CreditCard[];
   initialCategories: Category[];
   initialTransactions?: Transaction[];
@@ -258,8 +261,26 @@ export function TransactionsView({
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
 
   const realizedBalance = receivedIncome - paidExpense;
+
+  // Rendimentos estimados pendentes das contas para o mês selecionado
+  const { month: currentMonth, year: currentYear } = useMemo(() => getZonedParts(), []);
+  const projectedYieldPending = useMemo(
+    () =>
+      calculatePendingProjectedYield(
+        initialAccounts as AccountWithBalance[],
+        month,
+        year,
+        currentMonth,
+        currentYear
+      ),
+    [initialAccounts, month, year, currentMonth, currentYear]
+  );
+
   const projectedBalance =
-    receivedIncome + pendingIncome - (paidExpense + pendingExpense);
+    receivedIncome +
+    pendingIncome -
+    (paidExpense + pendingExpense) +
+    projectedYieldPending;
 
   // Aplicação combinada dos filtros
   const filteredTransactions = useMemo(
@@ -319,6 +340,7 @@ export function TransactionsView({
       periodLabel: formattedMonth,
       transactions: filteredTransactions,
       filterLabel: hasActiveFilter ? filterLabel : undefined,
+      projectedYield: projectedYieldPending,
     });
   };
 
@@ -527,9 +549,16 @@ export function TransactionsView({
               {formatCurrency(realizedBalance)}
             </span>
           </div>
-          <span className="text-[10px] text-zinc-400 mt-2 pt-2 border-t border-zinc-800/80 block">
-            Previsão final: {formatCurrency(projectedBalance)}
-          </span>
+          <div className="mt-2 pt-2 border-t border-zinc-800/80 space-y-0.5">
+            <span className="text-[10px] text-zinc-400 block">
+              Previsão final: <strong className="font-semibold text-zinc-200">{formatCurrency(projectedBalance)}</strong>
+            </span>
+            {projectedYieldPending > 0 && (
+              <span className="text-[9.5px] text-emerald-400 font-medium block">
+                + {formatCurrency(projectedYieldPending)} de rendimentos estimados
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">

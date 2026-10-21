@@ -86,6 +86,7 @@ export interface ExportTransactionsOptions {
   periodLabel: string;
   transactions: Transaction[];
   filterLabel?: string;
+  projectedYield?: number;
 }
 
 export function exportTransactionsReport({
@@ -93,6 +94,7 @@ export function exportTransactionsReport({
   periodLabel,
   transactions,
   filterLabel,
+  projectedYield = 0,
 }: ExportTransactionsOptions) {
   const now = new Date();
   const dateSuffix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
@@ -151,7 +153,7 @@ export function exportTransactionsReport({
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
   const realizedBalance = totalIncomePaid - totalExpensePaid;
-  const projectedBalance = totalIncomeAll - totalExpenseAll;
+  const projectedBalance = totalIncomeAll - totalExpenseAll + projectedYield;
 
   if (format === 'csv') {
     // Formata os valores monetários para PT-BR
@@ -171,6 +173,7 @@ export function exportTransactionsReport({
       ['Saldo Realizado', realizedBalance],
       ['Receitas Previstas (Total)', totalIncomeAll],
       ['Despesas Previstas (Total)', totalExpenseAll],
+      ...(projectedYield > 0 ? [['Rendimentos Estimados de Contas', projectedYield]] : []),
       ['Saldo Previsto', projectedBalance],
       ['Total de Lançamentos', transactions.length],
     ];
@@ -213,7 +216,11 @@ export function exportTransactionsReport({
       val: formatCurrency(realizedBalance),
       color: realizedBalance >= 0 ? [37, 99, 235] : [220, 38, 38], // blue-600 or red
     },
-    { title: 'LANÇAMENTOS', val: `${transactions.length} registros`, color: [100, 116, 139] },
+    {
+      title: projectedYield > 0 ? 'PREVISÃO C/ REND.' : 'LANÇAMENTOS',
+      val: projectedYield > 0 ? formatCurrency(projectedBalance) : `${transactions.length} registros`,
+      color: [100, 116, 139],
+    },
   ];
 
   cards.forEach((card, idx) => {

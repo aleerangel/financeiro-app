@@ -2,6 +2,8 @@
 
 import { useMemo } from 'react';
 import { Transaction } from '@/types/database';
+import { AccountWithBalance } from '@/lib/actions/accounts';
+import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
 import {
   CategoryMonthlyEvolutionItem,
   computeCategoryEvolutionMetrics,
@@ -26,6 +28,7 @@ const MONTH_SHORT_NAMES = [
 
 interface MonthlyBarChartProps {
   transactions: Transaction[];
+  accounts?: AccountWithBalance[];
   incomeEvolution?: CategoryMonthlyEvolutionItem[];
   currentMonth?: number;
   year?: number;
@@ -34,6 +37,7 @@ interface MonthlyBarChartProps {
 
 export function MonthlyBarChart({
   transactions,
+  accounts = [],
   incomeEvolution = [],
   currentMonth = new Date().getMonth(),
   year = new Date().getFullYear(),
@@ -73,6 +77,7 @@ export function MonthlyBarChart({
     pendingExpense,
     realizedNet,
     projectedNet,
+    pendingYield,
     receivedIncomePct,
     incomeSegments,
   } = useMemo(() => {
@@ -127,10 +132,18 @@ export function MonthlyBarChart({
       }
     }
 
+    const pendingYield = calculatePendingProjectedYield(
+      accounts,
+      refMonth,
+      refYear,
+      currentMonth,
+      year
+    );
+
     const tIncome = recInc + pendInc;
     const tExpense = paidExp + pendExp;
     const rNet = recInc - paidExp;
-    const pNet = tIncome - tExpense;
+    const pNet = tIncome - tExpense + pendingYield;
 
     const recIncPct =
       tIncome > 0
@@ -152,10 +165,11 @@ export function MonthlyBarChart({
       pendingExpense: pendExp,
       realizedNet: rNet,
       projectedNet: pNet,
+      pendingYield,
       receivedIncomePct: recIncPct,
       incomeSegments: segments,
     };
-  }, [activeTransactions]);
+  }, [activeTransactions, accounts, refMonth, refYear, currentMonth, year]);
 
   return (
     <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-5 flex flex-col justify-between">
@@ -388,6 +402,9 @@ export function MonthlyBarChart({
               : 'Tudo recebido'}
             {pendingExpense > 0
               ? ` | -${formatCurrency(pendingExpense)} a pagar`
+              : ''}
+            {pendingYield > 0
+              ? ` | +${formatCurrency(pendingYield)} rendimentos`
               : ''}
           </span>
         </div>

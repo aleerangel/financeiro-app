@@ -115,3 +115,46 @@ export function isYieldTransaction(
   );
 }
 
+/**
+ * Calcula os rendimentos projetados pendentes das contas para o mês/ano selecionado.
+ *
+ * Regras:
+ * - Se o mês for passado: retorna 0 (no passado só contam lançamentos efetivamente realizados).
+ * - Se o mês for o atual: calcula a soma de Math.max(0, estimated_monthly_yield - total_yield_current_month) por conta.
+ * - Se o mês for futuro: calcula a soma integral de estimated_monthly_yield de todas as contas.
+ */
+export function calculatePendingProjectedYield(
+  accounts: Array<{ estimated_monthly_yield?: number; total_yield_current_month?: number }>,
+  targetMonth: number,
+  targetYear: number,
+  currentMonth: number,
+  currentYear: number
+): number {
+  if (!accounts || accounts.length === 0) return 0;
+
+  // Mês no passado: nenhum rendimento futuro pendente
+  if (
+    targetYear < currentYear ||
+    (targetYear === currentYear && targetMonth < currentMonth)
+  ) {
+    return 0;
+  }
+
+  // Mês atual: desconta o que já foi creditado/lançado neste mês
+  if (targetYear === currentYear && targetMonth === currentMonth) {
+    const pendingTotal = accounts.reduce((acc, a) => {
+      const est = Number(a.estimated_monthly_yield) || 0;
+      const recorded = Number(a.total_yield_current_month) || 0;
+      return acc + Math.max(0, est - recorded);
+    }, 0);
+    return Math.round(pendingTotal * 100) / 100;
+  }
+
+  // Mês futuro: estimativa mensal integral
+  const futureTotal = accounts.reduce((acc, a) => {
+    return acc + (Number(a.estimated_monthly_yield) || 0);
+  }, 0);
+  return Math.round(futureTotal * 100) / 100;
+}
+
+

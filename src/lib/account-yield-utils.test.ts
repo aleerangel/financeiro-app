@@ -3,6 +3,7 @@ import {
   resolveAccountYieldConfig,
   calculateProjectedYield,
   isYieldTransaction,
+  calculatePendingProjectedYield,
 } from './account-yield-utils';
 
 describe('account-yield-utils', () => {
@@ -46,6 +47,25 @@ describe('account-yield-utils', () => {
         notes: null,
       })
     ).toBe(false);
+  });
+
+  it('calculates pending projected yields correctly across past, current, and future months', () => {
+    const accounts = [
+      { estimated_monthly_yield: 85.5, total_yield_current_month: 30.0 }, // 55.5 pendente
+      { estimated_monthly_yield: 20.0, total_yield_current_month: 25.0 }, // 0 pendente (já superou)
+    ];
+
+    // Mês atual (ex: Outubro 2026, com mês atual = Outubro 2026)
+    const currentPending = calculatePendingProjectedYield(accounts, 9, 2026, 9, 2026);
+    expect(currentPending).toBe(55.5);
+
+    // Mês passado (Setembro 2026): deve ser 0
+    const pastPending = calculatePendingProjectedYield(accounts, 8, 2026, 9, 2026);
+    expect(pastPending).toBe(0);
+
+    // Mês futuro (Novembro 2026): deve somar o estimado total (85.5 + 20 = 105.5)
+    const futurePending = calculatePendingProjectedYield(accounts, 10, 2026, 9, 2026);
+    expect(futurePending).toBe(105.5);
   });
 });
 

@@ -279,6 +279,7 @@ export function GeneralDashboardView({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MonthlyBarChart
           transactions={transactions}
+          accounts={accounts}
           incomeEvolution={generalData?.incomeCategoryEvolution || []}
           currentMonth={month}
           year={year}
