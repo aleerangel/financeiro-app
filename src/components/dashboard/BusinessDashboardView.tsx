@@ -15,6 +15,8 @@ import {
   Percent,
   Plus,
   Users,
+  MessageCircle,
+  ShoppingBag,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import {
@@ -50,6 +52,16 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 };
 
 const EMPTY_BUSINESS_STATS: BusinessPeriodStat[] = [];
+
+function formatWhatsAppUrl(name: string, phone?: string | null) {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return null;
+  const fullPhone = digits.startsWith('55') ? digits : `55${digits}`;
+  const firstName = name.trim().split(' ')[0] || name;
+  const message = `Olá, ${firstName}! Tudo bem? Sentimos sua falta aqui na barbearia! Bora renovar o visual esta semana? Se quiser, já posso agendar seu horário. ✂️💈`;
+  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+}
 
 export function BusinessDashboardView({
   data,
@@ -243,6 +255,84 @@ export function BusinessDashboardView({
           </div>
         </div>
       </div>
+
+      {/* Alerta de Retenção: Clientes para Retorno (+30 dias) */}
+      {data.inactiveClientsAlerts && data.inactiveClientsAlerts.length > 0 && (
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 rounded-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                <Users className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-zinc-100 text-sm flex items-center gap-2 flex-wrap">
+                  Atenção: Clientes para Retorno
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    {data.inactiveClientsAlerts.length} para reativar
+                  </span>
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Clientes que não cortam há mais de 30 dias. Chame no WhatsApp com 1 clique para agendar:
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/clientes"
+              className="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 self-start sm:self-auto shrink-0"
+            >
+              Ver clientes
+              <Eye className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
+            {data.inactiveClientsAlerts.map((client) => {
+              const waUrl = formatWhatsAppUrl(client.name, client.phone);
+              return (
+                <div
+                  key={client.id}
+                  className="p-3 bg-zinc-900/80 border border-zinc-800 rounded-xl flex flex-col justify-between gap-2 hover:border-zinc-700 transition"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-bold text-zinc-100 text-xs truncate">
+                        {client.name}
+                      </span>
+                      <span className="text-[10px] text-amber-400 font-semibold shrink-0">
+                        há {client.daysSinceLastVisit}d
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 block mt-0.5">
+                      {client.totalVisitsAllTime} visitas anteriores
+                    </span>
+                  </div>
+
+                  {waUrl ? (
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition"
+                      title="Enviar mensagem amigável no WhatsApp"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      Chamar no Zap
+                    </a>
+                  ) : (
+                    <Link
+                      href="/clientes"
+                      className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition text-center"
+                    >
+                      Cadastrar Tel.
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Linha Superior: Gráfico de Vendas e Receita + Saldo das Contas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico (Ocupa 2 colunas no desktop) */}
@@ -470,6 +560,140 @@ export function BusinessDashboardView({
                 Nenhuma despesa da barbearia lançada neste mês.
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Grade Analítica: Divisão Serviços vs Produtos + Top 5 Clientes do Mês */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Divisão de Faturamento: Serviços vs Produtos */}
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-zinc-100 text-base">
+                  Divisão de Faturamento: Serviços vs Produtos
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Mão de obra (cortes/barba) vs itens de prateleira em {formattedMonth || 'mês atual'}
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0">
+                <ShoppingBag className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Barra Bipartida de Proporção */}
+            <div className="space-y-4">
+              <div className="w-full h-3.5 bg-zinc-800 rounded-full overflow-hidden flex">
+                <div
+                  className="bg-emerald-500 h-full transition-all duration-300"
+                  style={{ width: `${data.revenueSplit?.servicePercentage || 0}%` }}
+                  title={`Serviços: ${data.revenueSplit?.servicePercentage || 0}%`}
+                />
+                <div
+                  className="bg-amber-400 h-full transition-all duration-300"
+                  style={{ width: `${data.revenueSplit?.productPercentage || 0}%` }}
+                  title={`Produtos: ${data.revenueSplit?.productPercentage || 0}%`}
+                />
+              </div>
+
+              {/* Blocos de Detalhamento */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl">
+                  <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold mb-1">
+                    <Scissors className="w-3.5 h-3.5" />
+                    <span>Serviços ({data.revenueSplit?.servicePercentage || 0}%)</span>
+                  </div>
+                  <span className="text-base sm:text-lg font-extrabold text-zinc-100 block">
+                    {formatCurrency(data.revenueSplit?.serviceRevenue || 0)}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 block mt-0.5">
+                    {data.revenueSplit?.serviceCount || 0} cortes / atendimentos
+                  </span>
+                </div>
+
+                <div className="p-3.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl">
+                  <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold mb-1">
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>Produtos ({data.revenueSplit?.productPercentage || 0}%)</span>
+                  </div>
+                  <span className="text-base sm:text-lg font-extrabold text-zinc-100 block">
+                    {formatCurrency(data.revenueSplit?.productRevenue || 0)}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 block mt-0.5">
+                    {data.revenueSplit?.productCount || 0} produtos vendidos
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Top 5 Clientes Mais Assíduos do Mês */}
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-zinc-100 text-base">
+                  Top 5 Clientes Mais Assíduos
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Quem mais frequentou e faturou em {formattedMonth || 'mês atual'}
+                </p>
+              </div>
+              <Link
+                href="/clientes"
+                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium shrink-0"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Ver todos
+              </Link>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
+                    <th className="pb-2.5 font-semibold">Cliente</th>
+                    <th className="pb-2.5 font-semibold text-center">Visitas</th>
+                    <th className="pb-2.5 font-semibold text-right">Total Gasto</th>
+                    <th className="pb-2.5 font-semibold text-right">Última Visita</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {data.topClients && data.topClients.map((client, idx) => (
+                    <tr key={`${client.name}-${idx}`} className="hover:bg-zinc-800/30 transition">
+                      <td className="py-3 font-semibold text-zinc-100 flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-md bg-zinc-800 text-zinc-300 font-bold text-[10px] flex items-center justify-center shrink-0">
+                          {idx + 1}º
+                        </span>
+                        <span className="truncate max-w-[130px]">{client.name}</span>
+                      </td>
+                      <td className="py-3 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-bold text-[11px]">
+                          {client.visitsCount} {client.visitsCount === 1 ? 'visita' : 'visitas'}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right font-bold text-emerald-400">
+                        {formatCurrency(client.totalSpent)}
+                      </td>
+                      <td className="py-3 text-right text-zinc-400 font-mono text-[11px]">
+                        {formatDate(client.lastVisitDate)}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {(!data.topClients || data.topClients.length === 0) && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-zinc-500">
+                        Nenhum atendimento registrado neste mês.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

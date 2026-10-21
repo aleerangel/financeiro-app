@@ -7,7 +7,9 @@ import {
   getZonedParts,
   getZonedRangeBoundsIso,
   getZonedYMD,
+  getTodayYMD,
 } from '@/lib/date-utils';
+import { diffDaysYMD, saleDateToYMD } from '@/lib/client-analytics';
 import {
   buildYearlyCategoryEvolution,
   CategoryMonthlyEvolutionItem,
@@ -80,6 +82,31 @@ export interface BusinessMonthSummary {
   averageTicket: number;
 }
 
+export interface TopMonthClient {
+  name: string;
+  visitsCount: number;
+  totalSpent: number;
+  lastVisitDate: string;
+}
+
+export interface ServiceVsProductSplit {
+  serviceRevenue: number;
+  productRevenue: number;
+  servicePercentage: number;
+  productPercentage: number;
+  serviceCount: number;
+  productCount: number;
+}
+
+export interface InactiveClientAlert {
+  id: string;
+  name: string;
+  phone?: string | null;
+  daysSinceLastVisit: number;
+  lastVisitDate: string;
+  totalVisitsAllTime: number;
+}
+
 export interface BusinessDashboardData {
   yearlyStats: BusinessPeriodStat[];
   monthlyStats: BusinessPeriodStat[];
@@ -87,6 +114,9 @@ export interface BusinessDashboardData {
   weeksMeta: WeekMeta[];
   defaultWeekIndex: number;
   topProducts: TopProductStat[];
+  topClients: TopMonthClient[];
+  revenueSplit: ServiceVsProductSplit;
+  inactiveClientsAlerts: InactiveClientAlert[];
   recentSales: RecentBusinessSale[];
   recentExpenses: RecentBusinessExpense[];
   expensesBySource: BusinessExpenseSourceStat[];
@@ -159,10 +189,11 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   const { startIso: bizSalesStartIso, endIso: bizSalesEndIso } =
     getZonedRangeBoundsIso(earliestDate, latestDate);
 
-  // 1. Busca vendas e despesas no período abrangente em paralelo
+  // 1. Busca vendas, despesas e clientes em paralelo
   const [
     { data: salesData, error: salesError },
     { data: txData, error: txError },
+    { data: clientsData, error: clientsError },
   ] = await Promise.all([
     supabase
       .from('sales')
@@ -176,7 +207,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
         items:sale_items(
           product_name,
           quantity,
-          total_price
+          total_price,
+          product:products(type)
         )
       `)
       .eq('user_id', user.id)
@@ -196,6 +228,15 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       .gte('due_date', earliestDate)
       .lte('due_date', latestDate)
       .order('due_date', { ascending: false }),
+    supabase
+      .from('clients')
+      .select(`
+        id,
+        name,
+        phone,
+        sales:sales(sale_date, total_amount)
+      `)
+      .eq('user_id', user.id),
   ]);
 
   if (salesError || !salesData) {
@@ -203,6 +244,9 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   }
   if (txError) {
     console.error('Erro ao buscar despesas do dashboard:', txError);
+  }
+  if (clientsError) {
+    console.error('Erro ao buscar clientes do dashboard:', clientsError);
   }
 
   const sales = salesData || [];
@@ -498,6 +542,118 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     sale_date: s.sale_date,
   }));
 
+  // 5. TOP 5 CLIENTES DO MÊS SELECIONADO
+  const clientAggMap = new Map<string, {
+    name: string;
+    visitsCount: number;
+    totalSpent: number;
+    lastVisitDate: string;
+  }>();
+
+  // 6. DIVISÃO DE FATURAMENTO: SERVIÇOS VS PRODUTOS
+  let serviceRevenue = 0;
+  let productRevenue = 0;
+  let serviceCount = 0;
+  let productCount = 0;
+
+  type SaleItemWithProduct = {
+    product_name: string;
+    quantity: number;
+    total_price: number;
+    product?: { type?: string } | null;
+  };
+
+  for (const s of selectedMonthSales) {
+    const clientKey = (s.client_name || 'Cliente Avulso').trim();
+    const curClient = clientAggMap.get(clientKey) || {
+      name: clientKey,
+      visitsCount: 0,
+      totalSpent: 0,
+      lastVisitDate: s.sale_date,
+    };
+    curClient.visitsCount += 1;
+    curClient.totalSpent += Number(s.total_amount) || 0;
+    if (s.sale_date > curClient.lastVisitDate) {
+      curClient.lastVisitDate = s.sale_date;
+    }
+    clientAggMap.set(clientKey, curClient);
+
+    const items = (s.items as unknown as SaleItemWithProduct[]) || [];
+    if (items.length > 0) {
+      for (const item of items) {
+        const itemTotal = Number(item.total_price) || 0;
+        const itemQty = Number(item.quantity) || 1;
+        const isProduct = item.product?.type === 'product';
+
+        if (isProduct) {
+          productRevenue += itemTotal;
+          productCount += itemQty;
+        } else {
+          serviceRevenue += itemTotal;
+          serviceCount += itemQty;
+        }
+      }
+    } else {
+      serviceRevenue += Number(s.total_amount) || 0;
+      serviceCount += 1;
+    }
+  }
+
+  const topClients: TopMonthClient[] = Array.from(clientAggMap.values())
+    .sort((a, b) => b.totalSpent - a.totalSpent || b.visitsCount - a.visitsCount)
+    .slice(0, 5);
+
+  const totalSplitRevenue = serviceRevenue + productRevenue;
+  const servicePercentage =
+    totalSplitRevenue > 0
+      ? Math.round((serviceRevenue / totalSplitRevenue) * 100)
+      : 0;
+  const productPercentage =
+    totalSplitRevenue > 0 ? 100 - servicePercentage : 0;
+
+  const revenueSplit: ServiceVsProductSplit = {
+    serviceRevenue,
+    productRevenue,
+    servicePercentage,
+    productPercentage,
+    serviceCount,
+    productCount,
+  };
+
+  // 7. CLIENTES PARA RETORNO (INATIVOS HÁ 30 DIAS OU MAIS)
+  const todayYmd = getTodayYMD();
+  const inactiveCandidates: InactiveClientAlert[] = [];
+
+  for (const c of clientsData || []) {
+    const cSales = (c.sales as unknown as { sale_date: string; total_amount: number }[]) || [];
+    if (cSales.length === 0) continue;
+
+    let latestSaleDate = cSales[0].sale_date;
+    for (const cs of cSales) {
+      if (cs.sale_date > latestSaleDate) {
+        latestSaleDate = cs.sale_date;
+      }
+    }
+
+    const lastVisitYmd = saleDateToYMD(latestSaleDate);
+    const daysSince = diffDaysYMD(lastVisitYmd, todayYmd);
+
+    if (daysSince >= 30) {
+      inactiveCandidates.push({
+        id: c.id,
+        name: c.name,
+        phone: c.phone || null,
+        daysSinceLastVisit: daysSince,
+        lastVisitDate: latestSaleDate,
+        totalVisitsAllTime: cSales.length,
+      });
+    }
+  }
+
+  const inactiveClientsAlerts = inactiveCandidates
+    .sort((a, b) => a.daysSinceLastVisit - b.daysSinceLastVisit || b.totalVisitsAllTime - a.totalVisitsAllTime)
+    .slice(0, 5);
+
   return {
     yearlyStats,
     monthlyStats,
@@ -505,6 +661,9 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     weeksMeta,
     defaultWeekIndex,
     topProducts,
+    topClients,
+    revenueSplit,
+    inactiveClientsAlerts,
     recentSales,
     recentExpenses,
     expensesBySource,
