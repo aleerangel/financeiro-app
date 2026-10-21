@@ -75,6 +75,8 @@ export interface BusinessMonthSummary {
   projectedProfit: number;
   profitMargin: number;
   salesCount: number;
+  uniqueClientsCount: number;
+  clientReturnRate: number;
   averageTicket: number;
 }
 
@@ -166,6 +168,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       .from('sales')
       .select(`
         id,
+        client_id,
         client_name,
         total_amount,
         sale_date,
@@ -401,6 +404,27 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   const averageTicket =
     monthSalesCount > 0 ? monthRevenue / monthSalesCount : 0;
 
+  // Clientes únicos atendidos no mês selecionado
+  const selectedMonthSales = sales.filter((s) => {
+    if (!s.sale_date) return false;
+    const parts = getZonedParts(new Date(s.sale_date));
+    return parts.month === currentMonth && parts.year === year;
+  });
+
+  const uniqueClientsSet = new Set<string>();
+  for (const s of selectedMonthSales) {
+    const key = (s.client_id || s.client_name || '').trim().toLowerCase();
+    if (key) {
+      uniqueClientsSet.add(key);
+    }
+  }
+
+  const uniqueClientsCount = uniqueClientsSet.size;
+  const clientReturnRate =
+    uniqueClientsCount > 0
+      ? Math.round((monthSalesCount / uniqueClientsCount) * 10) / 10
+      : 0;
+
   const monthSummary: BusinessMonthSummary = {
     revenue: monthRevenue,
     paidExpenses,
@@ -410,6 +434,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     projectedProfit,
     profitMargin,
     salesCount: monthSalesCount,
+    uniqueClientsCount,
+    clientReturnRate,
     averageTicket,
   };
 

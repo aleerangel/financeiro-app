@@ -14,6 +14,7 @@ import {
   Wallet,
   Percent,
   Plus,
+  Users,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import {
@@ -105,13 +106,15 @@ export function BusinessDashboardView({
     projectedProfit: 0,
     profitMargin: 0,
     salesCount: 0,
+    uniqueClientsCount: 0,
+    clientReturnRate: 0,
     averageTicket: 0,
   };
 
   return (
     <div className="space-y-6">
       {/* KPIs de Resultado Real da Barbearia no Mês Selecionado */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* 1. Faturamento Bruto */}
         <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
@@ -127,7 +130,28 @@ export function BusinessDashboardView({
               {formatCurrency(summary.revenue)}
             </span>
             <span className="text-[11px] text-zinc-400 mt-1 block">
-              {summary.salesCount} atendimentos • Ticket {formatCurrency(summary.averageTicket)}
+              Ticket médio: {formatCurrency(summary.averageTicket)}
+            </span>
+          </div>
+        </div>
+
+        {/* 2. Clientes Atendidos no Mês */}
+        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-blue-400">
+              Clientes Atendidos
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <Users className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <span className="text-lg sm:text-2xl font-extrabold text-blue-400 block">
+              {summary.salesCount} {summary.salesCount === 1 ? 'atendimento' : 'atendimentos'}
+            </span>
+            <span className="text-[11px] text-zinc-400 mt-1 block">
+              {summary.uniqueClientsCount} {summary.uniqueClientsCount === 1 ? 'cliente único' : 'clientes únicos'}
+              {summary.clientReturnRate > 1 ? ` • ${summary.clientReturnRate.toFixed(1)}x visitas` : ''}
             </span>
           </div>
         </div>
