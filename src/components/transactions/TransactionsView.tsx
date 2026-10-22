@@ -52,7 +52,6 @@ import {
   filterTransactionsList,
   groupTransactionsByDay,
 } from '@/lib/transaction-filter-utils';
-import { MobileKpiCarousel } from '@/components/dashboard/MobileKpiCarousel';
 
 const TransactionModal = dynamic(
   () => import('./TransactionModal').then((m) => m.TransactionModal),
@@ -483,8 +482,8 @@ export function TransactionsView({
 
   return (
     <div className="space-y-6">
-      {/* Cards de Resumo do Mês (Desktop Grid / Mobile Carousel) */}
-      <MobileKpiCarousel desktopGridClassName="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" accentColor="emerald">
+      {/* Cards de Resumo do Mês */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div>
             <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
@@ -575,7 +574,7 @@ export function TransactionsView({
             A receber: {formatCurrency(pendingIncome)}
           </span>
         </div>
-      </MobileKpiCarousel>
+      </div>
 
       {/* Barra de Busca, Filtros Avançados e Ações */}
       <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">

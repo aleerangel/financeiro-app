@@ -32,7 +32,6 @@ import {
   buildWhatsappLink,
   formatShortDayMonth,
 } from './ClientHistoryModal';
-import { MobileKpiCarousel } from '@/components/dashboard/MobileKpiCarousel';
 
 interface ClientsListProps {
   initialClients: ClientWithStats[];
@@ -179,8 +178,8 @@ export function ClientsList({ initialClients }: ClientsListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Resumo e Estatísticas de Clientes (Desktop Grid / Mobile Carousel) */}
-      <MobileKpiCarousel desktopGridClassName="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4" accentColor="emerald">
+      {/* Resumo e Estatísticas de Clientes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
           <div>
             <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
@@ -252,7 +251,7 @@ export function ClientsList({ initialClients }: ClientsListProps) {
             <TrendingUp className="w-5 h-5" />
           </div>
         </div>
-      </MobileKpiCarousel>
+      </div>
 
       {/* Painel Radar de Retorno: Clientes Na Janela ou Atrasados */}
       {radarClients.length > 0 && (
@@ -276,8 +275,7 @@ export function ClientsList({ initialClients }: ClientsListProps) {
             </div>
           </div>
 
-          {/* Grid Desktop (>= md) */}
-          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {radarClients.map((client) => {
               const { analytics } = client;
               const whatsappUrl = buildWhatsappLink(client);
@@ -365,80 +363,6 @@ export function ClientsList({ initialClients }: ClientsListProps) {
                         Atender
                       </Link>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Carrossel Touch Mobile (< md) */}
-          <div className="md:hidden flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-            {radarClients.map((client) => {
-              const { analytics } = client;
-              const whatsappUrl = buildWhatsappLink(client);
-
-              return (
-                <div
-                  key={client.id}
-                  onClick={() => setSelectedClientForHistory(client)}
-                  className="p-3.5 bg-zinc-950/90 border border-zinc-800 rounded-xl flex flex-col justify-between gap-3 w-[80vw] max-w-[290px] shrink-0 snap-center cursor-pointer"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-bold text-sm text-zinc-100 truncate">
-                          {client.name}
-                        </span>
-                        {client.isVip && (
-                          <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        )}
-                      </div>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shrink-0 ${getStatusBadgeStyle(
-                          analytics.status
-                        )}`}
-                      >
-                        {analytics.statusLabel}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-zinc-400">
-                      Janela:{' '}
-                      <strong className="text-emerald-400">
-                        {formatShortDayMonth(analytics.windowStartDate)} a{' '}
-                        {formatShortDayMonth(analytics.windowEndDate)}
-                      </strong>
-                    </div>
-
-                    <span className="text-[11px] text-zinc-500 block">
-                      Última vez há {analytics.daysSinceLastVisit}d
-                    </span>
-                  </div>
-
-                  <div
-                    className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-800/70"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {whatsappUrl ? (
-                      <a
-                        href={whatsappUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition shadow-sm"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        WhatsApp
-                      </a>
-                    ) : (
-                      <span className="text-[11px] text-zinc-500">Sem telefone</span>
-                    )}
-                    <Link
-                      href={`/vendas?clientId=${client.id}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold"
-                    >
-                      <Scissors className="w-3.5 h-3.5 text-emerald-400" />
-                      Atender
-                    </Link>
                   </div>
                 </div>
               );
@@ -533,8 +457,7 @@ export function ClientsList({ initialClients }: ClientsListProps) {
 
       {/* Tabela de Clientes */}
       <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl">
-        {/* Versão Desktop (>= md) */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -736,136 +659,6 @@ export function ClientsList({ initialClients }: ClientsListProps) {
               )}
             </tbody>
           </table>
-        </div>
-
-        {/* Versão Mobile Touch (< md): Cards estilo feed */}
-        <div className="md:hidden space-y-3">
-          {filteredClients.map((client) => {
-            const { analytics } = client;
-            const whatsappUrl = buildWhatsappLink(client);
-
-            return (
-              <div
-                key={client.id}
-                onClick={() => setSelectedClientForHistory(client)}
-                className="p-4 bg-zinc-950/70 border border-zinc-800/80 rounded-xl space-y-3 cursor-pointer hover:border-zinc-700 transition"
-              >
-                {/* Header do Card */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700/80 flex items-center justify-center font-bold text-sm text-emerald-400 shrink-0">
-                      {client.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-sm text-zinc-100">
-                          {client.name}
-                        </span>
-                        {client.isVip && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                            <Crown className="w-2.5 h-2.5 text-amber-400" />
-                            VIP
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-zinc-400 block mt-0.5">
-                        {client.phone || 'Sem telefone'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shrink-0 ${getStatusBadgeStyle(
-                      analytics.status
-                    )}`}
-                  >
-                    {analytics.statusLabel}
-                  </span>
-                </div>
-
-                {/* Métricas e Janela */}
-                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-zinc-800/70">
-                  <div>
-                    <span className="text-[10px] text-zinc-500 block">Total Gasto</span>
-                    <span className="font-extrabold text-emerald-400 text-sm">
-                      {formatCurrency(client.totalSpent)}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 block mt-0.5">
-                      {client.totalSalesCount} {client.totalSalesCount === 1 ? 'visita' : 'visitas'}
-                    </span>
-                  </div>
-
-                  <div className="text-right">
-                    <span className="text-[10px] text-zinc-500 block">Última Visita</span>
-                    <span className="font-semibold text-zinc-200">
-                      {client.lastSaleDate ? formatDate(client.lastSaleDate.split('T')[0]) : 'Nenhuma'}
-                    </span>
-                    {analytics.daysSinceLastVisit !== null && (
-                      <span className="text-[10px] text-amber-400 font-medium block mt-0.5">
-                        {analytics.daysSinceLastVisit === 0 ? 'Hoje' : `há ${analytics.daysSinceLastVisit}d`}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Botões de Ação */}
-                <div
-                  className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-800/70"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center gap-1.5">
-                    {whatsappUrl && (
-                      <a
-                        href={whatsappUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition shadow-sm"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        Zap
-                      </a>
-                    )}
-                    <Link
-                      href={`/vendas?clientId=${client.id}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold"
-                    >
-                      <Scissors className="w-3.5 h-3.5 text-emerald-400" />
-                      Atender
-                    </Link>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleEdit(client)}
-                      className="p-1.5 text-zinc-400 hover:text-zinc-100 rounded-lg hover:bg-zinc-800 transition"
-                      title="Editar cliente"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(client.id, client.name)}
-                      disabled={deletingId === client.id}
-                      className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg hover:bg-zinc-800 transition"
-                      title="Excluir cliente"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {filteredClients.length === 0 && (
-            <div className="py-12 text-center text-zinc-500">
-              <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-xs">
-                {searchTerm || statusFilter !== 'all'
-                  ? 'Nenhum cliente encontrado para este filtro.'
-                  : 'Nenhum cliente cadastrado ainda.'}
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
