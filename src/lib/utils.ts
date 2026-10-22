@@ -1,4 +1,4 @@
-import { getZonedTimeParts } from './date-utils';
+import { getZonedTimeParts, getZonedYMD } from './date-utils';
 
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
@@ -9,7 +9,9 @@ export function formatCurrency(value: number): string {
 
 export function formatDate(dateString: string): string {
   if (!dateString) return '';
-  const [year, month, day] = dateString.split('-');
+  const ymd = getZonedYMD(dateString);
+  const [year, month, day] = ymd.split('-');
+  if (!year || !month || !day) return dateString;
   return `${day}/${month}/${year}`;
 }
 

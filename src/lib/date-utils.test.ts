@@ -7,7 +7,7 @@ import {
   resolveSaleTimestamps,
   isPastMonth,
 } from './date-utils';
-import { formatDateTime } from './utils';
+import { formatDateTime, formatDate } from './utils';
 
 describe('getZonedParts', () => {
   it('usa o fuso de São Paulo, não o do servidor (UTC)', () => {
@@ -70,4 +70,22 @@ describe('isPastMonth', () => {
     expect(isPastMonth(8, 2026, lateOct)).toBe(true);
   });
 });
+
+describe('formatDate', () => {
+  it('formata strings YYYY-MM-DD para DD/MM/YYYY', () => {
+    expect(formatDate('2026-10-15')).toBe('15/10/2026');
+  });
+
+  it('formata strings ISO com timezone sem quebrar o formato DD/MM/YYYY', () => {
+    // 2026-10-15T23:48:06+00:00 = 15/10/2026 às 20:48 em SP
+    expect(formatDate('2026-10-15T23:48:06+00:00')).toBe('15/10/2026');
+    // 2026-10-21T00:30:00Z = 20/10/2026 às 21:30 em SP
+    expect(formatDate('2026-10-21T00:30:00Z')).toBe('20/10/2026');
+  });
+
+  it('retorna string vazia se entrada vazia ou nula', () => {
+    expect(formatDate('')).toBe('');
+  });
+});
+
 
