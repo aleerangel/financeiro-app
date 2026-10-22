@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { CreditCardModal } from './CreditCardModal';
 import { CreditCardInvoicesPanel } from './CreditCardInvoicesPanel';
+import { MobileKpiCarousel } from '@/components/dashboard/MobileKpiCarousel';
 
 interface CreditCardsListProps {
   initialCards: CreditCardWithUsage[];
@@ -70,8 +71,8 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Resumo Consolidado de Limites e Botão */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Resumo Consolidado de Limites e Botão (Desktop Grid / Mobile Carousel) */}
+      <MobileKpiCarousel desktopGridClassName="hidden md:grid md:grid-cols-3 gap-4" accentColor="purple">
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">
             Limite Total
@@ -98,7 +99,7 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
             {formatCurrency(totalAvailable)}
           </h3>
         </div>
-      </div>
+      </MobileKpiCarousel>
 
       <div className="flex justify-end">
         <button
@@ -113,8 +114,8 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
         </button>
       </div>
 
-      {/* Grid de Cartões Físicos / Visuais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grid de Cartões Físicos (Desktop Grid >= md) */}
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {initialCards.map((card) => {
           const limitPercentage = card.credit_limit > 0
             ? Math.min(100, Math.round((card.used_limit / card.credit_limit) * 100))
@@ -234,6 +235,127 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Carrossel Touch de Cartões Físicos (Mobile < md) */}
+      <div className="md:hidden">
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
+          {initialCards.map((card) => {
+            const limitPercentage = card.credit_limit > 0
+              ? Math.min(100, Math.round((card.used_limit / card.credit_limit) * 100))
+              : 0;
+            const isSelected = selectedCard?.id === card.id;
+
+            return (
+              <div
+                key={card.id}
+                onClick={() => handleSelectCard(card.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSelectCard(card.id);
+                  }
+                }}
+                className={`relative p-5 rounded-2xl text-white shadow-xl flex flex-col justify-between h-52 overflow-hidden transition-all cursor-pointer select-none w-[84vw] max-w-[320px] shrink-0 snap-center ${
+                  isSelected
+                    ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-zinc-950 scale-[1.01]'
+                    : 'opacity-95'
+                }`}
+                style={{
+                  backgroundColor: card.color || '#8b5cf6',
+                  backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.2) 0%, transparent 60%)',
+                }}
+              >
+                {/* Topo do Cartão: Chip, Contactless e Menu */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-6 rounded bg-amber-300/80 border border-amber-400 flex items-center justify-center opacity-90">
+                      <div className="w-6 h-4 border border-amber-600/40 rounded-sm" />
+                    </div>
+                    <Wifi className="w-4 h-4 rotate-90 text-white/80" />
+                    <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/25 backdrop-blur-sm text-[10px] font-semibold text-white/90 border border-white/15">
+                      <Receipt className="w-3 h-3" />
+                      {isSelected ? 'Faturas abertas' : 'Ver faturas'}
+                    </span>
+                  </div>
+
+                  <div
+                    className="relative"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => setActiveMenuId(activeMenuId === card.id ? null : card.id)}
+                      className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white/90 transition backdrop-blur-sm"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    {activeMenuId === card.id && (
+                      <div className="absolute right-0 top-8 z-20 w-32 bg-zinc-950 border border-zinc-800 rounded-xl py-1 shadow-2xl text-xs text-zinc-200">
+                        <button
+                          onClick={() => handleEdit(card)}
+                          className="w-full px-3 py-2 text-left hover:bg-zinc-900 flex items-center gap-2"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(card.id)}
+                          disabled={deletingId === card.id}
+                          className="w-full px-3 py-2 text-left text-red-400 hover:bg-zinc-900 flex items-center gap-2"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          {deletingId === card.id ? 'Excluindo...' : 'Excluir'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Centro: Nome do Cartão e Datas */}
+                <div>
+                  <h4 className="font-extrabold text-base tracking-wide drop-shadow-sm">
+                    {card.name}
+                  </h4>
+                  <div className="flex items-center gap-3 text-[10px] text-white/80 mt-1 font-medium">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Fecha: dia {card.closing_day}
+                    </span>
+                    <span>Vence: dia {card.due_day}</span>
+                  </div>
+                </div>
+
+                {/* Base: Barra de Limite e Valores */}
+                <div className="bg-black/25 backdrop-blur-md -mx-5 -mb-5 p-3.5 pt-2.5 rounded-b-2xl border-t border-white/10">
+                  <div className="flex justify-between items-center text-[11px] font-semibold mb-1">
+                    <span className="text-white/80">Usado: {formatCurrency(card.used_limit)}</span>
+                    <span>Disp: {formatCurrency(card.available_limit)}</span>
+                  </div>
+
+                  {/* Barra de Progresso */}
+                  <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-300 rounded-full ${
+                        limitPercentage > 85 ? 'bg-red-400' : 'bg-emerald-400'
+                      }`}
+                      style={{ width: `${limitPercentage}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {initialCards.length === 0 && (
+            <div className="w-full py-10 text-center text-zinc-500 bg-zinc-900/40 border border-dashed border-zinc-800 rounded-2xl">
+              <CardIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-xs font-medium">Nenhum cartão cadastrado.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Aba / Painel de Faturas do Cartão Selecionado */}

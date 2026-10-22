@@ -31,6 +31,7 @@ import {
   ChartViewPeriod,
   useIndependentChartPeriod,
 } from './ChartPeriodToolbar';
+import { MobileKpiCarousel } from './MobileKpiCarousel';
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 
 export type ChartPeriod = ChartViewPeriod;
@@ -125,8 +126,8 @@ export function BusinessDashboardView({
 
   return (
     <div className="space-y-6">
-      {/* KPIs de Resultado Real da Barbearia no Mês Selecionado */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      {/* KPIs de Resultado Real da Barbearia no Mês Selecionado (Desktop Grid / Mobile Carousel) */}
+      <MobileKpiCarousel desktopGridClassName="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4" accentColor="emerald">
         {/* 1. Faturamento Bruto */}
         <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
@@ -254,7 +255,7 @@ export function BusinessDashboardView({
             </div>
           </div>
         </div>
-      </div>
+      </MobileKpiCarousel>
 
       {/* Alerta de Retenção: Clientes para Retorno (+30 dias) */}
       {data.inactiveClientsAlerts && data.inactiveClientsAlerts.length > 0 && (
@@ -285,7 +286,8 @@ export function BusinessDashboardView({
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
+          {/* Desktop Grid (>= md) */}
+          <div className="hidden md:grid md:grid-cols-3 xl:grid-cols-5 gap-2.5">
             {data.inactiveClientsAlerts.map((client) => {
               const waUrl = formatWhatsAppUrl(client.name, client.phone);
               return (
@@ -322,6 +324,53 @@ export function BusinessDashboardView({
                     <Link
                       href="/clientes"
                       className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition text-center"
+                    >
+                      Cadastrar Tel.
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Mobile Touch Carousel (< md): Deslize horizontal com snap */}
+          <div className="md:hidden flex gap-2.5 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+            {data.inactiveClientsAlerts.map((client) => {
+              const waUrl = formatWhatsAppUrl(client.name, client.phone);
+              return (
+                <div
+                  key={client.id}
+                  className="p-3.5 bg-zinc-900/90 border border-zinc-800 rounded-xl flex flex-col justify-between gap-3 w-[72vw] max-w-[270px] shrink-0 snap-center hover:border-zinc-700 transition"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-bold text-zinc-100 text-sm truncate">
+                        {client.name}
+                      </span>
+                      <span className="text-[11px] text-amber-400 font-bold shrink-0">
+                        há {client.daysSinceLastVisit}d
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-zinc-500 block mt-0.5">
+                      {client.totalVisitsAllTime} visitas anteriores
+                    </span>
+                  </div>
+
+                  {waUrl ? (
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition shadow-sm"
+                      title="Enviar mensagem no WhatsApp"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Chamar no Zap
+                    </a>
+                  ) : (
+                    <Link
+                      href="/clientes"
+                      className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition text-center"
                     >
                       Cadastrar Tel.
                     </Link>
@@ -651,7 +700,8 @@ export function BusinessDashboardView({
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Tabela Versão Desktop (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -694,6 +744,53 @@ export function BusinessDashboardView({
                 </tbody>
               </table>
             </div>
+
+            {/* Versão Mobile Touch-First (< md): Mini-cards estilo feed */}
+            <div className="md:hidden space-y-2.5">
+              {data.topClients && data.topClients.slice(0, 3).map((client, idx) => (
+                <div
+                  key={`${client.name}-${idx}`}
+                  className="p-3 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-zinc-800 text-zinc-300 font-bold text-xs flex items-center justify-center shrink-0">
+                      {idx + 1}º
+                    </span>
+                    <div>
+                      <span className="font-bold text-zinc-100 text-xs block truncate max-w-[140px]">
+                        {client.name}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">
+                        Última: {formatDate(client.lastVisitDate)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-extrabold text-emerald-400 text-xs block">
+                      {formatCurrency(client.totalSpent)}
+                    </span>
+                    <span className="text-[10px] text-blue-400 font-semibold inline-block mt-0.5">
+                      {client.visitsCount} {client.visitsCount === 1 ? 'visita' : 'visitas'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {(!data.topClients || data.topClients.length === 0) && (
+                <div className="py-6 text-center text-xs text-zinc-500">
+                  Nenhum atendimento registrado neste mês.
+                </div>
+              )}
+
+              {data.topClients && data.topClients.length > 3 && (
+                <Link
+                  href="/clientes"
+                  className="block text-center py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl transition"
+                >
+                  Ver todos os clientes no CRM (+{data.topClients.length - 3})
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -716,7 +813,8 @@ export function BusinessDashboardView({
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Tabela Desktop (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -770,6 +868,59 @@ export function BusinessDashboardView({
                 </tbody>
               </table>
             </div>
+
+            {/* Versão Mobile Touch-First (< md) */}
+            <div className="md:hidden space-y-2.5">
+              {data.topProducts.slice(0, 3).map((p, idx) => (
+                <div
+                  key={`${p.name}-${idx}`}
+                  className="p-3 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+                      <Scissors className="w-3.5 h-3.5 text-zinc-400" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-zinc-100 text-xs block truncate max-w-[130px]">
+                        {p.name}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">
+                        {p.salesCount} {p.salesCount === 1 ? 'venda' : 'vendas'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-extrabold text-zinc-100 text-xs block">
+                      {formatCurrency(p.revenue)}
+                    </span>
+                    {p.growth !== 0 && (
+                      <span
+                        className={`text-[10px] font-bold inline-flex items-center gap-0.5 mt-0.5 ${
+                          p.growth > 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}
+                      >
+                        {p.growth > 0 ? '+' : ''}{p.growth}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {data.topProducts.length === 0 && !loading && (
+                <div className="py-6 text-center text-xs text-zinc-500">
+                  Nenhuma venda registrada ainda.
+                </div>
+              )}
+
+              {data.topProducts.length > 3 && (
+                <Link
+                  href="/produtos"
+                  className="block text-center py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl transition"
+                >
+                  Ver todos os produtos (+{data.topProducts.length - 3})
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 
@@ -787,7 +938,8 @@ export function BusinessDashboardView({
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Tabela Desktop (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -824,6 +976,45 @@ export function BusinessDashboardView({
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Versão Mobile Touch-First (< md) */}
+            <div className="md:hidden space-y-2.5">
+              {data.recentSales.slice(0, 3).map((sale) => (
+                <div
+                  key={sale.id}
+                  className="p-3 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+                >
+                  <div>
+                    <span className="font-bold text-zinc-100 text-xs block truncate max-w-[150px]">
+                      {sale.client_name}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 block mt-0.5">
+                      {sale.account_name} • {formatDateTime(sale.sale_date)}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-extrabold text-emerald-400 text-xs block">
+                      + {formatCurrency(sale.total_amount)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {data.recentSales.length === 0 && !loading && (
+                <div className="py-6 text-center text-xs text-zinc-500">
+                  Nenhum atendimento recente registrado.
+                </div>
+              )}
+
+              {data.recentSales.length > 3 && (
+                <Link
+                  href="/vendas"
+                  className="block text-center py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl transition"
+                >
+                  Ver histórico de atendimentos (+{data.recentSales.length - 3})
+                </Link>
+              )}
             </div>
           </div>
         </div>

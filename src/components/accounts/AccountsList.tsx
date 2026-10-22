@@ -9,6 +9,7 @@ import { AccountWithBalance, deleteAccount } from '@/lib/actions/accounts';
 import { formatCurrency } from '@/lib/utils';
 import { AccountModal } from './AccountModal';
 import { EditAccountBalanceModal } from './EditAccountBalanceModal';
+import { MobileKpiCarousel } from '@/components/dashboard/MobileKpiCarousel';
 
 interface AccountsListProps {
   initialAccounts: AccountWithBalance[];
@@ -95,8 +96,8 @@ export function AccountsList({ initialAccounts }: AccountsListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Resumo Consolidado e Rendimentos */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Resumo Consolidado e Rendimentos (Desktop Grid / Mobile Carousel) */}
+      <MobileKpiCarousel desktopGridClassName="hidden md:grid md:grid-cols-3 gap-4" accentColor="emerald">
         <div className="flex flex-col justify-between gap-4 p-5 bg-zinc-900 border border-zinc-800/80 rounded-2xl">
           <div>
             <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">
@@ -155,7 +156,7 @@ export function AccountsList({ initialAccounts }: AccountsListProps) {
             </p>
           </div>
         </div>
-      </div>
+      </MobileKpiCarousel>
 
       {/* Grid de Contas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

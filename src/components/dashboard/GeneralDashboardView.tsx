@@ -29,6 +29,8 @@ import {
   ChartViewPeriod,
   useIndependentChartPeriod,
 } from './ChartPeriodToolbar';
+import { MobileKpiCarousel } from './MobileKpiCarousel';
+import { MobileChartCarousel } from './MobileChartCarousel';
 import { MonthlyBarChart } from './MonthlyBarChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
 import { UpcomingBillsAlert } from './UpcomingBillsAlert';
@@ -182,8 +184,8 @@ export function GeneralDashboardView({
       {/* Alerta de Recebimentos Previstos Pendentes de Confirmação */}
       <PendingReceiptsAlert receipts={pendingReceipts} onReceiptConfirmed={onReceiptConfirmed} />
 
-      {/* 1. Topo: Cards de Resumo Principal */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 1. Topo: Cards de Resumo Principal (Desktop Grid / Mobile Carousel) */}
+      <MobileKpiCarousel desktopGridClassName="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4" accentColor="blue">
         {/* Card Saldo em Contas */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-400 mb-2">
@@ -273,80 +275,164 @@ export function GeneralDashboardView({
             </span>
           </div>
         </div>
-      </div>
+      </MobileKpiCarousel>
 
-      {/* 2. Painéis de Receitas & Balanço Geral e Gastos por Categoria */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MonthlyBarChart
-          transactions={transactions}
-          accounts={accounts}
-          incomeEvolution={generalData?.incomeCategoryEvolution || []}
-          currentMonth={month}
-          year={year}
-          onExpandEvolution={(refMonth, refYear) =>
-            setEvolutionModalState({ type: 'income', refMonth, refYear })
-          }
-        />
-        <CategoryDonutChart
-          transactions={transactions}
-          expenseEvolution={generalData?.expenseCategoryEvolution || []}
-          currentMonth={month}
-          year={year}
-          onExpandEvolution={(refMonth, refYear) =>
-            setEvolutionModalState({ type: 'expense', refMonth, refYear })
-          }
-        />
-      </div>
+      {/* 2. Painéis de Receitas & Balanço Geral e Gastos por Categoria (Desktop Grid / Mobile Carousel) */}
+      <MobileChartCarousel
+        accentColor="blue"
+        desktopGridClassName="hidden md:grid md:grid-cols-2 gap-6"
+        slides={[
+          {
+            id: 'monthly-bars',
+            label: 'Receitas & Balanço',
+            content: (
+              <MonthlyBarChart
+                transactions={transactions}
+                accounts={accounts}
+                incomeEvolution={generalData?.incomeCategoryEvolution || []}
+                currentMonth={month}
+                year={year}
+                onExpandEvolution={(refMonth, refYear) =>
+                  setEvolutionModalState({ type: 'income', refMonth, refYear })
+                }
+              />
+            ),
+          },
+          {
+            id: 'category-donut',
+            label: 'Gastos por Categoria',
+            content: (
+              <CategoryDonutChart
+                transactions={transactions}
+                expenseEvolution={generalData?.expenseCategoryEvolution || []}
+                currentMonth={month}
+                year={year}
+                onExpandEvolution={(refMonth, refYear) =>
+                  setEvolutionModalState({ type: 'expense', refMonth, refYear })
+                }
+              />
+            ),
+          },
+        ]}
+      />
 
       {/* 3. Gráficos de Fluxo e Evolução de Saldo em Contas com Seletor Interno */}
-      {/* Gráfico 1: Fluxo (Vendas, Receitas e Balanço) */}
-      <SmoothLineChart
-        title="Fluxo (Vendas, Receitas e Balanço)"
-        subtitle={flowChart.subtitle}
-        series={flowSeries}
-        labels={flowLabels}
-        tooltipLabels={flowTooltipLabels}
-        height={260}
-        rightAction={
-          <ChartPeriodToolbar
-            period={flowChart.period}
-            onPeriodChange={flowChart.setPeriod}
-            year={flowChart.year}
-            month={flowChart.month}
-            onYearChange={flowChart.handleYearChange}
-            onMonthChange={flowChart.handleMonthChange}
-            weeksMeta={flowChart.weeksMeta}
-            selectedWeekIndex={flowChart.selectedWeekIndex}
-            onWeekChange={flowChart.handleWeekChange}
-            loading={flowChart.loading}
-          />
-        }
-      />
+      {/* Versão Desktop (>= md) */}
+      <div className="hidden md:block space-y-6">
+        <SmoothLineChart
+          title="Fluxo (Vendas, Receitas e Balanço)"
+          subtitle={flowChart.subtitle}
+          series={flowSeries}
+          labels={flowLabels}
+          tooltipLabels={flowTooltipLabels}
+          height={260}
+          rightAction={
+            <ChartPeriodToolbar
+              period={flowChart.period}
+              onPeriodChange={flowChart.setPeriod}
+              year={flowChart.year}
+              month={flowChart.month}
+              onYearChange={flowChart.handleYearChange}
+              onMonthChange={flowChart.handleMonthChange}
+              weeksMeta={flowChart.weeksMeta}
+              selectedWeekIndex={flowChart.selectedWeekIndex}
+              onWeekChange={flowChart.handleWeekChange}
+              loading={flowChart.loading}
+            />
+          }
+        />
 
-      {/* Gráfico 2: Evolução do Saldo em Contas */}
-      <SmoothLineChart
-        title="Evolução do Saldo em Contas"
-        subtitle={balanceChart.subtitle}
-        series={balanceSeries}
-        labels={balanceLabels}
-        tooltipLabels={balanceTooltipLabels}
-        height={260}
-        dynamicYScale
-        rightAction={
-          <ChartPeriodToolbar
-            period={balanceChart.period}
-            onPeriodChange={balanceChart.setPeriod}
-            year={balanceChart.year}
-            month={balanceChart.month}
-            onYearChange={balanceChart.handleYearChange}
-            onMonthChange={balanceChart.handleMonthChange}
-            weeksMeta={balanceChart.weeksMeta}
-            selectedWeekIndex={balanceChart.selectedWeekIndex}
-            onWeekChange={balanceChart.handleWeekChange}
-            loading={balanceChart.loading}
-          />
-        }
-      />
+        <SmoothLineChart
+          title="Evolução do Saldo em Contas"
+          subtitle={balanceChart.subtitle}
+          series={balanceSeries}
+          labels={balanceLabels}
+          tooltipLabels={balanceTooltipLabels}
+          height={260}
+          dynamicYScale
+          rightAction={
+            <ChartPeriodToolbar
+              period={balanceChart.period}
+              onPeriodChange={balanceChart.setPeriod}
+              year={balanceChart.year}
+              month={balanceChart.month}
+              onYearChange={balanceChart.handleYearChange}
+              onMonthChange={balanceChart.handleMonthChange}
+              weeksMeta={balanceChart.weeksMeta}
+              selectedWeekIndex={balanceChart.selectedWeekIndex}
+              onWeekChange={balanceChart.handleWeekChange}
+              loading={balanceChart.loading}
+            />
+          }
+        />
+      </div>
+
+      {/* Versão Mobile (< md): Abas touch e slide único */}
+      <div className="md:hidden">
+        <MobileChartCarousel
+          accentColor="blue"
+          desktopGridClassName="hidden"
+          slides={[
+            {
+              id: 'flow-chart',
+              label: 'Fluxo & Balanço',
+              content: (
+                <SmoothLineChart
+                  title="Fluxo (Vendas, Receitas e Balanço)"
+                  subtitle={flowChart.subtitle}
+                  series={flowSeries}
+                  labels={flowLabels}
+                  tooltipLabels={flowTooltipLabels}
+                  height={240}
+                  rightAction={
+                    <ChartPeriodToolbar
+                      period={flowChart.period}
+                      onPeriodChange={flowChart.setPeriod}
+                      year={flowChart.year}
+                      month={flowChart.month}
+                      onYearChange={flowChart.handleYearChange}
+                      onMonthChange={flowChart.handleMonthChange}
+                      weeksMeta={flowChart.weeksMeta}
+                      selectedWeekIndex={flowChart.selectedWeekIndex}
+                      onWeekChange={flowChart.handleWeekChange}
+                      loading={flowChart.loading}
+                    />
+                  }
+                />
+              ),
+            },
+            {
+              id: 'balance-chart',
+              label: 'Saldo em Contas',
+              content: (
+                <SmoothLineChart
+                  title="Evolução do Saldo em Contas"
+                  subtitle={balanceChart.subtitle}
+                  series={balanceSeries}
+                  labels={balanceLabels}
+                  tooltipLabels={balanceTooltipLabels}
+                  height={240}
+                  dynamicYScale
+                  rightAction={
+                    <ChartPeriodToolbar
+                      period={balanceChart.period}
+                      onPeriodChange={balanceChart.setPeriod}
+                      year={balanceChart.year}
+                      month={balanceChart.month}
+                      onYearChange={balanceChart.handleYearChange}
+                      onMonthChange={balanceChart.handleMonthChange}
+                      weeksMeta={balanceChart.weeksMeta}
+                      selectedWeekIndex={balanceChart.selectedWeekIndex}
+                      onWeekChange={balanceChart.handleWeekChange}
+                      loading={balanceChart.loading}
+                    />
+                  }
+                />
+              ),
+            },
+          ]}
+        />
+      </div>
 
       {/* Modal de Evolução de Receitas ou Despesas por Categoria */}
       <CategoryEvolutionModal
@@ -466,7 +552,8 @@ export function GeneralDashboardView({
             </Link>
           </div>
 
-          <div className="divide-y divide-zinc-800/80">
+          {/* Versão Desktop (>= md) */}
+          <div className="hidden md:block divide-y divide-zinc-800/80">
             {recentTransactions.map((t) => {
               const isIncome = t.type === 'income';
 
@@ -496,6 +583,49 @@ export function GeneralDashboardView({
               <p className="py-6 text-center text-xs text-zinc-500">
                 Nenhum lançamento registrado em {formattedMonth}.
               </p>
+            )}
+          </div>
+
+          {/* Versão Mobile Touch (< md) */}
+          <div className="md:hidden space-y-2">
+            {recentTransactions.slice(0, 3).map((t) => {
+              const isIncome = t.type === 'income';
+
+              return (
+                <div key={t.id} className="p-2.5 bg-zinc-950/60 border border-zinc-800/70 rounded-xl flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-zinc-200 block truncate max-w-[170px]">
+                      {t.description}
+                    </span>
+                    <span className="text-[10px] text-zinc-500 block mt-0.5">
+                      {formatDate(t.due_date)} • {t.category?.name || 'Geral'}
+                    </span>
+                  </div>
+
+                  <span
+                    className={`text-xs font-bold shrink-0 ${
+                      isIncome ? 'text-emerald-400' : 'text-zinc-200'
+                    }`}
+                  >
+                    {isIncome ? '+' : '-'} {formatCurrency(Number(t.amount))}
+                  </span>
+                </div>
+              );
+            })}
+
+            {recentTransactions.length === 0 && (
+              <p className="py-6 text-center text-xs text-zinc-500">
+                Nenhum lançamento registrado em {formattedMonth}.
+              </p>
+            )}
+
+            {recentTransactions.length > 3 && (
+              <Link
+                href="/transacoes"
+                className="block text-center py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl transition"
+              >
+                Ver todos no Extrato (+{recentTransactions.length - 3})
+              </Link>
             )}
           </div>
         </div>
