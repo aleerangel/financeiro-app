@@ -189,3 +189,25 @@ export async function deleteClient(id: string): Promise<void> {
   revalidatePath('/clientes');
   revalidatePath('/vendas');
 }
+
+export type SimpleClient = Pick<Client, 'id' | 'name' | 'phone'>;
+
+export async function getSimpleClients(): Promise<SimpleClient[]> {
+  const supabase = await createSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select('id, name, phone')
+    .eq('user_id', user.id)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar clientes simples:', error);
+    return [];
+  }
+
+  return (data as SimpleClient[]) || [];
+}
