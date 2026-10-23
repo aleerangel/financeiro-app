@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
+import { clearAppClientStorage } from '@/lib/auth-storage';
 import { useState } from 'react';
 
 interface NavbarProps {
@@ -37,12 +38,7 @@ export function Navbar({ userEmail }: NavbarProps) {
       ]);
 
       if (typeof window !== 'undefined') {
-        try {
-          window.localStorage.clear();
-          window.sessionStorage.clear();
-        } catch {
-          // Ignora erros de storage restrito
-        }
+        clearAppClientStorage();
 
         if ('caches' in window) {
           try {

@@ -20,6 +20,7 @@ import { signOutServerAction } from '@/lib/actions/auth';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { formatCurrency } from '@/lib/utils';
+import { clearAppClientStorage } from '@/lib/auth-storage';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 
 interface MobileMoreViewProps {
@@ -80,12 +81,7 @@ export function MobileMoreView({
       ]);
 
       if (typeof window !== 'undefined') {
-        try {
-          window.localStorage.clear();
-          window.sessionStorage.clear();
-        } catch {
-          // Ignora erros de storage restrito
-        }
+        clearAppClientStorage();
 
         if ('caches' in window) {
           try {

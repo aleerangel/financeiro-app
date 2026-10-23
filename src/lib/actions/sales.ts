@@ -264,7 +264,7 @@ async function createSaleLegacy(params: {
     .single();
 
   if (saleError || !sale) {
-    await supabase.from('transactions').delete().eq('id', transaction.id);
+    await supabase.from('transactions').delete().eq('id', transaction.id).eq('user_id', userId);
     throw new Error(saleError?.message || 'Erro ao registrar atendimento.');
   }
 
@@ -281,8 +281,8 @@ async function createSaleLegacy(params: {
 
   if (itemsError) {
     // Reverte venda (cascade nos itens) e receita para não deixar dados órfãos
-    await supabase.from('sales').delete().eq('id', sale.id);
-    await supabase.from('transactions').delete().eq('id', transaction.id);
+    await supabase.from('sales').delete().eq('id', sale.id).eq('user_id', userId);
+    await supabase.from('transactions').delete().eq('id', transaction.id).eq('user_id', userId);
     throw new Error(itemsError.message || 'Erro ao salvar itens do atendimento.');
   }
 
