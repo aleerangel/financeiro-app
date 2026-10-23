@@ -3,12 +3,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import {
-  TrendingUp,
   Scissors,
   Users,
   Clock,
-  ArrowUpRight,
-  ArrowDownRight,
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
@@ -172,23 +169,6 @@ export function MobileSummaryView({
     [flowChart.activeStats]
   );
 
-  // Totais do período ativo para exibição no cabeçalho do gráfico
-  const periodTotals = useMemo(() => {
-    const totalInc = flowChart.activeStats.reduce(
-      (sum, s) => sum + (s.serviceRevenue || 0) + (s.generalIncome || 0),
-      0
-    );
-    const totalExp = flowChart.activeStats.reduce(
-      (sum, s) => sum + (s.generalExpense || 0),
-      0
-    );
-    return {
-      income: totalInc,
-      expense: totalExp,
-      balance: totalInc - totalExp,
-    };
-  }, [flowChart.activeStats]);
-
   // 2. RECEITAS E DESPESAS (REALIZADO + PREVISTO COM O QUE AINDA FALTA)
   const {
     receivedIncome,
@@ -197,6 +177,8 @@ export function MobileSummaryView({
     paidExpense,
     pendingExpense,
     totalExpense,
+    realizedBalance,
+    projectedBalance,
   } = useMemo(() => {
     let recInc = 0;
     let pendInc = 0;
@@ -234,6 +216,8 @@ export function MobileSummaryView({
       paidExpense: pdExp,
       pendingExpense: pendExp,
       totalExpense: pdExp + pendExp,
+      realizedBalance: recInc - pdExp,
+      projectedBalance: recInc + pendInc - (pdExp + pendExp),
     };
   }, [transactions, yearlyStats, generalData?.yearlyStats, flowChart.month, businessData.monthSummary]);
 
@@ -419,29 +403,47 @@ export function MobileSummaryView({
       {/* ============================================================== */}
       {/* 1. EVOLUÇÃO FINANCEIRA AMPLIADA (ALTA VISIBILIDADE)             */}
       {/* ============================================================== */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 sm:p-5 space-y-2">
-        {/* Badges de Resumo Rápido do Período */}
-        <div className="grid grid-cols-3 gap-2 p-2 bg-zinc-950/80 rounded-xl border border-zinc-800/70 text-center">
-          <div>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 sm:p-5 space-y-3">
+        {/* Badges de Resumo do Período com Realizado em Destaque e Total Previsto Embaixo */}
+        <div className="grid grid-cols-3 gap-2 p-2.5 bg-zinc-950/80 rounded-xl border border-zinc-800/70 text-center">
+          {/* Entradas */}
+          <div className="flex flex-col justify-between py-0.5">
             <span className="text-[10px] text-zinc-400 block font-medium">Entradas</span>
-            <span className="text-xs font-bold text-emerald-400">
-              {formatHidden(formatCurrency(periodTotals.income))}
+            <span className="text-xs sm:text-sm font-black text-emerald-400 my-0.5">
+              {formatHidden(formatCurrency(receivedIncome))}
+            </span>
+            <span className="text-[9px] text-zinc-400 block truncate leading-tight">
+              {pendingIncome > 0
+                ? `previsto: ${formatHidden(formatCurrency(totalIncome))} (+${formatHidden(formatCurrency(pendingIncome))})`
+                : '100% recebido'}
             </span>
           </div>
-          <div>
+
+          {/* Saídas */}
+          <div className="flex flex-col justify-between py-0.5 border-x border-zinc-800/60 px-1">
             <span className="text-[10px] text-zinc-400 block font-medium">Saídas</span>
-            <span className="text-xs font-bold text-rose-400">
-              {formatHidden(formatCurrency(periodTotals.expense))}
+            <span className="text-xs sm:text-sm font-black text-rose-400 my-0.5">
+              {formatHidden(formatCurrency(paidExpense))}
+            </span>
+            <span className="text-[9px] text-zinc-400 block truncate leading-tight">
+              {pendingExpense > 0
+                ? `previsto: ${formatHidden(formatCurrency(totalExpense))} (+${formatHidden(formatCurrency(pendingExpense))})`
+                : '100% pago'}
             </span>
           </div>
-          <div>
+
+          {/* Balanço */}
+          <div className="flex flex-col justify-between py-0.5">
             <span className="text-[10px] text-zinc-400 block font-medium">Balanço</span>
             <span
-              className={`text-xs font-black ${
-                periodTotals.balance >= 0 ? 'text-zinc-100' : 'text-rose-400'
+              className={`text-xs sm:text-sm font-black my-0.5 ${
+                realizedBalance >= 0 ? 'text-zinc-100' : 'text-rose-400'
               }`}
             >
-              {formatHidden(formatCurrency(periodTotals.balance))}
+              {formatHidden(formatCurrency(realizedBalance))}
+            </span>
+            <span className="text-[9px] text-zinc-400 block truncate leading-tight">
+              previsto: {formatHidden(formatCurrency(projectedBalance))}
             </span>
           </div>
         </div>
@@ -459,58 +461,7 @@ export function MobileSummaryView({
       </div>
 
       {/* ============================================================== */}
-      {/* 2. RECEITAS E DESPESAS                                          */}
-      {/* ============================================================== */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {/* Card Receita */}
-        <div className="p-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between space-y-2">
-          <div className="flex items-center justify-between text-zinc-400">
-            <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-              Receita Atual
-            </span>
-            <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div>
-            <div className="text-base sm:text-lg font-black text-emerald-400">
-              {formatHidden(formatCurrency(receivedIncome))}
-            </div>
-            <p className="text-[10px] text-zinc-400 mt-0.5 leading-tight">
-              {pendingIncome > 0
-                ? `+ ${formatHidden(formatCurrency(pendingIncome))} a receber (previsto: ${formatHidden(formatCurrency(totalIncome))})`
-                : '100% recebido no mês'}
-            </p>
-          </div>
-        </div>
-
-        {/* Card Despesas */}
-        <div className="p-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between space-y-2">
-          <div className="flex items-center justify-between text-zinc-400">
-            <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-              <ArrowDownRight className="w-3.5 h-3.5 text-rose-400" />
-              Despesas Pagas
-            </span>
-            <div className="w-6 h-6 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400">
-              <ArrowDownRight className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div>
-            <div className="text-base sm:text-lg font-black text-rose-400">
-              {formatHidden(formatCurrency(paidExpense))}
-            </div>
-            <p className="text-[10px] text-zinc-400 mt-0.5 leading-tight">
-              {pendingExpense > 0
-                ? `+ ${formatHidden(formatCurrency(pendingExpense))} a pagar (previsto: ${formatHidden(formatCurrency(totalExpense))})`
-                : 'Todas as contas pagas'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ============================================================== */}
-      {/* 3. RECEITAS E BALANÇO GERAL (SEM SELETOR INTERNO)               */}
+      {/* 2. RECEITAS E BALANÇO GERAL (SEM SELETOR INTERNO)               */}
       {/* ============================================================== */}
       <MonthlyBarChart
         transactions={transactions}
