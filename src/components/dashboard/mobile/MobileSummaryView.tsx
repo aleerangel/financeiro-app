@@ -69,16 +69,9 @@ export function MobileSummaryView({
     month,
     generalData,
     yearlyStats,
-    getGeneralDashboardData
+    getGeneralDashboardData,
+    'monthly'
   );
-
-  // Garante que o modo inicial seja 'monthly' (Mensal como default)
-  useEffect(() => {
-    if (flowChart.period !== 'monthly') {
-      flowChart.setPeriod('monthly');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Seleciona primeira ou última semana após carregar novo mês no modo semanal
   useEffect(() => {
@@ -178,9 +171,7 @@ export function MobileSummaryView({
         id: 'totalIncome',
         name: 'Entradas',
         color: '#22c55e', // Verde esmeralda
-        values: flowChart.activeStats.map(
-          (s) => (s.serviceRevenue || 0) + (s.generalIncome || 0)
-        ),
+        values: flowChart.activeStats.map((s) => s.generalIncome || 0),
         formatValue: (v) => formatCurrency(v),
       },
       {
@@ -195,7 +186,7 @@ export function MobileSummaryView({
         name: 'Balanço',
         color: '#3b82f6', // Azul
         values: flowChart.activeStats.map(
-          (s) => (s.serviceRevenue || 0) + (s.generalIncome || 0) - (s.generalExpense || 0)
+          (s) => (s.generalIncome || 0) - (s.generalExpense || 0)
         ),
         formatValue: (v) => formatCurrency(v),
       },
@@ -241,7 +232,7 @@ export function MobileSummaryView({
     if (flowChart.period === 'weekly') {
       // No modo semanal: soma dos dias da semana ativa e pendências da semana
       recInc = flowChart.activeStats.reduce(
-        (sum, d) => sum + (d.serviceRevenue || 0) + (d.generalIncome || 0),
+        (sum, d) => sum + (d.generalIncome || 0),
         0
       );
       pdExp = flowChart.activeStats.reduce(
@@ -259,7 +250,7 @@ export function MobileSummaryView({
     } else if (flowChart.period === 'yearly') {
       // No modo anual: soma consolidada dos 12 meses
       recInc = flowChart.activeStats.reduce(
-        (sum, m) => sum + (m.serviceRevenue || 0) + (m.generalIncome || 0),
+        (sum, m) => sum + (m.generalIncome || 0),
         0
       );
       pdExp = flowChart.activeStats.reduce(
@@ -276,7 +267,8 @@ export function MobileSummaryView({
       }
     } else {
       // No modo mensal: transações do mês selecionado
-      if (periodTransactions.length > 0) {
+      const isCurrentLoadedMonth = flowChart.month === month && flowChart.year === year;
+      if (isCurrentLoadedMonth && periodTransactions.length > 0) {
         for (const t of periodTransactions) {
           const amt = Number(t.amount) || 0;
           if (t.type === 'income') {
@@ -289,9 +281,9 @@ export function MobileSummaryView({
         }
       } else {
         const curYearStat = yearlyStats[flowChart.month] || generalData?.yearlyStats?.[flowChart.month];
-        recInc = (curYearStat?.serviceRevenue || 0) + (curYearStat?.generalIncome || 0);
+        recInc = curYearStat?.generalIncome || 0;
         pdExp = curYearStat?.generalExpense || 0;
-        pendExp = businessData.monthSummary?.pendingExpenses || 0;
+        pendExp = isCurrentLoadedMonth ? businessData.monthSummary?.pendingExpenses || 0 : 0;
       }
     }
 
@@ -309,6 +301,9 @@ export function MobileSummaryView({
     flowChart.period,
     flowChart.activeStats,
     flowChart.month,
+    flowChart.year,
+    month,
+    year,
     periodTransactions,
     transactions,
     yearlyStats,

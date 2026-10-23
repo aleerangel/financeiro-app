@@ -29,10 +29,11 @@ export function useIndependentChartPeriod<T extends ChartPeriodDataShape<S>, S>(
   baseMonth: number,
   baseData: T | undefined,
   fallbackYearlyStats: S[],
-  fetcher: (year: number, month: number) => Promise<T>
+  fetcher: (year: number, month: number) => Promise<T>,
+  initialPeriod: ChartViewPeriod = 'yearly'
 ) {
   const parentKey = `${baseYear}-${baseMonth}`;
-  const [period, setPeriod] = useState<ChartViewPeriod>('yearly');
+  const [period, setPeriod] = useState<ChartViewPeriod>(initialPeriod);
   const [overrideState, setOverrideState] = useState<{
     parentKey: string;
     year: number;
