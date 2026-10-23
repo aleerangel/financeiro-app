@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateInstallmentDueDates } from './credit-card-utils';
+import { calculateInstallmentDueDates, getCardInvoiceStatus } from './credit-card-utils';
 
 describe('credit-card-utils - calculateInstallmentDueDates', () => {
   it('places purchase on current invoice when transaction is on or before closing day (dueDay > closingDay)', () => {
@@ -34,6 +34,59 @@ describe('credit-card-utils - calculateInstallmentDueDates', () => {
       '2027-02-28',
       '2027-03-31',
     ]);
+  });
+});
+
+describe('credit-card-utils - getCardInvoiceStatus', () => {
+  it('identifies open invoice and counts days left when today is before closing day', () => {
+    // Hoje é dia 08/10/2026, fecha dia 14 e vence dia 21
+    const fixedNow = new Date('2026-10-08T15:00:00Z');
+    const status = getCardInvoiceStatus({ closing_day: 14, due_day: 21 }, 9, 2026, fixedNow);
+
+    expect(status.isOpen).toBe(true);
+    expect(status.statusLabel).toBe('Fatura Aberta');
+    expect(status.closingLabel).toBe('Fecha dia 14');
+    expect(status.daysLeftLabel).toBe('Faltam 6 dias');
+    expect(status.dueLabel).toBe('Vence dia 21');
+  });
+
+  it('shows "Fecha hoje" when today is the closing day', () => {
+    const fixedNow = new Date('2026-10-14T15:00:00Z');
+    const status = getCardInvoiceStatus({ closing_day: 14, due_day: 21 }, 9, 2026, fixedNow);
+
+    expect(status.isOpen).toBe(true);
+    expect(status.closingLabel).toBe('Fecha dia 14');
+    expect(status.daysLeftLabel).toBe('Fecha hoje');
+  });
+
+  it('shows "Falta 1 dia" when today is 1 day before closing day', () => {
+    const fixedNow = new Date('2026-10-13T15:00:00Z');
+    const status = getCardInvoiceStatus({ closing_day: 14, due_day: 21 }, 9, 2026, fixedNow);
+
+    expect(status.isOpen).toBe(true);
+    expect(status.daysLeftLabel).toBe('Falta 1 dia');
+  });
+
+  it('identifies closed invoice and shows due day when today is after closing day', () => {
+    // Hoje é dia 15/10/2026, fechou dia 14 e vence dia 21
+    const fixedNow = new Date('2026-10-15T15:00:00Z');
+    const status = getCardInvoiceStatus({ closing_day: 14, due_day: 21 }, 9, 2026, fixedNow);
+
+    expect(status.isOpen).toBe(false);
+    expect(status.statusLabel).toBe('Fatura Fechada');
+    expect(status.dueLabel).toBe('Vence dia 21');
+    expect(status.daysLeftLabel).toBeUndefined();
+  });
+
+  it('handles cross-month due dates correctly (e.g. closes 25 of month - 1, due 05)', () => {
+    // Vencimento em 05/11/2026, fecha em 25/10/2026. Hoje é 20/10/2026
+    const fixedNow = new Date('2026-10-20T15:00:00Z');
+    const status = getCardInvoiceStatus({ closing_day: 25, due_day: 5 }, 10, 2026, fixedNow);
+
+    expect(status.isOpen).toBe(true);
+    expect(status.closingLabel).toBe('Fecha dia 25');
+    expect(status.daysLeftLabel).toBe('Faltam 5 dias');
+    expect(status.dueLabel).toBe('Vence dia 5');
   });
 });
 

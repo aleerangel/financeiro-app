@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Plus, CreditCard as CardIcon, Wifi, Calendar, MoreVertical, Pencil, Trash2, Receipt } from 'lucide-react';
 import { CreditCardWithUsage, deleteCreditCard } from '@/lib/actions/credit-cards';
 import { formatCurrency } from '@/lib/utils';
+import { getCardInvoiceStatus } from '@/lib/credit-card-utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { CreditCardModal } from './CreditCardModal';
@@ -130,6 +131,7 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
             ? Math.min(100, Math.round((card.used_limit / card.credit_limit) * 100))
             : 0;
           const isSelected = selectedCard?.id === card.id;
+          const invoiceStatus = getCardInvoiceStatus(card);
 
           return (
             <div
@@ -200,17 +202,47 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
                 </div>
               </div>
 
-              {/* Centro: Nome do Cartão e Datas */}
+              {/* Centro: Nome do Cartão e Indicador de Fatura Aberta/Fechada */}
               <div>
-                <h4 className="font-extrabold text-lg tracking-wide drop-shadow-sm">
-                  {card.name}
-                </h4>
-                <div className="flex items-center gap-4 text-[11px] text-white/80 mt-1 font-medium">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    Fecha: dia {card.closing_day}
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-extrabold text-lg tracking-wide drop-shadow-sm truncate">
+                    {card.name}
+                  </h4>
+                  <span
+                    className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-sm ${
+                      invoiceStatus.isOpen
+                        ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400/40'
+                        : 'bg-amber-500/20 text-amber-200 border-amber-400/40'
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        invoiceStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                      }`}
+                    />
+                    {invoiceStatus.statusLabel}
                   </span>
-                  <span>Vence: dia {card.due_day}</span>
+                </div>
+
+                <div className="mt-1">
+                  {invoiceStatus.isOpen ? (
+                    <div>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-white drop-shadow-sm">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-300" />
+                        <span>{invoiceStatus.closingLabel}</span>
+                      </div>
+                      {invoiceStatus.daysLeftLabel && (
+                        <span className="text-[10px] text-white/80 font-medium block pl-5">
+                          {invoiceStatus.daysLeftLabel}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-200 drop-shadow-sm">
+                      <Calendar className="w-3.5 h-3.5 text-amber-300" />
+                      <span>{invoiceStatus.dueLabel}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

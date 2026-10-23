@@ -19,6 +19,7 @@ import { Transaction } from '@/types/database';
 import { GeneralDashboardData } from '@/lib/actions/dashboard';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { getCardInvoiceStatus } from '@/lib/credit-card-utils';
 
 export interface GeneralDashboardMobileProps {
   generalData?: GeneralDashboardData;
@@ -66,6 +67,16 @@ export function GeneralDashboardMobile({
     }
     return cards.reduce((sum, c) => sum + (Number(c.current_invoice) || 0), 0);
   }, [transactions, cards]);
+
+  // Status de fatura aberta / fechada de cada cartão
+  const cardsStatus = useMemo(() => {
+    return cards.map((c) => ({
+      card: c,
+      status: getCardInvoiceStatus(c),
+    }));
+  }, [cards]);
+
+  const primaryStatus = cardsStatus[0]?.status;
 
   // Rendimentos ganhos acumulados no mês
   const totalYieldMonth = accounts.reduce(
@@ -192,25 +203,96 @@ export function GeneralDashboardMobile({
           </Link>
         </div>
 
-        <div>
-          <span className="text-xs text-zinc-400 block font-medium">Fatura atual</span>
-          <h3 className="text-2xl font-extrabold text-purple-300 mt-0.5 tracking-tight">
-            {formatHidden(formatCurrency(totalCurrentInvoice))}
-          </h3>
-          <div className="flex items-center justify-between text-xs text-zinc-400 mt-2">
-            <span>
-              Limite total usado:{' '}
-              <strong className="text-zinc-200 font-semibold">
-                {formatHidden(formatCurrency(totalCardUsed))}
-              </strong>
-            </span>
-            <span>
-              Limite disponível:{' '}
-              <strong className="text-emerald-400 font-semibold">
-                {formatHidden(formatCurrency(totalCardAvailable))}
-              </strong>
-            </span>
+        {/* Topo do valor da Fatura e Indicador Aberta/Fechada */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <span className="text-xs text-zinc-400 block font-medium">Fatura atual</span>
+            <h3 className="text-2xl font-extrabold text-purple-300 mt-0.5 tracking-tight">
+              {formatHidden(formatCurrency(totalCurrentInvoice))}
+            </h3>
           </div>
+
+          {/* Indicador de Fatura Aberta / Fechada */}
+          {primaryStatus && (
+            <div className="text-right flex flex-col items-end">
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border mb-1 ${
+                  primaryStatus.isOpen
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    primaryStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                  }`}
+                />
+                {primaryStatus.statusLabel}
+              </span>
+
+              {primaryStatus.isOpen ? (
+                <>
+                  <span className="text-xs font-bold text-zinc-200">
+                    {primaryStatus.closingLabel}
+                  </span>
+                  {primaryStatus.daysLeftLabel && (
+                    <span className="text-[10px] text-zinc-400 font-medium">
+                      {primaryStatus.daysLeftLabel}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs font-bold text-zinc-200">
+                  {primaryStatus.dueLabel}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Se houver mais de 1 cartão, mostra status individual de cada um */}
+        {cards.length > 1 && (
+          <div className="pt-2 border-t border-zinc-800/80 space-y-2">
+            {cardsStatus.map(({ card, status }) => (
+              <div key={card.id} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 truncate">
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: card.color || '#8b5cf6' }}
+                  />
+                  <span className="text-zinc-300 font-medium truncate">{card.name}</span>
+                </div>
+                <div className="text-right shrink-0">
+                  {status.isOpen ? (
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-emerald-400 font-semibold">{status.closingLabel}</span>
+                      {status.daysLeftLabel && (
+                        <span className="text-[10px] text-zinc-400">({status.daysLeftLabel})</span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-amber-300 font-semibold">{status.dueLabel}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Limite Total Usado e Limite Disponível */}
+        <div className="flex items-center justify-between text-xs text-zinc-400 pt-1">
+          <span>
+            Limite total usado:{' '}
+            <strong className="text-zinc-200 font-semibold">
+              {formatHidden(formatCurrency(totalCardUsed))}
+            </strong>
+          </span>
+          <span>
+            Limite disponível:{' '}
+            <strong className="text-emerald-400 font-semibold">
+              {formatHidden(formatCurrency(totalCardAvailable))}
+            </strong>
+          </span>
         </div>
 
         {/* Barra de Limite */}

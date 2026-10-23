@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
+import { getCardInvoiceStatus } from '@/lib/credit-card-utils';
 import { Transaction } from '@/types/database';
 import {
   GeneralDashboardData,
@@ -219,7 +220,27 @@ export function GeneralDashboardDesktop({
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-purple-300">{formatCurrency(totalCurrentInvoice)}</h2>
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-2xl font-bold text-purple-300">{formatCurrency(totalCurrentInvoice)}</h2>
+              {cards[0] && (
+                (() => {
+                  const primaryStatus = getCardInvoiceStatus(cards[0]);
+                  return (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        primaryStatus.isOpen
+                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                      }`}
+                    >
+                      {primaryStatus.isOpen
+                        ? `${primaryStatus.closingLabel}${primaryStatus.daysLeftLabel ? ` • ${primaryStatus.daysLeftLabel}` : ''}`
+                        : primaryStatus.dueLabel}
+                    </span>
+                  );
+                })()
+              )}
+            </div>
             <div className="flex items-center justify-between text-[11px] text-zinc-400 mt-1">
               <span>Usado: <strong className="text-zinc-200">{formatCurrency(totalCardUsed)}</strong></span>
               <span>Disp: <strong className="text-emerald-400">{formatCurrency(totalCardAvailable)}</strong></span>
@@ -430,31 +451,56 @@ export function GeneralDashboardDesktop({
           </div>
 
           <div className="divide-y divide-zinc-800/80">
-            {cards.map((card) => (
-              <div key={card.id} className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: card.color || '#8b5cf6' }}
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-zinc-200 block">{card.name}</span>
-                    <span className="text-[10px] text-zinc-500">Vence dia {card.due_day}</span>
+            {cards.map((card) => {
+              const cardStatus = getCardInvoiceStatus(card);
+              return (
+                <div key={card.id} className="py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: card.color || '#8b5cf6' }}
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-zinc-200 block">{card.name}</span>
+                        <span
+                          className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold border ${
+                            cardStatus.isOpen
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                          }`}
+                        >
+                          {cardStatus.isOpen ? 'Aberta' : 'Fechada'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400 mt-0.5">
+                        {cardStatus.isOpen ? (
+                          <span>
+                            <strong className="text-zinc-300 font-semibold">{cardStatus.closingLabel}</strong>
+                            {cardStatus.daysLeftLabel && (
+                              <span className="text-zinc-500 ml-1">({cardStatus.daysLeftLabel})</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-amber-300 font-medium">{cardStatus.dueLabel}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-zinc-400 block font-medium">Fatura atual</span>
+                    <span className="text-sm font-bold text-purple-300 block">
+                      {formatCurrency(card.current_invoice ?? 0)}
+                    </span>
+                    <div className="text-[10px] text-zinc-500 flex items-center justify-end gap-1.5 mt-0.5">
+                      <span>Usado: {formatCurrency(card.used_limit)}</span>
+                      <span>•</span>
+                      <span className="text-emerald-400 font-medium">Disp: {formatCurrency(card.available_limit)}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-zinc-400 block font-medium">Fatura atual</span>
-                  <span className="text-sm font-bold text-purple-300 block">
-                    {formatCurrency(card.current_invoice ?? 0)}
-                  </span>
-                  <div className="text-[10px] text-zinc-500 flex items-center justify-end gap-1.5 mt-0.5">
-                    <span>Usado: {formatCurrency(card.used_limit)}</span>
-                    <span>•</span>
-                    <span className="text-emerald-400 font-medium">Disp: {formatCurrency(card.available_limit)}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {cards.length === 0 && (
               <p className="py-6 text-center text-xs text-zinc-500">
