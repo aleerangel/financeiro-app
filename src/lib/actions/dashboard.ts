@@ -626,7 +626,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
 
   for (const c of clientsData || []) {
     const cSales = (c.sales as unknown as { sale_date: string; total_amount: number }[]) || [];
-    if (cSales.length === 0) continue;
+    // Clientes com apenas 1 atendimento não possuem histórico suficiente para definir ciclo ou retorno
+    if (cSales.length < 2) continue;
 
     let latestSaleDate = cSales[0].sale_date;
     for (const cs of cSales) {

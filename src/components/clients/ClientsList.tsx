@@ -70,12 +70,13 @@ export function ClientsList({ initialClients }: ClientsListProps) {
     return acc;
   }, [clients]);
 
-  // Clientes em destaque no Radar (Na Janela + Atrasados)
+  // Clientes em destaque no Radar (Na Janela + Atrasados) - apenas com 2 ou mais atendimentos
   const radarClients = useMemo(() => {
     return clients
       .filter(
         (c) =>
-          c.analytics.status === 'in_window' || c.analytics.status === 'overdue'
+          c.totalSalesCount >= 2 &&
+          (c.analytics.status === 'in_window' || c.analytics.status === 'overdue')
       )
       .sort((a, b) => {
         const scoreDiff =
@@ -540,8 +541,10 @@ export function ClientsList({ initialClients }: ClientsListProps) {
                           )}
                         </div>
                       ) : (
-                        <span className="text-zinc-600 text-[11px]">
-                          Sem atendimentos
+                        <span className="text-zinc-500 text-[11px]">
+                          {client.totalSalesCount === 1
+                            ? '1º atendimento (aguardando 2ª visita)'
+                            : 'Sem atendimentos'}
                         </span>
                       )}
                     </td>

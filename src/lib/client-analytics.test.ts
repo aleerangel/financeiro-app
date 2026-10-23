@@ -7,9 +7,9 @@ import {
 } from './client-analytics';
 
 describe('computeWeightedCycleDays', () => {
-  it('retorna null quando não há visitas e 21 para 1ª visita', () => {
+  it('retorna null quando há menos de 2 visitas para cálculo de intervalo', () => {
     expect(computeWeightedCycleDays([])).toBeNull();
-    expect(computeWeightedCycleDays(['2026-10-01'])).toBe(21);
+    expect(computeWeightedCycleDays(['2026-10-01'])).toBeNull();
   });
 
   it('calcula o ciclo exato para visitas regulares a cada 15 dias', () => {
@@ -46,6 +46,18 @@ describe('analyzeClientSales', () => {
     const res = analyzeClientSales([], now);
     expect(res.status).toBe('new');
     expect(res.cycleDays).toBeNull();
+  });
+
+  it('classifica cliente com apenas 1 visita como Novo e não define ciclo nem janela', () => {
+    const sales = [
+      { id: '1', total_amount: 40, sale_date: '2026-09-20T14:00:00Z' },
+    ];
+    const res = analyzeClientSales(sales, now);
+    expect(res.status).toBe('new');
+    expect(res.cycleDays).toBeNull();
+    expect(res.expectedNextDate).toBeNull();
+    expect(res.windowStartDate).toBeNull();
+    expect(res.windowEndDate).toBeNull();
   });
 
   it('classifica cliente dentro da janela prevista como Na Janela (in_window)', () => {

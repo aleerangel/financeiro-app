@@ -57,7 +57,6 @@ export interface ClientAnalytics {
 const WEEKDAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const WEEKDAY_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
-const DEFAULT_FIRST_VISIT_CYCLE = 21;
 const MIN_CYCLE_DAYS = 5;
 const MAX_CYCLE_DAYS = 90;
 
@@ -114,8 +113,8 @@ function weekdayOfYMD(ymd: string): number {
  * a partir de uma lista ordenada crescente de datas únicas YYYY-MM-DD.
  */
 export function computeWeightedCycleDays(sortedUniqueDates: string[]): number | null {
-  if (sortedUniqueDates.length === 0) return null;
-  if (sortedUniqueDates.length === 1) return DEFAULT_FIRST_VISIT_CYCLE;
+  // Clientes com menos de 2 visitas distintas não possuem intervalo para definição de ciclo
+  if (sortedUniqueDates.length < 2) return null;
 
   const rawIntervals: number[] = [];
   for (let i = 1; i < sortedUniqueDates.length; i++) {
@@ -123,7 +122,7 @@ export function computeWeightedCycleDays(sortedUniqueDates: string[]): number | 
     if (diff > 0) rawIntervals.push(diff);
   }
 
-  if (rawIntervals.length === 0) return DEFAULT_FIRST_VISIT_CYCLE;
+  if (rawIntervals.length === 0) return null;
 
   // Se houver intervalos regulares (<= 120 dias), descarta pausas extremas (> 120 dias)
   const regular = rawIntervals.filter((d) => d <= 120);
@@ -205,32 +204,6 @@ export function analyzeClientSales(
   const todayYmd = getTodayYMD(now);
 
   const daysSinceLastVisit = Math.max(0, diffDaysYMD(lastVisitYmd, todayYmd));
-  const isEstimatedCycle = distinctVisitDays === 1;
-  const cycleDays = computeWeightedCycleDays(uniqueDates) ?? DEFAULT_FIRST_VISIT_CYCLE;
-  const windowMarginDays = Math.max(2, Math.min(5, Math.round(cycleDays * 0.15)));
-
-  const expectedNextDate = addDaysYMD(lastVisitYmd, cycleDays);
-  const windowStartDate = addDaysYMD(expectedNextDate, -windowMarginDays);
-  const windowEndDate = addDaysYMD(expectedNextDate, windowMarginDays);
-  const daysUntilExpected = cycleDays - daysSinceLastVisit;
-
-  // Classificação na máquina de estados
-  const windowMin = cycleDays - windowMarginDays;
-  const windowMax = cycleDays + windowMarginDays;
-  const missingThreshold = Math.max(cycleDays * 2, 40);
-
-  let status: ClientReturnStatus;
-  if (daysSinceLastVisit >= windowMin && daysSinceLastVisit <= windowMax) {
-    status = 'in_window';
-  } else if (daysSinceLastVisit > windowMax && daysSinceLastVisit < missingThreshold) {
-    status = 'overdue';
-  } else if (daysSinceLastVisit >= missingThreshold) {
-    status = 'missing';
-  } else if (distinctVisitDays === 1) {
-    status = 'new';
-  } else {
-    status = 'on_track';
-  }
 
   // Dias da semana preferidos
   const weekdays = computePreferredWeekdays(uniqueDates);
@@ -251,11 +224,73 @@ export function analyzeClientSales(
     .sort((a, b) => b.count - a.count || b.totalSpent - a.totalSpent)
     .slice(0, 3);
 
+  // Clientes com apenas 1 atendimento não possuem histórico suficiente para definir ciclo ou retorno
+  if (distinctVisitDays < 2) {
+    return {
+      status: 'new',
+      statusLabel: CLIENT_STATUS_LABELS.new,
+      cycleDays: null,
+      isEstimatedCycle: false,
+      windowMarginDays: null,
+      expectedNextDate: null,
+      windowStartDate: null,
+      windowEndDate: null,
+      daysSinceLastVisit,
+      daysUntilExpected: null,
+      preferredWeekdays: weekdays.short,
+      preferredWeekdaysFull: weekdays.full,
+      favoriteItems,
+      distinctVisitDays,
+    };
+  }
+
+  const cycleDays = computeWeightedCycleDays(uniqueDates);
+  if (!cycleDays) {
+    return {
+      status: 'new',
+      statusLabel: CLIENT_STATUS_LABELS.new,
+      cycleDays: null,
+      isEstimatedCycle: false,
+      windowMarginDays: null,
+      expectedNextDate: null,
+      windowStartDate: null,
+      windowEndDate: null,
+      daysSinceLastVisit,
+      daysUntilExpected: null,
+      preferredWeekdays: weekdays.short,
+      preferredWeekdaysFull: weekdays.full,
+      favoriteItems,
+      distinctVisitDays,
+    };
+  }
+
+  const windowMarginDays = Math.max(2, Math.min(5, Math.round(cycleDays * 0.15)));
+  const expectedNextDate = addDaysYMD(lastVisitYmd, cycleDays);
+  const windowStartDate = addDaysYMD(expectedNextDate, -windowMarginDays);
+  const windowEndDate = addDaysYMD(expectedNextDate, windowMarginDays);
+  const daysUntilExpected = cycleDays - daysSinceLastVisit;
+
+  // Classificação na máquina de estados (somente clientes com 2+ visitas chegam aqui!)
+  const windowMin = cycleDays - windowMarginDays;
+  const windowMax = cycleDays + windowMarginDays;
+  const missingThreshold = Math.max(cycleDays * 2, 40);
+
+  let status: ClientReturnStatus;
+  if (daysSinceLastVisit >= windowMin && daysSinceLastVisit <= windowMax) {
+    status = 'in_window';
+  } else if (daysSinceLastVisit > windowMax && daysSinceLastVisit < missingThreshold) {
+    status = 'overdue';
+  } else if (daysSinceLastVisit >= missingThreshold) {
+    status = 'missing';
+  } else {
+    status = 'on_track';
+  }
+
   return {
     status,
     statusLabel: CLIENT_STATUS_LABELS[status],
     cycleDays,
-    isEstimatedCycle,
+    isEstimatedCycle: false,
     windowMarginDays,
     expectedNextDate,
     windowStartDate,
