@@ -11,6 +11,15 @@ import {
 } from 'lucide-react';
 import { useMobileNavigation, MobileTab } from '@/context/MobileNavigationContext';
 
+const MORE_ROUTES = [
+  '/clientes',
+  '/produtos',
+  '/contas',
+  '/cartoes',
+  '/recorrencias',
+  '/categorias',
+];
+
 export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
@@ -22,6 +31,18 @@ export function BottomNav() {
       router.push('/dashboard');
     }
   };
+
+  const isMoreRoute = MORE_ROUTES.some((route) => pathname.startsWith(route));
+  const isStatementRoute = pathname.startsWith('/transacoes');
+
+  // Determina a aba ativa real considerando se estamos em uma rota de módulo
+  const effectiveTab: MobileTab = isMoreRoute
+    ? 'more'
+    : isStatementRoute
+    ? 'statement'
+    : pathname === '/dashboard'
+    ? activeTab
+    : 'home';
 
   const navItems: { tab: MobileTab; label: string; icon: React.ElementType }[] = [
     { tab: 'home', label: 'Início', icon: LayoutDashboard },
@@ -37,7 +58,7 @@ export function BottomNav() {
         {(() => {
           const item = navItems[0];
           const Icon = item.icon;
-          const isActive = activeTab === item.tab;
+          const isActive = effectiveTab === item.tab;
           return (
             <button
               key={item.tab}
@@ -57,7 +78,7 @@ export function BottomNav() {
         {(() => {
           const item = navItems[1];
           const Icon = item.icon;
-          const isActive = activeTab === item.tab;
+          const isActive = effectiveTab === item.tab;
           return (
             <button
               key={item.tab}
@@ -89,7 +110,7 @@ export function BottomNav() {
         {(() => {
           const item = navItems[2];
           const Icon = item.icon;
-          const isActive = activeTab === item.tab;
+          const isActive = effectiveTab === item.tab;
           return (
             <button
               key={item.tab}
@@ -109,7 +130,7 @@ export function BottomNav() {
         {(() => {
           const item = navItems[3];
           const Icon = item.icon;
-          const isActive = activeTab === item.tab;
+          const isActive = effectiveTab === item.tab;
           return (
             <button
               key={item.tab}

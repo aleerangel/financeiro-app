@@ -8,6 +8,7 @@ import { BottomNav } from './BottomNav';
 import { QuickActionDrawer } from './QuickActionDrawer';
 import { MobileQuickTransactionModal } from './MobileQuickTransactionModal';
 import { MobileNewSaleDrawer } from './MobileNewSaleDrawer';
+import { MobileBackButton } from './MobileBackButton';
 
 interface AppShellProps {
   userEmail?: string;
@@ -21,6 +22,7 @@ export function AppShell({ userEmail, children }: AppShellProps) {
         <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-100">
           <Navbar userEmail={userEmail} />
           <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 pb-24 md:pb-10">
+            <MobileBackButton />
             {children}
           </main>
           <BottomNav />
