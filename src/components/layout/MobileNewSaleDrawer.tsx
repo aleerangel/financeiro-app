@@ -9,6 +9,7 @@ import {
   Check,
   Sparkles,
   UserPlus,
+  Loader2,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { Product, Account, PaymentMethod, Client } from '@/types/database';
@@ -20,6 +21,7 @@ import {
   getCachedSimpleClients,
   invalidateClientCache,
 } from '@/lib/client-cache';
+import { filterClientsBySearch, findExactClientMatch } from '@/lib/client-search-utils';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { ClientModal } from '@/components/clients/ClientModal';
 import { formatCurrency } from '@/lib/utils';
@@ -41,6 +43,7 @@ function MobileNewSaleDrawerDialog() {
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [clients, setClients] = useState<SimpleClient[]>([]);
+  const [loadingClients, setLoadingClients] = useState<boolean>(true);
 
   // Form State
   const [selectedItems, setSelectedItems] = useState<CreateSaleItemInput[]>([]);
@@ -101,6 +104,9 @@ function MobileNewSaleDrawerDialog() {
       })
       .catch((err) => {
         console.error('Erro ao carregar clientes:', err);
+      })
+      .finally(() => {
+        if (mounted) setLoadingClients(false);
       });
 
     return () => {
@@ -177,11 +183,9 @@ function MobileNewSaleDrawerDialog() {
     setCustomItemPrice('');
   };
 
-  // Clientes filtrados por busca rápida
+  // Clientes filtrados por busca rápida e inteligente (insensível a acentos, maiúsculas e multi-termos)
   const filteredClients = useMemo(() => {
-    if (!clientSearch.trim()) return clients.slice(0, 5);
-    const searchLower = clientSearch.toLowerCase();
-    return clients.filter((c) => c.name.toLowerCase().includes(searchLower)).slice(0, 5);
+    return filterClientsBySearch(clients, clientSearch, 6);
   }, [clients, clientSearch]);
 
   const selectedClient = clients.find((c) => c.id === selectedClientId);
@@ -207,9 +211,13 @@ function MobileNewSaleDrawerDialog() {
 
     try {
       setSubmitting(true);
+      const exactMatch = selectedClient || findExactClientMatch(clients, clientSearch);
+      const finalClientId = selectedClientId || exactMatch?.id || null;
+      const finalClientName = exactMatch ? exactMatch.name : (clientSearch.trim() || 'Cliente Balcão');
+
       await createSale({
-        client_id: selectedClientId,
-        client_name: selectedClient ? selectedClient.name : (clientSearch.trim() || 'Cliente Balcão'),
+        client_id: finalClientId,
+        client_name: finalClientName,
         payment_method: paymentMethod,
         account_id: accountId,
         items: selectedItems,
@@ -500,8 +508,10 @@ function MobileNewSaleDrawerDialog() {
                     placeholder="Buscar cliente cadastrado ou deixar avulso..."
                     value={clientSearch}
                     onChange={(e) => {
-                      setClientSearch(e.target.value);
-                      if (selectedClientId) setSelectedClientId(null);
+                      const val = e.target.value;
+                      setClientSearch(val);
+                      const exact = findExactClientMatch(clients, val);
+                      setSelectedClientId(exact ? exact.id : null);
                     }}
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-3 pr-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
                   />
@@ -523,8 +533,13 @@ function MobileNewSaleDrawerDialog() {
 
               {/* Sugestões de Clientes ou Ação de Cadastro Rápido */}
               {!selectedClientId && clientSearch.trim() && (
-                <div className="mt-1.5 bg-zinc-950 border border-zinc-800 rounded-xl divide-y divide-zinc-800/80 overflow-hidden">
-                  {filteredClients.length === 0 ? (
+                <div className="mt-1.5 bg-zinc-950 border border-zinc-800 rounded-xl divide-y divide-zinc-800/80 overflow-hidden shadow-lg animate-in fade-in duration-150">
+                  {loadingClients ? (
+                    <div className="p-3 text-[11px] text-zinc-400 flex items-center justify-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                      <span>Buscando clientes cadastrados...</span>
+                    </div>
+                  ) : filteredClients.length === 0 ? (
                     <div className="p-3 text-[11px] text-zinc-400 space-y-2">
                       <div>
                         Nenhum cliente cadastrado como <strong>&quot;{clientSearch}&quot;</strong>.

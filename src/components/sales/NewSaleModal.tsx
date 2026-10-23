@@ -6,6 +6,7 @@ import { Product, Account, PaymentMethod, Client } from '@/types/database';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { findExactClientMatch } from '@/lib/client-search-utils';
 import { toast } from 'sonner';
 import { ClientModal } from '@/components/clients/ClientModal';
 
@@ -119,9 +120,13 @@ export function NewSaleModal({
       setLoading(true);
       setError(null);
 
+      const exactMatch = findExactClientMatch(clientsList, clientName);
+      const finalClientId = selectedClientId || exactMatch?.id || undefined;
+      const finalClientName = exactMatch ? exactMatch.name : (clientName.trim() || 'Cliente Balcão');
+
       await createSale({
-        client_id: selectedClientId || undefined,
-        client_name: clientName,
+        client_id: finalClientId,
+        client_name: finalClientName,
         payment_method: paymentMethod,
         account_id: accountId,
         items: selectedItems,
@@ -194,9 +199,7 @@ export function NewSaleModal({
                 onChange={(e) => {
                   const val = e.target.value;
                   setClientName(val);
-                  const matched = clientsList.find(
-                    (c) => c.name.toLowerCase() === val.toLowerCase()
-                  );
+                  const matched = findExactClientMatch(clientsList, val);
                   setSelectedClientId(matched ? matched.id : null);
                 }}
                 placeholder="Selecione ou digite o nome do cliente..."

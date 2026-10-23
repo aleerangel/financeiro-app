@@ -26,7 +26,7 @@ import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
 import { getZonedParts } from '@/lib/date-utils';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
-import { seedClientCache } from '@/lib/client-cache';
+import { seedClientCache, getCachedSimpleClients, getCachedProducts } from '@/lib/client-cache';
 import { MobileHeader } from './mobile/MobileHeader';
 import { BusinessDashboardMobile } from './mobile/BusinessDashboardMobile';
 import { GeneralDashboardMobile } from './mobile/GeneralDashboardMobile';
@@ -160,6 +160,11 @@ export function DashboardView({
       timestamp: Date.now(),
     });
     seedClientCache({ accounts: initialAccounts, cards: initialCards, categories });
+    // Pré-carrega clientes e produtos em segundo plano para abertura instantânea (0ms) do Novo Atendimento
+    setTimeout(() => {
+      getCachedSimpleClients().catch(() => {});
+      getCachedProducts().catch(() => {});
+    }, 120);
     // Executa apenas uma vez na montagem
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

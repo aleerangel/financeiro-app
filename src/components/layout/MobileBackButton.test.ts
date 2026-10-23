@@ -33,3 +33,4 @@ describe('MobileBackButton - route recognition', () => {
     expect(isMoreModuleRoute('')).toBe(false);
   });
 });
+
