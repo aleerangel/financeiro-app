@@ -53,7 +53,7 @@ export default async function DashboardPage() {
     transactions,
   ] = await Promise.all([
     getAccounts(),
-    getCreditCards(),
+    getCreditCards(currentMonth, currentYear),
     getCategories(),
     getBusinessDashboardData(currentYear, currentMonth),
     getGeneralDashboardData(currentYear, currentMonth),

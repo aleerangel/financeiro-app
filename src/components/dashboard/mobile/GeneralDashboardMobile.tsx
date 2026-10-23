@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import {
   Wallet,
@@ -55,6 +56,16 @@ export function GeneralDashboardMobile({
     0
   );
   const totalCardAvailable = Math.max(0, totalCardLimit - totalCardUsed);
+
+  // Fatura atual: compras de cartão não pagas do mês selecionado
+  const totalCurrentInvoice = useMemo(() => {
+    if (transactions && transactions.length > 0) {
+      return transactions
+        .filter((t) => t.payment_method === 'credit' && !t.is_paid && t.credit_card_id)
+        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    }
+    return cards.reduce((sum, c) => sum + (Number(c.current_invoice) || 0), 0);
+  }, [transactions, cards]);
 
   // Rendimentos ganhos acumulados no mês
   const totalYieldMonth = accounts.reduce(
@@ -182,13 +193,24 @@ export function GeneralDashboardMobile({
         </div>
 
         <div>
-          <span className="text-xs text-zinc-400 block">Fatura atual</span>
+          <span className="text-xs text-zinc-400 block font-medium">Fatura atual</span>
           <h3 className="text-2xl font-extrabold text-purple-300 mt-0.5 tracking-tight">
-            {formatHidden(formatCurrency(totalCardUsed))}
+            {formatHidden(formatCurrency(totalCurrentInvoice))}
           </h3>
-          <span className="text-xs text-zinc-400 mt-1 block">
-            Limite disponível: <strong className="text-zinc-200">{formatHidden(formatCurrency(totalCardAvailable))}</strong>
-          </span>
+          <div className="flex items-center justify-between text-xs text-zinc-400 mt-2">
+            <span>
+              Limite total usado:{' '}
+              <strong className="text-zinc-200 font-semibold">
+                {formatHidden(formatCurrency(totalCardUsed))}
+              </strong>
+            </span>
+            <span>
+              Limite disponível:{' '}
+              <strong className="text-emerald-400 font-semibold">
+                {formatHidden(formatCurrency(totalCardAvailable))}
+              </strong>
+            </span>
+          </div>
         </div>
 
         {/* Barra de Limite */}

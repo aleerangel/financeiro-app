@@ -3,13 +3,18 @@
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { CreditCard, Transaction } from '@/types/database';
+import { getZonedParts } from '@/lib/date-utils';
 
 export interface CreditCardWithUsage extends CreditCard {
   used_limit: number;
   available_limit: number;
+  current_invoice: number;
 }
 
-export async function getCreditCards(): Promise<CreditCardWithUsage[]> {
+export async function getCreditCards(
+  referenceMonth?: number,
+  referenceYear?: number
+): Promise<CreditCardWithUsage[]> {
   const supabase = await createClient();
   const user = await getAuthenticatedUser();
 
@@ -31,29 +36,49 @@ export async function getCreditCards(): Promise<CreditCardWithUsage[]> {
   // Busca compras em cartão que ainda não foram pagas (faturas abertas/pendentes)
   const { data: transactions } = await supabase
     .from('transactions')
-    .select('credit_card_id, amount, is_paid')
+    .select('credit_card_id, amount, is_paid, due_date')
     .eq('user_id', user.id)
     .eq('payment_method', 'credit')
     .eq('is_paid', false)
     .not('credit_card_id', 'is', null);
 
   const usageByCard = new Map<string, number>();
+  const currentInvoiceByCard = new Map<string, number>();
+
+  const { month: defaultM, year: defaultY } = getZonedParts();
+  const targetM = referenceMonth !== undefined ? referenceMonth : defaultM;
+  const targetY = referenceYear !== undefined ? referenceYear : defaultY;
+
+  const targetStartDate = `${targetY}-${String(targetM + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(targetY, targetM + 1, 0).getDate();
+  const targetEndDate = `${targetY}-${String(targetM + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
   if (transactions) {
     for (const t of transactions) {
       if (!t.credit_card_id) continue;
-      const current = usageByCard.get(t.credit_card_id) || 0;
-      usageByCard.set(t.credit_card_id, current + Number(t.amount));
+      const amt = Number(t.amount) || 0;
+
+      // Limite total utilizado = soma de todas as transações não pagas de todas as faturas
+      const currentUsage = usageByCard.get(t.credit_card_id) || 0;
+      usageByCard.set(t.credit_card_id, currentUsage + amt);
+
+      // Fatura atual = compras não pagas cuja data de vencimento da fatura cai no mês de referência
+      if (t.due_date && t.due_date >= targetStartDate && t.due_date <= targetEndDate) {
+        const currentInvoice = currentInvoiceByCard.get(t.credit_card_id) || 0;
+        currentInvoiceByCard.set(t.credit_card_id, currentInvoice + amt);
+      }
     }
   }
 
   return cards.map((card) => {
     const limit = Number(card.credit_limit) || 0;
     const used = usageByCard.get(card.id) || 0;
+    const currentInvoice = currentInvoiceByCard.get(card.id) || 0;
     return {
       ...card,
       used_limit: used,
       available_limit: Math.max(0, limit - used),
+      current_invoice: currentInvoice,
     };
   });
 }

@@ -143,6 +143,12 @@ export function GeneralDashboardDesktop({
   const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.current_balance || 0), 0);
   const totalCardLimit = cards.reduce((sum, c) => sum + Number(c.credit_limit || 0), 0);
   const totalCardUsed = cards.reduce((sum, c) => sum + Number(c.used_limit || 0), 0);
+  const totalCardAvailable = Math.max(0, totalCardLimit - totalCardUsed);
+  const totalCurrentInvoice = transactions
+    ? transactions
+        .filter((t) => t.payment_method === 'credit' && !t.is_paid && t.credit_card_id)
+        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+    : cards.reduce((sum, c) => sum + Number(c.current_invoice || 0), 0);
 
   let receivedIncome = 0;
   let pendingIncome = 0;
@@ -206,17 +212,18 @@ export function GeneralDashboardDesktop({
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-400 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">
-              Faturas / Limite Usado
+              Fatura Atual
             </span>
             <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
               <CreditCard className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-purple-300">{formatCurrency(totalCardUsed)}</h2>
-            <span className="text-[11px] text-zinc-500 mt-1 block">
-              de {formatCurrency(totalCardLimit)} limite total
-            </span>
+            <h2 className="text-2xl font-bold text-purple-300">{formatCurrency(totalCurrentInvoice)}</h2>
+            <div className="flex items-center justify-between text-[11px] text-zinc-400 mt-1">
+              <span>Usado: <strong className="text-zinc-200">{formatCurrency(totalCardUsed)}</strong></span>
+              <span>Disp: <strong className="text-emerald-400">{formatCurrency(totalCardAvailable)}</strong></span>
+            </div>
           </div>
         </div>
 
@@ -436,12 +443,15 @@ export function GeneralDashboardDesktop({
                   </div>
                 </div>
                 <div className="text-right">
+                  <span className="text-[10px] text-zinc-400 block font-medium">Fatura atual</span>
                   <span className="text-sm font-bold text-purple-300 block">
-                    {formatCurrency(card.used_limit)}
+                    {formatCurrency(card.current_invoice ?? 0)}
                   </span>
-                  <span className="text-[10px] text-zinc-500">
-                    Disp: {formatCurrency(card.available_limit)}
-                  </span>
+                  <div className="text-[10px] text-zinc-500 flex items-center justify-end gap-1.5 mt-0.5">
+                    <span>Usado: {formatCurrency(card.used_limit)}</span>
+                    <span>•</span>
+                    <span className="text-emerald-400 font-medium">Disp: {formatCurrency(card.available_limit)}</span>
+                  </div>
                 </div>
               </div>
             ))}

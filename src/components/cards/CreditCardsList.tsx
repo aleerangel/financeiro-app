@@ -39,6 +39,7 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
   const totalLimit = initialCards.reduce((acc, curr) => acc + Number(curr.credit_limit), 0);
   const totalUsed = initialCards.reduce((acc, curr) => acc + curr.used_limit, 0);
   const totalAvailable = Math.max(0, totalLimit - totalUsed);
+  const totalCurrentInvoice = initialCards.reduce((acc, curr) => acc + Number(curr.current_invoice || 0), 0);
 
   const handleEdit = (card: CreditCardWithUsage) => {
     setCardToEdit(card);
@@ -71,13 +72,13 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
   return (
     <div className="space-y-6">
       {/* Resumo Consolidado de Limites e Botão */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">
-            Limite Total
+          <span className="text-xs uppercase tracking-wider text-purple-400 font-semibold">
+            Fatura Atual (Total)
           </span>
-          <h3 className="text-xl sm:text-2xl font-bold text-zinc-100 mt-2">
-            {formatCurrency(totalLimit)}
+          <h3 className="text-xl sm:text-2xl font-bold text-purple-300 mt-2">
+            {formatCurrency(totalCurrentInvoice)}
           </h3>
         </div>
 
@@ -96,6 +97,15 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
           </span>
           <h3 className="text-xl sm:text-2xl font-bold text-emerald-400 mt-2">
             {formatCurrency(totalAvailable)}
+          </h3>
+        </div>
+
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">
+            Limite Total
+          </span>
+          <h3 className="text-xl sm:text-2xl font-bold text-zinc-100 mt-2">
+            {formatCurrency(totalLimit)}
           </h3>
         </div>
       </div>
@@ -205,10 +215,16 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
               </div>
 
               {/* Base: Barra de Limite e Valores */}
-              <div className="bg-black/25 backdrop-blur-md -mx-6 -mb-6 p-4 pt-3 rounded-b-2xl border-t border-white/10">
-                <div className="flex justify-between items-center text-xs font-semibold mb-1.5">
-                  <span className="text-white/80">Usado: {formatCurrency(card.used_limit)}</span>
-                  <span>Disponível: {formatCurrency(card.available_limit)}</span>
+              <div className="bg-black/25 backdrop-blur-md -mx-6 -mb-6 p-4 pt-3 rounded-b-2xl border-t border-white/10 space-y-1.5">
+                <div className="flex justify-between items-baseline text-xs font-semibold">
+                  <span className="text-white/70 text-[10px] uppercase font-bold tracking-wider">Fatura Atual</span>
+                  <span className="text-sm font-extrabold text-white drop-shadow-sm">
+                    {formatCurrency(card.current_invoice ?? 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-white/80 font-medium">
+                  <span>Usado: {formatCurrency(card.used_limit)}</span>
+                  <span>Disp: {formatCurrency(card.available_limit)}</span>
                 </div>
 
                 {/* Barra de Progresso */}
