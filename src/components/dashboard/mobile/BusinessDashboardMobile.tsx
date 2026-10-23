@@ -39,6 +39,7 @@ function formatWhatsAppUrl(name: string, phone?: string | null) {
 export function BusinessDashboardMobile({
   data,
   formattedMonth,
+  loading = false,
 }: BusinessDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
