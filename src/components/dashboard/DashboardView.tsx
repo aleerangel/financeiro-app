@@ -381,6 +381,9 @@ export function DashboardView({
         {activeTab === 'statement' && (
           <MobileStatementView
             transactions={transactions}
+            accounts={accounts}
+            cards={initialCards}
+            categories={categories}
             onRefresh={refreshData}
           />
         )}

@@ -1,33 +1,53 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import {
   ArrowDownRight,
   ArrowUpRight,
   Search,
   X,
+  Pencil,
+  Trash2,
+  CheckCircle2,
+  RotateCcw,
+  Loader2,
 } from 'lucide-react';
-import { Transaction } from '@/types/database';
+import { Account, CreditCard, Category, Transaction } from '@/types/database';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
-import { updateTransaction } from '@/lib/actions/transactions';
+import { deleteTransaction, toggleTransactionPaid } from '@/lib/actions/transactions';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
+
+const TransactionModal = dynamic(
+  () => import('@/components/transactions/TransactionModal').then((m) => m.TransactionModal),
+  { ssr: false }
+);
 
 interface MobileStatementViewProps {
   transactions: Transaction[];
+  accounts?: Account[];
+  cards?: CreditCard[];
+  categories?: Category[];
   onRefresh?: () => void;
 }
 
 export function MobileStatementView({
   transactions,
+  accounts = [],
+  cards = [],
+  categories = [],
   onRefresh,
 }: MobileStatementViewProps) {
   const { showValues } = useMobileNavigation();
+  const { confirm } = useConfirm();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'pending'>('all');
   const [filterScope, setFilterScope] = useState<'all' | 'business' | 'personal'>('all');
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Filtros
@@ -84,20 +104,66 @@ export function MobileStatementView({
 
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
-  // Ação de marcar como pago/recebido
-  const handleMarkAsPaid = async (tx: Transaction) => {
+  // Alternar status de pagamento
+  const handleTogglePaidStatus = async (tx: Transaction) => {
     try {
       setUpdatingId(tx.id);
-      await updateTransaction(tx.id, { is_paid: true });
+      await toggleTransactionPaid(tx.id, !tx.is_paid);
       toast.success(
-        tx.type === 'income'
-          ? 'Receita confirmada como recebida!'
-          : 'Despesa marcada como paga!'
+        !tx.is_paid
+          ? tx.type === 'income'
+            ? 'Receita confirmada como recebida!'
+            : 'Despesa marcada como paga!'
+          : 'Lançamento desmarcado (pendente)!'
       );
-      setSelectedTx(null);
+      if (selectedTx && selectedTx.id === tx.id) {
+        setSelectedTx({ ...selectedTx, is_paid: !selectedTx.is_paid });
+      }
       if (onRefresh) onRefresh();
     } catch {
       toast.error('Erro ao atualizar status do lançamento');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Excluir lançamento (com suporte a compras parceladas)
+  const handleDeleteTransaction = async (tx: Transaction) => {
+    let deleteEntireGroup = false;
+
+    if (
+      tx.installment_group_id &&
+      tx.total_installments &&
+      tx.total_installments > 1
+    ) {
+      const choice = await confirm({
+        title: 'Excluir Compra Parcelada',
+        description: `Esta despesa faz parte de uma compra parcelada em ${tx.total_installments}x. Deseja excluir todas as parcelas ou somente esta?`,
+        confirmLabel: 'Excluir Todas',
+        cancelLabel: 'Excluir Só Esta',
+        variant: 'danger',
+      });
+      deleteEntireGroup = choice;
+    } else {
+      const ok = await confirm({
+        title: 'Excluir Lançamento',
+        description: `Deseja realmente excluir "${tx.description}"?`,
+        confirmLabel: 'Excluir',
+        variant: 'danger',
+      });
+      if (!ok) return;
+    }
+
+    try {
+      setUpdatingId(tx.id);
+      await deleteTransaction(tx.id, deleteEntireGroup);
+      toast.success('Lançamento excluído com sucesso!');
+      if (selectedTx?.id === tx.id) {
+        setSelectedTx(null);
+      }
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao excluir lançamento');
     } finally {
       setUpdatingId(null);
     }
@@ -235,13 +301,20 @@ export function MobileStatementView({
                   const isPending = !tx.is_paid;
 
                   return (
-                    <button
+                    <div
                       key={tx.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setSelectedTx(tx)}
-                      className="w-full p-3.5 flex items-center justify-between text-left hover:bg-zinc-800/40 active:bg-zinc-800 transition"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedTx(tx);
+                        }
+                      }}
+                      className="w-full p-3.5 flex items-center justify-between text-left hover:bg-zinc-800/40 active:bg-zinc-800 transition cursor-pointer select-none"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
                         <div
                           className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                             isIncome
@@ -255,21 +328,21 @@ export function MobileStatementView({
                             <ArrowDownRight className="w-4 h-4 stroke-[2.5]" />
                           )}
                         </div>
-                        <div>
-                          <span className="font-bold text-xs text-zinc-100 block truncate max-w-[180px]">
+                        <div className="min-w-0">
+                          <span className="font-bold text-xs text-zinc-100 block truncate">
                             {tx.description}
                           </span>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] text-zinc-400">
+                            <span className="text-[10px] text-zinc-400 truncate">
                               {tx.category?.name || 'Geral'}
                             </span>
                             {isBiz && (
-                              <span className="text-[9px] px-1 py-0.2 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20 font-bold">
+                              <span className="text-[9px] px-1 py-0.2 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20 font-bold shrink-0">
                                 PJ
                               </span>
                             )}
                             {isPending && (
-                              <span className="text-[9px] px-1 py-0.2 bg-amber-500/15 text-amber-400 rounded font-bold">
+                              <span className="text-[9px] px-1 py-0.2 bg-amber-500/15 text-amber-400 rounded font-bold shrink-0">
                                 Pendente
                               </span>
                             )}
@@ -277,19 +350,35 @@ export function MobileStatementView({
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <span
-                          className={`text-xs font-extrabold block ${
-                            isIncome ? 'text-emerald-400' : 'text-zinc-200'
-                          }`}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <span
+                            className={`text-xs font-extrabold block ${
+                              isIncome ? 'text-emerald-400' : 'text-zinc-200'
+                            }`}
+                          >
+                            {isIncome ? '+' : '-'} {formatHidden(formatCurrency(tx.amount))}
+                          </span>
+                          <span className="text-[10px] text-zinc-400 block mt-0.5 max-w-[100px] truncate">
+                            {tx.credit_card?.name || tx.account?.name || 'Sem conta'}
+                          </span>
+                        </div>
+
+                        {/* Botão de Edição Rápida */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingTx(tx);
+                          }}
+                          className="p-2 text-zinc-400 hover:text-zinc-100 active:text-zinc-100 hover:bg-zinc-800 active:scale-95 rounded-xl border border-transparent hover:border-zinc-700/60 transition"
+                          title="Editar Lançamento"
+                          aria-label={`Editar ${tx.description}`}
                         >
-                          {isIncome ? '+' : '-'} {formatHidden(formatCurrency(tx.amount))}
-                        </span>
-                        <span className="text-[10px] text-zinc-400 block mt-0.5">
-                          {tx.credit_card?.name || tx.account?.name || 'Sem conta'}
-                        </span>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -363,23 +452,84 @@ export function MobileStatementView({
               </div>
             </div>
 
-            {/* Ação para lançamentos pendentes */}
-            {!selectedTx.is_paid && (
+            {/* Ações da Gaveta: Editar, Excluir e Alternar Status */}
+            <div className="space-y-2 pt-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toEdit = selectedTx;
+                    setSelectedTx(null);
+                    setEditingTx(toEdit);
+                  }}
+                  className="py-2.5 px-3 bg-zinc-800 hover:bg-zinc-750 text-zinc-100 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 border border-zinc-700 active:scale-95"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-zinc-300" />
+                  <span>Editar</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={updatingId === selectedTx.id}
+                  onClick={() => handleDeleteTransaction(selectedTx)}
+                  className="py-2.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                >
+                  {updatingId === selectedTx.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  )}
+                  <span>Excluir</span>
+                </button>
+              </div>
+
+              {/* Botão de Alternar Status de Pagamento */}
               <button
                 type="button"
                 disabled={updatingId === selectedTx.id}
-                onClick={() => handleMarkAsPaid(selectedTx)}
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 text-center active:scale-95 disabled:opacity-50"
+                onClick={() => handleTogglePaidStatus(selectedTx)}
+                className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 ${
+                  !selectedTx.is_paid
+                    ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20'
+                    : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
+                }`}
               >
-                {updatingId === selectedTx.id
-                  ? 'Atualizando...'
-                  : selectedTx.type === 'income'
-                  ? 'Confirmar Recebimento Agora'
-                  : 'Marcar como Pago Agora'}
+                {updatingId === selectedTx.id ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : !selectedTx.is_paid ? (
+                  <CheckCircle2 className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
+                ) : (
+                  <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
+                )}
+                <span>
+                  {updatingId === selectedTx.id
+                    ? 'Atualizando...'
+                    : !selectedTx.is_paid
+                    ? selectedTx.type === 'income'
+                      ? 'Confirmar Recebimento Agora'
+                      : 'Marcar como Pago Agora'
+                    : 'Desmarcar (Voltar para Pendente)'}
+                </span>
               </button>
-            )}
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Edição de Transação */}
+      {editingTx && (
+        <TransactionModal
+          isOpen={Boolean(editingTx)}
+          onClose={() => setEditingTx(null)}
+          transaction={editingTx}
+          accounts={accounts}
+          cards={cards}
+          categories={categories}
+          onSuccess={() => {
+            setEditingTx(null);
+            if (onRefresh) onRefresh();
+          }}
+        />
       )}
     </div>
   );

@@ -15,6 +15,7 @@ import {
   LogOut,
   Loader2,
   Receipt,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
@@ -61,6 +62,7 @@ export function MobileMoreView({
 
   // Pré-carrega ativamente todas as rotas em segundo plano no momento em que a aba Mais é aberta
   useEffect(() => {
+    router.prefetch('/transacoes');
     router.prefetch('/fiados');
     router.prefetch('/clientes');
     router.prefetch('/produtos');
@@ -136,6 +138,13 @@ export function MobileMoreView({
     {
       title: 'Gestão Financeira & Meios',
       items: [
+        {
+          title: 'Lançamentos & Extrato Completo',
+          description: 'Visão tabular avançada, busca por texto, filtros e exportação',
+          href: '/transacoes',
+          icon: ArrowLeftRight,
+          iconColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+        },
         {
           title: 'Contas Bancárias',
           description: `${accounts.length} contas cadastradas • Saldo: ${formatHidden(formatCurrency(totalBalance))}`,
