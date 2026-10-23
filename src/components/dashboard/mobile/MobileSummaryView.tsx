@@ -10,6 +10,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ShoppingBag,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   BusinessDashboardData,
@@ -35,6 +38,11 @@ const CategoryEvolutionModal = dynamic(
   { ssr: false }
 );
 
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+
 interface MobileSummaryViewProps {
   businessData: BusinessDashboardData;
   generalData: GeneralDashboardData;
@@ -59,6 +67,29 @@ export function MobileSummaryView({
   const { showValues } = useMobileNavigation();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
+  // Mês e ano de referência para as seções de detalhamento (Receitas, Despesas e Barbearia)
+  const [refMonth, setRefMonth] = useState<number>(month);
+  const [refYear, setRefYear] = useState<number>(year);
+
+  // Navegação do seletor único de mês de referência
+  const handlePrevRefMonth = () => {
+    if (refMonth === 0) {
+      setRefMonth(11);
+      setRefYear((y) => y - 1);
+    } else {
+      setRefMonth((m) => m - 1);
+    }
+  };
+
+  const handleNextRefMonth = () => {
+    if (refMonth === 11) {
+      setRefMonth(0);
+      setRefYear((y) => y + 1);
+    } else {
+      setRefMonth((m) => m + 1);
+    }
+  };
+
   // Estado do Modal de Evolução por Categoria (quando clicar em Expandir no gráfico)
   const [evolutionModalState, setEvolutionModalState] = useState<{
     type: 'income' | 'expense';
@@ -66,55 +97,7 @@ export function MobileSummaryView({
     refYear: number;
   } | null>(null);
 
-  // 1. CARDS DO TOPO: RECEITAS E DESPESAS (REALIZADO + PREVISTO COM O QUE AINDA FALTA)
-  const {
-    receivedIncome,
-    pendingIncome,
-    totalIncome,
-    paidExpense,
-    pendingExpense,
-    totalExpense,
-  } = useMemo(() => {
-    let recInc = 0;
-    let pendInc = 0;
-    let pdExp = 0;
-    let pendExp = 0;
-
-    if (transactions.length > 0) {
-      for (const t of transactions) {
-        const amt = Number(t.amount) || 0;
-        if (t.type === 'income') {
-          if (t.is_paid) {
-            recInc += amt;
-          } else {
-            pendInc += amt;
-          }
-        } else if (t.type === 'expense') {
-          if (t.is_paid) {
-            pdExp += amt;
-          } else {
-            pendExp += amt;
-          }
-        }
-      }
-    } else {
-      const curYearStat = yearlyStats[month] || generalData?.yearlyStats?.[month];
-      recInc = (curYearStat?.serviceRevenue || 0) + (curYearStat?.generalIncome || 0);
-      pdExp = curYearStat?.generalExpense || 0;
-      pendExp = businessData.monthSummary?.pendingExpenses || 0;
-    }
-
-    return {
-      receivedIncome: recInc,
-      pendingIncome: pendInc,
-      totalIncome: recInc + pendInc,
-      paidExpense: pdExp,
-      pendingExpense: pendExp,
-      totalExpense: pdExp + pendExp,
-    };
-  }, [transactions, yearlyStats, generalData?.yearlyStats, month, businessData.monthSummary]);
-
-  // 2. EVOLUÇÃO FINANCEIRA COM O MOTOR NATIVO WEB (SmoothLineChart + ChartPeriodToolbar)
+  // 1. MOTOR NATIVO WEB DE EVOLUÇÃO (SmoothLineChart + ChartPeriodToolbar)
   const flowChart = useIndependentChartPeriod(
     year,
     month,
@@ -164,7 +147,55 @@ export function MobileSummaryView({
     [flowChart.activeStats]
   );
 
-  // 3. DIAS MAIS FORTES DA BARBEARIA NO MÊS (CÁLCULO PRECISO)
+  // 2. RECEITAS E DESPESAS (REALIZADO + PREVISTO COM O QUE AINDA FALTA)
+  const {
+    receivedIncome,
+    pendingIncome,
+    totalIncome,
+    paidExpense,
+    pendingExpense,
+    totalExpense,
+  } = useMemo(() => {
+    let recInc = 0;
+    let pendInc = 0;
+    let pdExp = 0;
+    let pendExp = 0;
+
+    if (transactions.length > 0) {
+      for (const t of transactions) {
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'income') {
+          if (t.is_paid) {
+            recInc += amt;
+          } else {
+            pendInc += amt;
+          }
+        } else if (t.type === 'expense') {
+          if (t.is_paid) {
+            pdExp += amt;
+          } else {
+            pendExp += amt;
+          }
+        }
+      }
+    } else {
+      const curYearStat = yearlyStats[refMonth] || generalData?.yearlyStats?.[refMonth];
+      recInc = (curYearStat?.serviceRevenue || 0) + (curYearStat?.generalIncome || 0);
+      pdExp = curYearStat?.generalExpense || 0;
+      pendExp = businessData.monthSummary?.pendingExpenses || 0;
+    }
+
+    return {
+      receivedIncome: recInc,
+      pendingIncome: pendInc,
+      totalIncome: recInc + pendInc,
+      paidExpense: pdExp,
+      pendingExpense: pendExp,
+      totalExpense: pdExp + pendExp,
+    };
+  }, [transactions, yearlyStats, generalData?.yearlyStats, refMonth, businessData.monthSummary]);
+
+  // 3. DIAS MAIS FORTES DA BARBEARIA NO MÊS
   const strongDaysStats = useMemo(() => {
     const dayTotals: Record<string, number> = {
       Seg: 0,
@@ -186,7 +217,7 @@ export function MobileSummaryView({
       Dom: 'Domingo',
     };
 
-    // 1. Somar a partir de weeklyStatsByWeek (todas as semanas do mês)
+    // Somar a partir de weeklyStatsByWeek
     Object.values(businessData.weeklyStatsByWeek || {}).forEach((weekDays) => {
       weekDays.forEach((stat) => {
         if (stat.label && dayTotals[stat.label] !== undefined) {
@@ -195,7 +226,7 @@ export function MobileSummaryView({
       });
     });
 
-    // 2. Se por ventura weeklyStatsByWeek for 0, calcular via transações da barbearia
+    // Fallback nas transações caso weeklyStatsByWeek esteja vazio
     const totalRevFromWeeks = Object.values(dayTotals).reduce((a, b) => a + b, 0);
     if (totalRevFromWeeks === 0 && transactions && transactions.length > 0) {
       const bizTxs = transactions.filter((t) => t.is_paid && isBarbeariaServiceIncome(t));
@@ -226,7 +257,7 @@ export function MobileSummaryView({
       .sort((a, b) => b.revenue - a.revenue);
   }, [businessData.weeklyStatsByWeek, transactions]);
 
-  // Dados da Barbearia
+  // Resumo da Barbearia
   const bizSummary = businessData.monthSummary || {
     revenue: 0,
     paidExpenses: 0,
@@ -248,8 +279,35 @@ export function MobileSummaryView({
   };
 
   return (
-    <div className="space-y-5 pb-16">
-      {/* 1. CARDS DO TOPO: RECEITAS E DESPESAS (REALIZADO + PREVISTO COM O QUE AINDA FALTA) */}
+    <div className="space-y-4 pb-16">
+      {/* 1. TOPO DA PÁGINA: EVOLUÇÃO FINANCEIRA AMPLIADA */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 sm:p-5">
+        <SmoothLineChart
+          title="Evolução Financeira"
+          subtitle={flowChart.subtitle}
+          series={flowSeries}
+          labels={flowLabels}
+          tooltipLabels={flowTooltipLabels}
+          height={280}
+          compactLayout={true}
+          rightAction={
+            <ChartPeriodToolbar
+              period={flowChart.period}
+              onPeriodChange={flowChart.setPeriod}
+              year={flowChart.year}
+              month={flowChart.month}
+              onYearChange={flowChart.handleYearChange}
+              onMonthChange={flowChart.handleMonthChange}
+              weeksMeta={flowChart.weeksMeta}
+              selectedWeekIndex={flowChart.selectedWeekIndex}
+              onWeekChange={flowChart.handleWeekChange}
+              loading={flowChart.loading}
+            />
+          }
+        />
+      </div>
+
+      {/* 2. ABAIXO DA EVOLUÇÃO: RECEITAS E DESPESAS */}
       <div className="grid grid-cols-2 gap-2.5">
         {/* Card Receita */}
         <div className="p-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between space-y-2">
@@ -298,57 +356,71 @@ export function MobileSummaryView({
         </div>
       </div>
 
-      {/* 2. EVOLUÇÃO FINANCEIRA COM O GRÁFICO NATIVO SUAVE (SmoothLineChart) */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 sm:p-4">
-        <SmoothLineChart
-          title="Evolução Financeira"
-          subtitle={flowChart.subtitle}
-          series={flowSeries}
-          labels={flowLabels}
-          tooltipLabels={flowTooltipLabels}
-          height={220}
-          rightAction={
-            <ChartPeriodToolbar
-              period={flowChart.period}
-              onPeriodChange={flowChart.setPeriod}
-              year={flowChart.year}
-              month={flowChart.month}
-              onYearChange={flowChart.handleYearChange}
-              onMonthChange={flowChart.handleMonthChange}
-              weeksMeta={flowChart.weeksMeta}
-              selectedWeekIndex={flowChart.selectedWeekIndex}
-              onWeekChange={flowChart.handleWeekChange}
-              loading={flowChart.loading}
-            />
-          }
-        />
+      {/* 3. SELETOR DE MÊS DE REFERÊNCIA CENTRALIZADO */}
+      <div className="flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+            Mês de Referência
+          </span>
+        </div>
+        <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl px-1.5 py-1 text-xs">
+          <button
+            type="button"
+            onClick={handlePrevRefMonth}
+            className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+            title="Mês anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <select
+            value={refMonth}
+            onChange={(e) => setRefMonth(Number(e.target.value))}
+            className="bg-transparent text-zinc-100 font-bold text-xs px-2 py-0.5 focus:outline-none cursor-pointer"
+          >
+            {MONTH_NAMES.map((m, idx) => (
+              <option key={m} value={idx} className="bg-zinc-900 text-zinc-100">
+                {m}/{refYear}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleNextRefMonth}
+            className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+            title="Próximo mês"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* 3. MÓDULOS COMPLETOS DA VERSÃO WEB DE ENTRADAS E SAÍDAS POR CATEGORIAS */}
-      {/* Módulo de Entradas por Categoria */}
+      {/* 4. DEPOIS O RESTO: RECEITAS E BALANÇO GERAL (SEM SELETOR INTERNO) */}
       <MonthlyBarChart
         transactions={transactions}
         accounts={accounts}
         incomeEvolution={generalData?.incomeCategoryEvolution || []}
-        currentMonth={month}
-        year={year}
-        onExpandEvolution={(refMonth, refYear) =>
-          setEvolutionModalState({ type: 'income', refMonth, refYear })
+        currentMonth={refMonth}
+        year={refYear}
+        hideMonthSelector={true}
+        onExpandEvolution={(m, y) =>
+          setEvolutionModalState({ type: 'income', refMonth: m, refYear: y })
         }
       />
 
-      {/* Módulo de Saídas por Categoria (Donut Chart) */}
+      {/* 5. GASTOS POR CATEGORIA (SEM SELETOR INTERNO) */}
       <CategoryDonutChart
         transactions={transactions}
         expenseEvolution={generalData?.expenseCategoryEvolution || []}
-        currentMonth={month}
-        year={year}
-        onExpandEvolution={(refMonth, refYear) =>
-          setEvolutionModalState({ type: 'expense', refMonth, refYear })
+        currentMonth={refMonth}
+        year={refYear}
+        hideMonthSelector={true}
+        onExpandEvolution={(m, y) =>
+          setEvolutionModalState({ type: 'expense', refMonth: m, refYear: y })
         }
       />
 
-      {/* 4. INTELIGÊNCIA OPERACIONAL DA BARBEARIA */}
+      {/* 6. INTELIGÊNCIA OPERACIONAL DA BARBEARIA */}
       <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -489,8 +561,8 @@ export function MobileSummaryView({
             : generalData?.expenseCategoryEvolution || []
         }
         transactions={transactions}
-        currentMonth={evolutionModalState?.refMonth ?? month}
-        year={evolutionModalState?.refYear ?? year}
+        currentMonth={evolutionModalState?.refMonth ?? refMonth}
+        year={evolutionModalState?.refYear ?? refYear}
         formattedMonth={formattedMonth}
       />
     </div>

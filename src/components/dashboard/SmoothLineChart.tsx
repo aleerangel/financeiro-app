@@ -21,6 +21,7 @@ export interface SmoothLineChartProps {
   height?: number;
   rightAction?: React.ReactNode;
   dynamicYScale?: boolean;
+  compactLayout?: boolean;
 }
 
 const DEFAULT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -35,6 +36,7 @@ export function SmoothLineChart({
   height = 260,
   rightAction,
   dynamicYScale = false,
+  compactLayout = false,
 }: SmoothLineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -130,12 +132,23 @@ export function SmoothLineChart({
   }, [series, dynamicYScale]);
 
   // Dimensões SVG internas
-  const svgWidth = 650;
+  const svgWidth = compactLayout ? 460 : 650;
   const svgHeight = height;
-  const padLeft = 85;
-  const padRight = 25;
-  const padTop = 25;
-  const padBottom = 35;
+  const padLeft = compactLayout ? 58 : 85;
+  const padRight = compactLayout ? 12 : 25;
+  const padTop = compactLayout ? 16 : 25;
+  const padBottom = compactLayout ? 28 : 35;
+
+  const formatTickLabel = (tick: number) => {
+    if (compactLayout) {
+      if (Math.abs(tick) >= 1000) {
+        const kVal = tick / 1000;
+        return `R$ ${kVal % 1 === 0 ? kVal.toFixed(0) : kVal.toFixed(1)}k`;
+      }
+      return `R$ ${Math.round(tick)}`;
+    }
+    return formatCurrency(tick);
+  };
 
   const chartW = svgWidth - padLeft - padRight;
   const chartH = svgHeight - padTop - padBottom;
@@ -235,14 +248,14 @@ export function SmoothLineChart({
                   strokeWidth="1"
                 />
                 <text
-                  x={padLeft - 10}
+                  x={padLeft - 8}
                   y={yPos + 4}
                   textAnchor="end"
                   fill="#71717a"
-                  fontSize="11"
-                  fontWeight="500"
+                  fontSize={compactLayout ? '11' : '11'}
+                  fontWeight="600"
                 >
-                  {formatCurrency(tick)}
+                  {formatTickLabel(tick)}
                 </text>
               </g>
             );
@@ -256,11 +269,11 @@ export function SmoothLineChart({
               <text
                 key={`label-${idx}`}
                 x={xPos}
-                y={svgHeight - 10}
+                y={svgHeight - (compactLayout ? 6 : 10)}
                 textAnchor="middle"
                 fill={isHovered ? '#f4f4f5' : '#a1a1aa'}
-                fontSize="11"
-                fontWeight={isHovered ? '700' : '500'}
+                fontSize={compactLayout ? '11' : '11'}
+                fontWeight={isHovered ? '700' : '600'}
                 className="transition-colors"
               >
                 {m}

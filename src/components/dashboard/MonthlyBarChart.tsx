@@ -33,6 +33,7 @@ interface MonthlyBarChartProps {
   currentMonth?: number;
   year?: number;
   onExpandEvolution?: (refMonth: number, refYear: number) => void;
+  hideMonthSelector?: boolean;
 }
 
 export function MonthlyBarChart({
@@ -42,6 +43,7 @@ export function MonthlyBarChart({
   currentMonth = new Date().getMonth(),
   year = new Date().getFullYear(),
   onExpandEvolution,
+  hideMonthSelector = false,
 }: MonthlyBarChartProps) {
   const {
     refMonth,
@@ -186,40 +188,42 @@ export function MonthlyBarChart({
 
           <div className="flex items-center gap-2 flex-wrap">
             {/* Seletor de Mês de Referência do Painel */}
-            <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl px-1 py-0.5 text-xs">
-              <button
-                type="button"
-                onClick={handlePrevMonth}
-                className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
-                title="Mês anterior"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <select
-                value={refMonth}
-                onChange={(e) => selectReferencePeriod(Number(e.target.value), refYear)}
-                className="bg-transparent text-zinc-200 font-semibold text-xs px-1 py-0.5 focus:outline-none cursor-pointer"
-                title="Selecionar mês de referência"
-              >
-                {MONTH_SHORT_NAMES.map((mName, idx) => (
-                  <option
-                    key={mName}
-                    value={idx}
-                    className="bg-zinc-900 text-zinc-100"
-                  >
-                    {mName}/{refYear}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleNextMonth}
-                className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
-                title="Próximo mês"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {!hideMonthSelector && (
+              <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl px-1 py-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                  title="Mês anterior"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <select
+                  value={refMonth}
+                  onChange={(e) => selectReferencePeriod(Number(e.target.value), refYear)}
+                  className="bg-transparent text-zinc-200 font-semibold text-xs px-1 py-0.5 focus:outline-none cursor-pointer"
+                  title="Selecionar mês de referência"
+                >
+                  {MONTH_SHORT_NAMES.map((mName, idx) => (
+                    <option
+                      key={mName}
+                      value={idx}
+                      className="bg-zinc-900 text-zinc-100"
+                    >
+                      {mName}/{refYear}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                  title="Próximo mês"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {(receivedIncome > 0 || paidExpense > 0) && (
               <span
