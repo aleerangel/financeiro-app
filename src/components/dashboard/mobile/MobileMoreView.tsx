@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -16,6 +17,7 @@ import {
   Loader2,
   Receipt,
   ArrowLeftRight,
+  MessageSquare,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
@@ -24,6 +26,14 @@ import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { formatCurrency } from '@/lib/utils';
 import { clearAppClientStorage } from '@/lib/auth-storage';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { BusinessMessageSettings } from '@/lib/whatsapp-templates';
+import { getMessageSettings } from '@/lib/actions/message-settings';
+import { toast } from 'sonner';
+
+const MessageSettingsModal = dynamic(
+  () => import('@/components/fiados/MessageSettingsModal').then((m) => m.MessageSettingsModal),
+  { ssr: false }
+);
 
 interface MobileMoreViewProps {
   accounts: AccountWithBalance[];
@@ -42,6 +52,26 @@ export function MobileMoreView({
   const [loggingOut, setLoggingOut] = useState(false);
   const [navigatingHref, setNavigatingHref] = useState<string | null>(null);
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const [isMessageSettingsOpen, setIsMessageSettingsOpen] = useState(false);
+  const [messageSettings, setMessageSettings] = useState<BusinessMessageSettings | null>(null);
+  const [loadingSettings, setLoadingSettings] = useState(false);
+
+  const handleOpenMessageSettings = async () => {
+    if (messageSettings) {
+      setIsMessageSettingsOpen(true);
+      return;
+    }
+    setLoadingSettings(true);
+    try {
+      const settings = await getMessageSettings();
+      setMessageSettings(settings);
+      setIsMessageSettingsOpen(true);
+    } catch {
+      toast.error('Erro ao carregar configurações de mensagens.');
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
 
   // Reseta qualquer estado de carregamento pendente ao mudar de rota
   if (prevPathname !== pathname) {
@@ -133,6 +163,14 @@ export function MobileMoreView({
           icon: Package,
           iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
         },
+        {
+          title: 'Configurar WhatsApp & Chave Pix',
+          description: 'Chave Pix de recebimento e modelos de mensagens automáticas',
+          onClick: handleOpenMessageSettings,
+          isLoading: loadingSettings,
+          icon: MessageSquare,
+          iconColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+        },
       ],
     },
     {
@@ -189,34 +227,21 @@ export function MobileMoreView({
             {section.items.map((item, iIdx) => {
               const Icon = item.icon;
               const isNavigating = navigatingHref === item.href;
+              const isItemBusy = isNavigating || Boolean(item.isLoading);
 
-              return (
-                <Link
-                  key={iIdx}
-                  href={item.href}
-                  prefetch={true}
-                  onClick={() => {
-                    setNavigatingHref(item.href);
-                    // Timeout de segurança: limpa o destaque se a navegação for cancelada ou ao retornar
-                    setTimeout(() => setNavigatingHref(null), 600);
-                  }}
-                  className={`p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] ${
-                    isNavigating
-                      ? 'bg-zinc-800/90 border-l-2 border-emerald-400'
-                      : 'hover:bg-zinc-800/40 active:bg-zinc-800'
-                  }`}
-                >
+              const innerContent = (
+                <>
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 transition-transform ${item.iconColor} ${
-                        isNavigating ? 'scale-105' : ''
+                        isItemBusy ? 'scale-105' : ''
                       }`}
                     >
                       <Icon className="w-5 h-5 stroke-[2.2]" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`font-bold text-xs block ${isNavigating ? 'text-emerald-300' : 'text-zinc-100'}`}>
+                        <span className={`font-bold text-xs block ${isItemBusy ? 'text-emerald-300' : 'text-zinc-100'}`}>
                           {item.title}
                         </span>
                         {item.badge && (
@@ -228,16 +253,54 @@ export function MobileMoreView({
                         )}
                       </div>
                       <span className="text-[11px] text-zinc-400 block mt-0.5">
-                        {isNavigating ? 'Abrindo...' : item.description}
+                        {isItemBusy ? 'Abrindo...' : item.description}
                       </span>
                     </div>
                   </div>
 
-                  {isNavigating ? (
+                  {isItemBusy ? (
                     <Loader2 className="w-4 h-4 text-emerald-400 animate-spin shrink-0 ml-2" />
                   ) : (
                     <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0 ml-2" />
                   )}
+                </>
+              );
+
+              if (item.onClick) {
+                return (
+                  <button
+                    key={iIdx}
+                    type="button"
+                    onClick={item.onClick}
+                    disabled={Boolean(item.isLoading)}
+                    className={`w-full p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] disabled:opacity-70 ${
+                      item.isLoading
+                        ? 'bg-zinc-800/90 border-l-2 border-emerald-400'
+                        : 'hover:bg-zinc-800/40 active:bg-zinc-800'
+                    }`}
+                  >
+                    {innerContent}
+                  </button>
+                );
+              }
+
+              return (
+                <Link
+                  key={iIdx}
+                  href={item.href!}
+                  prefetch={true}
+                  onClick={() => {
+                    setNavigatingHref(item.href!);
+                    // Timeout de segurança: limpa o destaque se a navegação for cancelada ou ao retornar
+                    setTimeout(() => setNavigatingHref(null), 600);
+                  }}
+                  className={`p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] ${
+                    isNavigating
+                      ? 'bg-zinc-800/90 border-l-2 border-emerald-400'
+                      : 'hover:bg-zinc-800/40 active:bg-zinc-800'
+                  }`}
+                >
+                  {innerContent}
                 </Link>
               );
             })}
@@ -265,6 +328,18 @@ export function MobileMoreView({
           <span>{loggingOut ? 'Saindo...' : 'Sair da conta'}</span>
         </button>
       </div>
+
+      {/* Modal de Configurações de WhatsApp & Pix */}
+      {isMessageSettingsOpen && messageSettings && (
+        <MessageSettingsModal
+          isOpen={isMessageSettingsOpen}
+          onClose={() => setIsMessageSettingsOpen(false)}
+          initialSettings={messageSettings}
+          onSaved={(newSettings) => {
+            setMessageSettings(newSettings);
+          }}
+        />
+      )}
     </div>
   );
 }
