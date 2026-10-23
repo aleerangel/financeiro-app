@@ -22,7 +22,7 @@ export function AppShell({ userEmail, children }: AppShellProps) {
       <MobileNavigationProvider>
         <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-100">
           <Navbar userEmail={userEmail} />
-          <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 pb-24 md:pb-10">
+          <main className="flex-1 max-w-6xl w-full mx-auto px-4 pt-3 pb-24 md:py-6 md:pb-10">
             <MobileBackButton />
             {children}
           </main>

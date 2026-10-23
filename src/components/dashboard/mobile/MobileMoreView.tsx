@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Users,
@@ -12,7 +12,10 @@ import {
   ChevronRight,
   ShieldCheck,
   LogOut,
+  Loader2,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { signOutServerAction } from '@/lib/actions/auth';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { formatCurrency } from '@/lib/utils';
@@ -30,6 +33,39 @@ export function MobileMoreView({
   clientsReturnCount = 0,
 }: MobileMoreViewProps) {
   const { showValues } = useMobileNavigation();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await Promise.allSettled([
+        supabase.auth.signOut(),
+        signOutServerAction(),
+      ]);
+
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.clear();
+          window.sessionStorage.clear();
+        } catch {
+          // Ignora erros de storage restrito
+        }
+
+        if ('caches' in window) {
+          try {
+            const keys = await window.caches.keys();
+            await Promise.all(keys.map((key) => window.caches.delete(key)));
+          } catch {
+            // Ignora erros de Cache API
+          }
+        }
+      }
+    } finally {
+      window.location.replace('/login');
+    }
+  };
 
   const totalBalance = accounts.reduce(
     (sum, acc) => sum + Number(acc.current_balance || 0),
@@ -145,21 +181,25 @@ export function MobileMoreView({
         </div>
       ))}
 
-      {/* Card de Informações do Sistema */}
-      <div className="p-4 bg-zinc-900/60 border border-zinc-800 rounded-2xl flex items-center justify-between text-xs text-zinc-400">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Sistema Financeiro & Barbearia • V2.0 Mobile</span>
+      {/* Card de Informações do Sistema e Logout */}
+      <div className="p-4 bg-zinc-900/60 border border-zinc-800 rounded-2xl flex items-center justify-between gap-3 text-xs text-zinc-400">
+        <div className="flex items-center gap-2 min-w-0">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="truncate">Finanças & Barbearia • V2.0</span>
         </div>
-        <form action="/auth/signout" method="post">
-          <button
-            type="submit"
-            className="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold transition"
-          >
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl font-bold text-xs transition active:scale-95 disabled:opacity-50 shrink-0"
+        >
+          {loggingOut ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
             <LogOut className="w-3.5 h-3.5" />
-            <span>Sair</span>
-          </button>
-        </form>
+          )}
+          <span>{loggingOut ? 'Saindo...' : 'Sair da conta'}</span>
+        </button>
       </div>
     </div>
   );
