@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Check, Wallet, TrendingUp, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   AccountWithBalance,
   updateAccountBalance,
@@ -90,6 +91,11 @@ function EditAccountBalanceDialog({
       if (onSuccess) {
         onSuccess();
       }
+      toast.success(
+        mode === 'yield'
+          ? 'Rendimento registrado com sucesso!'
+          : 'Saldo da conta atualizado com sucesso!'
+      );
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar conta.');
@@ -100,7 +106,7 @@ function EditAccountBalanceDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl relative">
+      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"

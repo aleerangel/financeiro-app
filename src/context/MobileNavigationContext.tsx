@@ -35,6 +35,9 @@ interface MobileNavigationContextType {
   newTransactionModal: NewTransactionModalState;
   setNewTransactionModal: (state: NewTransactionModalState) => void;
   openQuickTransaction: (type: 'income' | 'expense', scope: 'personal' | 'business') => void;
+  yieldModalOpen: boolean;
+  setYieldModalOpen: (open: boolean) => void;
+  openYieldCorrection: () => void;
 }
 
 const MobileNavigationContext = createContext<MobileNavigationContextType | undefined>(undefined);
@@ -73,6 +76,7 @@ export function MobileNavigationProvider({ children }: { children: React.ReactNo
   const [quickActionOpen, setQuickActionOpen] = useState<boolean>(false);
   const [activeMoreModule, setActiveMoreModule] = useState<MobileMoreModule>(null);
   const [newSaleOpen, setNewSaleOpen] = useState<boolean>(false);
+  const [yieldModalOpen, setYieldModalOpen] = useState<boolean>(false);
   const [newTransactionModal, setNewTransactionModal] = useState<NewTransactionModalState>({
     open: false,
     type: 'expense',
@@ -109,6 +113,11 @@ export function MobileNavigationProvider({ children }: { children: React.ReactNo
     });
   };
 
+  const openYieldCorrection = () => {
+    setQuickActionOpen(false);
+    setYieldModalOpen(true);
+  };
+
   return (
     <MobileNavigationContext.Provider
       value={{
@@ -127,6 +136,9 @@ export function MobileNavigationProvider({ children }: { children: React.ReactNo
         newTransactionModal,
         setNewTransactionModal,
         openQuickTransaction,
+        yieldModalOpen,
+        setYieldModalOpen,
+        openYieldCorrection,
       }}
     >
       {children}

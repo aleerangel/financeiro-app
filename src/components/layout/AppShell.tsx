@@ -8,6 +8,7 @@ import { BottomNav } from './BottomNav';
 import { QuickActionDrawer } from './QuickActionDrawer';
 import { MobileQuickTransactionModal } from './MobileQuickTransactionModal';
 import { MobileNewSaleDrawer } from './MobileNewSaleDrawer';
+import { MobileYieldCorrectionModal } from './MobileYieldCorrectionModal';
 import { MobileBackButton } from './MobileBackButton';
 
 interface AppShellProps {
@@ -29,6 +30,7 @@ export function AppShell({ userEmail, children }: AppShellProps) {
           <QuickActionDrawer />
           <MobileQuickTransactionModal />
           <MobileNewSaleDrawer />
+          <MobileYieldCorrectionModal />
         </div>
       </MobileNavigationProvider>
     </DateProvider>
