@@ -145,11 +145,7 @@ export function GeneralDashboardDesktop({
   const totalCardLimit = cards.reduce((sum, c) => sum + Number(c.credit_limit || 0), 0);
   const totalCardUsed = cards.reduce((sum, c) => sum + Number(c.used_limit || 0), 0);
   const totalCardAvailable = Math.max(0, totalCardLimit - totalCardUsed);
-  const totalCurrentInvoice = transactions
-    ? transactions
-        .filter((t) => t.payment_method === 'credit' && !t.is_paid && t.credit_card_id)
-        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
-    : cards.reduce((sum, c) => sum + Number(c.current_invoice || 0), 0);
+  const totalCurrentInvoice = cards.reduce((sum, c) => sum + Number(c.current_invoice || 0), 0);
 
   let receivedIncome = 0;
   let pendingIncome = 0;
@@ -224,7 +220,7 @@ export function GeneralDashboardDesktop({
               <h2 className="text-2xl font-bold text-purple-300">{formatCurrency(totalCurrentInvoice)}</h2>
               {cards[0] && (
                 (() => {
-                  const primaryStatus = getCardInvoiceStatus(cards[0]);
+                  const primaryStatus = cards[0].invoice_status || getCardInvoiceStatus(cards[0]);
                   return (
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -452,7 +448,7 @@ export function GeneralDashboardDesktop({
 
           <div className="divide-y divide-zinc-800/80">
             {cards.map((card) => {
-              const cardStatus = getCardInvoiceStatus(card);
+              const cardStatus = card.invoice_status || getCardInvoiceStatus(card);
               return (
                 <div key={card.id} className="py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">

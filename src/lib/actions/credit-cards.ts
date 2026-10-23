@@ -4,11 +4,17 @@ import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { CreditCard, Transaction } from '@/types/database';
 import { getZonedParts } from '@/lib/date-utils';
+import {
+  CardInvoiceStatus,
+  getCardCycleInfo,
+  getCardInvoiceStatus,
+} from '@/lib/credit-card-utils';
 
 export interface CreditCardWithUsage extends CreditCard {
   used_limit: number;
   available_limit: number;
   current_invoice: number;
+  invoice_status?: CardInvoiceStatus;
 }
 
 export async function getCreditCards(
@@ -43,9 +49,12 @@ export async function getCreditCards(
     .not('credit_card_id', 'is', null);
 
   const usageByCard = new Map<string, number>();
-  const currentInvoiceByCard = new Map<string, number>();
+  const txsByCard = new Map<string, { amount: number; due_date: string | null }[]>();
 
   const { month: defaultM, year: defaultY } = getZonedParts();
+  const isHistorical =
+    (referenceMonth !== undefined && referenceMonth !== defaultM) ||
+    (referenceYear !== undefined && referenceYear !== defaultY);
   const targetM = referenceMonth !== undefined ? referenceMonth : defaultM;
   const targetY = referenceYear !== undefined ? referenceYear : defaultY;
 
@@ -62,23 +71,65 @@ export async function getCreditCards(
       const currentUsage = usageByCard.get(t.credit_card_id) || 0;
       usageByCard.set(t.credit_card_id, currentUsage + amt);
 
-      // Fatura atual = compras não pagas cuja data de vencimento da fatura cai no mês de referência
-      if (t.due_date && t.due_date >= targetStartDate && t.due_date <= targetEndDate) {
-        const currentInvoice = currentInvoiceByCard.get(t.credit_card_id) || 0;
-        currentInvoiceByCard.set(t.credit_card_id, currentInvoice + amt);
-      }
+      const list = txsByCard.get(t.credit_card_id) || [];
+      list.push({ amount: amt, due_date: t.due_date });
+      txsByCard.set(t.credit_card_id, list);
     }
   }
+
+  const now = new Date();
 
   return cards.map((card) => {
     const limit = Number(card.credit_limit) || 0;
     const used = usageByCard.get(card.id) || 0;
-    const currentInvoice = currentInvoiceByCard.get(card.id) || 0;
+    const cardTxs = txsByCard.get(card.id) || [];
+
+    let currentInvoice = 0;
+    let invoiceStatus: CardInvoiceStatus;
+
+    if (isHistorical) {
+      // Consulta para mês histórico fixo (ex: tela de resumo anual/mensal)
+      currentInvoice = cardTxs
+        .filter((t) => t.due_date && t.due_date >= targetStartDate && t.due_date <= targetEndDate)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      invoiceStatus = getCardInvoiceStatus(card, targetM, targetY, now);
+    } else {
+      // Ciclo ativo no tempo presente
+      const cycle = getCardCycleInfo(card, now);
+
+      // 1. Verifica se há saldo pendente na fatura fechada do ciclo anterior
+      const prevPending = cardTxs
+        .filter((t) => t.due_date === cycle.prevDueDateStr)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      // 2. Saldo pendente na fatura aberta atual
+      const openPending = cardTxs
+        .filter((t) => t.due_date === cycle.openDueDateStr)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      if (prevPending > 0) {
+        // A fatura fechada mais recente ainda não foi paga!
+        currentInvoice = prevPending;
+        invoiceStatus = getCardInvoiceStatus(card, undefined, undefined, now, {
+          hasPendingClosedInvoice: true,
+        });
+      } else {
+        // A fatura fechada anterior já foi quitada (ou não teve despesas).
+        // A fatura atual ativa passa a ser a do próximo ciclo (Fatura Aberta).
+        currentInvoice = openPending;
+        invoiceStatus = getCardInvoiceStatus(card, undefined, undefined, now, {
+          hasPendingClosedInvoice: false,
+        });
+      }
+    }
+
     return {
       ...card,
       used_limit: used,
       available_limit: Math.max(0, limit - used),
       current_invoice: currentInvoice,
+      invoice_status: invoiceStatus,
     };
   });
 }

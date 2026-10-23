@@ -131,7 +131,7 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
             ? Math.min(100, Math.round((card.used_limit / card.credit_limit) * 100))
             : 0;
           const isSelected = selectedCard?.id === card.id;
-          const invoiceStatus = getCardInvoiceStatus(card);
+          const invoiceStatus = card.invoice_status || getCardInvoiceStatus(card);
 
           return (
             <div

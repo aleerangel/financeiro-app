@@ -58,21 +58,16 @@ export function GeneralDashboardMobile({
   );
   const totalCardAvailable = Math.max(0, totalCardLimit - totalCardUsed);
 
-  // Fatura atual: compras de cartão não pagas do mês selecionado
+  // Fatura atual: soma das faturas ativas de todos os cartões cadastrados
   const totalCurrentInvoice = useMemo(() => {
-    if (transactions && transactions.length > 0) {
-      return transactions
-        .filter((t) => t.payment_method === 'credit' && !t.is_paid && t.credit_card_id)
-        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-    }
     return cards.reduce((sum, c) => sum + (Number(c.current_invoice) || 0), 0);
-  }, [transactions, cards]);
+  }, [cards]);
 
   // Status de fatura aberta / fechada de cada cartão
   const cardsStatus = useMemo(() => {
     return cards.map((c) => ({
       card: c,
-      status: getCardInvoiceStatus(c),
+      status: c.invoice_status || getCardInvoiceStatus(c),
     }));
   }, [cards]);
 

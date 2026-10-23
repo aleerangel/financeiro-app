@@ -78,6 +78,96 @@ describe('credit-card-utils - getCardInvoiceStatus', () => {
     expect(status.daysLeftLabel).toBeUndefined();
   });
 
+  it('advances to next open invoice when previous invoice has closed and was paid (user case: 23/10, closes 14, due 21)', () => {
+    // Hoje é dia 23/10/2026. Fatura fechou 14/10, venceu 21/10 e foi paga
+    const fixedNow = new Date('2026-10-23T15:00:00Z');
+    const status = getCardInvoiceStatus(
+      { closing_day: 14, due_day: 21 },
+      undefined,
+      undefined,
+      fixedNow,
+      { hasPendingClosedInvoice: false }
+    );
+
+    expect(status.isOpen).toBe(true);
+    expect(status.statusLabel).toBe('Fatura Aberta');
+    expect(status.closingLabel).toBe('Fecha dia 14');
+    expect(status.daysLeftLabel).toBe('Faltam 22 dias');
+    expect(status.dueLabel).toBe('Vence dia 21');
+    expect(status.closingDateStr).toBe('2026-11-14');
+    expect(status.dueDateStr).toBe('2026-11-21');
+  });
+
+  it('advances to next open invoice automatically when today is past due date and no pending invoice specified', () => {
+    // Hoje é dia 23/10/2026 (> vencimento 21/10)
+    const fixedNow = new Date('2026-10-23T15:00:00Z');
+    const status = getCardInvoiceStatus(
+      { closing_day: 14, due_day: 21 },
+      undefined,
+      undefined,
+      fixedNow
+    );
+
+    expect(status.isOpen).toBe(true);
+    expect(status.statusLabel).toBe('Fatura Aberta');
+    expect(status.closingLabel).toBe('Fecha dia 14');
+    expect(status.daysLeftLabel).toBe('Faltam 22 dias');
+    expect(status.closingDateStr).toBe('2026-11-14');
+    expect(status.dueDateStr).toBe('2026-11-21');
+  });
+
+  it('keeps closed invoice status when closed invoice still has pending balance after due date', () => {
+    // Hoje é dia 23/10/2026, mas fatura de outubro NÃO foi paga (atrasada)
+    const fixedNow = new Date('2026-10-23T15:00:00Z');
+    const status = getCardInvoiceStatus(
+      { closing_day: 14, due_day: 21 },
+      undefined,
+      undefined,
+      fixedNow,
+      { hasPendingClosedInvoice: true }
+    );
+
+    expect(status.isOpen).toBe(false);
+    expect(status.statusLabel).toBe('Fatura Fechada');
+    expect(status.dueLabel).toBe('Venceu dia 21');
+    expect(status.closingDateStr).toBe('2026-10-14');
+    expect(status.dueDateStr).toBe('2026-10-21');
+  });
+
+  it('keeps closed invoice status when today is between closing date and due date and pending is true', () => {
+    // Hoje é dia 18/10/2026 (entre 14/10 e 21/10)
+    const fixedNow = new Date('2026-10-18T15:00:00Z');
+    const status = getCardInvoiceStatus(
+      { closing_day: 14, due_day: 21 },
+      undefined,
+      undefined,
+      fixedNow,
+      { hasPendingClosedInvoice: true }
+    );
+
+    expect(status.isOpen).toBe(false);
+    expect(status.statusLabel).toBe('Fatura Fechada');
+    expect(status.dueLabel).toBe('Vence dia 21');
+  });
+
+  it('advances to next open invoice if paid early between closing date and due date', () => {
+    // Hoje é dia 18/10/2026, fechou 14/10 e o usuário já pagou adiantado
+    const fixedNow = new Date('2026-10-18T15:00:00Z');
+    const status = getCardInvoiceStatus(
+      { closing_day: 14, due_day: 21 },
+      undefined,
+      undefined,
+      fixedNow,
+      { hasPendingClosedInvoice: false }
+    );
+
+    expect(status.isOpen).toBe(true);
+    expect(status.statusLabel).toBe('Fatura Aberta');
+    expect(status.closingLabel).toBe('Fecha dia 14');
+    expect(status.daysLeftLabel).toBe('Faltam 27 dias');
+    expect(status.closingDateStr).toBe('2026-11-14');
+  });
+
   it('handles cross-month due dates correctly (e.g. closes 25 of month - 1, due 05)', () => {
     // Vencimento em 05/11/2026, fecha em 25/10/2026. Hoje é 20/10/2026
     const fixedNow = new Date('2026-10-20T15:00:00Z');
