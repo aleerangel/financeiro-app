@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -24,6 +24,10 @@ export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { activeTab, setActiveTab, setQuickActionOpen } = useMobileNavigation();
+
+  useEffect(() => {
+    router.prefetch('/dashboard');
+  }, [router]);
 
   const handleTabClick = (tab: MobileTab) => {
     setActiveTab(tab);

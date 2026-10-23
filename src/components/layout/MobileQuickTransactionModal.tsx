@@ -14,9 +14,12 @@ import {
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { Account, CreditCard, Category, PaymentMethod, FinancialScope } from '@/types/database';
-import { getAccounts } from '@/lib/actions/accounts';
-import { getCreditCards } from '@/lib/actions/credit-cards';
-import { getCategories } from '@/lib/actions/categories';
+import {
+  getCachedAccounts,
+  getCachedCreditCards,
+  getCachedCategories,
+  invalidateClientCache,
+} from '@/lib/client-cache';
 import { createTransaction } from '@/lib/actions/transactions';
 import { isBusinessCategory } from '@/lib/business-scope-utils';
 import { getTodayYMD } from '@/lib/date-utils';
@@ -56,10 +59,10 @@ function MobileQuickTransactionModalDialog() {
   const [isPaid, setIsPaid] = useState(newTransactionModal.type === 'income' || paymentMethod !== 'credit');
   const [submitting, setSubmitting] = useState(false);
 
-  // Carrega contas, cartões e categorias sob demanda
+  // Carrega contas, cartões e categorias em cache instantâneo (0ms de latência)
   useEffect(() => {
     let mounted = true;
-    Promise.all([getAccounts(), getCreditCards(), getCategories()])
+    Promise.all([getCachedAccounts(), getCachedCreditCards(), getCachedCategories()])
       .then(([accs, cds, cats]) => {
         if (!mounted) return;
         setAccounts(accs);
@@ -138,6 +141,8 @@ function MobileQuickTransactionModalDialog() {
         total_installments: isCredit ? installments : 1,
         is_paid: isCredit ? false : isPaid,
       });
+
+      invalidateClientCache(['accounts', 'cards']);
 
       toast.success(
         type === 'income'

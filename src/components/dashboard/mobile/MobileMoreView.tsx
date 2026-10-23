@@ -146,6 +146,7 @@ export function MobileMoreView({
                 <Link
                   key={iIdx}
                   href={item.href}
+                  prefetch={true}
                   className="p-3.5 flex items-center justify-between text-left hover:bg-zinc-800/40 active:bg-zinc-800 transition"
                 >
                   <div className="flex items-center gap-3">

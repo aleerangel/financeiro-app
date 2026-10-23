@@ -12,7 +12,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
-import { AccountWithBalance, getAccounts } from '@/lib/actions/accounts';
+import { AccountWithBalance } from '@/lib/actions/accounts';
+import { getCachedAccounts, invalidateClientCache } from '@/lib/client-cache';
 import { EditAccountBalanceModal } from '@/components/accounts/EditAccountBalanceModal';
 import { formatCurrency } from '@/lib/utils';
 
@@ -33,7 +34,7 @@ function MobileYieldCorrectionContent({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     let mounted = true;
 
-    getAccounts()
+    getCachedAccounts()
       .then((accs) => {
         if (!mounted) return;
         // Prioriza contas que possuem rendimento configurado ou saldo
@@ -65,6 +66,7 @@ function MobileYieldCorrectionContent({ onClose }: { onClose: () => void }) {
   }, []);
 
   const handleSuccess = () => {
+    invalidateClientCache(['accounts']);
     router.refresh();
     onClose();
   };

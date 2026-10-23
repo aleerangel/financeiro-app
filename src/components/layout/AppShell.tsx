@@ -1,19 +1,47 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { DateProvider } from '@/context/DateContext';
-import { MobileNavigationProvider } from '@/context/MobileNavigationContext';
+import { MobileNavigationProvider, useMobileNavigation } from '@/context/MobileNavigationContext';
 import { Navbar } from './Navbar';
 import { BottomNav } from './BottomNav';
-import { QuickActionDrawer } from './QuickActionDrawer';
-import { MobileQuickTransactionModal } from './MobileQuickTransactionModal';
-import { MobileNewSaleDrawer } from './MobileNewSaleDrawer';
-import { MobileYieldCorrectionModal } from './MobileYieldCorrectionModal';
 import { MobileBackButton } from './MobileBackButton';
+
+// Carregamento dinâmico dos drawers e modais pesados sob demanda (zero impacto no LCP/TBT inicial)
+const QuickActionDrawer = dynamic(
+  () => import('./QuickActionDrawer').then((m) => m.QuickActionDrawer),
+  { ssr: false }
+);
+const MobileQuickTransactionModal = dynamic(
+  () => import('./MobileQuickTransactionModal').then((m) => m.MobileQuickTransactionModal),
+  { ssr: false }
+);
+const MobileNewSaleDrawer = dynamic(
+  () => import('./MobileNewSaleDrawer').then((m) => m.MobileNewSaleDrawer),
+  { ssr: false }
+);
+const MobileYieldCorrectionModal = dynamic(
+  () => import('./MobileYieldCorrectionModal').then((m) => m.MobileYieldCorrectionModal),
+  { ssr: false }
+);
 
 interface AppShellProps {
   userEmail?: string;
   children: React.ReactNode;
+}
+
+function AppShellDrawers() {
+  const { quickActionOpen, newTransactionModal, newSaleOpen, yieldModalOpen } = useMobileNavigation();
+
+  return (
+    <>
+      {quickActionOpen && <QuickActionDrawer />}
+      {newTransactionModal.open && <MobileQuickTransactionModal />}
+      {newSaleOpen && <MobileNewSaleDrawer />}
+      {yieldModalOpen && <MobileYieldCorrectionModal />}
+    </>
+  );
 }
 
 export function AppShell({ userEmail, children }: AppShellProps) {
@@ -27,10 +55,7 @@ export function AppShell({ userEmail, children }: AppShellProps) {
             {children}
           </main>
           <BottomNav />
-          <QuickActionDrawer />
-          <MobileQuickTransactionModal />
-          <MobileNewSaleDrawer />
-          <MobileYieldCorrectionModal />
+          <AppShellDrawers />
         </div>
       </MobileNavigationProvider>
     </DateProvider>

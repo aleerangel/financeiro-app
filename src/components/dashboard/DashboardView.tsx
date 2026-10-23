@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
@@ -26,14 +26,52 @@ import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
 import { getZonedParts } from '@/lib/date-utils';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
-import { BusinessDashboardView } from './BusinessDashboardView';
-import { GeneralDashboardView } from './GeneralDashboardView';
+import { seedClientCache } from '@/lib/client-cache';
 import { MobileHeader } from './mobile/MobileHeader';
-import { MobileStatementView } from './mobile/MobileStatementView';
-import { MobileSummaryView } from './mobile/MobileSummaryView';
-import { MobileMoreView } from './mobile/MobileMoreView';
 import { BusinessDashboardMobile } from './mobile/BusinessDashboardMobile';
 import { GeneralDashboardMobile } from './mobile/GeneralDashboardMobile';
+
+// Abas secundárias do mobile carregadas sob demanda (evita sobrecarga de JS inicial)
+const MobileStatementView = dynamic(
+  () => import('./mobile/MobileStatementView').then((m) => m.MobileStatementView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-16 text-center text-zinc-500 text-xs animate-pulse">Carregando extrato...</div>
+    ),
+  }
+);
+
+const MobileSummaryView = dynamic(
+  () => import('./mobile/MobileSummaryView').then((m) => m.MobileSummaryView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-16 text-center text-zinc-500 text-xs animate-pulse">Carregando resumo e gráficos...</div>
+    ),
+  }
+);
+
+const MobileMoreView = dynamic(
+  () => import('./mobile/MobileMoreView').then((m) => m.MobileMoreView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-16 text-center text-zinc-500 text-xs animate-pulse">Carregando opções...</div>
+    ),
+  }
+);
+
+// Telas exclusivas do Desktop carregadas dinamicamente apenas em computadores
+const BusinessDashboardView = dynamic(
+  () => import('./BusinessDashboardView').then((m) => m.BusinessDashboardView),
+  { ssr: false }
+);
+
+const GeneralDashboardView = dynamic(
+  () => import('./GeneralDashboardView').then((m) => m.GeneralDashboardView),
+  { ssr: false }
+);
 
 const TransactionModal = dynamic(
   () =>
@@ -51,6 +89,16 @@ const EditAccountBalanceModal = dynamic(
   { ssr: false }
 );
 
+interface DashboardMonthCache {
+  transactions: Transaction[];
+  businessData: BusinessDashboardData;
+  generalData: GeneralDashboardData;
+  accounts: AccountWithBalance[];
+  upcomingBills: Transaction[];
+  pendingReceipts: Transaction[];
+  timestamp: number;
+}
+
 interface DashboardViewProps {
   initialAccounts: AccountWithBalance[];
   initialCards: CreditCardWithUsage[];
@@ -59,6 +107,8 @@ interface DashboardViewProps {
   initialGeneralData: GeneralDashboardData;
   initialUpcomingBills?: Transaction[];
   initialPendingReceipts?: Transaction[];
+  initialTransactions?: Transaction[];
+  initialIsMobile?: boolean;
 }
 
 export function DashboardView({
@@ -69,19 +119,26 @@ export function DashboardView({
   initialGeneralData,
   initialUpcomingBills = [],
   initialPendingReceipts = [],
+  initialTransactions = [],
+  initialIsMobile = false,
 }: DashboardViewProps) {
   const { month, year, formattedMonth } = useDateContext();
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(768, initialIsMobile);
   const { activeTab, contextMode } = useMobileNavigation();
 
   const [viewMode, setViewMode] = useState<'business' | 'general'>('business');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [accounts, setAccounts] = useState<AccountWithBalance[]>(initialAccounts);
   const [businessData, setBusinessData] = useState<BusinessDashboardData>(initialBusinessData);
   const [generalData, setGeneralData] = useState<GeneralDashboardData>(initialGeneralData);
   const [upcomingBills, setUpcomingBills] = useState<Transaction[]>(initialUpcomingBills);
   const [pendingReceipts, setPendingReceipts] = useState<Transaction[]>(initialPendingReceipts);
   const monthKey = `${year}-${month}`;
+
+  // Cache em memória por mês: evita 100% dos refetches duplicados ao alternar períodos
+  const cacheRef = useRef<Map<string, DashboardMonthCache>>(new Map());
+  const initialLoadedKeyRef = useRef(monthKey);
+
   // Mês cujos dados já foram carregados; enquanto diferir do selecionado, está carregando
   const [loadedKey, setLoadedKey] = useState(monthKey);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,6 +147,22 @@ export function DashboardView({
   const [modalDefaultScope, setModalDefaultScope] = useState<FinancialScope>('personal');
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [accountToAdjustBalance, setAccountToAdjustBalance] = useState<AccountWithBalance | null>(null);
+
+  // Inicializa o cache com os dados do mês inicial trazidos pelo servidor
+  useEffect(() => {
+    cacheRef.current.set(monthKey, {
+      transactions: initialTransactions,
+      businessData: initialBusinessData,
+      generalData: initialGeneralData,
+      accounts: initialAccounts,
+      upcomingBills: initialUpcomingBills,
+      pendingReceipts: initialPendingReceipts,
+      timestamp: Date.now(),
+    });
+    seedClientCache({ accounts: initialAccounts, cards: initialCards, categories });
+    // Executa apenas uma vez na montagem
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const refreshData = useCallback(async () => {
     try {
@@ -102,6 +175,19 @@ export function DashboardView({
         getUpcomingAndOverdueBills(3),
         getPendingIncomeReceipts(),
       ]);
+
+      const entry: DashboardMonthCache = {
+        transactions: txs,
+        businessData: bData,
+        generalData: gData,
+        accounts: accs,
+        upcomingBills: bills,
+        pendingReceipts: receipts,
+        timestamp: Date.now(),
+      };
+      cacheRef.current.set(monthKey, entry);
+      seedClientCache({ accounts: accs });
+
       setTransactions(txs);
       setBusinessData(bData);
       setGeneralData(gData);
@@ -113,9 +199,32 @@ export function DashboardView({
     } finally {
       setRefreshing(false);
     }
-  }, [month, year]);
+  }, [month, year, monthKey]);
 
   useEffect(() => {
+    // 1. Otimização: Se for o mês inicial já carregado pelo SSR, não refaz queries
+    if (monthKey === initialLoadedKeyRef.current && initialTransactions.length > 0) {
+      setLoadedKey(monthKey);
+      return;
+    }
+
+    // 2. Otimização: Se o mês já existe em cache, restaura instantaneamente (0ms)
+    const cached = cacheRef.current.get(monthKey);
+    if (cached) {
+      setTransactions(cached.transactions);
+      setBusinessData(cached.businessData);
+      setGeneralData(cached.generalData);
+      setAccounts(cached.accounts);
+      setUpcomingBills(cached.upcomingBills);
+      setPendingReceipts(cached.pendingReceipts);
+      setLoadedKey(monthKey);
+
+      // Se foi consultado há menos de 2 minutos, não precisa de revalidação imediata
+      if (Date.now() - cached.timestamp < 120 * 1000) {
+        return;
+      }
+    }
+
     let active = true;
 
     Promise.all([
@@ -127,14 +236,24 @@ export function DashboardView({
       getPendingIncomeReceipts(),
     ])
       .then(([txs, bData, gData, accs, bills, receipts]) => {
-        if (active) {
-          setTransactions(txs);
-          setBusinessData(bData);
-          setGeneralData(gData);
-          setAccounts(accs);
-          setUpcomingBills(bills);
-          setPendingReceipts(receipts);
-        }
+        if (!active) return;
+        const entry: DashboardMonthCache = {
+          transactions: txs,
+          businessData: bData,
+          generalData: gData,
+          accounts: accs,
+          upcomingBills: bills,
+          pendingReceipts: receipts,
+          timestamp: Date.now(),
+        };
+        cacheRef.current.set(monthKey, entry);
+
+        setTransactions(txs);
+        setBusinessData(bData);
+        setGeneralData(gData);
+        setAccounts(accs);
+        setUpcomingBills(bills);
+        setPendingReceipts(receipts);
       })
       .catch((err) => {
         console.error('Erro ao buscar dados do dashboard:', err);
@@ -148,7 +267,40 @@ export function DashboardView({
     return () => {
       active = false;
     };
-  }, [month, year, monthKey]);
+  }, [month, year, monthKey, initialTransactions.length]);
+
+  // Pré-busca em background do mês anterior quando a CPU estiver ociosa
+  useEffect(() => {
+    const prevM = month === 0 ? 11 : month - 1;
+    const prevY = month === 0 ? year - 1 : year;
+    const prevKey = `${prevY}-${prevM}`;
+
+    if (cacheRef.current.has(prevKey)) return;
+
+    const timer = setTimeout(() => {
+      Promise.all([
+        getTransactions(prevM, prevY),
+        getBusinessDashboardData(prevY, prevM),
+        getGeneralDashboardData(prevY, prevM),
+      ])
+        .then(([txs, bData, gData]) => {
+          if (!cacheRef.current.has(prevKey)) {
+            cacheRef.current.set(prevKey, {
+              transactions: txs,
+              businessData: bData,
+              generalData: gData,
+              accounts,
+              upcomingBills: [],
+              pendingReceipts: [],
+              timestamp: Date.now(),
+            });
+          }
+        })
+        .catch(() => {});
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [month, year, accounts]);
 
   const handleExport = (format: ExportFormat) => {
     if (viewMode === 'business') {
@@ -249,7 +401,7 @@ export function DashboardView({
           />
         )}
 
-        {/* Modal de Transação Financeira Tradicional */}
+        {/* Modal de Nova Despesa Rápida Mobile */}
         <TransactionModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
@@ -268,41 +420,32 @@ export function DashboardView({
             setAccountToAdjustBalance(null);
           }}
           account={accountToAdjustBalance}
+          defaultMode="adjust"
           onSuccess={refreshData}
         />
       </div>
     );
   }
 
+  // Desktop View
   return (
     <div className="space-y-6">
-      {/* Topo: Título, Alternador (Negócio / Geral) e Ações Rápidas */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
+      {/* Header com Toggle Barbearia vs Geral */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-zinc-800">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
-              {viewMode === 'business' ? 'Dashboard Barbearia' : 'Visão Geral Consolidada'}
-            </h1>
-            <span
-              className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
-                viewMode === 'business'
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                  : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-              }`}
-            >
-              {viewMode === 'business' ? 'Negócio' : 'Geral'}
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+          <h1 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
+            Dashboard Financeiro
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-400">
             {viewMode === 'business'
-              ? `Vendas, atendimentos e receitas dos serviços em ${year}`
-              : `Entradas, saídas e balanço financeiro completo em ${formattedMonth}`}
+              ? 'Métricas de atendimento, estoque e desempenho da barbearia'
+              : 'Visão consolidada de todas as contas, cartões e patrimônio'}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Alternador de Modo: Negócio vs Geral */}
-          <div className="flex items-center p-1 bg-zinc-900 border border-zinc-800 rounded-xl shadow-inner">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {/* Alternador Principal: Barbearia vs Geral */}
+          <div className="flex items-center bg-zinc-900 border border-zinc-800 p-1 rounded-xl shadow-sm">
             <button
               onClick={() => setViewMode('business')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
@@ -312,31 +455,23 @@ export function DashboardView({
               }`}
             >
               <Scissors className="w-3.5 h-3.5" />
-              <span>Negócio</span>
+              Barbearia
             </button>
             <button
               onClick={() => setViewMode('general')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                 viewMode === 'general'
-                  ? 'bg-blue-500 text-zinc-950 shadow-md shadow-blue-500/20'
+                  ? 'bg-zinc-800 text-zinc-100 shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>Geral</span>
+              Visão Geral
             </button>
           </div>
 
-          {/* Botão de Exportação */}
-          <ExportDropdown
-            onExport={handleExport}
-            buttonLabel="Exportar"
-            title={
-              viewMode === 'business'
-                ? 'Exportar Fechamento Barbearia'
-                : 'Exportar Extrato Consolidado'
-            }
-          />
+          {/* Exportação */}
+          <ExportDropdown onExport={handleExport} />
 
           {/* Botões de Ação Rápida */}
           {viewMode === 'business' ? (
@@ -346,10 +481,10 @@ export function DashboardView({
                   setModalDefaultScope('business');
                   setModalOpen(true);
                 }}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs sm:text-sm rounded-xl transition"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold text-xs sm:text-sm rounded-xl transition shadow-sm"
               >
-                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                Gasto Barbearia
+                <Plus className="w-4 h-4 text-emerald-400" />
+                Despesa Barbearia
               </button>
               <Link
                 href="/vendas"
@@ -363,10 +498,10 @@ export function DashboardView({
             <div className="flex items-center gap-2">
               <Link
                 href="/vendas"
-                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-xs sm:text-sm rounded-xl transition border border-zinc-700/60"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold text-xs sm:text-sm rounded-xl transition shadow-sm"
               >
-                <Scissors className="w-3.5 h-3.5 text-emerald-400" />
-                Atendimento
+                <Scissors className="w-4 h-4 text-emerald-400" />
+                Balcão Barbearia
               </Link>
               <button
                 onClick={() => {
@@ -444,6 +579,7 @@ export function DashboardView({
           setAccountToAdjustBalance(null);
         }}
         account={accountToAdjustBalance}
+        defaultMode="adjust"
         onSuccess={refreshData}
       />
     </div>

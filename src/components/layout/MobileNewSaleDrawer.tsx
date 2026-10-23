@@ -12,9 +12,14 @@ import {
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { Product, Account, PaymentMethod, Client } from '@/types/database';
-import { getProducts, createProduct } from '@/lib/actions/products';
-import { getAccounts } from '@/lib/actions/accounts';
-import { getSimpleClients, SimpleClient } from '@/lib/actions/clients';
+import { createProduct } from '@/lib/actions/products';
+import { SimpleClient } from '@/lib/actions/clients';
+import {
+  getCachedProducts,
+  getCachedAccounts,
+  getCachedSimpleClients,
+  invalidateClientCache,
+} from '@/lib/client-cache';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { ClientModal } from '@/components/clients/ClientModal';
 import { formatCurrency } from '@/lib/utils';
@@ -58,12 +63,12 @@ function MobileNewSaleDrawerDialog() {
     price: number;
   } | null>(null);
 
-  // Carrega produtos, contas e clientes de forma desacoplada e ultrarrápida
+  // Carrega produtos, contas e clientes com cache imediato em memória (0ms de latência)
   useEffect(() => {
     let mounted = true;
 
     // 1. Produtos / Serviços de forma prioritária e isolada
-    getProducts()
+    getCachedProducts()
       .then((prods) => {
         if (!mounted) return;
         setProducts(prods);
@@ -76,7 +81,7 @@ function MobileNewSaleDrawerDialog() {
       });
 
     // 2. Contas bancárias
-    getAccounts()
+    getCachedAccounts()
       .then((accs) => {
         if (!mounted) return;
         setAccounts(accs);
@@ -89,7 +94,7 @@ function MobileNewSaleDrawerDialog() {
       });
 
     // 3. Clientes com consulta otimizada sem JOINs e sem cálculo pesado de CRM
-    getSimpleClients()
+    getCachedSimpleClients()
       .then((cls) => {
         if (!mounted) return;
         setClients(cls);
@@ -211,6 +216,8 @@ function MobileNewSaleDrawerDialog() {
         notes: notes.trim() || undefined,
         sale_date: getTodayYMD(),
       });
+
+      invalidateClientCache(['accounts', 'clients']);
 
       toast.success('Atendimento concluído com sucesso! 💈✂️');
 
