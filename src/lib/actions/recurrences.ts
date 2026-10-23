@@ -72,7 +72,7 @@ export async function getRecurrences(): Promise<Recurrence[]> {
 const syncCache = new Map<string, number>();
 const SYNC_CACHE_TTL_MS = 5 * 60 * 1000;
 
-export function invalidateRecurrenceSync(userId?: string) {
+function invalidateRecurrenceSync(userId?: string) {
   if (!userId) {
     syncCache.clear();
     return;

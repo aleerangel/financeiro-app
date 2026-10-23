@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 
-const MORE_ROUTES = [
+export const MORE_ROUTES = [
   '/clientes',
   '/produtos',
   '/contas',
@@ -14,12 +14,17 @@ const MORE_ROUTES = [
   '/categorias',
 ];
 
+export function isMoreModuleRoute(pathname: string): boolean {
+  if (!pathname) return false;
+  return MORE_ROUTES.some((route) => pathname.startsWith(route));
+}
+
 export function MobileBackButton() {
   const pathname = usePathname();
   const router = useRouter();
   const { setActiveTab } = useMobileNavigation();
 
-  const isMoreRoute = MORE_ROUTES.some((route) => pathname.startsWith(route));
+  const isMoreRoute = isMoreModuleRoute(pathname);
 
   if (!isMoreRoute) return null;
 

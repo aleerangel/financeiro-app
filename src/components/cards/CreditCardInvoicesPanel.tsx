@@ -26,6 +26,7 @@ import {
 import { toggleTransactionPaid, deleteTransaction } from '@/lib/actions/transactions';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { getCardInvoiceStatus } from '@/lib/credit-card-utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useDateContext } from '@/context/DateContext';
@@ -176,25 +177,9 @@ export function CreditCardInvoicesPanel({
     );
   }, [invoicesByMonthKey, currentInvoiceKey, selectedMonth, selectedYear]);
 
-  // Calcula datas exatas de fechamento e vencimento da fatura selecionada
+  // Obtém datas exatas e status da fatura selecionada a partir da fonte única da verdade
   const invoiceDatesInfo = useMemo(() => {
-    const daysInDueMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    const finalDueDay = Math.min(card.due_day, daysInDueMonth);
-    const dueDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(finalDueDay).padStart(2, '0')}`;
-
-    let closingMonth = selectedMonth;
-    let closingYear = selectedYear;
-    if (card.due_day < card.closing_day) {
-      closingMonth -= 1;
-      if (closingMonth < 0) {
-        closingMonth = 11;
-        closingYear -= 1;
-      }
-    }
-    const daysInClosingMonth = new Date(closingYear, closingMonth + 1, 0).getDate();
-    const finalClosingDay = Math.min(card.closing_day, daysInClosingMonth);
-    const closingDateStr = `${closingYear}-${String(closingMonth + 1).padStart(2, '0')}-${String(finalClosingDay).padStart(2, '0')}`;
-
+    const baseStatus = getCardInvoiceStatus(card, selectedMonth, selectedYear);
     const todayStr = getTodayYMD();
 
     let statusLabel = 'Sem lançamentos';
@@ -204,10 +189,10 @@ export function CreditCardInvoicesPanel({
       if (currentInvoice.pendingTotal <= 0) {
         statusLabel = 'Fatura Paga';
         statusColor = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-      } else if (todayStr > dueDateStr) {
+      } else if (todayStr > baseStatus.dueDateStr) {
         statusLabel = 'Fatura Vencida';
         statusColor = 'bg-rose-500/15 text-rose-400 border-rose-500/30';
-      } else if (todayStr >= closingDateStr) {
+      } else if (!baseStatus.isOpen) {
         statusLabel = 'Fatura Fechada';
         statusColor = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
       } else {
@@ -217,12 +202,15 @@ export function CreditCardInvoicesPanel({
     }
 
     return {
-      dueDateStr,
-      closingDateStr,
+      dueDateStr: baseStatus.dueDateStr,
+      closingDateStr: baseStatus.closingDateStr,
       statusLabel,
       statusColor,
+      daysLeftLabel: baseStatus.daysLeftLabel,
+      closingLabel: baseStatus.closingLabel,
+      dueLabel: baseStatus.dueLabel,
     };
-  }, [card.closing_day, card.due_day, selectedMonth, selectedYear, currentInvoice]);
+  }, [card, selectedMonth, selectedYear, currentInvoice]);
 
   const handlePrevMonth = () => {
     if (selectedMonth === 0) {
