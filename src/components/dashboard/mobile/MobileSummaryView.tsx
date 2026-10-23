@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Scissors,
   Users,
@@ -62,6 +62,9 @@ export function MobileSummaryView({
     'all' | 'totalIncome' | 'totalExpense' | 'netBalance'
   >('all');
 
+  // Ref para controlar seleção de semana na transição entre meses
+  const targetWeekRef = useRef<'first' | 'last' | null>(null);
+
   // 1. MOTOR NATIVO WEB DE EVOLUÇÃO (Inicializado com 'monthly' como default)
   const flowChart = useIndependentChartPeriod(
     year,
@@ -79,7 +82,19 @@ export function MobileSummaryView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Navegação unificada pelo seletor único do topo
+  // Seleciona primeira ou última semana após carregar novo mês no modo semanal
+  useEffect(() => {
+    if (targetWeekRef.current === 'last' && flowChart.weeksMeta.length > 0) {
+      flowChart.handleWeekChange(flowChart.weeksMeta.length - 1);
+      targetWeekRef.current = null;
+    } else if (targetWeekRef.current === 'first' && flowChart.weeksMeta.length > 0) {
+      flowChart.handleWeekChange(0);
+      targetWeekRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowChart.weeksMeta, flowChart.month]);
+
+  // Navegação unificada pelo seletor único do topo (permite transição contínua entre meses no modo semanal)
   const handlePrevPeriod = () => {
     if (flowChart.period === 'monthly') {
       const newMonth = flowChart.month === 0 ? 11 : flowChart.month - 1;
@@ -89,6 +104,13 @@ export function MobileSummaryView({
     } else if (flowChart.period === 'weekly') {
       if (flowChart.selectedWeekIndex > 0) {
         flowChart.handleWeekChange(flowChart.selectedWeekIndex - 1);
+      } else {
+        // Transição para a última semana do mês anterior
+        targetWeekRef.current = 'last';
+        const prevMonth = flowChart.month === 0 ? 11 : flowChart.month - 1;
+        const prevYear = flowChart.month === 0 ? flowChart.year - 1 : flowChart.year;
+        flowChart.handleMonthChange(prevMonth, prevYear);
+        setMonthYear(prevMonth, prevYear);
       }
     } else if (flowChart.period === 'yearly') {
       const newYear = flowChart.year - 1;
@@ -106,6 +128,13 @@ export function MobileSummaryView({
     } else if (flowChart.period === 'weekly') {
       if (flowChart.selectedWeekIndex < flowChart.weeksMeta.length - 1) {
         flowChart.handleWeekChange(flowChart.selectedWeekIndex + 1);
+      } else {
+        // Transição para a primeira semana do mês seguinte
+        targetWeekRef.current = 'first';
+        const nextMonth = flowChart.month === 11 ? 0 : flowChart.month + 1;
+        const nextYear = flowChart.month === 11 ? flowChart.year + 1 : flowChart.year;
+        flowChart.handleMonthChange(nextMonth, nextYear);
+        setMonthYear(nextMonth, nextYear);
       }
     } else if (flowChart.period === 'yearly') {
       const newYear = flowChart.year + 1;
@@ -114,17 +143,35 @@ export function MobileSummaryView({
     }
   };
 
-  // Label do período ativo para o seletor único
+  // Semana ativa
+  const currentWeek = useMemo(() => {
+    return flowChart.weeksMeta?.[flowChart.selectedWeekIndex];
+  }, [flowChart.weeksMeta, flowChart.selectedWeekIndex]);
+
+  // Transações estritamente filtradas para o período ativo
+  const periodTransactions = useMemo(() => {
+    if (flowChart.period === 'weekly' && currentWeek) {
+      return transactions.filter(
+        (t) => t.due_date >= currentWeek.startDate && t.due_date <= currentWeek.endDate
+      );
+    }
+    return transactions;
+  }, [transactions, flowChart.period, currentWeek]);
+
+  // Label do período ativo para o seletor único e para os módulos
   const activePeriodLabel = useMemo(() => {
     if (flowChart.period === 'monthly') {
       return `${MONTH_FULL_NAMES[flowChart.month]} de ${flowChart.year}`;
     }
     if (flowChart.period === 'weekly') {
-      const currentWeek = flowChart.weeksMeta?.[flowChart.selectedWeekIndex];
-      return currentWeek ? currentWeek.label : `Semana ${flowChart.selectedWeekIndex + 1}`;
+      const monthShort = MONTH_FULL_NAMES[flowChart.month].slice(0, 3);
+      if (currentWeek) {
+        return `Semana ${flowChart.selectedWeekIndex + 1} (${currentWeek.shortLabel}) • ${monthShort}/${flowChart.year}`;
+      }
+      return `Semana ${flowChart.selectedWeekIndex + 1} • ${monthShort}/${flowChart.year}`;
     }
     return `Ano de ${flowChart.year}`;
-  }, [flowChart.period, flowChart.month, flowChart.year, flowChart.weeksMeta, flowChart.selectedWeekIndex]);
+  }, [flowChart.period, flowChart.month, flowChart.year, currentWeek, flowChart.selectedWeekIndex]);
 
   // Séries do Gráfico
   const flowSeries: ChartSeries[] = useMemo(
@@ -158,6 +205,7 @@ export function MobileSummaryView({
     [flowChart.activeStats]
   );
 
+  // Rótulos do eixo X (no modo mensal: 'Sem 1', 'Sem 2'...)
   const flowLabels = useMemo(() => {
     if (flowChart.period === 'monthly') {
       return flowChart.activeStats.map((_, idx) => `Sem ${idx + 1}`);
@@ -176,7 +224,7 @@ export function MobileSummaryView({
     return flowSeries.filter((s) => s.id === selectedMetric);
   }, [flowSeries, selectedMetric]);
 
-  // 2. RECEITAS E DESPESAS (REALIZADO + PREVISTO COM O QUE AINDA FALTA)
+  // 2. RECEITAS E DESPESAS CORRESPONDENTES AO PERÍODO ATIVO
   const {
     receivedIncome,
     pendingIncome,
@@ -192,28 +240,61 @@ export function MobileSummaryView({
     let pdExp = 0;
     let pendExp = 0;
 
-    if (transactions.length > 0) {
+    if (flowChart.period === 'weekly') {
+      // No modo semanal: soma dos dias da semana ativa e pendências da semana
+      recInc = flowChart.activeStats.reduce(
+        (sum, d) => sum + (d.serviceRevenue || 0) + (d.generalIncome || 0),
+        0
+      );
+      pdExp = flowChart.activeStats.reduce(
+        (sum, d) => sum + (d.generalExpense || 0),
+        0
+      );
+
+      for (const t of periodTransactions) {
+        const amt = Number(t.amount) || 0;
+        if (!t.is_paid) {
+          if (t.type === 'income') pendInc += amt;
+          else if (t.type === 'expense') pendExp += amt;
+        }
+      }
+    } else if (flowChart.period === 'yearly') {
+      // No modo anual: soma consolidada dos 12 meses
+      recInc = flowChart.activeStats.reduce(
+        (sum, m) => sum + (m.serviceRevenue || 0) + (m.generalIncome || 0),
+        0
+      );
+      pdExp = flowChart.activeStats.reduce(
+        (sum, m) => sum + (m.generalExpense || 0),
+        0
+      );
+
       for (const t of transactions) {
         const amt = Number(t.amount) || 0;
-        if (t.type === 'income') {
-          if (t.is_paid) {
-            recInc += amt;
-          } else {
-            pendInc += amt;
-          }
-        } else if (t.type === 'expense') {
-          if (t.is_paid) {
-            pdExp += amt;
-          } else {
-            pendExp += amt;
-          }
+        if (!t.is_paid) {
+          if (t.type === 'income') pendInc += amt;
+          else if (t.type === 'expense') pendExp += amt;
         }
       }
     } else {
-      const curYearStat = yearlyStats[flowChart.month] || generalData?.yearlyStats?.[flowChart.month];
-      recInc = (curYearStat?.serviceRevenue || 0) + (curYearStat?.generalIncome || 0);
-      pdExp = curYearStat?.generalExpense || 0;
-      pendExp = businessData.monthSummary?.pendingExpenses || 0;
+      // No modo mensal: transações do mês selecionado
+      if (periodTransactions.length > 0) {
+        for (const t of periodTransactions) {
+          const amt = Number(t.amount) || 0;
+          if (t.type === 'income') {
+            if (t.is_paid) recInc += amt;
+            else pendInc += amt;
+          } else if (t.type === 'expense') {
+            if (t.is_paid) pdExp += amt;
+            else pendExp += amt;
+          }
+        }
+      } else {
+        const curYearStat = yearlyStats[flowChart.month] || generalData?.yearlyStats?.[flowChart.month];
+        recInc = (curYearStat?.serviceRevenue || 0) + (curYearStat?.generalIncome || 0);
+        pdExp = curYearStat?.generalExpense || 0;
+        pendExp = businessData.monthSummary?.pendingExpenses || 0;
+      }
     }
 
     return {
@@ -226,9 +307,18 @@ export function MobileSummaryView({
       realizedBalance: recInc - pdExp,
       projectedBalance: recInc + pendInc - (pdExp + pendExp),
     };
-  }, [transactions, yearlyStats, generalData?.yearlyStats, flowChart.month, businessData.monthSummary]);
+  }, [
+    flowChart.period,
+    flowChart.activeStats,
+    flowChart.month,
+    periodTransactions,
+    transactions,
+    yearlyStats,
+    generalData?.yearlyStats,
+    businessData.monthSummary,
+  ]);
 
-  // 3. DIAS MAIS FORTES DA BARBEARIA NO MÊS
+  // 3. DIAS MAIS FORTES DA BARBEARIA (CALCULADO NO PERÍODO ATIVO)
   const strongDaysStats = useMemo(() => {
     const dayTotals: Record<string, number> = {
       Seg: 0,
@@ -250,17 +340,27 @@ export function MobileSummaryView({
       Dom: 'Domingo',
     };
 
-    Object.values(businessData.weeklyStatsByWeek || {}).forEach((weekDays) => {
-      weekDays.forEach((stat) => {
+    if (flowChart.period === 'weekly') {
+      // Se for semanal: usa os dias daquela semana ativa
+      flowChart.activeStats.forEach((stat) => {
         if (stat.label && dayTotals[stat.label] !== undefined) {
-          dayTotals[stat.label] += stat.revenue || 0;
+          dayTotals[stat.label] += stat.serviceRevenue || 0;
         }
       });
-    });
+    } else {
+      // Se mensal ou anual: soma acumulada
+      Object.values(businessData.weeklyStatsByWeek || {}).forEach((weekDays) => {
+        weekDays.forEach((stat) => {
+          if (stat.label && dayTotals[stat.label] !== undefined) {
+            dayTotals[stat.label] += stat.revenue || 0;
+          }
+        });
+      });
+    }
 
     const totalRevFromWeeks = Object.values(dayTotals).reduce((a, b) => a + b, 0);
-    if (totalRevFromWeeks === 0 && transactions && transactions.length > 0) {
-      const bizTxs = transactions.filter((t) => t.is_paid && isBarbeariaServiceIncome(t));
+    if (totalRevFromWeeks === 0 && periodTransactions.length > 0) {
+      const bizTxs = periodTransactions.filter((t) => t.is_paid && isBarbeariaServiceIncome(t));
       bizTxs.forEach((t) => {
         if (t.due_date) {
           const parts = t.due_date.split('-');
@@ -286,28 +386,46 @@ export function MobileSummaryView({
         percentage: Math.round(((dayTotals[code] || 0) / totalRev) * 100),
       }))
       .sort((a, b) => b.revenue - a.revenue);
-  }, [businessData.weeklyStatsByWeek, transactions]);
+  }, [flowChart.period, flowChart.activeStats, businessData.weeklyStatsByWeek, periodTransactions]);
 
-  // Resumo da Barbearia
-  const bizSummary = businessData.monthSummary || {
-    revenue: 0,
-    paidExpenses: 0,
-    pendingExpenses: 0,
-    totalExpenses: 0,
-    netProfit: 0,
-    projectedProfit: 0,
-    profitMargin: 0,
-    averageTicket: 0,
-  };
+  // Faturamento da barbearia para o período ativo
+  const bizPeriodRevenue = useMemo(() => {
+    if (flowChart.period === 'weekly' || flowChart.period === 'yearly') {
+      return flowChart.activeStats.reduce((sum, s) => sum + (s.serviceRevenue || 0), 0);
+    }
+    return businessData.monthSummary?.revenue || 0;
+  }, [flowChart.period, flowChart.activeStats, businessData.monthSummary]);
 
-  const revenueSplit = businessData.revenueSplit || {
-    serviceRevenue: 0,
-    productRevenue: 0,
-    servicePercentage: 0,
-    productPercentage: 0,
-    serviceCount: 0,
-    productCount: 0,
-  };
+  // Divisão Serviços vs Produtos no período ativo
+  const revenueSplit = useMemo(() => {
+    let sRev = 0;
+    let pRev = 0;
+
+    for (const t of periodTransactions) {
+      if (t.is_paid && isBarbeariaServiceIncome(t)) {
+        sRev += Number(t.amount || 0);
+      }
+    }
+
+    if (sRev === 0 && flowChart.period === 'monthly') {
+      return businessData.revenueSplit || {
+        serviceRevenue: 0,
+        productRevenue: 0,
+        servicePercentage: 100,
+        productPercentage: 0,
+      };
+    }
+
+    pRev = businessData.revenueSplit?.productRevenue || 0;
+    const total = sRev + pRev || 1;
+
+    return {
+      serviceRevenue: sRev,
+      productRevenue: pRev,
+      servicePercentage: Math.round((sRev / total) * 100),
+      productPercentage: 100 - Math.round((sRev / total) * 100),
+    };
+  }, [periodTransactions, flowChart.period, businessData.revenueSplit]);
 
   return (
     <div className="space-y-4 pb-16">
@@ -374,8 +492,7 @@ export function MobileSummaryView({
           <button
             type="button"
             onClick={handlePrevPeriod}
-            disabled={flowChart.period === 'weekly' && flowChart.selectedWeekIndex <= 0}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 disabled:opacity-25 disabled:pointer-events-none active:scale-90 transition"
+            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
             aria-label="Período anterior"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -388,11 +505,7 @@ export function MobileSummaryView({
           <button
             type="button"
             onClick={handleNextPeriod}
-            disabled={
-              flowChart.period === 'weekly' &&
-              flowChart.selectedWeekIndex >= flowChart.weeksMeta.length - 1
-            }
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 disabled:opacity-25 disabled:pointer-events-none active:scale-90 transition"
+            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
             aria-label="Próximo período"
           >
             <ChevronRight className="w-4 h-4" />
@@ -531,30 +644,32 @@ export function MobileSummaryView({
       </div>
 
       {/* ============================================================== */}
-      {/* 2. RECEITAS E BALANÇO GERAL (SEM SELETOR INTERNO E SEM BOTÃO EVOLUÇÃO) */}
+      {/* 2. RECEITAS E BALANÇO GERAL (SINCRONIZADO COM O PERÍODO ATIVO)   */}
       {/* ============================================================== */}
       <MonthlyBarChart
-        transactions={transactions}
+        transactions={periodTransactions}
         accounts={accounts}
         incomeEvolution={generalData?.incomeCategoryEvolution || []}
         currentMonth={flowChart.month}
         year={flowChart.year}
         hideMonthSelector={true}
+        periodLabel={activePeriodLabel}
       />
 
       {/* ============================================================== */}
-      {/* 3. GASTOS POR CATEGORIA (SEM SELETOR INTERNO E SEM BOTÃO EVOLUÇÃO) */}
+      {/* 3. GASTOS POR CATEGORIA (SINCRONIZADO COM O PERÍODO ATIVO)      */}
       {/* ============================================================== */}
       <CategoryDonutChart
-        transactions={transactions}
+        transactions={periodTransactions}
         expenseEvolution={generalData?.expenseCategoryEvolution || []}
         currentMonth={flowChart.month}
         year={flowChart.year}
         hideMonthSelector={true}
+        periodLabel={activePeriodLabel}
       />
 
       {/* ============================================================== */}
-      {/* 5. INTELIGÊNCIA OPERACIONAL DA BARBEARIA                       */}
+      {/* 4. INTELIGÊNCIA OPERACIONAL DA BARBEARIA                       */}
       {/* ============================================================== */}
       <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3.5">
         <div className="flex items-center justify-between">
@@ -565,17 +680,16 @@ export function MobileSummaryView({
             </h3>
           </div>
           <span className="text-xs font-extrabold text-emerald-400">
-            {formatHidden(formatCurrency(bizSummary.revenue))}
+            {formatHidden(formatCurrency(bizPeriodRevenue))}
           </span>
         </div>
 
         {/* Divisão Serviços vs Produtos */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span>Divisão de Receitas</span>
+            <span>Divisão de Receitas • {activePeriodLabel}</span>
             <span className="font-semibold text-zinc-300">
-              {Math.round(revenueSplit.servicePercentage)}% Serviços •{' '}
-              {Math.round(revenueSplit.productPercentage)}% Produtos
+              {revenueSplit.servicePercentage}% Serviços • {revenueSplit.productPercentage}% Produtos
             </span>
           </div>
           <div className="w-full h-3 bg-zinc-800 rounded-full flex overflow-hidden">
@@ -610,12 +724,12 @@ export function MobileSummaryView({
           </div>
         </div>
 
-        {/* Dias Mais Fortes no Mês */}
+        {/* Dias Mais Fortes */}
         <div className="pt-2 border-t border-zinc-800/80 space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-zinc-400" />
-              Dias Mais Fortes no Mês
+              {flowChart.period === 'weekly' ? 'Receita por Dia da Semana' : 'Dias Mais Fortes no Período'}
             </span>
             <span className="text-[10px] text-zinc-400 uppercase">Receita no dia</span>
           </div>
@@ -645,7 +759,7 @@ export function MobileSummaryView({
           </div>
         </div>
 
-        {/* Top 3 Clientes do Mês */}
+        {/* Top Clientes */}
         {businessData.topClients && businessData.topClients.length > 0 && (
           <div className="pt-2 border-t border-zinc-800/80 space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-zinc-300">

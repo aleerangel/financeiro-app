@@ -34,6 +34,7 @@ interface MonthlyBarChartProps {
   year?: number;
   onExpandEvolution?: (refMonth: number, refYear: number) => void;
   hideMonthSelector?: boolean;
+  periodLabel?: string;
 }
 
 export function MonthlyBarChart({
@@ -44,6 +45,7 @@ export function MonthlyBarChart({
   year = new Date().getFullYear(),
   onExpandEvolution,
   hideMonthSelector = false,
+  periodLabel,
 }: MonthlyBarChartProps) {
   const {
     refMonth,
@@ -182,7 +184,7 @@ export function MonthlyBarChart({
               Receitas &amp; Balanço Geral
             </h3>
             <p className="text-xs text-zinc-400">
-              Composição das entradas por categoria e balanço do mês
+              {periodLabel ? `Composição das entradas por categoria • ${periodLabel}` : 'Composição das entradas por categoria e balanço do mês'}
             </p>
           </div>
 
@@ -260,7 +262,7 @@ export function MonthlyBarChart({
         <div className="flex justify-between items-center text-xs">
           <span className="flex items-center gap-1.5 font-medium text-emerald-400">
             <TrendingUp className="w-3.5 h-3.5" />
-            Receitas ({MONTH_SHORT_NAMES[refMonth]})
+            Receitas ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
             <span className="text-[11px] text-zinc-400 font-normal">
               ({receivedIncomePct}% recebido)
             </span>

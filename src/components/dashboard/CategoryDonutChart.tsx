@@ -30,6 +30,7 @@ interface CategoryDonutChartProps {
   year?: number;
   onExpandEvolution?: (refMonth: number, refYear: number) => void;
   hideMonthSelector?: boolean;
+  periodLabel?: string;
 }
 
 interface CategoryTotal {
@@ -48,6 +49,7 @@ export function CategoryDonutChart({
   year = new Date().getFullYear(),
   onExpandEvolution,
   hideMonthSelector = false,
+  periodLabel,
 }: CategoryDonutChartProps) {
   const {
     refMonth,
@@ -168,7 +170,7 @@ export function CategoryDonutChart({
             Gastos por Categoria
           </h3>
           <p className="text-xs text-zinc-400">
-            Execução de pagamentos e distribuição das despesas
+            {periodLabel ? `Execução de pagamentos e distribuição das despesas • ${periodLabel}` : 'Execução de pagamentos e distribuição das despesas'}
           </p>
         </div>
 
