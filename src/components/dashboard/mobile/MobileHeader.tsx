@@ -13,7 +13,7 @@ import { useDateContext } from '@/context/DateContext';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 
 export function MobileHeader() {
-  const { formattedMonth, prevMonth, nextMonth } = useDateContext();
+  const { formattedMonth, prevMonth, nextMonth, month, year, setMonthYear } = useDateContext();
   const { activeTab, contextMode, setContextMode, showValues, setShowValues } = useMobileNavigation();
 
   // Na aba "Mais" e na aba "Resumo" (que tem seu próprio seletor único no topo), o cabeçalho padrão não é renderizado
@@ -21,8 +21,19 @@ export function MobileHeader() {
 
   const isHome = activeTab === 'home';
 
+  // Na aba Início, garante que o mês seja rigorosamente o mês atual
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  React.useEffect(() => {
+    if (isHome) {
+      const now = new Date();
+      if (month !== now.getMonth() || year !== now.getFullYear()) {
+        setMonthYear(now.getMonth(), now.getFullYear());
+      }
+    }
+  }, [isHome, month, year, setMonthYear]);
+
   return (
-    <div className="space-y-3 pt-1 pb-3">
+    <div className={`pt-1 ${isHome ? 'pb-2' : 'space-y-3 pb-3'}`}>
       {/* Seletor Barbearia vs Pessoal: SOMENTE na aba Início */}
       {isHome && (
         <div className="flex items-center justify-between gap-2">
@@ -71,28 +82,30 @@ export function MobileHeader() {
         </div>
       )}
 
-      {/* Linha do Seletor de Mês/Ano estilizado touch */}
-      <div className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 px-3 py-1.5 rounded-2xl">
-        <button
-          type="button"
-          onClick={prevMonth}
-          className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
-          aria-label="Mês anterior"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <span className="text-xs font-extrabold uppercase tracking-wider text-zinc-200">
-          {formattedMonth}
-        </span>
-        <button
-          type="button"
-          onClick={nextMonth}
-          className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
-          aria-label="Próximo mês"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
+      {/* Linha do Seletor de Mês/Ano: exibido apenas no Extrato (no Início fica fixo no mês atual) */}
+      {!isHome && (
+        <div className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 px-3 py-1.5 rounded-2xl">
+          <button
+            type="button"
+            onClick={prevMonth}
+            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
+            aria-label="Mês anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-zinc-200">
+            {formattedMonth}
+          </span>
+          <button
+            type="button"
+            onClick={nextMonth}
+            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
+            aria-label="Próximo mês"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

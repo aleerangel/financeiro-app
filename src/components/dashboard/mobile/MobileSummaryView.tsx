@@ -19,7 +19,6 @@ import { AccountWithBalance } from '@/lib/actions/accounts';
 import { Transaction } from '@/types/database';
 import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
 import { formatCurrency } from '@/lib/utils';
-import { useDateContext } from '@/context/DateContext';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { MonthlyBarChart } from '../MonthlyBarChart';
 import { CategoryDonutChart } from '../CategoryDonutChart';
@@ -52,7 +51,6 @@ export function MobileSummaryView({
   accounts = [],
 }: MobileSummaryViewProps) {
   const { showValues } = useMobileNavigation();
-  const { setMonthYear } = useDateContext();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
   // Filtro de métrica selecionada para a Evolução Financeira ('all' ou individual)
@@ -91,7 +89,6 @@ export function MobileSummaryView({
       const newMonth = flowChart.month === 0 ? 11 : flowChart.month - 1;
       const newYear = flowChart.month === 0 ? flowChart.year - 1 : flowChart.year;
       flowChart.handleMonthChange(newMonth, newYear);
-      setMonthYear(newMonth, newYear);
     } else if (flowChart.period === 'weekly') {
       if (flowChart.selectedWeekIndex > 0) {
         flowChart.handleWeekChange(flowChart.selectedWeekIndex - 1);
@@ -101,12 +98,10 @@ export function MobileSummaryView({
         const prevMonth = flowChart.month === 0 ? 11 : flowChart.month - 1;
         const prevYear = flowChart.month === 0 ? flowChart.year - 1 : flowChart.year;
         flowChart.handleMonthChange(prevMonth, prevYear);
-        setMonthYear(prevMonth, prevYear);
       }
     } else if (flowChart.period === 'yearly') {
       const newYear = flowChart.year - 1;
       flowChart.handleYearChange(newYear);
-      setMonthYear(flowChart.month, newYear);
     }
   };
 
@@ -115,7 +110,6 @@ export function MobileSummaryView({
       const newMonth = flowChart.month === 11 ? 0 : flowChart.month + 1;
       const newYear = flowChart.month === 11 ? flowChart.year + 1 : flowChart.year;
       flowChart.handleMonthChange(newMonth, newYear);
-      setMonthYear(newMonth, newYear);
     } else if (flowChart.period === 'weekly') {
       if (flowChart.selectedWeekIndex < flowChart.weeksMeta.length - 1) {
         flowChart.handleWeekChange(flowChart.selectedWeekIndex + 1);
@@ -125,12 +119,10 @@ export function MobileSummaryView({
         const nextMonth = flowChart.month === 11 ? 0 : flowChart.month + 1;
         const nextYear = flowChart.month === 11 ? flowChart.year + 1 : flowChart.year;
         flowChart.handleMonthChange(nextMonth, nextYear);
-        setMonthYear(nextMonth, nextYear);
       }
     } else if (flowChart.period === 'yearly') {
       const newYear = flowChart.year + 1;
       flowChart.handleYearChange(newYear);
-      setMonthYear(flowChart.month, newYear);
     }
   };
 
