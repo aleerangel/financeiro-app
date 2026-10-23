@@ -22,14 +22,12 @@ export default async function TransacoesPage() {
 
   const { month, year } = getZonedParts();
 
-  // Garante que recorrências ativas do mês já existam antes da leitura
-  await syncMonthlyRecurrences(month, year);
-
   const [accounts, cards, categories, transactions] = await Promise.all([
     getAccounts(),
     getCreditCards(),
     getCategories(),
     getTransactions(month, year),
+    syncMonthlyRecurrences(month, year).catch(() => {}),
   ]);
 
   return (

@@ -47,16 +47,14 @@ export function MobileMoreView({
     setNavigatingHref(null);
   }
 
-  // Reseta também ao voltar pelo botão físico ou navegação de histórico (bfcache/popstate/focus)
+  // Reseta também ao voltar pelo botão físico ou navegação de histórico (bfcache/popstate)
   useEffect(() => {
     const handleReset = () => setNavigatingHref(null);
     window.addEventListener('pageshow', handleReset);
     window.addEventListener('popstate', handleReset);
-    window.addEventListener('focus', handleReset);
     return () => {
       window.removeEventListener('pageshow', handleReset);
       window.removeEventListener('popstate', handleReset);
-      window.removeEventListener('focus', handleReset);
     };
   }, []);
 
@@ -182,7 +180,7 @@ export function MobileMoreView({
                   onClick={() => {
                     setNavigatingHref(item.href);
                     // Timeout de segurança: limpa o destaque se a navegação for cancelada ou ao retornar
-                    setTimeout(() => setNavigatingHref(null), 2000);
+                    setTimeout(() => setNavigatingHref(null), 600);
                   }}
                   className={`p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] ${
                     isNavigating

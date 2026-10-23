@@ -30,10 +30,10 @@ export async function getAccounts(): Promise<AccountWithBalance[]> {
     throw new Error('Não autenticado');
   }
 
-  // Busca as contas
+  // Busca as contas com seleção explícita de colunas
   const { data: accounts, error: accountsError } = await supabase
     .from('accounts')
-    .select('*')
+    .select('id, user_id, name, type, color, initial_balance, yield_type, yield_rate, created_at, updated_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
 

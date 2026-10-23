@@ -30,7 +30,7 @@ export async function getCreditCards(
 
   const { data: cards, error: cardsError } = await supabase
     .from('credit_cards')
-    .select('*')
+    .select('id, user_id, name, credit_limit, closing_day, due_day, color, created_at, updated_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
 

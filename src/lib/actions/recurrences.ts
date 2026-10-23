@@ -67,6 +67,32 @@ export async function getRecurrences(): Promise<Recurrence[]> {
  * - só gera a partir do mês de criação da recorrência;
  * - NÃO chama revalidatePath: é executada durante o render do servidor.
  */
+// Cache de sincronização de recorrências em memória por usuário e mês (TTL de 5 minutos)
+// Evita consultas e mutações repetidas no banco a cada requisição ou navegação no dashboard
+const syncCache = new Map<string, number>();
+const SYNC_CACHE_TTL_MS = 5 * 60 * 1000;
+
+export function invalidateRecurrenceSync(userId?: string) {
+  if (!userId) {
+    syncCache.clear();
+    return;
+  }
+  for (const key of syncCache.keys()) {
+    if (key.startsWith(userId)) {
+      syncCache.delete(key);
+    }
+  }
+}
+
+/**
+ * Sincroniza lançamentos automáticos de contas fixas para o mês/ano fornecido.
+ *
+ * Regras:
+ * - nunca gera em meses passados (fuso America/Sao_Paulo);
+ * - só gera a partir do mês de criação da recorrência;
+ * - utiliza cache em memória para evitar rodar queries repetidas na mesma sessão;
+ * - NÃO chama revalidatePath: é executada durante o render do servidor.
+ */
 export async function syncMonthlyRecurrences(month: number, year: number) {
   if (isPastMonth(month, year)) return;
 
@@ -75,19 +101,32 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
 
   if (!user) throw new Error('Não autenticado');
 
+  const cacheKey = `${user.id}-${year}-${month}`;
+  const lastSync = syncCache.get(cacheKey);
+  if (lastSync && Date.now() - lastSync < SYNC_CACHE_TTL_MS) {
+    return;
+  }
+
   const { data: recurrences, error: recError } = await supabase
     .from('recurrences')
     .select(`
-      *,
-      category:categories(*)
+      id, user_id, description, amount, type, due_day, start_date, end_date, active, created_at,
+      category_id, account_id, credit_card_id, notes, scope,
+      category:categories(id, name, color, icon)
     `)
     .eq('user_id', user.id)
     .eq('active', true);
 
-  if (recError || !recurrences || recurrences.length === 0) return;
+  if (recError || !recurrences || recurrences.length === 0) {
+    syncCache.set(cacheKey, Date.now());
+    return;
+  }
 
   const eligible = recurrences.filter((rec) => isRecurrenceEligible(rec, month, year));
-  if (eligible.length === 0) return;
+  if (eligible.length === 0) {
+    syncCache.set(cacheKey, Date.now());
+    return;
+  }
 
   const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month + 1, 0).getDate();
@@ -149,19 +188,23 @@ export async function syncMonthlyRecurrences(month: number, year: number) {
     }
   }
 
-  // Propaga categoria/descrição editadas na recorrência para os lançamentos do mês
-  for (const rec of eligible) {
-    await supabase
-      .from('transactions')
-      .update({
-        category_id: rec.category_id || null,
-        description: rec.description,
-      })
-      .eq('user_id', user.id)
-      .eq('recurrence_id', rec.id)
-      .gte('due_date', startDate)
-      .lte('due_date', endDate);
-  }
+  // Propaga categoria/descrição editadas na recorrência para os lançamentos do mês em paralelo
+  await Promise.all(
+    eligible.map((rec) =>
+      supabase
+        .from('transactions')
+        .update({
+          category_id: rec.category_id || null,
+          description: rec.description,
+        })
+        .eq('user_id', user.id)
+        .eq('recurrence_id', rec.id)
+        .gte('due_date', startDate)
+        .lte('due_date', endDate)
+    )
+  );
+
+  syncCache.set(cacheKey, Date.now());
 }
 
 export async function createRecurrence(input: CreateRecurrenceInput) {
@@ -203,6 +246,8 @@ export async function createRecurrence(input: CreateRecurrenceInput) {
   }
 
   if (error) throw new Error(error.message);
+
+  invalidateRecurrenceSync(user.id);
 
   // Sincroniza imediatamente com o mês atual
   const today = getZonedParts();
@@ -287,6 +332,8 @@ export async function updateRecurrence(id: string, input: UpdateRecurrenceInput)
       .eq('user_id', user.id);
   }
 
+  invalidateRecurrenceSync(user.id);
+
   revalidatePath('/recorrencias');
   revalidatePath('/transacoes');
   revalidatePath('/dashboard');
@@ -308,6 +355,8 @@ export async function toggleRecurrenceActive(id: string, active: boolean) {
 
   if (error) throw new Error(error.message);
 
+  invalidateRecurrenceSync(user.id);
+
   revalidatePath('/recorrencias');
   revalidatePath('/dashboard');
 }
@@ -325,6 +374,8 @@ export async function deleteRecurrence(id: string) {
     .eq('user_id', user.id);
 
   if (error) throw new Error(error.message);
+
+  invalidateRecurrenceSync(user.id);
 
   revalidatePath('/recorrencias');
   revalidatePath('/dashboard');

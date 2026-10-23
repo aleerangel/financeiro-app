@@ -24,3 +24,4 @@ export function clearAppClientStorage(): void {
     // Ignora erros em ambientes com storage restrito ou modo anônimo
   }
 }
+

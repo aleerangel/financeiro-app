@@ -36,9 +36,8 @@ export default async function DashboardPage() {
   const nextMonth = (currentMonth + 1) % 12;
   const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
 
-  // Sincroniza recorrências do mês atual. O mês seguinte é sincronizado em background
-  // sem bloquear o carregamento e renderização do usuário atual.
-  await syncMonthlyRecurrences(currentMonth, currentYear);
+  // Sincronização concorrente de recorrências para não bloquear o TTFB inicial
+  const syncCurrentPromise = syncMonthlyRecurrences(currentMonth, currentYear).catch(() => {});
   void syncMonthlyRecurrences(nextMonth, nextYear).catch(() => {});
 
   // Busca todos os dados do dashboard em paralelo no servidor (incluindo transações iniciais)
@@ -60,6 +59,7 @@ export default async function DashboardPage() {
     getUpcomingAndOverdueBills(3),
     getPendingIncomeReceipts(),
     getTransactions(currentMonth, currentYear),
+    syncCurrentPromise,
   ]);
 
   return (

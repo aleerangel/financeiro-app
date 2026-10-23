@@ -56,3 +56,4 @@ describe('auth-storage - clearAppClientStorage', () => {
     expect(() => clearAppClientStorage()).not.toThrow();
   });
 });
+
