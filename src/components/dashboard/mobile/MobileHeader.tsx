@@ -72,45 +72,26 @@ export function MobileHeader() {
       )}
 
       {/* Linha do Seletor de Mês/Ano estilizado touch */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex-1 flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 px-3 py-1.5 rounded-2xl">
-          <button
-            type="button"
-            onClick={prevMonth}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
-            aria-label="Mês anterior"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-xs font-extrabold uppercase tracking-wider text-zinc-200">
-            {formattedMonth}
-          </span>
-          <button
-            type="button"
-            onClick={nextMonth}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
-            aria-label="Próximo mês"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Nas abas Extrato e Resumo, o botão de privacidade fica inline ao lado do seletor de mês */}
-        {!isHome && (
-          <button
-            type="button"
-            onClick={() => setShowValues((prev) => !prev)}
-            className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-400 hover:text-zinc-200 transition active:scale-95 shrink-0"
-            aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
-            title={showValues ? 'Ocultar valores' : 'Mostrar valores'}
-          >
-            {showValues ? (
-              <Eye className="w-4 h-4" />
-            ) : (
-              <EyeOff className="w-4 h-4 text-emerald-400" />
-            )}
-          </button>
-        )}
+      <div className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 px-3 py-1.5 rounded-2xl">
+        <button
+          type="button"
+          onClick={prevMonth}
+          className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
+          aria-label="Mês anterior"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="text-xs font-extrabold uppercase tracking-wider text-zinc-200">
+          {formattedMonth}
+        </span>
+        <button
+          type="button"
+          onClick={nextMonth}
+          className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
+          aria-label="Próximo mês"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

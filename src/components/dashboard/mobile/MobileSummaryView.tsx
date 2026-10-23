@@ -8,8 +8,6 @@ import {
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  EyeOff,
 } from 'lucide-react';
 import {
   BusinessDashboardData,
@@ -53,7 +51,7 @@ export function MobileSummaryView({
   transactions = [],
   accounts = [],
 }: MobileSummaryViewProps) {
-  const { showValues, setShowValues } = useMobileNavigation();
+  const { showValues } = useMobileNavigation();
   const { setMonthYear } = useDateContext();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
@@ -433,57 +431,40 @@ export function MobileSummaryView({
       {/* SELETOR ÚNICO NO TOPO (SEMANAL | MENSAL [DEFAULT] | ANUAL)     */}
       {/* ============================================================== */}
       <div className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5 shadow-sm">
-        {/* Linha 1: Pílulas de Granularidade e Botão de Privacidade */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex-1 flex items-center bg-zinc-950 p-1 rounded-xl border border-zinc-800/80">
-            <button
-              type="button"
-              onClick={() => flowChart.setPeriod('weekly')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                flowChart.period === 'weekly'
-                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Semanal
-            </button>
-            <button
-              type="button"
-              onClick={() => flowChart.setPeriod('monthly')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                flowChart.period === 'monthly'
-                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Mensal
-            </button>
-            <button
-              type="button"
-              onClick={() => flowChart.setPeriod('yearly')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                flowChart.period === 'yearly'
-                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              Anual
-            </button>
-          </div>
-
-          {/* Botão de Privacidade */}
+        {/* Linha 1: Pílulas de Granularidade (Semanal | Mensal | Anual) */}
+        <div className="flex items-center bg-zinc-950 p-1 rounded-xl border border-zinc-800/80">
           <button
             type="button"
-            onClick={() => setShowValues((prev) => !prev)}
-            className="p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-400 hover:text-zinc-200 transition active:scale-95"
-            aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
-            title={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+            onClick={() => flowChart.setPeriod('weekly')}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              flowChart.period === 'weekly'
+                ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
           >
-            {showValues ? (
-              <Eye className="w-4 h-4" />
-            ) : (
-              <EyeOff className="w-4 h-4 text-emerald-400" />
-            )}
+            Semanal
+          </button>
+          <button
+            type="button"
+            onClick={() => flowChart.setPeriod('monthly')}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              flowChart.period === 'monthly'
+                ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            Mensal
+          </button>
+          <button
+            type="button"
+            onClick={() => flowChart.setPeriod('yearly')}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              flowChart.period === 'yearly'
+                ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            Anual
           </button>
         </div>
 
