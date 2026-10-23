@@ -547,3 +547,4 @@ function MobileNewSaleDrawerDialog() {
     </div>
   );
 }
+

@@ -432,3 +432,4 @@ function MobileQuickTransactionModalDialog() {
     </div>
   );
 }
+
