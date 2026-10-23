@@ -20,6 +20,8 @@ export interface CreateClientInput {
 export interface ClientWithStats extends Client {
   totalSalesCount: number;
   totalSpent: number;
+  totalDebt: number;
+  pendingSalesCount: number;
   lastSaleDate: string | null;
   isVip: boolean;
   analytics: ClientAnalytics;
@@ -39,6 +41,10 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
       sales:sales(
         id,
         total_amount,
+        paid_amount,
+        remaining_amount,
+        status,
+        due_date,
         sale_date,
         payment_method,
         notes,
@@ -47,6 +53,15 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
           quantity,
           unit_price,
           total_price
+        ),
+        amortizations:sale_amortizations(
+          id,
+          amount,
+          payment_method,
+          account_id,
+          amortized_at,
+          notes,
+          account:accounts(id, name)
         )
       )
     `)
@@ -76,6 +91,12 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
     const sales = c.sales || [];
     const totalSalesCount = sales.length;
     const totalSpent = sales.reduce((acc, s) => acc + Number(s.total_amount || 0), 0);
+    const totalDebt = sales
+      .filter((s) => s.status === 'pending' || s.status === 'partially_paid' || (Number(s.remaining_amount || 0) > 0))
+      .reduce((acc, s) => acc + Number(s.remaining_amount || 0), 0);
+    const pendingSalesCount = sales.filter(
+      (s) => s.status === 'pending' || s.status === 'partially_paid' || (Number(s.remaining_amount || 0) > 0)
+    ).length;
     const sortedSales = [...sales].sort(
       (a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime()
     );
@@ -93,6 +114,8 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
       updated_at: c.updated_at,
       totalSalesCount,
       totalSpent,
+      totalDebt,
+      pendingSalesCount,
       lastSaleDate,
       analytics,
       salesHistory: sortedSales,

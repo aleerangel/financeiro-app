@@ -80,6 +80,8 @@ export interface BusinessMonthSummary {
   uniqueClientsCount: number;
   clientReturnRate: number;
   averageTicket: number;
+  totalReceivables?: number;
+  monthOnCreditRevenue?: number;
 }
 
 export interface TopMonthClient {
@@ -189,11 +191,12 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   const { startIso: bizSalesStartIso, endIso: bizSalesEndIso } =
     getZonedRangeBoundsIso(earliestDate, latestDate);
 
-  // 1. Busca vendas, despesas e clientes em paralelo
+  // 1. Busca vendas, despesas, clientes e débitos a receber em paralelo
   const [
     { data: salesData, error: salesError },
     { data: txData, error: txError },
     { data: clientsData, error: clientsError },
+    { data: pendingSalesData },
   ] = await Promise.all([
     supabase
       .from('sales')
@@ -202,6 +205,11 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
         client_id,
         client_name,
         total_amount,
+        paid_amount,
+        remaining_amount,
+        status,
+        payment_method,
+        due_date,
         sale_date,
         account:accounts(name),
         items:sale_items(
@@ -209,6 +217,11 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
           quantity,
           total_price,
           product:products(type)
+        ),
+        amortizations:sale_amortizations(
+          id,
+          amount,
+          amortized_at
         )
       `)
       .eq('user_id', user.id)
@@ -237,6 +250,11 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
         sales:sales(sale_date, total_amount)
       `)
       .eq('user_id', user.id),
+    supabase
+      .from('sales')
+      .select('remaining_amount')
+      .eq('user_id', user.id)
+      .in('status', ['pending', 'partially_paid']),
   ]);
 
   if (salesError || !salesData) {
@@ -277,9 +295,24 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     const amount = Number(s.total_amount) || 0;
 
     const curDay = salesByDate.get(dateStr) || { revenue: 0, salesCount: 0 };
-    curDay.revenue += amount;
     curDay.salesCount += 1;
+
+    // Se a venda for à vista, o faturamento entra no dia do atendimento
+    if (s.payment_method !== 'on_credit') {
+      curDay.revenue += amount;
+    }
     salesByDate.set(dateStr, curDay);
+
+    // Se for venda a prazo, cada amortização entra como receita na data em que o dinheiro entrou
+    if (s.payment_method === 'on_credit' && s.amortizations && Array.isArray(s.amortizations)) {
+      for (const a of s.amortizations as { amortized_at?: string; amount?: number }[]) {
+        if (!a.amortized_at) continue;
+        const amortDateStr = getZonedYMD(a.amortized_at);
+        const dayRecord = salesByDate.get(amortDateStr) || { revenue: 0, salesCount: 0 };
+        dayRecord.revenue += Number(a.amount) || 0;
+        salesByDate.set(amortDateStr, dayRecord);
+      }
+    }
 
     // Processa itens para ranking de produtos
     if (s.items && Array.isArray(s.items)) {
@@ -469,6 +502,15 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       ? Math.round((monthSalesCount / uniqueClientsCount) * 10) / 10
       : 0;
 
+  const totalReceivables = (pendingSalesData || []).reduce(
+    (acc, curr) => acc + Number(curr.remaining_amount || 0),
+    0
+  );
+
+  const monthOnCreditRevenue = selectedMonthSales
+    .filter((s) => s.payment_method === 'on_credit')
+    .reduce((acc, curr) => acc + Number(curr.remaining_amount ?? curr.total_amount ?? 0), 0);
+
   const monthSummary: BusinessMonthSummary = {
     revenue: monthRevenue,
     paidExpenses,
@@ -481,6 +523,8 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     uniqueClientsCount,
     clientReturnRate,
     averageTicket,
+    totalReceivables,
+    monthOnCreditRevenue,
   };
 
   const expensesBySource = Array.from(sourceMap.values()).sort(

@@ -19,9 +19,15 @@ import {
   Eye,
   ArrowUpDown,
   Radar,
+  HandCoins,
 } from 'lucide-react';
+import { Account } from '@/types/database';
 import { ClientWithStats, deleteClient } from '@/lib/actions/clients';
-import { ClientReturnStatus, getReturnPriorityScore } from '@/lib/client-analytics';
+import {
+  ClientReturnStatus,
+  getReturnPriorityScore,
+  RawClientSale,
+} from '@/lib/client-analytics';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
@@ -32,15 +38,17 @@ import {
   buildWhatsappLink,
   formatShortDayMonth,
 } from './ClientHistoryModal';
+import { AmortizeModal } from '@/components/sales/AmortizeModal';
 
 interface ClientsListProps {
   initialClients: ClientWithStats[];
+  accounts?: Account[];
 }
 
-type StatusFilter = 'all' | ClientReturnStatus | 'vip';
+type StatusFilter = 'all' | ClientReturnStatus | 'vip' | 'debt';
 type SortOption = 'priority' | 'spent' | 'visits' | 'recent' | 'name';
 
-export function ClientsList({ initialClients }: ClientsListProps) {
+export function ClientsList({ initialClients, accounts = [] }: ClientsListProps) {
   const { confirm } = useConfirm();
   const [clients, setClients] = useState<ClientWithStats[]>(initialClients);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,6 +58,8 @@ export function ClientsList({ initialClients }: ClientsListProps) {
   const [clientToEdit, setClientToEdit] = useState<ClientWithStats | null>(null);
   const [selectedClientForHistory, setSelectedClientForHistory] =
     useState<ClientWithStats | null>(null);
+  const [amortizingClient, setAmortizingClient] = useState<ClientWithStats | null>(null);
+  const [amortizingSale, setAmortizingSale] = useState<RawClientSale | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Contadores por filtro
@@ -62,10 +72,12 @@ export function ClientsList({ initialClients }: ClientsListProps) {
       on_track: 0,
       new: 0,
       vip: 0,
+      debt: 0,
     };
     for (const c of clients) {
       acc[c.analytics.status]++;
       if (c.isVip) acc.vip++;
+      if (Number(c.totalDebt || 0) > 0) acc.debt++;
     }
     return acc;
   }, [clients]);
@@ -96,6 +108,8 @@ export function ClientsList({ initialClients }: ClientsListProps) {
     const list = clients.filter((c) => {
       if (statusFilter === 'vip') {
         if (!c.isVip) return false;
+      } else if (statusFilter === 'debt') {
+        if (Number(c.totalDebt || 0) <= 0) return false;
       } else if (statusFilter !== 'all') {
         if (c.analytics.status !== statusFilter) return false;
       }
@@ -169,6 +183,7 @@ export function ClientsList({ initialClients }: ClientsListProps) {
 
   const filterPills: { id: StatusFilter; label: string; count: number }[] = [
     { id: 'all', label: 'Todos', count: counts.all },
+    { id: 'debt', label: 'Com Débito', count: counts.debt },
     { id: 'in_window', label: 'Na Janela', count: counts.in_window },
     { id: 'overdue', label: 'Atrasados', count: counts.overdue },
     { id: 'missing', label: 'Sumidos', count: counts.missing },
@@ -507,6 +522,12 @@ export function ClientsList({ initialClients }: ClientsListProps) {
                             >
                               {analytics.statusLabel}
                             </span>
+
+                            {Number(client.totalDebt || 0) > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                                Débito: {formatCurrency(Number(client.totalDebt))}
+                              </span>
+                            )}
                           </div>
 
                           {client.notes && (
@@ -615,6 +636,15 @@ export function ClientsList({ initialClients }: ClientsListProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-end gap-1">
+                        {Number(client.totalDebt || 0) > 0 && (
+                          <button
+                            onClick={() => setAmortizingClient(client)}
+                            className="p-1.5 text-amber-400 hover:text-amber-300 rounded-lg hover:bg-zinc-800 transition"
+                            title="Receber / amortizar débito deste cliente"
+                          >
+                            <HandCoins className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         <button
                           onClick={() => setSelectedClientForHistory(client)}
                           className="p-1.5 text-zinc-400 hover:text-emerald-400 rounded-lg hover:bg-zinc-800 transition"
@@ -669,6 +699,8 @@ export function ClientsList({ initialClients }: ClientsListProps) {
         client={selectedClientForHistory}
         onClose={() => setSelectedClientForHistory(null)}
         onEdit={(client) => handleEdit(client)}
+        onAmortizeClient={(c) => setAmortizingClient(c)}
+        onAmortizeSale={(sale) => setAmortizingSale(sale)}
       />
 
       <ClientModal
@@ -682,6 +714,22 @@ export function ClientsList({ initialClients }: ClientsListProps) {
           window.location.reload();
         }}
       />
+
+      {(amortizingClient || amortizingSale) && (
+        <AmortizeModal
+          isOpen={Boolean(amortizingClient || amortizingSale)}
+          onClose={() => {
+            setAmortizingClient(null);
+            setAmortizingSale(null);
+          }}
+          accounts={accounts}
+          client={amortizingClient}
+          sale={amortizingSale}
+          onSuccess={() => {
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

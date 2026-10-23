@@ -10,13 +10,26 @@ export interface RawClientSaleItem {
   total_price: number;
 }
 
+export interface RawClientSaleAmortization {
+  id: string;
+  amount: number;
+  payment_method: string;
+  amortized_at: string;
+  notes?: string | null;
+}
+
 export interface RawClientSale {
   id: string;
   total_amount: number;
   sale_date: string;
-  payment_method?: PaymentMethod;
+  payment_method?: PaymentMethod | 'on_credit';
+  status?: 'paid' | 'pending' | 'partially_paid';
+  due_date?: string | null;
+  paid_amount?: number;
+  remaining_amount?: number;
   notes?: string | null;
   items?: RawClientSaleItem[];
+  amortizations?: RawClientSaleAmortization[];
 }
 
 export interface FavoriteItemStat {

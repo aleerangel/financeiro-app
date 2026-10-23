@@ -73,3 +73,4 @@ describe('client-search-utils', () => {
     expect(noMatch).toBeUndefined();
   });
 });
+

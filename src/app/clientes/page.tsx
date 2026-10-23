@@ -2,6 +2,7 @@ import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { getClients } from '@/lib/actions/clients';
+import { getAccounts } from '@/lib/actions/accounts';
 import { ClientsList } from '@/components/clients/ClientsList';
 
 export default async function ClientesPage() {
@@ -11,7 +12,10 @@ export default async function ClientesPage() {
     redirect('/login');
   }
 
-  const clients = await getClients();
+  const [clients, accounts] = await Promise.all([
+    getClients(),
+    getAccounts(),
+  ]);
 
   return (
     <AppShell userEmail={user.email}>
@@ -23,7 +27,7 @@ export default async function ClientesPage() {
           </p>
         </div>
 
-        <ClientsList initialClients={clients} />
+        <ClientsList initialClients={clients} accounts={accounts} />
       </div>
     </AppShell>
   );

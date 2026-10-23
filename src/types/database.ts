@@ -137,13 +137,36 @@ export interface Client {
   updated_at: string;
 }
 
+export type SalePaymentMethod = PaymentMethod | 'on_credit';
+export type SaleStatus = 'paid' | 'pending' | 'partially_paid';
+
+export interface SaleAmortization {
+  id: string;
+  user_id: string;
+  sale_id: string;
+  client_id?: string | null;
+  amount: number;
+  payment_method: PaymentMethod;
+  account_id: string;
+  transaction_id?: string | null;
+  amortized_at: string;
+  notes?: string | null;
+  created_at: string;
+  account?: Account | null;
+  client?: Client | null;
+}
+
 export interface Sale {
   id: string;
   user_id: string;
   client_id?: string | null;
   client_name: string;
   total_amount: number;
-  payment_method: PaymentMethod;
+  paid_amount?: number;
+  remaining_amount?: number;
+  status?: SaleStatus;
+  payment_method: SalePaymentMethod;
+  due_date?: string | null;
   account_id: string | null;
   transaction_id: string | null;
   sale_date: string;
@@ -153,5 +176,6 @@ export interface Sale {
   items?: SaleItem[];
   account?: Account | null;
   client?: Client | null;
+  amortizations?: SaleAmortization[];
 }
 

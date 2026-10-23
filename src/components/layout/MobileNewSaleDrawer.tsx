@@ -10,9 +10,10 @@ import {
   Sparkles,
   UserPlus,
   Loader2,
+  CalendarClock,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
-import { Product, Account, PaymentMethod, Client } from '@/types/database';
+import { Product, Account, PaymentMethod, SalePaymentMethod, Client } from '@/types/database';
 import { createProduct } from '@/lib/actions/products';
 import { SimpleClient } from '@/lib/actions/clients';
 import {
@@ -51,8 +52,11 @@ function MobileNewSaleDrawerDialog() {
   const [customItemPrice, setCustomItemPrice] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [clientSearch, setClientSearch] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
+  const [paymentMethod, setPaymentMethod] = useState<SalePaymentMethod>('pix');
   const [accountId, setAccountId] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [initialPayment, setInitialPayment] = useState('');
+  const [initialPaymentMethod, setInitialPaymentMethod] = useState<PaymentMethod>('pix');
   const [notes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -215,6 +219,19 @@ function MobileNewSaleDrawerDialog() {
       const finalClientId = selectedClientId || exactMatch?.id || null;
       const finalClientName = exactMatch ? exactMatch.name : (clientSearch.trim() || 'Cliente Balcão');
 
+      if (paymentMethod === 'on_credit' && !finalClientId) {
+        toast.error('Vendas a prazo exigem selecionar ou cadastrar um cliente');
+        setSubmitting(false);
+        return;
+      }
+
+      const initPayNum = initialPayment ? parseFloat(initialPayment.replace(',', '.')) : 0;
+      if (initPayNum > totalAmount) {
+        toast.error('O valor de entrada não pode ser maior que o total do atendimento');
+        setSubmitting(false);
+        return;
+      }
+
       await createSale({
         client_id: finalClientId,
         client_name: finalClientName,
@@ -223,6 +240,10 @@ function MobileNewSaleDrawerDialog() {
         items: selectedItems,
         notes: notes.trim() || undefined,
         sale_date: getTodayYMD(),
+        due_date: paymentMethod === 'on_credit' && dueDate ? dueDate : undefined,
+        initial_payment: paymentMethod === 'on_credit' && initPayNum > 0 ? initPayNum : undefined,
+        initial_payment_method:
+          paymentMethod === 'on_credit' && initPayNum > 0 ? initialPaymentMethod : undefined,
       });
 
       invalidateClientCache(['accounts', 'clients']);
@@ -624,19 +645,20 @@ function MobileNewSaleDrawerDialog() {
                 </label>
                 <select
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                  onChange={(e) => setPaymentMethod(e.target.value as SalePaymentMethod)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none"
                 >
                   <option value="pix">Pix</option>
                   <option value="cash">Dinheiro</option>
                   <option value="debit">Cartão Débito</option>
                   <option value="credit">Cartão Crédito</option>
+                  <option value="on_credit">A Prazo (Fiado)</option>
                 </select>
               </div>
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-1">
-                  Conta de Entrada
+                  {paymentMethod === 'on_credit' ? 'Conta Padrão' : 'Conta de Entrada'}
                 </label>
                 <select
                   value={accountId}
@@ -651,6 +673,134 @@ function MobileNewSaleDrawerDialog() {
                 </select>
               </div>
             </div>
+
+            {/* Condições de Pagamento a Prazo (Mobile) */}
+            {paymentMethod === 'on_credit' && (
+              <div className="p-3.5 bg-zinc-950/90 rounded-2xl border border-zinc-800 space-y-3 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <CalendarClock className="w-3.5 h-3.5" />
+                    Condições do Fiado
+                  </span>
+                  {!selectedClientId && !findExactClientMatch(clients, clientSearch) && (
+                    <span className="text-[10px] text-amber-400 font-bold">
+                      * Cliente obrigatório
+                    </span>
+                  )}
+                </div>
+
+                {!selectedClientId && !findExactClientMatch(clients, clientSearch) && (
+                  <div className="p-2 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-300 text-[11px]">
+                    Selecione um cliente acima ou cadastre para liberar a venda a prazo.
+                  </div>
+                )}
+
+                {/* Entrada Imediata */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                      Entrada Imediata
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={totalAmount}
+                      placeholder="R$ 0,00"
+                      value={initialPayment}
+                      onChange={(e) => setInitialPayment(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {parseFloat(initialPayment || '0') > 0 && (
+                    <div>
+                      <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                        Forma da Entrada
+                      </label>
+                      <select
+                        value={initialPaymentMethod}
+                        onChange={(e) => setInitialPaymentMethod(e.target.value as PaymentMethod)}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="pix">Pix</option>
+                        <option value="cash">Dinheiro</option>
+                        <option value="debit">Débito</option>
+                        <option value="credit">Crédito</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Vencimento Opcional */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-zinc-400">
+                      Vencimento (Opcional)
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 7);
+                          setDueDate(d.toISOString().split('T')[0]);
+                        }}
+                        className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300"
+                      >
+                        +7d
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 15);
+                          setDueDate(d.toISOString().split('T')[0]);
+                        }}
+                        className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300"
+                      >
+                        +15d
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 30);
+                          setDueDate(d.toISOString().split('T')[0]);
+                        }}
+                        className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300"
+                      >
+                        +30d
+                      </button>
+                      {dueDate && (
+                        <button
+                          type="button"
+                          onClick={() => setDueDate('')}
+                          className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-rose-400"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-0.5">
+                  <span>Saldo a receber:</span>
+                  <strong className="text-amber-400 font-bold">
+                    {formatCurrency(
+                      Math.max(0, totalAmount - (parseFloat(initialPayment || '0') || 0))
+                    )}
+                  </strong>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Rodapé Fixo com Total e Botão Finalizar */}

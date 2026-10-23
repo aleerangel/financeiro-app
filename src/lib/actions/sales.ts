@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { Sale, PaymentMethod } from '@/types/database';
+import { Sale, PaymentMethod, SalePaymentMethod } from '@/types/database';
 import { getOrCreateBarbeariaCategory } from '@/lib/actions/categories';
 import {
   getTodayYMD,
@@ -20,18 +20,41 @@ export interface CreateSaleItemInput {
 export interface CreateSaleInput {
   client_id?: string | null;
   client_name: string;
-  payment_method: PaymentMethod;
+  payment_method: SalePaymentMethod;
   account_id: string;
   items: CreateSaleItemInput[];
   notes?: string;
   sale_date?: string;
+  due_date?: string | null;
+  initial_payment?: number | null;
+  initial_payment_method?: PaymentMethod;
 }
 
 export interface TodaySalesSummary {
   todayTotal: number;
+  todayOnCreditTotal: number;
+  totalPendingReceivables: number;
   todayClientsCount: number;
   averageTicket: number;
   todaySales: Sale[];
+}
+
+export interface AmortizeSaleInput {
+  saleId: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  accountId: string;
+  notes?: string;
+  amortizedAt?: string;
+}
+
+export interface AmortizeClientDebtInput {
+  clientId: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  accountId: string;
+  notes?: string;
+  amortizedAt?: string;
 }
 
 export async function getSales(month?: number, year?: number): Promise<Sale[]> {
@@ -46,7 +69,11 @@ export async function getSales(month?: number, year?: number): Promise<Sale[]> {
       *,
       items:sale_items(*),
       account:accounts(*),
-      client:clients(*)
+      client:clients(*),
+      amortizations:sale_amortizations(
+        *,
+        account:accounts(id, name)
+      )
     `)
     .eq('user_id', user.id)
     .order('sale_date', { ascending: false });
@@ -79,30 +106,79 @@ export async function getTodaySalesSummary(): Promise<TodaySalesSummary> {
   const todayYmd = getTodayYMD();
   const { startIso: startOfDay, endIso: endOfDay } = getZonedRangeBoundsIso(todayYmd);
 
-  const { data: sales, error } = await supabase
-    .from('sales')
-    .select(`
-      *,
-      items:sale_items(*),
-      account:accounts(*),
-      client:clients(*)
-    `)
-    .eq('user_id', user.id)
-    .gte('sale_date', startOfDay)
-    .lte('sale_date', endOfDay)
-    .order('sale_date', { ascending: false });
+  const [
+    { data: sales, error: salesError },
+    { data: todayAmortizations },
+    { data: pendingSales },
+  ] = await Promise.all([
+    supabase
+      .from('sales')
+      .select(`
+        *,
+        items:sale_items(*),
+        account:accounts(*),
+        client:clients(*),
+        amortizations:sale_amortizations(
+          *,
+          account:accounts(id, name)
+        )
+      `)
+      .eq('user_id', user.id)
+      .gte('sale_date', startOfDay)
+      .lte('sale_date', endOfDay)
+      .order('sale_date', { ascending: false }),
+    supabase
+      .from('sale_amortizations')
+      .select('amount')
+      .eq('user_id', user.id)
+      .gte('amortized_at', startOfDay)
+      .lte('amortized_at', endOfDay),
+    supabase
+      .from('sales')
+      .select('remaining_amount')
+      .eq('user_id', user.id)
+      .in('status', ['pending', 'partially_paid']),
+  ]);
 
-  if (error || !sales) {
-    return { todayTotal: 0, todayClientsCount: 0, averageTicket: 0, todaySales: [] };
+  if (salesError || !sales) {
+    return {
+      todayTotal: 0,
+      todayOnCreditTotal: 0,
+      totalPendingReceivables: 0,
+      todayClientsCount: 0,
+      averageTicket: 0,
+      todaySales: [],
+    };
   }
 
   const todaySalesList = sales as unknown as Sale[];
-  const total = todaySalesList.reduce((acc, curr) => acc + Number(curr.total_amount), 0);
+  const cashSalesToday = todaySalesList
+    .filter((s) => s.payment_method !== 'on_credit')
+    .reduce((acc, curr) => acc + Number(curr.total_amount), 0);
+
+  const amortizationsToday = (todayAmortizations || []).reduce(
+    (acc, curr) => acc + Number(curr.amount || 0),
+    0
+  );
+
+  const todayTotal = cashSalesToday + amortizationsToday;
+
+  const todayOnCreditTotal = todaySalesList
+    .filter((s) => s.payment_method === 'on_credit')
+    .reduce((acc, curr) => acc + Number(curr.remaining_amount ?? curr.total_amount), 0);
+
+  const totalPendingReceivables = (pendingSales || []).reduce(
+    (acc, curr) => acc + Number(curr.remaining_amount || 0),
+    0
+  );
+
   const count = todaySalesList.length;
-  const avg = count > 0 ? total / count : 0;
+  const avg = count > 0 ? todayTotal / count : 0;
 
   return {
-    todayTotal: total,
+    todayTotal,
+    todayOnCreditTotal,
+    totalPendingReceivables,
     todayClientsCount: count,
     averageTicket: avg,
     todaySales: todaySalesList,
@@ -117,6 +193,10 @@ export async function createSale(input: CreateSaleInput) {
 
   if (!input.client_name.trim()) {
     throw new Error('Informe o nome do cliente atendido.');
+  }
+
+  if (input.payment_method === 'on_credit' && !input.client_id) {
+    throw new Error('Vendas a prazo exigem a vinculação de um cliente cadastrado.');
   }
 
   if (!input.items || input.items.length === 0) {
@@ -143,7 +223,10 @@ export async function createSale(input: CreateSaleInput) {
     ? `Comanda: ${input.notes}`
     : 'Atendimento registrado no módulo de vendas';
 
-  // 4. Registra receita + venda + itens de forma ATÔMICA (tudo ou nada) via RPC
+  const initialPayment = Number(input.initial_payment || 0);
+  const initialPaymentMethod = input.initial_payment_method || 'cash';
+
+  // 4. Registra receita + venda + itens de forma ATÔMICA via RPC
   const { data: saleId, error: rpcError } = await supabase.rpc('create_sale_atomic', {
     p_client_id: input.client_id || null,
     p_client_name: input.client_name.trim(),
@@ -161,6 +244,9 @@ export async function createSale(input: CreateSaleInput) {
       quantity: item.quantity,
       unit_price: item.unit_price,
     })),
+    p_due_date: input.due_date || null,
+    p_initial_payment: initialPayment,
+    p_initial_payment_method: initialPaymentMethod,
   });
 
   let sale: { id: string } | null = null;
@@ -168,7 +254,7 @@ export async function createSale(input: CreateSaleInput) {
   if (!rpcError && saleId) {
     sale = { id: saleId as string };
   } else if (rpcError && isMissingRpcError(rpcError)) {
-    // Compatibilidade: migration ainda não aplicada no banco -> fluxo legado com rollback completo
+    // Compatibilidade / Fallback
     sale = await createSaleLegacy({
       supabase,
       userId: user.id,
@@ -179,6 +265,8 @@ export async function createSale(input: CreateSaleInput) {
       categoryId: barbeariaCategoryId,
       saleDateIso,
       dateOnlyStr,
+      initialPayment,
+      initialPaymentMethod,
     });
   } else {
     throw new Error(rpcError?.message || 'Erro ao registrar atendimento.');
@@ -211,6 +299,8 @@ async function createSaleLegacy(params: {
   categoryId: string;
   saleDateIso: string;
   dateOnlyStr: string;
+  initialPayment: number;
+  initialPaymentMethod: PaymentMethod;
 }): Promise<{ id: string }> {
   const {
     supabase,
@@ -222,30 +312,73 @@ async function createSaleLegacy(params: {
     categoryId,
     saleDateIso,
     dateOnlyStr,
+    initialPayment,
+    initialPaymentMethod,
   } = params;
 
-  const { data: transaction, error: txError } = await supabase
-    .from('transactions')
-    .insert({
-      user_id: userId,
-      description: transactionDesc,
-      amount: totalAmount,
-      type: 'income',
-      payment_method: input.payment_method,
-      transaction_date: dateOnlyStr,
-      due_date: dateOnlyStr,
-      category_id: categoryId,
-      account_id: input.account_id,
-      is_paid: true,
-      paid_at: saleDateIso,
-      notes: transactionNotes,
-    })
-    .select('id')
-    .single();
+  const isOnCredit = input.payment_method === 'on_credit';
+  let transactionId: string | null = null;
 
-  if (txError || !transaction) {
-    throw new Error(txError?.message || 'Erro ao gerar receita do atendimento.');
+  // Se não for fiado, ou se tiver entrada imediata no fiado, cria transação financeira
+  if (!isOnCredit) {
+    const { data: transaction, error: txError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: userId,
+        description: transactionDesc,
+        amount: totalAmount,
+        type: 'income',
+        payment_method: input.payment_method,
+        transaction_date: dateOnlyStr,
+        due_date: dateOnlyStr,
+        category_id: categoryId,
+        account_id: input.account_id,
+        is_paid: true,
+        paid_at: saleDateIso,
+        notes: transactionNotes,
+      })
+      .select('id')
+      .single();
+
+    if (txError || !transaction) {
+      throw new Error(txError?.message || 'Erro ao gerar receita do atendimento.');
+    }
+    transactionId = transaction.id;
+  } else if (initialPayment > 0) {
+    const { data: transaction, error: txError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: userId,
+        description: `Entrada Atendimento: ${input.client_name.trim()}`,
+        amount: initialPayment,
+        type: 'income',
+        payment_method: initialPaymentMethod,
+        transaction_date: dateOnlyStr,
+        due_date: dateOnlyStr,
+        category_id: categoryId,
+        account_id: input.account_id,
+        is_paid: true,
+        paid_at: saleDateIso,
+        notes: 'Entrada inicial no ato da venda a prazo',
+      })
+      .select('id')
+      .single();
+
+    if (txError || !transaction) {
+      throw new Error(txError?.message || 'Erro ao gerar receita da entrada do atendimento.');
+    }
+    transactionId = transaction.id;
   }
+
+  const paidAmount = isOnCredit ? initialPayment : totalAmount;
+  const remainingAmount = isOnCredit ? Math.max(0, totalAmount - initialPayment) : 0;
+  const status = isOnCredit
+    ? remainingAmount <= 0
+      ? 'paid'
+      : initialPayment > 0
+      ? 'partially_paid'
+      : 'pending'
+    : 'paid';
 
   const { data: sale, error: saleError } = await supabase
     .from('sales')
@@ -254,9 +387,13 @@ async function createSaleLegacy(params: {
       client_id: input.client_id || null,
       client_name: input.client_name.trim(),
       total_amount: totalAmount,
+      paid_amount: paidAmount,
+      remaining_amount: remainingAmount,
+      status,
       payment_method: input.payment_method,
+      due_date: input.due_date || null,
       account_id: input.account_id,
-      transaction_id: transaction.id,
+      transaction_id: isOnCredit ? null : transactionId,
       sale_date: saleDateIso,
       notes: input.notes?.trim() || null,
     })
@@ -264,8 +401,25 @@ async function createSaleLegacy(params: {
     .single();
 
   if (saleError || !sale) {
-    await supabase.from('transactions').delete().eq('id', transaction.id).eq('user_id', userId);
+    if (transactionId) {
+      await supabase.from('transactions').delete().eq('id', transactionId).eq('user_id', userId);
+    }
     throw new Error(saleError?.message || 'Erro ao registrar atendimento.');
+  }
+
+  // Se for a prazo e tiver entrada, grava amortização correspondente
+  if (isOnCredit && initialPayment > 0 && transactionId) {
+    await supabase.from('sale_amortizations').insert({
+      user_id: userId,
+      sale_id: sale.id,
+      client_id: input.client_id || null,
+      amount: initialPayment,
+      payment_method: initialPaymentMethod,
+      account_id: input.account_id,
+      transaction_id: transactionId,
+      amortized_at: saleDateIso,
+      notes: 'Entrada inicial no ato da venda',
+    });
   }
 
   const { error: itemsError } = await supabase.from('sale_items').insert(
@@ -280,46 +434,244 @@ async function createSaleLegacy(params: {
   );
 
   if (itemsError) {
-    // Reverte venda (cascade nos itens) e receita para não deixar dados órfãos
     await supabase.from('sales').delete().eq('id', sale.id).eq('user_id', userId);
-    await supabase.from('transactions').delete().eq('id', transaction.id).eq('user_id', userId);
+    if (transactionId) {
+      await supabase.from('transactions').delete().eq('id', transactionId).eq('user_id', userId);
+    }
     throw new Error(itemsError.message || 'Erro ao salvar itens do atendimento.');
   }
 
   return sale;
 }
 
-export async function deleteSale(saleId: string) {
+export async function amortizeSale(input: AmortizeSaleInput) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error('Não autenticado');
 
-  // Busca a venda para pegar o transaction_id correspondente
-  const { data: sale } = await supabase
+  if (input.amount <= 0) {
+    throw new Error('O valor da amortização deve ser maior que zero.');
+  }
+
+  const { saleDateIso, dateOnlyStr } = resolveSaleTimestamps(input.amortizedAt);
+  const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);
+
+  const { data: sale, error: saleErr } = await supabase
     .from('sales')
-    .select('transaction_id')
-    .eq('id', saleId)
+    .select('id, client_id, client_name, total_amount, paid_amount, remaining_amount')
+    .eq('id', input.saleId)
     .eq('user_id', user.id)
     .single();
 
-  // Deleta a venda (por cascade, remove os sale_items)
-  const { error: deleteSaleError } = await supabase
-    .from('sales')
-    .delete()
-    .eq('id', saleId)
-    .eq('user_id', user.id);
-
-  if (deleteSaleError) {
-    throw new Error(deleteSaleError.message);
+  if (saleErr || !sale) {
+    throw new Error('Comanda não encontrada.');
   }
 
-  // Se houver transação financeira associada, remove-a para estornar a receita
-  if (sale?.transaction_id) {
+  if (input.amount > Number(sale.remaining_amount || 0)) {
+    throw new Error(
+      `O valor informado (R$ ${input.amount.toFixed(2)}) excede o saldo devedor restante (R$ ${Number(sale.remaining_amount || 0).toFixed(2)}).`
+    );
+  }
+
+  const description = `Amortização: ${sale.client_name}`;
+  const notes = input.notes?.trim() || 'Amortização de atendimento a prazo';
+
+  const { data: amortizationId, error: rpcError } = await supabase.rpc('amortize_sale_atomic', {
+    p_sale_id: input.saleId,
+    p_amount: input.amount,
+    p_payment_method: input.paymentMethod,
+    p_account_id: input.accountId,
+    p_category_id: barbeariaCategoryId,
+    p_description: description,
+    p_notes: notes,
+    p_amortized_at: saleDateIso,
+    p_date_only: dateOnlyStr,
+  });
+
+  if (rpcError) {
+    // Fallback sem RPC
+    const { data: tx, error: txErr } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: user.id,
+        description,
+        amount: input.amount,
+        type: 'income',
+        payment_method: input.paymentMethod,
+        transaction_date: dateOnlyStr,
+        due_date: dateOnlyStr,
+        category_id: barbeariaCategoryId,
+        account_id: input.accountId,
+        is_paid: true,
+        paid_at: saleDateIso,
+        notes,
+      })
+      .select('id')
+      .single();
+
+    if (txErr || !tx) {
+      throw new Error(txErr?.message || 'Erro ao registrar receita da amortização.');
+    }
+
+    const { data: amort, error: amortErr } = await supabase
+      .from('sale_amortizations')
+      .insert({
+        user_id: user.id,
+        sale_id: sale.id,
+        client_id: sale.client_id,
+        amount: input.amount,
+        payment_method: input.paymentMethod,
+        account_id: input.accountId,
+        transaction_id: tx.id,
+        amortized_at: saleDateIso,
+        notes,
+      })
+      .select('id')
+      .single();
+
+    if (amortErr || !amort) {
+      await supabase.from('transactions').delete().eq('id', tx.id).eq('user_id', user.id);
+      throw new Error(amortErr?.message || 'Erro ao registrar amortização.');
+    }
+
+    const newPaid = Number(sale.paid_amount || 0) + input.amount;
+    const newRemaining = Math.max(0, Number(sale.remaining_amount || 0) - input.amount);
+    const newStatus = newRemaining <= 0 ? 'paid' : 'partially_paid';
+
+    await supabase
+      .from('sales')
+      .update({
+        paid_amount: newPaid,
+        remaining_amount: newRemaining,
+        status: newStatus,
+      })
+      .eq('id', sale.id)
+      .eq('user_id', user.id);
+  }
+
+  revalidatePath('/vendas');
+  revalidatePath('/dashboard');
+  revalidatePath('/transacoes');
+  revalidatePath('/contas');
+  revalidatePath('/clientes');
+
+  return { id: amortizationId };
+}
+
+export async function amortizeClientDebt(input: AmortizeClientDebtInput) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  if (input.amount <= 0) {
+    throw new Error('O valor da amortização deve ser maior que zero.');
+  }
+
+  const { saleDateIso, dateOnlyStr } = resolveSaleTimestamps(input.amortizedAt);
+  const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);
+
+  const { data, error: rpcError } = await supabase.rpc('amortize_client_debt_atomic', {
+    p_client_id: input.clientId,
+    p_amount: input.amount,
+    p_payment_method: input.paymentMethod,
+    p_account_id: input.accountId,
+    p_category_id: barbeariaCategoryId,
+    p_notes: input.notes?.trim() || 'Amortização consolidada de débito do cliente',
+    p_amortized_at: saleDateIso,
+    p_date_only: dateOnlyStr,
+  });
+
+  if (rpcError) {
+    // Fallback: busca vendas pendentes ordenadas por data crescente
+    const { data: pendingSales, error: fetchErr } = await supabase
+      .from('sales')
+      .select('id, remaining_amount, sale_date')
+      .eq('user_id', user.id)
+      .eq('client_id', input.clientId)
+      .in('status', ['pending', 'partially_paid'])
+      .order('sale_date', { ascending: true });
+
+    if (fetchErr || !pendingSales || pendingSales.length === 0) {
+      throw new Error('Este cliente não possui débitos em aberto.');
+    }
+
+    let remainingToAmortize = input.amount;
+
+    for (const s of pendingSales) {
+      if (remainingToAmortize <= 0) break;
+      const thisAmount = Math.min(remainingToAmortize, Number(s.remaining_amount || 0));
+      if (thisAmount > 0) {
+        await amortizeSale({
+          saleId: s.id,
+          amount: thisAmount,
+          paymentMethod: input.paymentMethod,
+          accountId: input.accountId,
+          notes: input.notes,
+          amortizedAt: input.amortizedAt,
+        });
+        remainingToAmortize -= thisAmount;
+      }
+    }
+  }
+
+  revalidatePath('/vendas');
+  revalidatePath('/dashboard');
+  revalidatePath('/transacoes');
+  revalidatePath('/contas');
+  revalidatePath('/clientes');
+
+  return data;
+}
+
+export async function deleteSaleAmortization(amortizationId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const { data: amort, error: amortErr } = await supabase
+    .from('sale_amortizations')
+    .select('*, sale:sales(*)')
+    .eq('id', amortizationId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (amortErr || !amort) {
+    throw new Error('Amortização não encontrada.');
+  }
+
+  const { error: delErr } = await supabase
+    .from('sale_amortizations')
+    .delete()
+    .eq('id', amortizationId)
+    .eq('user_id', user.id);
+
+  if (delErr) throw new Error(delErr.message);
+
+  if (amort.transaction_id) {
     await supabase
       .from('transactions')
       .delete()
-      .eq('id', sale.transaction_id)
+      .eq('id', amort.transaction_id)
+      .eq('user_id', user.id);
+  }
+
+  if (amort.sale) {
+    const saleRecord = amort.sale as Sale;
+    const newPaid = Math.max(0, Number(saleRecord.paid_amount || 0) - Number(amort.amount));
+    const newRemaining = Math.max(0, Number(saleRecord.total_amount) - newPaid);
+    const newStatus = newPaid <= 0 ? 'pending' : (newRemaining <= 0 ? 'paid' : 'partially_paid');
+
+    await supabase
+      .from('sales')
+      .update({
+        paid_amount: newPaid,
+        remaining_amount: newRemaining,
+        status: newStatus,
+      })
+      .eq('id', amort.sale_id)
       .eq('user_id', user.id);
   }
 
@@ -330,3 +682,57 @@ export async function deleteSale(saleId: string) {
   revalidatePath('/clientes');
 }
 
+export async function deleteSale(saleId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  // Busca a venda e suas amortizações para coletar os IDs das receitas
+  const { data: sale } = await supabase
+    .from('sales')
+    .select(`
+      transaction_id,
+      amortizations:sale_amortizations(transaction_id)
+    `)
+    .eq('id', saleId)
+    .eq('user_id', user.id)
+    .single();
+
+  const txIdsToDelete: string[] = [];
+  if (sale?.transaction_id) {
+    txIdsToDelete.push(sale.transaction_id);
+  }
+
+  if (sale?.amortizations && Array.isArray(sale.amortizations)) {
+    for (const a of sale.amortizations as { transaction_id?: string | null }[]) {
+      if (a.transaction_id) txIdsToDelete.push(a.transaction_id);
+    }
+  }
+
+  // Deleta a venda (por cascade, remove os sale_items e sale_amortizations)
+  const { error: deleteSaleError } = await supabase
+    .from('sales')
+    .delete()
+    .eq('id', saleId)
+    .eq('user_id', user.id);
+
+  if (deleteSaleError) {
+    throw new Error(deleteSaleError.message);
+  }
+
+  // Se houver transações financeiras associadas, remove-as para estornar a receita
+  if (txIdsToDelete.length > 0) {
+    await supabase
+      .from('transactions')
+      .delete()
+      .in('id', txIdsToDelete)
+      .eq('user_id', user.id);
+  }
+
+  revalidatePath('/vendas');
+  revalidatePath('/dashboard');
+  revalidatePath('/transacoes');
+  revalidatePath('/contas');
+  revalidatePath('/clientes');
+}

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Plus, Minus, Trash2, CheckCircle2, UserPlus } from 'lucide-react';
-import { Product, Account, PaymentMethod, Client } from '@/types/database';
+import { X, Plus, Minus, Trash2, CheckCircle2, UserPlus, CalendarClock } from 'lucide-react';
+import { Product, Account, PaymentMethod, SalePaymentMethod, Client } from '@/types/database';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
@@ -40,8 +40,11 @@ export function NewSaleModal({
   const [clientName, setClientName] = useState(initialClient ? initialClient.name : '');
   const [saleDate, setSaleDate] = useState(getTodayYMD());
   const [selectedItems, setSelectedItems] = useState<CreateSaleItemInput[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
+  const [paymentMethod, setPaymentMethod] = useState<SalePaymentMethod>('pix');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
+  const [dueDate, setDueDate] = useState('');
+  const [initialPayment, setInitialPayment] = useState('');
+  const [initialPaymentMethod, setInitialPaymentMethod] = useState<PaymentMethod>('pix');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +127,19 @@ export function NewSaleModal({
       const finalClientId = selectedClientId || exactMatch?.id || undefined;
       const finalClientName = exactMatch ? exactMatch.name : (clientName.trim() || 'Cliente Balcão');
 
+      if (paymentMethod === 'on_credit' && !finalClientId) {
+        setError('Vendas a prazo exigem selecionar ou cadastrar um cliente.');
+        setLoading(false);
+        return;
+      }
+
+      const initPayNum = initialPayment ? parseFloat(initialPayment.replace(',', '.')) : 0;
+      if (initPayNum > totalAmount) {
+        setError('O valor de entrada não pode ser maior que o total do atendimento.');
+        setLoading(false);
+        return;
+      }
+
       await createSale({
         client_id: finalClientId,
         client_name: finalClientName,
@@ -132,15 +148,21 @@ export function NewSaleModal({
         items: selectedItems,
         notes: notes.trim() || undefined,
         sale_date: saleDate,
+        due_date: paymentMethod === 'on_credit' && dueDate ? dueDate : undefined,
+        initial_payment: paymentMethod === 'on_credit' && initPayNum > 0 ? initPayNum : undefined,
+        initial_payment_method:
+          paymentMethod === 'on_credit' && initPayNum > 0 ? initialPaymentMethod : undefined,
       });
 
       // Reset
       setClientName('');
       setSelectedClientId(null);
       setSelectedItems([]);
+      setDueDate('');
+      setInitialPayment('');
       setNotes('');
       setSaleDate(getTodayYMD());
-      toast.success(`Atendimento de "${clientName}" registrado com sucesso!`);
+      toast.success(`Atendimento de "${finalClientName}" registrado com sucesso!`);
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
@@ -331,19 +353,20 @@ export function NewSaleModal({
               </label>
               <select
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                onChange={(e) => setPaymentMethod(e.target.value as SalePaymentMethod)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
               >
                 <option value="pix">Pix</option>
                 <option value="cash">Dinheiro em Espécie</option>
                 <option value="debit">Cartão de Débito</option>
                 <option value="credit">Cartão de Crédito</option>
+                <option value="on_credit">A Prazo (Fiado)</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                Conta de Entrada
+                {paymentMethod === 'on_credit' ? 'Conta Padrão' : 'Conta de Entrada'}
               </label>
               <select
                 value={accountId}
@@ -358,6 +381,142 @@ export function NewSaleModal({
               </select>
             </div>
           </div>
+
+          {/* Seção Condicional de Venda a Prazo */}
+          {paymentMethod === 'on_credit' && (
+            <div className="p-4 bg-zinc-950/80 rounded-2xl border border-zinc-800 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <CalendarClock className="w-4 h-4" />
+                  Condições do Pagamento a Prazo
+                </span>
+                {!selectedClientId && !findExactClientMatch(clientsList, clientName) && (
+                  <span className="text-[11px] text-amber-400/90 font-medium">
+                    * Cliente obrigatório
+                  </span>
+                )}
+              </div>
+
+              {!selectedClientId && !findExactClientMatch(clientsList, clientName) && (
+                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs flex items-center justify-between">
+                  <span>Selecione ou cadastre o cliente para poder vender a prazo.</span>
+                  <button
+                    type="button"
+                    onClick={() => setClientModalOpen(true)}
+                    className="font-bold underline ml-2 hover:text-amber-200"
+                  >
+                    Cadastrar
+                  </button>
+                </div>
+              )}
+
+              {/* Entrada Imediata */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">
+                    Entrada Imediata (Opcional)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={totalAmount}
+                    placeholder="R$ 0,00"
+                    value={initialPayment}
+                    onChange={(e) => setInitialPayment(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                  />
+                </div>
+
+                {parseFloat(initialPayment || '0') > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">
+                      Forma da Entrada
+                    </label>
+                    <select
+                      value={initialPaymentMethod}
+                      onChange={(e) => setInitialPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                    >
+                      <option value="pix">Pix</option>
+                      <option value="cash">Dinheiro em Espécie</option>
+                      <option value="debit">Cartão Débito</option>
+                      <option value="credit">Cartão Crédito</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Data de Vencimento Opcional */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-zinc-300">
+                    Data de Vencimento (Opcional)
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 7);
+                        setDueDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-zinc-850 hover:bg-zinc-800 text-[10px] text-zinc-300 transition"
+                    >
+                      +7d
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 15);
+                        setDueDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-zinc-850 hover:bg-zinc-800 text-[10px] text-zinc-300 transition"
+                    >
+                      +15d
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 30);
+                        setDueDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-zinc-850 hover:bg-zinc-800 text-[10px] text-zinc-300 transition"
+                    >
+                      +30d
+                    </button>
+                    {dueDate && (
+                      <button
+                        type="button"
+                        onClick={() => setDueDate('')}
+                        className="px-2 py-0.5 rounded-lg bg-zinc-850 hover:bg-zinc-800 text-[10px] text-rose-400 transition"
+                      >
+                        Limpar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                />
+              </div>
+
+              {/* Resumo visual do fiado */}
+              <div className="pt-1 flex items-center justify-between text-xs text-zinc-400">
+                <span>Saldo que ficará a receber:</span>
+                <strong className="text-amber-400 font-bold">
+                  {formatCurrency(
+                    Math.max(0, totalAmount - (parseFloat(initialPayment || '0') || 0))
+                  )}
+                </strong>
+              </div>
+            </div>
+          )}
 
           {/* Botão Finalizar Atendimento em Destaque */}
           <div className="pt-2">

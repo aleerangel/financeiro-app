@@ -11,4 +11,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Regras do Projeto e Git
 
 - **Commits sempre em Português (pt-BR):** Todas as mensagens de commit do Git (`git commit -m "..."`) devem ser escritas obrigatoriamente em português (ex.: `feat(modulo): adiciona nova funcionalidade...`, `fix(auth): corrige isolamento de sessao...`, `docs(readme): atualiza documentacao...`).
+- **Engenharia de Requisitos Interativa:** Toda vez que o usuário falar para ir para a "engenharia de requisitos" (ou planejar nova funcionalidade/módulo), obrigatoriamente faça as perguntas de alinhamento e requisitos diretamente ao usuário (usando a ferramenta de perguntas ou entrevista estruturada) para definir regras de negócio, casos de uso e preferências antes de bater o martelo.
 
