@@ -16,6 +16,7 @@ import {
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { BusinessDashboardData } from '@/lib/actions/dashboard';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useMobileNavigation } from '@/context/MobileNavigationContext';
 
 export interface BusinessDashboardMobileProps {
   data: BusinessDashboardData;
@@ -42,6 +43,9 @@ export function BusinessDashboardMobile({
   loading = false,
   onAddBusinessExpense,
 }: BusinessDashboardMobileProps) {
+  const { showValues } = useMobileNavigation();
+  const formatHidden = (val: string) => (showValues ? val : '••••••');
+
   const summary = data?.monthSummary || {
     revenue: 0,
     paidExpenses: 0,
@@ -81,10 +85,10 @@ export function BusinessDashboardMobile({
           </div>
           <div className="mt-2">
             <span className="text-2xl font-extrabold text-emerald-400 block tracking-tight">
-              {formatCurrency(summary.revenue)}
+              {formatHidden(formatCurrency(summary.revenue))}
             </span>
             <span className="text-xs text-zinc-400 mt-1 block">
-              Ticket médio: <strong className="text-zinc-200">{formatCurrency(summary.averageTicket)}</strong>
+              Ticket médio: <strong className="text-zinc-200">{formatHidden(formatCurrency(summary.averageTicket))}</strong>
             </span>
           </div>
         </div>
@@ -127,17 +131,17 @@ export function BusinessDashboardMobile({
                   summary.netProfit >= 0 ? 'text-zinc-100' : 'text-rose-400'
                 }`}
               >
-                {formatCurrency(summary.netProfit)}
+                {formatHidden(formatCurrency(summary.netProfit))}
               </span>
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/30">
                 {summary.profitMargin}% margem
               </span>
             </div>
             <div className="flex items-center justify-between text-xs text-zinc-400 mt-1.5 pt-1.5 border-t border-zinc-800/80">
-              <span>Gastos pagos: {formatCurrency(summary.paidExpenses)}</span>
+              <span>Gastos pagos: {formatHidden(formatCurrency(summary.paidExpenses))}</span>
               {summary.pendingExpenses > 0 && (
                 <span className="text-amber-400/90 font-medium">
-                  +{formatCurrency(summary.pendingExpenses)} a pagar
+                  +{formatHidden(formatCurrency(summary.pendingExpenses))} a pagar
                 </span>
               )}
             </div>
@@ -196,7 +200,7 @@ export function BusinessDashboardMobile({
               <Scissors className="w-3 h-3" /> Serviços ({revenueSplit.servicePercentage}%)
             </span>
             <span className="text-sm font-extrabold text-zinc-100 block">
-              {formatCurrency(revenueSplit.serviceRevenue)}
+              {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
             </span>
             <span className="text-[10px] text-zinc-400 block mt-0.5">
               {revenueSplit.serviceCount} atendimentos
@@ -208,7 +212,7 @@ export function BusinessDashboardMobile({
               <ShoppingBag className="w-3 h-3" /> Produtos ({revenueSplit.productPercentage}%)
             </span>
             <span className="text-sm font-extrabold text-zinc-100 block">
-              {formatCurrency(revenueSplit.productRevenue)}
+              {formatHidden(formatCurrency(revenueSplit.productRevenue))}
             </span>
             <span className="text-[10px] text-zinc-400 block mt-0.5">
               {revenueSplit.productCount} vendidos

@@ -24,8 +24,16 @@ import { exportTransactionsReport, ExportFormat } from '@/lib/export-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
 import { getZonedParts } from '@/lib/date-utils';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { BusinessDashboardView } from './BusinessDashboardView';
 import { GeneralDashboardView } from './GeneralDashboardView';
+import { MobileHeader } from './mobile/MobileHeader';
+import { MobileStatementView } from './mobile/MobileStatementView';
+import { MobileSummaryView } from './mobile/MobileSummaryView';
+import { MobileMoreView } from './mobile/MobileMoreView';
+import { BusinessDashboardMobile } from './mobile/BusinessDashboardMobile';
+import { GeneralDashboardMobile } from './mobile/GeneralDashboardMobile';
 
 const TransactionModal = dynamic(
   () =>
@@ -63,6 +71,8 @@ export function DashboardView({
   initialPendingReceipts = [],
 }: DashboardViewProps) {
   const { month, year, formattedMonth } = useDateContext();
+  const isMobile = useIsMobile();
+  const { activeTab, contextMode } = useMobileNavigation();
 
   const [viewMode, setViewMode] = useState<'business' | 'general'>('business');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -161,6 +171,105 @@ export function DashboardView({
       });
     }
   };
+
+  // Experiência Mobile Totalmente Desacoplada e Orientada a Abas
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {/* Cabeçalho Fixo Touch: Barbearia vs Pessoal, Mês/Ano e Olho de Privacidade */}
+        <MobileHeader />
+
+        {/* Conteúdo da Aba Selecionada */}
+        {activeTab === 'home' && (
+          contextMode === 'business' ? (
+            <BusinessDashboardMobile
+              data={businessData}
+              accounts={accounts}
+              formattedMonth={formattedMonth}
+              loading={loading}
+              onEditBalance={(acc) => {
+                setAccountToAdjustBalance(acc);
+                setBalanceModalOpen(true);
+              }}
+              onAddBusinessExpense={() => {
+                setModalDefaultScope('business');
+                setModalOpen(true);
+              }}
+            />
+          ) : (
+            <GeneralDashboardMobile
+              transactions={transactions}
+              accounts={accounts}
+              cards={initialCards}
+              formattedMonth={formattedMonth}
+              loading={loading}
+              upcomingBills={upcomingBills}
+              onBillPaid={(id) => {
+                setUpcomingBills((prev) => prev.filter((b) => b.id !== id));
+                refreshData();
+              }}
+              pendingReceipts={pendingReceipts}
+              onReceiptConfirmed={(id) => {
+                setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
+                refreshData();
+              }}
+              onEditBalance={(acc) => {
+                setAccountToAdjustBalance(acc);
+                setBalanceModalOpen(true);
+              }}
+            />
+          )
+        )}
+
+        {activeTab === 'statement' && (
+          <MobileStatementView
+            transactions={transactions}
+            onRefresh={refreshData}
+          />
+        )}
+
+        {activeTab === 'summary' && (
+          <MobileSummaryView
+            businessData={businessData}
+            generalData={generalData}
+            yearlyStats={generalData.yearlyStats}
+            formattedMonth={formattedMonth}
+            month={month}
+          />
+        )}
+
+        {activeTab === 'more' && (
+          <MobileMoreView
+            accounts={accounts}
+            cards={initialCards}
+            clientsReturnCount={businessData.inactiveClientsAlerts?.length || 0}
+          />
+        )}
+
+        {/* Modal de Transação Financeira Tradicional */}
+        <TransactionModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          accounts={accounts}
+          cards={initialCards}
+          categories={categories}
+          defaultScope={modalDefaultScope}
+          onSuccess={refreshData}
+        />
+
+        {/* Modal de Ajuste Rápido de Saldo da Conta */}
+        <EditAccountBalanceModal
+          isOpen={balanceModalOpen}
+          onClose={() => {
+            setBalanceModalOpen(false);
+            setAccountToAdjustBalance(null);
+          }}
+          account={accountToAdjustBalance}
+          onSuccess={refreshData}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

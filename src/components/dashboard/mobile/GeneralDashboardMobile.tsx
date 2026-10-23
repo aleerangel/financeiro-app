@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import {
   Wallet,
@@ -8,8 +7,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ChevronRight,
-  Eye,
-  EyeOff,
   Landmark,
   ArrowLeftRight,
   Sparkles,
@@ -20,6 +17,7 @@ import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { Transaction } from '@/types/database';
 import { GeneralDashboardData } from '@/lib/actions/dashboard';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useMobileNavigation } from '@/context/MobileNavigationContext';
 
 export interface GeneralDashboardMobileProps {
   generalData?: GeneralDashboardData;
@@ -42,7 +40,7 @@ export function GeneralDashboardMobile({
   formattedMonth,
   upcomingBills = [],
 }: GeneralDashboardMobileProps) {
-  const [showValues, setShowValues] = useState<boolean>(true);
+  const { showValues } = useMobileNavigation();
 
   const totalBalance = accounts.reduce(
     (sum, acc) => sum + Number(acc.current_balance || 0),
@@ -84,26 +82,6 @@ export function GeneralDashboardMobile({
 
   return (
     <div className="space-y-4 pb-8">
-      {/* Header Estilo Nubank: Boas-vindas e Botão Ocultar Valores */}
-      <div className="flex items-center justify-between pt-1 pb-1">
-        <div>
-          <span className="text-xs text-zinc-400 block font-medium">
-            Visão Geral Pessoal
-          </span>
-          <span className="text-sm font-bold text-zinc-200">
-            {formattedMonth}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowValues(!showValues)}
-          className="p-2 text-zinc-400 hover:text-zinc-100 bg-zinc-900 border border-zinc-800 rounded-xl transition"
-          title={showValues ? 'Ocultar valores' : 'Mostrar valores'}
-        >
-          {showValues ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
-
       {/* 1. Bloco Estilo Nubank: Conta & Saldo Disponível */}
       <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
         <div className="flex items-center justify-between text-zinc-400">
