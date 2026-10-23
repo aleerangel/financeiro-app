@@ -1,14 +1,10 @@
-import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { getCategories } from '@/lib/actions/categories';
 import { CategoriesList } from '@/components/categories/CategoriesList';
 
-export const instant = false;
-
 export default async function CategoriasPage() {
-  await connection();
   const user = await getAuthenticatedUser();
 
   if (!user) {

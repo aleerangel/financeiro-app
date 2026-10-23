@@ -1,14 +1,10 @@
-import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { getClients } from '@/lib/actions/clients';
 import { ClientsList } from '@/components/clients/ClientsList';
 
-export const instant = false;
-
 export default async function ClientesPage() {
-  await connection();
   const user = await getAuthenticatedUser();
 
   if (!user) {

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Users,
@@ -32,8 +33,20 @@ export function MobileMoreView({
   cards,
   clientsReturnCount = 0,
 }: MobileMoreViewProps) {
+  const router = useRouter();
   const { showValues } = useMobileNavigation();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [navigatingHref, setNavigatingHref] = useState<string | null>(null);
+
+  // Pré-carrega ativamente todas as 6 rotas em segundo plano no momento em que a aba Mais é aberta
+  useEffect(() => {
+    router.prefetch('/clientes');
+    router.prefetch('/produtos');
+    router.prefetch('/contas');
+    router.prefetch('/cartoes');
+    router.prefetch('/recorrencias');
+    router.prefetch('/categorias');
+  }, [router]);
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -142,22 +155,31 @@ export function MobileMoreView({
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl divide-y divide-zinc-800/80 overflow-hidden">
             {section.items.map((item, iIdx) => {
               const Icon = item.icon;
+              const isNavigating = navigatingHref === item.href;
+
               return (
                 <Link
                   key={iIdx}
                   href={item.href}
                   prefetch={true}
-                  className="p-3.5 flex items-center justify-between text-left hover:bg-zinc-800/40 active:bg-zinc-800 transition"
+                  onClick={() => setNavigatingHref(item.href)}
+                  className={`p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] ${
+                    isNavigating
+                      ? 'bg-zinc-800/90 border-l-2 border-emerald-400'
+                      : 'hover:bg-zinc-800/40 active:bg-zinc-800'
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${item.iconColor}`}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 transition-transform ${item.iconColor} ${
+                        isNavigating ? 'scale-105' : ''
+                      }`}
                     >
                       <Icon className="w-5 h-5 stroke-[2.2]" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-zinc-100 block">
+                        <span className={`font-bold text-xs block ${isNavigating ? 'text-emerald-300' : 'text-zinc-100'}`}>
                           {item.title}
                         </span>
                         {item.badge && (
@@ -169,12 +191,16 @@ export function MobileMoreView({
                         )}
                       </div>
                       <span className="text-[11px] text-zinc-400 block mt-0.5">
-                        {item.description}
+                        {isNavigating ? 'Abrindo...' : item.description}
                       </span>
                     </div>
                   </div>
 
-                  <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0 ml-2" />
+                  {isNavigating ? (
+                    <Loader2 className="w-4 h-4 text-emerald-400 animate-spin shrink-0 ml-2" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0 ml-2" />
+                  )}
                 </Link>
               );
             })}

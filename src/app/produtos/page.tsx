@@ -1,14 +1,10 @@
-import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { getProducts } from '@/lib/actions/products';
 import { ProductsList } from '@/components/products/ProductsList';
 
-export const instant = false;
-
 export default async function ProdutosPage() {
-  await connection();
   const user = await getAuthenticatedUser();
 
   if (!user) {

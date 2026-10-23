@@ -1,14 +1,10 @@
-import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getCreditCards } from '@/lib/actions/credit-cards';
 import { AppShell } from '@/components/layout/AppShell';
 import { CreditCardsList } from '@/components/cards/CreditCardsList';
 
-export const instant = false;
-
 export default async function CartoesPage() {
-  await connection();
   const user = await getAuthenticatedUser();
 
   if (!user) {

@@ -1,14 +1,10 @@
-import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAccounts } from '@/lib/actions/accounts';
 import { AppShell } from '@/components/layout/AppShell';
 import { AccountsList } from '@/components/accounts/AccountsList';
 
-export const instant = false;
-
 export default async function ContasPage() {
-  await connection();
   const user = await getAuthenticatedUser();
 
   if (!user) {

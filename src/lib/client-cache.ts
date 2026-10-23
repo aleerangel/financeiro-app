@@ -100,3 +100,4 @@ export function invalidateClientCache(keys?: ('accounts' | 'cards' | 'categories
   if (keys.includes('products')) cachedProducts = null;
   if (keys.includes('clients')) cachedClients = null;
 }
+

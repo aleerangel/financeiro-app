@@ -1,4 +1,3 @@
-import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
@@ -8,10 +7,7 @@ import { getCreditCards } from '@/lib/actions/credit-cards';
 import { getCategories } from '@/lib/actions/categories';
 import { RecurrencesList } from '@/components/recurrences/RecurrencesList';
 
-export const instant = false;
-
 export default async function RecorrenciasPage() {
-  await connection();
   const user = await getAuthenticatedUser();
 
   if (!user) {
