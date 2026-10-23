@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Users,
@@ -34,9 +34,30 @@ export function MobileMoreView({
   clientsReturnCount = 0,
 }: MobileMoreViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { showValues } = useMobileNavigation();
   const [loggingOut, setLoggingOut] = useState(false);
   const [navigatingHref, setNavigatingHref] = useState<string | null>(null);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  // Reseta qualquer estado de carregamento pendente ao mudar de rota
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setNavigatingHref(null);
+  }
+
+  // Reseta também ao voltar pelo botão físico ou navegação de histórico (bfcache/popstate/focus)
+  useEffect(() => {
+    const handleReset = () => setNavigatingHref(null);
+    window.addEventListener('pageshow', handleReset);
+    window.addEventListener('popstate', handleReset);
+    window.addEventListener('focus', handleReset);
+    return () => {
+      window.removeEventListener('pageshow', handleReset);
+      window.removeEventListener('popstate', handleReset);
+      window.removeEventListener('focus', handleReset);
+    };
+  }, []);
 
   // Pré-carrega ativamente todas as 6 rotas em segundo plano no momento em que a aba Mais é aberta
   useEffect(() => {
@@ -162,7 +183,11 @@ export function MobileMoreView({
                   key={iIdx}
                   href={item.href}
                   prefetch={true}
-                  onClick={() => setNavigatingHref(item.href)}
+                  onClick={() => {
+                    setNavigatingHref(item.href);
+                    // Timeout de segurança: limpa o destaque se a navegação for cancelada ou ao retornar
+                    setTimeout(() => setNavigatingHref(null), 2000);
+                  }}
                   className={`p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] ${
                     isNavigating
                       ? 'bg-zinc-800/90 border-l-2 border-emerald-400'
