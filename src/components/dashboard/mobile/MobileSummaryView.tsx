@@ -63,6 +63,11 @@ export function MobileSummaryView({
   const { setMonthYear } = useDateContext();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
+  // Filtro de métrica selecionada para a Evolução Financeira ('all' ou individual)
+  const [selectedMetric, setSelectedMetric] = useState<
+    'all' | 'totalIncome' | 'totalExpense' | 'netBalance'
+  >('all');
+
   // 1. MOTOR NATIVO WEB DE EVOLUÇÃO (Inicializado com 'monthly' como default)
   const flowChart = useIndependentChartPeriod(
     year,
@@ -168,6 +173,12 @@ export function MobileSummaryView({
     () => flowChart.activeStats.map((s) => s.fullLabel || s.label),
     [flowChart.activeStats]
   );
+
+  // Filtra as séries da Evolução Financeira conforme o botão clicado
+  const displayedSeries = useMemo(() => {
+    if (selectedMetric === 'all') return flowSeries;
+    return flowSeries.filter((s) => s.id === selectedMetric);
+  }, [flowSeries, selectedMetric]);
 
   // 2. RECEITAS E DESPESAS (REALIZADO + PREVISTO COM O QUE AINDA FALTA)
   const {
@@ -404,37 +415,91 @@ export function MobileSummaryView({
       {/* 1. EVOLUÇÃO FINANCEIRA AMPLIADA (ALTA VISIBILIDADE)             */}
       {/* ============================================================== */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 sm:p-5 space-y-3">
-        {/* Badges de Resumo do Período com Realizado em Destaque e Total Previsto Embaixo */}
-        <div className="grid grid-cols-3 gap-2 p-2.5 bg-zinc-950/80 rounded-xl border border-zinc-800/70 text-center">
+        {/* Badges de Resumo do Período - Toque para filtrar o gráfico */}
+        <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-zinc-950/80 rounded-xl border border-zinc-800/70 text-center">
           {/* Entradas */}
-          <div className="flex flex-col justify-between py-0.5">
-            <span className="text-[10px] text-zinc-400 block font-medium">Entradas</span>
+          <button
+            type="button"
+            onClick={() =>
+              setSelectedMetric((prev) => (prev === 'totalIncome' ? 'all' : 'totalIncome'))
+            }
+            className={`flex flex-col justify-between p-2 rounded-lg transition-all active:scale-95 text-center ${
+              selectedMetric === 'totalIncome'
+                ? 'bg-emerald-500/15 border border-emerald-500/50 shadow-sm ring-1 ring-emerald-500/30'
+                : selectedMetric !== 'all'
+                ? 'opacity-40 hover:opacity-80 border border-transparent'
+                : 'hover:bg-zinc-900/60 border border-transparent'
+            }`}
+            title="Clique para filtrar apenas Entradas"
+          >
+            <div className="flex items-center justify-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              <span className="text-[10px] text-zinc-400 block font-bold uppercase tracking-wider">
+                Entradas
+              </span>
+            </div>
             <span className="text-xs sm:text-sm font-black text-emerald-400 my-0.5">
               {formatHidden(formatCurrency(receivedIncome))}
             </span>
-            <span className="text-[9px] text-zinc-400 block truncate leading-tight">
+            <span className="text-[9px] text-zinc-400 block truncate leading-tight w-full">
               {pendingIncome > 0
-                ? `previsto: ${formatHidden(formatCurrency(totalIncome))} (+${formatHidden(formatCurrency(pendingIncome))})`
+                ? `prev: ${formatHidden(formatCurrency(totalIncome))}`
                 : '100% recebido'}
             </span>
-          </div>
+          </button>
 
           {/* Saídas */}
-          <div className="flex flex-col justify-between py-0.5 border-x border-zinc-800/60 px-1">
-            <span className="text-[10px] text-zinc-400 block font-medium">Saídas</span>
+          <button
+            type="button"
+            onClick={() =>
+              setSelectedMetric((prev) => (prev === 'totalExpense' ? 'all' : 'totalExpense'))
+            }
+            className={`flex flex-col justify-between p-2 rounded-lg transition-all active:scale-95 text-center ${
+              selectedMetric === 'totalExpense'
+                ? 'bg-rose-500/15 border border-rose-500/50 shadow-sm ring-1 ring-rose-500/30'
+                : selectedMetric !== 'all'
+                ? 'opacity-40 hover:opacity-80 border border-transparent'
+                : 'hover:bg-zinc-900/60 border border-transparent'
+            }`}
+            title="Clique para filtrar apenas Saídas"
+          >
+            <div className="flex items-center justify-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
+              <span className="text-[10px] text-zinc-400 block font-bold uppercase tracking-wider">
+                Saídas
+              </span>
+            </div>
             <span className="text-xs sm:text-sm font-black text-rose-400 my-0.5">
               {formatHidden(formatCurrency(paidExpense))}
             </span>
-            <span className="text-[9px] text-zinc-400 block truncate leading-tight">
+            <span className="text-[9px] text-zinc-400 block truncate leading-tight w-full">
               {pendingExpense > 0
-                ? `previsto: ${formatHidden(formatCurrency(totalExpense))} (+${formatHidden(formatCurrency(pendingExpense))})`
+                ? `prev: ${formatHidden(formatCurrency(totalExpense))}`
                 : '100% pago'}
             </span>
-          </div>
+          </button>
 
           {/* Balanço */}
-          <div className="flex flex-col justify-between py-0.5">
-            <span className="text-[10px] text-zinc-400 block font-medium">Balanço</span>
+          <button
+            type="button"
+            onClick={() =>
+              setSelectedMetric((prev) => (prev === 'netBalance' ? 'all' : 'netBalance'))
+            }
+            className={`flex flex-col justify-between p-2 rounded-lg transition-all active:scale-95 text-center ${
+              selectedMetric === 'netBalance'
+                ? 'bg-blue-500/15 border border-blue-500/50 shadow-sm ring-1 ring-blue-500/30'
+                : selectedMetric !== 'all'
+                ? 'opacity-40 hover:opacity-80 border border-transparent'
+                : 'hover:bg-zinc-900/60 border border-transparent'
+            }`}
+            title="Clique para filtrar apenas Balanço"
+          >
+            <div className="flex items-center justify-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+              <span className="text-[10px] text-zinc-400 block font-bold uppercase tracking-wider">
+                Balanço
+              </span>
+            </div>
             <span
               className={`text-xs sm:text-sm font-black my-0.5 ${
                 realizedBalance >= 0 ? 'text-zinc-100' : 'text-rose-400'
@@ -442,17 +507,27 @@ export function MobileSummaryView({
             >
               {formatHidden(formatCurrency(realizedBalance))}
             </span>
-            <span className="text-[9px] text-zinc-400 block truncate leading-tight">
-              previsto: {formatHidden(formatCurrency(projectedBalance))}
+            <span className="text-[9px] text-zinc-400 block truncate leading-tight w-full">
+              prev: {formatHidden(formatCurrency(projectedBalance))}
             </span>
-          </div>
+          </button>
         </div>
 
-        {/* Gráfico Amplo e Nítido */}
+        {/* Gráfico Amplo e Nítido com a Métrica Selecionada */}
         <SmoothLineChart
           title="Evolução Financeira"
-          subtitle={flowChart.subtitle}
-          series={flowSeries}
+          subtitle={
+            selectedMetric === 'all'
+              ? flowChart.subtitle
+              : `Exibindo somente ${
+                  selectedMetric === 'totalIncome'
+                    ? 'Entradas'
+                    : selectedMetric === 'totalExpense'
+                    ? 'Saídas'
+                    : 'Balanço'
+                } (toque no badge para voltar a todos)`
+          }
+          series={displayedSeries}
           labels={flowLabels}
           tooltipLabels={flowTooltipLabels}
           height={320}
