@@ -9,7 +9,6 @@ import {
   ShoppingBag,
   MessageCircle,
   Eye,
-  Plus,
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
@@ -40,8 +39,6 @@ function formatWhatsAppUrl(name: string, phone?: string | null) {
 export function BusinessDashboardMobile({
   data,
   formattedMonth,
-  loading = false,
-  onAddBusinessExpense,
 }: BusinessDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
@@ -147,25 +144,6 @@ export function BusinessDashboardMobile({
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Ações Rápidas Mobile */}
-      <div className="grid grid-cols-2 gap-2.5">
-        <Link
-          href="/vendas"
-          className="flex items-center justify-center gap-1.5 py-3 px-3 bg-emerald-500 text-zinc-950 font-bold text-xs rounded-xl shadow-md active:scale-95 transition"
-        >
-          <Scissors className="w-4 h-4" />
-          Novo Atendimento
-        </Link>
-        <button
-          type="button"
-          onClick={onAddBusinessExpense}
-          className="flex items-center justify-center gap-1.5 py-3 px-3 bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-amber-500/30 font-semibold text-xs rounded-xl active:scale-95 transition"
-        >
-          <Plus className="w-4 h-4" />
-          Gasto Barbearia
-        </button>
       </div>
 
       {/* 2. Divisão de Faturamento: Serviços vs Produtos */}
