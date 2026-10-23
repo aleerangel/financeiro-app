@@ -132,6 +132,8 @@ export interface Client {
   name: string;
   phone?: string | null;
   cpf?: string | null;
+  birth_date?: string | null;
+  last_contacted_at?: string | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;

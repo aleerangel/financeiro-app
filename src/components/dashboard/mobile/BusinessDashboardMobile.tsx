@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
+import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 import {
   Scissors,
   TrendingUp,
@@ -26,22 +28,19 @@ export interface BusinessDashboardMobileProps {
   onAddBusinessExpense?: () => void;
 }
 
-function formatWhatsAppUrl(name: string, phone?: string | null) {
-  if (!phone) return null;
-  const digits = phone.replace(/\D/g, '');
-  if (!digits) return null;
-  const fullPhone = digits.startsWith('55') ? digits : `55${digits}`;
-  const firstName = name.trim().split(' ')[0] || name;
-  const message = `Olá, ${firstName}! Tudo bem? Sentimos sua falta aqui na barbearia! Bora renovar o visual esta semana? Se quiser, já posso agendar seu horário. ✂️💈`;
-  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
-}
-
 export function BusinessDashboardMobile({
   data,
   formattedMonth,
   loading = false,
 }: BusinessDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
+  const [engagementClient, setEngagementClient] = useState<{
+    id: string;
+    name: string;
+    phone?: string | null;
+    daysSinceLastVisit: number;
+  } | null>(null);
+
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
   const summary = data?.monthSummary || {
@@ -358,7 +357,6 @@ export function BusinessDashboardMobile({
 
           <div className="space-y-2">
             {data.inactiveClientsAlerts.slice(0, 4).map((client) => {
-              const waUrl = formatWhatsAppUrl(client.name, client.phone);
               return (
                 <div
                   key={client.id}
@@ -373,16 +371,22 @@ export function BusinessDashboardMobile({
                     </span>
                   </div>
 
-                  {waUrl ? (
-                    <a
-                      href={waUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {client.phone ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEngagementClient({
+                          id: client.id,
+                          name: client.name,
+                          phone: client.phone,
+                          daysSinceLastVisit: client.daysSinceLastVisit,
+                        })
+                      }
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold shrink-0"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       Zap
-                    </a>
+                    </button>
                   ) : (
                     <Link
                       href="/clientes"
@@ -396,6 +400,20 @@ export function BusinessDashboardMobile({
             })}
           </div>
         </div>
+      )}
+
+      {engagementClient && (
+        <ClientEngagementWhatsAppModal
+          isOpen={Boolean(engagementClient)}
+          onClose={() => setEngagementClient(null)}
+          client={engagementClient}
+          purpose={
+            engagementClient.daysSinceLastVisit >= 45
+              ? 'inactive_recovery'
+              : 'return_window'
+          }
+          daysSinceLastVisit={engagementClient.daysSinceLastVisit}
+        />
       )}
     </div>
   );

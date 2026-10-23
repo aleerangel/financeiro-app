@@ -14,6 +14,7 @@ export interface CreateClientInput {
   name: string;
   phone?: string | null;
   cpf?: string | null;
+  birth_date?: string | null;
   notes?: string | null;
 }
 
@@ -147,6 +148,7 @@ export async function createClient(input: CreateClientInput): Promise<Client> {
       name: input.name.trim(),
       phone: input.phone?.trim() || null,
       cpf: input.cpf?.trim() || null,
+      birth_date: input.birth_date || null,
       notes: input.notes?.trim() || null,
     })
     .select()
@@ -177,6 +179,7 @@ export async function updateClient(id: string, input: CreateClientInput): Promis
       name: input.name.trim(),
       phone: input.phone?.trim() || null,
       cpf: input.cpf?.trim() || null,
+      birth_date: input.birth_date || null,
       notes: input.notes?.trim() || null,
     })
     .eq('id', id)
@@ -191,6 +194,29 @@ export async function updateClient(id: string, input: CreateClientInput): Promis
   revalidatePath('/clientes');
   revalidatePath('/vendas');
   return data as unknown as Client;
+}
+
+export async function markClientContacted(clientId: string): Promise<string> {
+  const supabase = await createSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const nowIso = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('clients')
+    .update({ last_contacted_at: nowIso })
+    .eq('id', clientId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Erro ao atualizar último contato do cliente:', error);
+  }
+
+  revalidatePath('/clientes');
+  revalidatePath('/dashboard');
+  return nowIso;
 }
 
 export async function deleteClient(id: string): Promise<void> {

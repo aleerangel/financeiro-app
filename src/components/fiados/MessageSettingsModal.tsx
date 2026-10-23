@@ -57,9 +57,25 @@ export function MessageSettingsModal({
   const [templateCreditReceipt, setTemplateCreditReceipt] = useState(
     initialSettings.template_sale_credit_receipt || DEFAULT_TEMPLATES.creditReceipt
   );
+  const [templateReturnWindow, setTemplateReturnWindow] = useState(
+    initialSettings.template_return_window || DEFAULT_TEMPLATES.returnWindowCasual
+  );
+  const [templateInactiveRecovery, setTemplateInactiveRecovery] = useState(
+    initialSettings.template_inactive_recovery ||
+      DEFAULT_TEMPLATES.inactiveRecoveryCasual
+  );
+  const [templateBirthday, setTemplateBirthday] = useState(
+    initialSettings.template_birthday || DEFAULT_TEMPLATES.birthdayCasual
+  );
 
   const [selectedTemplateTab, setSelectedTemplateTab] = useState<
-    'friendly' | 'default' | 'firm' | 'creditReceipt'
+    | 'friendly'
+    | 'default'
+    | 'firm'
+    | 'creditReceipt'
+    | 'returnWindow'
+    | 'inactiveRecovery'
+    | 'birthday'
   >('friendly');
 
   const [saving, setSaving] = useState(false);
@@ -71,6 +87,9 @@ export function MessageSettingsModal({
     setTemplateDefault(DEFAULT_TEMPLATES.default);
     setTemplateFirm(DEFAULT_TEMPLATES.firm);
     setTemplateCreditReceipt(DEFAULT_TEMPLATES.creditReceipt);
+    setTemplateReturnWindow(DEFAULT_TEMPLATES.returnWindowCasual);
+    setTemplateInactiveRecovery(DEFAULT_TEMPLATES.inactiveRecoveryCasual);
+    setTemplateBirthday(DEFAULT_TEMPLATES.birthdayCasual);
     toast.info('Modelos de mensagens restaurados para o padrão.');
   };
 
@@ -87,6 +106,9 @@ export function MessageSettingsModal({
         template_default: templateDefault,
         template_firm: templateFirm,
         template_sale_credit_receipt: templateCreditReceipt,
+        template_return_window: templateReturnWindow,
+        template_inactive_recovery: templateInactiveRecovery,
+        template_birthday: templateBirthday,
       });
 
       toast.success('Configurações salvas com sucesso!');
@@ -265,11 +287,11 @@ export function MessageSettingsModal({
               </div>
 
               {/* Sub-abas de templates */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800">
                 <button
                   type="button"
                   onClick={() => setSelectedTemplateTab('friendly')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     selectedTemplateTab === 'friendly'
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       : 'text-slate-400 hover:text-white'
@@ -280,7 +302,7 @@ export function MessageSettingsModal({
                 <button
                   type="button"
                   onClick={() => setSelectedTemplateTab('default')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     selectedTemplateTab === 'default'
                       ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                       : 'text-slate-400 hover:text-white'
@@ -291,24 +313,57 @@ export function MessageSettingsModal({
                 <button
                   type="button"
                   onClick={() => setSelectedTemplateTab('firm')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     selectedTemplateTab === 'firm'
                       ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Firme (Atraso)
+                  Firme
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedTemplateTab('creditReceipt')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     selectedTemplateTab === 'creditReceipt'
                       ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Recibo Fiado
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTemplateTab('returnWindow')}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedTemplateTab === 'returnWindow'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Retorno
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTemplateTab('inactiveRecovery')}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedTemplateTab === 'inactiveRecovery'
+                      ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Inativos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTemplateTab('birthday')}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedTemplateTab === 'birthday'
+                      ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Aniversário
                 </button>
               </div>
 
@@ -342,6 +397,30 @@ export function MessageSettingsModal({
                   <textarea
                     value={templateCreditReceipt}
                     onChange={(e) => setTemplateCreditReceipt(e.target.value)}
+                    rows={6}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
+                  />
+                )}
+                {selectedTemplateTab === 'returnWindow' && (
+                  <textarea
+                    value={templateReturnWindow}
+                    onChange={(e) => setTemplateReturnWindow(e.target.value)}
+                    rows={6}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
+                  />
+                )}
+                {selectedTemplateTab === 'inactiveRecovery' && (
+                  <textarea
+                    value={templateInactiveRecovery}
+                    onChange={(e) => setTemplateInactiveRecovery(e.target.value)}
+                    rows={6}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
+                  />
+                )}
+                {selectedTemplateTab === 'birthday' && (
+                  <textarea
+                    value={templateBirthday}
+                    onChange={(e) => setTemplateBirthday(e.target.value)}
                     rows={6}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
                   />

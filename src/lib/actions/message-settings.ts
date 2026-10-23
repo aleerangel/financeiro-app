@@ -20,6 +20,9 @@ export async function getMessageSettings(): Promise<BusinessMessageSettings> {
     template_default: DEFAULT_TEMPLATES.default,
     template_firm: DEFAULT_TEMPLATES.firm,
     template_sale_credit_receipt: DEFAULT_TEMPLATES.creditReceipt,
+    template_return_window: DEFAULT_TEMPLATES.returnWindowCasual,
+    template_inactive_recovery: DEFAULT_TEMPLATES.inactiveRecoveryCasual,
+    template_birthday: DEFAULT_TEMPLATES.birthdayCasual,
     include_pix_default: true,
   };
 
@@ -46,6 +49,12 @@ export async function getMessageSettings(): Promise<BusinessMessageSettings> {
       template_firm: data.template_firm || DEFAULT_TEMPLATES.firm,
       template_sale_credit_receipt:
         data.template_sale_credit_receipt || DEFAULT_TEMPLATES.creditReceipt,
+      template_return_window:
+        data.template_return_window || DEFAULT_TEMPLATES.returnWindowCasual,
+      template_inactive_recovery:
+        data.template_inactive_recovery || DEFAULT_TEMPLATES.inactiveRecoveryCasual,
+      template_birthday:
+        data.template_birthday || DEFAULT_TEMPLATES.birthdayCasual,
       include_pix_default: data.include_pix_default ?? true,
     };
   } catch {
@@ -61,6 +70,9 @@ export async function saveMessageSettings(input: {
   template_default?: string | null;
   template_firm?: string | null;
   template_sale_credit_receipt?: string | null;
+  template_return_window?: string | null;
+  template_inactive_recovery?: string | null;
+  template_birthday?: string | null;
   include_pix_default?: boolean;
 }): Promise<BusinessMessageSettings> {
   const supabase = await createClient();
@@ -78,6 +90,12 @@ export async function saveMessageSettings(input: {
     template_firm: input.template_firm || DEFAULT_TEMPLATES.firm,
     template_sale_credit_receipt:
       input.template_sale_credit_receipt || DEFAULT_TEMPLATES.creditReceipt,
+    template_return_window:
+      input.template_return_window || DEFAULT_TEMPLATES.returnWindowCasual,
+    template_inactive_recovery:
+      input.template_inactive_recovery || DEFAULT_TEMPLATES.inactiveRecoveryCasual,
+    template_birthday:
+      input.template_birthday || DEFAULT_TEMPLATES.birthdayCasual,
     include_pix_default: input.include_pix_default ?? true,
     updated_at: new Date().toISOString(),
   };
@@ -92,7 +110,8 @@ export async function saveMessageSettings(input: {
 
   revalidatePath('/fiados');
   revalidatePath('/vendas');
-  revalidatePath('/configuracoes');
+  revalidatePath('/clientes');
+  revalidatePath('/dashboard');
 
   return payload;
 }

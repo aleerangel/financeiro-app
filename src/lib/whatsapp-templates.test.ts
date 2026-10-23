@@ -89,4 +89,50 @@ describe('whatsapp-templates', () => {
     expect(text).toContain('barber@fin.com');
     expect(text).toContain('15/11/2026');
   });
+
+  it('renderiza template de radar de retorno com dias desde o último corte', () => {
+    const text = renderWhatsAppTemplate(
+      DEFAULT_TEMPLATES.returnWindowCasual,
+      {
+        nome: 'Guilherme Castro',
+        dias_ultima_visita: 22,
+      },
+      false
+    );
+
+    expect(text).toContain('Guilherme');
+    expect(text).toContain('22 dias');
+    expect(text).toContain('renovar o visual');
+    expect(text).toContain(SYSTEM_WHATSAPP_SIGNATURE);
+  });
+
+  it('renderiza template de resgate de inativo', () => {
+    const text = renderWhatsAppTemplate(
+      DEFAULT_TEMPLATES.inactiveRecoveryCasual,
+      {
+        nome: 'Rodrigo Lima',
+        dias_ultima_visita: 60,
+      },
+      false
+    );
+
+    expect(text).toContain('Rodrigo');
+    expect(text).toContain('sumiu');
+    expect(text).toContain('60 dias');
+  });
+
+  it('renderiza template de aniversário', () => {
+    const text = renderWhatsAppTemplate(
+      DEFAULT_TEMPLATES.birthdayCasual,
+      {
+        nome: 'Gabriel Pires',
+      },
+      false
+    );
+
+    expect(text).toContain('Gabriel');
+    expect(text).toContain('parabéns');
+    expect(text).toContain('🎂');
+  });
 });
+

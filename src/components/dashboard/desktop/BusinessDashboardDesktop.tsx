@@ -32,6 +32,8 @@ import {
   useIndependentChartPeriod,
 } from '../ChartPeriodToolbar';
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
+import { useState } from 'react';
+import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 
 export type ChartPeriod = ChartViewPeriod;
 
@@ -53,16 +55,6 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 
 const EMPTY_BUSINESS_STATS: BusinessPeriodStat[] = [];
 
-function formatWhatsAppUrl(name: string, phone?: string | null) {
-  if (!phone) return null;
-  const digits = phone.replace(/\D/g, '');
-  if (!digits) return null;
-  const fullPhone = digits.startsWith('55') ? digits : `55${digits}`;
-  const firstName = name.trim().split(' ')[0] || name;
-  const message = `Olá, ${firstName}! Tudo bem? Sentimos sua falta aqui na barbearia! Bora renovar o visual esta semana? Se quiser, já posso agendar seu horário. ✂️💈`;
-  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
-}
-
 export function BusinessDashboardDesktop({
   data,
   accounts,
@@ -71,6 +63,13 @@ export function BusinessDashboardDesktop({
   onEditBalance,
   onAddBusinessExpense,
 }: BusinessDashboardDesktopProps) {
+  const [engagementClient, setEngagementClient] = useState<{
+    id: string;
+    name: string;
+    phone?: string | null;
+    daysSinceLastVisit: number;
+  } | null>(null);
+
   const { month, year } = useDateContext();
   const businessChart = useIndependentChartPeriod<
     BusinessDashboardData,
@@ -310,7 +309,6 @@ export function BusinessDashboardDesktop({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
             {data.inactiveClientsAlerts.map((client) => {
-              const waUrl = formatWhatsAppUrl(client.name, client.phone);
               return (
                 <div
                   key={client.id}
@@ -330,17 +328,23 @@ export function BusinessDashboardDesktop({
                     </span>
                   </div>
 
-                  {waUrl ? (
-                    <a
-                      href={waUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {client.phone ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEngagementClient({
+                          id: client.id,
+                          name: client.name,
+                          phone: client.phone,
+                          daysSinceLastVisit: client.daysSinceLastVisit,
+                        })
+                      }
                       className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition"
-                      title="Enviar mensagem amigável no WhatsApp"
+                      title="Chamar no WhatsApp com mensagem inteligente"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       Chamar no Zap
-                    </a>
+                    </button>
                   ) : (
                     <Link
                       href="/clientes"
@@ -851,6 +855,20 @@ export function BusinessDashboardDesktop({
           </div>
         </div>
       </div>
+
+      {engagementClient && (
+        <ClientEngagementWhatsAppModal
+          isOpen={Boolean(engagementClient)}
+          onClose={() => setEngagementClient(null)}
+          client={engagementClient}
+          purpose={
+            engagementClient.daysSinceLastVisit >= 45
+              ? 'inactive_recovery'
+              : 'return_window'
+          }
+          daysSinceLastVisit={engagementClient.daysSinceLastVisit}
+        />
+      )}
     </div>
   );
 }

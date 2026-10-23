@@ -20,6 +20,7 @@ import {
   ArrowUpDown,
   Radar,
   HandCoins,
+  ShieldCheck,
 } from 'lucide-react';
 import { Account } from '@/types/database';
 import { ClientWithStats, deleteClient } from '@/lib/actions/clients';
@@ -35,17 +36,39 @@ import { ClientModal } from './ClientModal';
 import {
   ClientHistoryModal,
   getStatusBadgeStyle,
-  buildWhatsappLink,
   formatShortDayMonth,
 } from './ClientHistoryModal';
 import { AmortizeModal } from '@/components/sales/AmortizeModal';
+import {
+  ClientEngagementWhatsAppModal,
+  EngagementPurpose,
+} from './ClientEngagementWhatsAppModal';
+
+function isBirthdayThisMonth(birthDateStr?: string | null): boolean {
+  if (!birthDateStr) return false;
+  const parts = birthDateStr.split('-');
+  if (parts.length < 3) return false;
+  const birthMonth = parseInt(parts[1], 10);
+  const currentMonth = new Date().getMonth() + 1;
+  return birthMonth === currentMonth;
+}
+
+function isBirthdayToday(birthDateStr?: string | null): boolean {
+  if (!birthDateStr) return false;
+  const parts = birthDateStr.split('-');
+  if (parts.length < 3) return false;
+  const birthMonth = parseInt(parts[1], 10);
+  const birthDay = parseInt(parts[2], 10);
+  const now = new Date();
+  return birthMonth === now.getMonth() + 1 && birthDay === now.getDate();
+}
 
 interface ClientsListProps {
   initialClients: ClientWithStats[];
   accounts?: Account[];
 }
 
-type StatusFilter = 'all' | ClientReturnStatus | 'vip' | 'debt';
+type StatusFilter = 'all' | ClientReturnStatus | 'vip' | 'debt' | 'birthday';
 type SortOption = 'priority' | 'spent' | 'visits' | 'recent' | 'name';
 
 export function ClientsList({ initialClients, accounts = [] }: ClientsListProps) {
@@ -61,6 +84,10 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
   const [amortizingClient, setAmortizingClient] = useState<ClientWithStats | null>(null);
   const [amortizingSale, setAmortizingSale] = useState<RawClientSale | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [engagementData, setEngagementData] = useState<{
+    client: ClientWithStats;
+    purpose: EngagementPurpose;
+  } | null>(null);
 
   // Contadores por filtro
   const counts = useMemo(() => {
@@ -73,11 +100,13 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
       new: 0,
       vip: 0,
       debt: 0,
+      birthday: 0,
     };
     for (const c of clients) {
       acc[c.analytics.status]++;
       if (c.isVip) acc.vip++;
       if (Number(c.totalDebt || 0) > 0) acc.debt++;
+      if (isBirthdayThisMonth(c.birth_date)) acc.birthday++;
     }
     return acc;
   }, [clients]);
@@ -110,6 +139,8 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
         if (!c.isVip) return false;
       } else if (statusFilter === 'debt') {
         if (Number(c.totalDebt || 0) <= 0) return false;
+      } else if (statusFilter === 'birthday') {
+        if (!isBirthdayThisMonth(c.birth_date)) return false;
       } else if (statusFilter !== 'all') {
         if (c.analytics.status !== statusFilter) return false;
       }
@@ -154,6 +185,21 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
   const avgTicketPerClient = totalClients > 0 ? totalRevenueAll / totalClients : 0;
   const avgTicketPerSale = totalSalesAll > 0 ? totalRevenueAll / totalSalesAll : 0;
 
+  const openEngagementModal = (client: ClientWithStats) => {
+    let purpose: EngagementPurpose = 'general';
+    if (isBirthdayThisMonth(client.birth_date)) {
+      purpose = 'birthday';
+    } else if (client.analytics.status === 'missing') {
+      purpose = 'inactive_recovery';
+    } else if (
+      client.analytics.status === 'in_window' ||
+      client.analytics.status === 'overdue'
+    ) {
+      purpose = 'return_window';
+    }
+    setEngagementData({ client, purpose });
+  };
+
   const handleEdit = (client: ClientWithStats) => {
     setClientToEdit(client);
     setModalOpen(true);
@@ -183,10 +229,11 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
 
   const filterPills: { id: StatusFilter; label: string; count: number }[] = [
     { id: 'all', label: 'Todos', count: counts.all },
-    { id: 'debt', label: 'Com Débito', count: counts.debt },
+    { id: 'birthday', label: 'Aniversariantes 🎂', count: counts.birthday },
     { id: 'in_window', label: 'Na Janela', count: counts.in_window },
     { id: 'overdue', label: 'Atrasados', count: counts.overdue },
-    { id: 'missing', label: 'Sumidos', count: counts.missing },
+    { id: 'missing', label: 'Sumidos (+45d)', count: counts.missing },
+    { id: 'debt', label: 'Com Débito', count: counts.debt },
     { id: 'on_track', label: 'Em Dia', count: counts.on_track },
     { id: 'vip', label: 'VIPs', count: counts.vip },
     { id: 'new', label: 'Novos', count: counts.new },
@@ -294,7 +341,6 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {radarClients.map((client) => {
               const { analytics } = client;
-              const whatsappUrl = buildWhatsappLink(client);
 
               return (
                 <div
@@ -357,17 +403,16 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                     </span>
 
                     <div className="flex items-center gap-1.5">
-                      {whatsappUrl && (
-                        <a
-                          href={whatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      {client.phone && (
+                        <button
+                          type="button"
+                          onClick={() => openEngagementModal(client)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold transition"
-                          title="Enviar lembrete no WhatsApp"
+                          title="Chamar no WhatsApp com mensagem inteligente"
                         >
                           <MessageCircle className="w-3 h-3" />
                           WhatsApp
-                        </a>
+                        </button>
                       )}
 
                       <Link
@@ -489,7 +534,6 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
             <tbody className="divide-y divide-zinc-800/60">
               {filteredClients.map((client) => {
                 const { analytics } = client;
-                const whatsappUrl = buildWhatsappLink(client);
 
                 return (
                   <tr
@@ -514,6 +558,16 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                                 VIP
                               </span>
                             )}
+
+                            {isBirthdayToday(client.birth_date) ? (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                                🎂 Hoje!
+                              </span>
+                            ) : isBirthdayThisMonth(client.birth_date) ? (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-pink-500/10 text-pink-300 border border-pink-500/20">
+                                🎂 Aniversariante
+                              </span>
+                            ) : null}
 
                             <span
                               className={`inline-flex items-center px-2 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider border ${getStatusBadgeStyle(
@@ -576,18 +630,23 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                       onClick={(e) => e.stopPropagation()}
                     >
                       {client.phone ? (
-                        <div className="flex items-center gap-1.5">
-                          <span>{client.phone}</span>
-                          {whatsappUrl && (
-                            <a
-                              href={whatsappUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span>{client.phone}</span>
+                            <button
+                              type="button"
+                              onClick={() => openEngagementModal(client)}
                               className="p-1 rounded-md text-emerald-400 hover:bg-emerald-500/10 transition"
-                              title="Chamar no WhatsApp com mensagem pronta"
+                              title="Chamar no WhatsApp com mensagem inteligente"
                             >
                               <MessageCircle className="w-3.5 h-3.5" />
-                            </a>
+                            </button>
+                          </div>
+                          {client.last_contacted_at && (
+                            <span className="text-[10px] text-zinc-500 flex items-center gap-1">
+                              <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+                              Contatado em {formatDate(client.last_contacted_at.split('T')[0])}
+                            </span>
                           )}
                         </div>
                       ) : (
@@ -727,6 +786,23 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
           sale={amortizingSale}
           onSuccess={() => {
             window.location.reload();
+          }}
+        />
+      )}
+
+      {engagementData && (
+        <ClientEngagementWhatsAppModal
+          isOpen={Boolean(engagementData)}
+          onClose={() => setEngagementData(null)}
+          client={engagementData.client}
+          purpose={engagementData.purpose}
+          daysSinceLastVisit={engagementData.client.analytics.daysSinceLastVisit}
+          onContactRecorded={(clientId, contactedAt) => {
+            setClients((prev) =>
+              prev.map((c) =>
+                c.id === clientId ? { ...c, last_contacted_at: contactedAt } : c
+              )
+            );
           }}
         />
       )}

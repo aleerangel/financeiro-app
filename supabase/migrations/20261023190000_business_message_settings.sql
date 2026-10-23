@@ -48,3 +48,4 @@ CREATE POLICY "business_message_settings_delete"
   FOR DELETE
   TO authenticated
   USING (auth.uid() = user_id);
+
