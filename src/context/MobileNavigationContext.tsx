@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { PaymentMethod, FinancialScope } from '@/types/database';
 
 export type MobileTab = 'home' | 'statement' | 'summary' | 'more';
 export type MobileContextMode = 'business' | 'personal';
@@ -17,6 +18,37 @@ export interface NewTransactionModalState {
   open: boolean;
   type: 'income' | 'expense';
   scope: 'personal' | 'business';
+}
+
+export interface OptimisticTransactionData {
+  description: string;
+  amount: number;
+  type: 'income' | 'expense';
+  scope: FinancialScope;
+  payment_method: PaymentMethod;
+  transaction_date: string;
+  due_date: string;
+  category_id?: string | null;
+  account_id?: string | null;
+  credit_card_id?: string | null;
+  total_installments?: number;
+  is_paid: boolean;
+}
+
+export interface OptimisticSaleData {
+  totalAmount: number;
+  paymentMethod: string;
+  accountId?: string | null;
+  clientName: string;
+  itemsCount: number;
+  isCredit: boolean;
+}
+
+export interface OptimisticMutation {
+  type: 'transaction' | 'sale' | 'yield' | 'refresh';
+  transaction?: OptimisticTransactionData;
+  sale?: OptimisticSaleData;
+  timestamp: number;
 }
 
 interface MobileNavigationContextType {
@@ -38,6 +70,8 @@ interface MobileNavigationContextType {
   yieldModalOpen: boolean;
   setYieldModalOpen: (open: boolean) => void;
   openYieldCorrection: () => void;
+  lastMutation: OptimisticMutation | null;
+  notifyMutation: (mutation: Omit<OptimisticMutation, 'timestamp'>) => void;
 }
 
 const MobileNavigationContext = createContext<MobileNavigationContextType | undefined>(undefined);
@@ -82,6 +116,20 @@ export function MobileNavigationProvider({ children }: { children: React.ReactNo
     type: 'expense',
     scope: 'personal',
   });
+  const [lastMutation, setLastMutation] = useState<OptimisticMutation | null>(null);
+
+  const notifyMutation = useCallback((mutation: Omit<OptimisticMutation, 'timestamp'>) => {
+    const fullMutation: OptimisticMutation = {
+      ...mutation,
+      timestamp: Date.now(),
+    };
+    setLastMutation(fullMutation);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('financeiro:mutation', { detail: fullMutation })
+      );
+    }
+  }, []);
 
   const setContextMode = (mode: MobileContextMode) => {
     setContextModeState(mode);
@@ -139,6 +187,8 @@ export function MobileNavigationProvider({ children }: { children: React.ReactNo
         yieldModalOpen,
         setYieldModalOpen,
         openYieldCorrection,
+        lastMutation,
+        notifyMutation,
       }}
     >
       {children}
@@ -152,4 +202,8 @@ export function useMobileNavigation() {
     throw new Error('useMobileNavigation must be used within a MobileNavigationProvider');
   }
   return context;
+}
+
+export function useOptionalMobileNavigation() {
+  return useContext(MobileNavigationContext) || null;
 }

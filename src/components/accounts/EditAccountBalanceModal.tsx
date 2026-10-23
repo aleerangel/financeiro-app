@@ -9,6 +9,7 @@ import {
   recordAccountYield,
 } from '@/lib/actions/accounts';
 import { formatCurrency } from '@/lib/utils';
+import { useOptionalMobileNavigation } from '@/context/MobileNavigationContext';
 
 interface EditAccountBalanceModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ function EditAccountBalanceDialog({
   onClose,
   onSuccess,
 }: DialogProps) {
+  const mobileNav = useOptionalMobileNavigation();
   const currentBalance = Number(account.current_balance) || 0;
 
   const [mode, setMode] = useState<'yield' | 'adjust'>(defaultMode);
@@ -90,6 +92,9 @@ function EditAccountBalanceDialog({
 
       if (onSuccess) {
         onSuccess();
+      }
+      if (mobileNav?.notifyMutation) {
+        mobileNav.notifyMutation({ type: 'yield' });
       }
       toast.success(
         mode === 'yield'

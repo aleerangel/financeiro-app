@@ -12,6 +12,7 @@ import {
   stripScopeTagFromNotes,
 } from '@/lib/business-scope-utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { useOptionalMobileNavigation } from '@/context/MobileNavigationContext';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ function TransactionModalDialog({
   defaultScope = 'personal',
   onSuccess,
 }: TransactionModalProps) {
+  const mobileNav = useOptionalMobileNavigation();
   const isEditing = !!transaction;
 
   const initialScope: FinancialScope = transaction
@@ -182,6 +184,26 @@ function TransactionModalDialog({
           is_paid: tab === 'credit' ? false : isPaid,
           notes: notes.trim() || null,
           scope,
+        });
+      }
+
+      if (mobileNav?.notifyMutation) {
+        mobileNav.notifyMutation({
+          type: 'transaction',
+          transaction: {
+            description: description.trim(),
+            amount: parsedAmount,
+            type: txType,
+            scope,
+            payment_method: paymentMethod,
+            transaction_date: date,
+            due_date: date,
+            category_id: categoryId || null,
+            account_id: tab !== 'credit' ? accountId || null : null,
+            credit_card_id: tab === 'credit' ? cardId || null : null,
+            total_installments: tab === 'credit' ? installments : 1,
+            is_paid: tab === 'credit' ? false : isPaid,
+          },
         });
       }
 

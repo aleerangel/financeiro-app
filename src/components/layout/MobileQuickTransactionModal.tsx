@@ -39,7 +39,7 @@ export function MobileQuickTransactionModal() {
 }
 
 function MobileQuickTransactionModalDialog() {
-  const { newTransactionModal, setNewTransactionModal } = useMobileNavigation();
+  const { newTransactionModal, setNewTransactionModal, notifyMutation } = useMobileNavigation();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -140,6 +140,25 @@ function MobileQuickTransactionModalDialog() {
         credit_card_id: isCredit ? cardId || null : null,
         total_installments: isCredit ? installments : 1,
         is_paid: isCredit ? false : isPaid,
+      });
+
+      // Notifica Dashboard e painéis imediatamente (atualização instantânea 0ms)
+      notifyMutation({
+        type: 'transaction',
+        transaction: {
+          description: description.trim(),
+          amount: numericAmount,
+          type,
+          scope,
+          payment_method: paymentMethod,
+          transaction_date: date,
+          due_date: date,
+          category_id: activeCategoryId || null,
+          account_id: isCredit ? null : accountId || null,
+          credit_card_id: isCredit ? cardId || null : null,
+          total_installments: isCredit ? installments : 1,
+          is_paid: isCredit ? false : isPaid,
+        },
       });
 
       invalidateClientCache(['accounts', 'cards']);

@@ -25,7 +25,7 @@ import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
 import { getZonedParts } from '@/lib/date-utils';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { useMobileNavigation, OptimisticMutation } from '@/context/MobileNavigationContext';
 import { seedClientCache, getCachedSimpleClients, getCachedProducts } from '@/lib/client-cache';
 import { MobileHeader } from './mobile/MobileHeader';
 import { BusinessDashboardMobile } from './mobile/BusinessDashboardMobile';
@@ -205,6 +205,150 @@ export function DashboardView({
       setRefreshing(false);
     }
   }, [month, year, monthKey]);
+
+  // Escuta mutações imediatas disparadas pelos modais móveis ou pelo botão central (+)
+  useEffect(() => {
+    const handleMutationEvent = (event: Event) => {
+      const customEvt = event as CustomEvent<OptimisticMutation>;
+      const mutation = customEvt.detail;
+      if (!mutation) return;
+
+      // 1. Invalida cache do mês para que refetches e trocas de mês busquem os dados reais
+      cacheRef.current.delete(monthKey);
+
+      // 2. Atualização Otimista Instantânea (0ms) de Nova Transação
+      if (mutation.type === 'transaction' && mutation.transaction) {
+        const tx = mutation.transaction;
+
+        // Cria transação otimista para inserção na lista
+        const optimisticTx: Transaction = {
+          id: `temp-${Date.now()}`,
+          user_id: '',
+          description: tx.description,
+          amount: tx.amount,
+          type: tx.type,
+          scope: tx.scope,
+          payment_method: tx.payment_method,
+          transaction_date: tx.transaction_date,
+          due_date: tx.due_date,
+          category_id: tx.category_id || null,
+          category: categories.find((c) => c.id === tx.category_id),
+          account_id: tx.account_id || null,
+          account: accounts.find((a) => a.id === tx.account_id),
+          credit_card_id: tx.credit_card_id || null,
+          credit_card: initialCards.find((c) => c.id === tx.credit_card_id),
+          installment_group_id: null,
+          recurrence_id: null,
+          current_installment: 1,
+          total_installments: tx.total_installments || 1,
+          is_paid: tx.is_paid,
+          paid_at: tx.is_paid ? new Date().toISOString() : null,
+          notes: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        setTransactions((prev) => [optimisticTx, ...prev]);
+
+        // Se movimentou conta e foi pago, atualiza saldo imediatamente
+        if (tx.account_id && tx.is_paid) {
+          setAccounts((prev) =>
+            prev.map((acc) => {
+              if (acc.id !== tx.account_id) return acc;
+              const delta = tx.type === 'income' ? tx.amount : -tx.amount;
+              return {
+                ...acc,
+                current_balance: Number(acc.current_balance || 0) + delta,
+              };
+            })
+          );
+        }
+
+        // Se for despesa ou receita da barbearia (business), atualiza o resumo da barbearia imediatamente
+        if (tx.scope === 'business') {
+          setBusinessData((prev) => {
+            const isExpense = tx.type === 'expense';
+            const isIncome = tx.type === 'income';
+            const prevSum = prev.monthSummary;
+
+            if (isIncome) {
+              return {
+                ...prev,
+                monthSummary: {
+                  ...prevSum,
+                  revenue: prevSum.revenue + tx.amount,
+                  netProfit: prevSum.netProfit + tx.amount,
+                  projectedProfit: prevSum.projectedProfit + tx.amount,
+                  salesCount: prevSum.salesCount + 1,
+                },
+              };
+            } else if (isExpense) {
+              return {
+                ...prev,
+                monthSummary: {
+                  ...prevSum,
+                  totalExpenses: prevSum.totalExpenses + tx.amount,
+                  paidExpenses: tx.is_paid
+                    ? prevSum.paidExpenses + tx.amount
+                    : prevSum.paidExpenses,
+                  pendingExpenses: !tx.is_paid
+                    ? prevSum.pendingExpenses + tx.amount
+                    : prevSum.pendingExpenses,
+                  netProfit: tx.is_paid
+                    ? prevSum.netProfit - tx.amount
+                    : prevSum.netProfit,
+                  projectedProfit: prevSum.projectedProfit - tx.amount,
+                },
+              };
+            }
+            return prev;
+          });
+        }
+      }
+
+      // 3. Atualização Otimista Instantânea (0ms) de Novo Atendimento / Venda Barbearia
+      if (mutation.type === 'sale' && mutation.sale) {
+        const sale = mutation.sale;
+
+        setBusinessData((prev) => {
+          const prevSum = prev.monthSummary;
+          const newRevenue = prevSum.revenue + sale.totalAmount;
+          const newSalesCount = prevSum.salesCount + 1;
+          return {
+            ...prev,
+            monthSummary: {
+              ...prevSum,
+              revenue: newRevenue,
+              netProfit: prevSum.netProfit + sale.totalAmount,
+              projectedProfit: prevSum.projectedProfit + sale.totalAmount,
+              salesCount: newSalesCount,
+              averageTicket: newRevenue / Math.max(1, newSalesCount),
+            },
+          };
+        });
+
+        if (sale.accountId && !sale.isCredit) {
+          setAccounts((prev) =>
+            prev.map((acc) => {
+              if (acc.id !== sale.accountId) return acc;
+              return {
+                ...acc,
+                current_balance: Number(acc.current_balance || 0) + sale.totalAmount,
+              };
+            })
+          );
+        }
+      }
+
+      // 4. Dispara sincronização em segundo plano (background) para consolidar
+      refreshData();
+    };
+
+    window.addEventListener('financeiro:mutation', handleMutationEvent);
+    return () => {
+      window.removeEventListener('financeiro:mutation', handleMutationEvent);
+    };
+  }, [monthKey, categories, accounts, initialCards, refreshData]);
 
   useEffect(() => {
     // 1. Otimização: Se for o mês inicial já carregado pelo SSR, não refaz queries

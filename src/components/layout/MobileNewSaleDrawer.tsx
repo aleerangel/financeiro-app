@@ -39,7 +39,7 @@ export function MobileNewSaleDrawer() {
 }
 
 function MobileNewSaleDrawerDialog() {
-  const { setNewSaleOpen } = useMobileNavigation();
+  const { setNewSaleOpen, notifyMutation } = useMobileNavigation();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
@@ -253,6 +253,19 @@ function MobileNewSaleDrawerDialog() {
         initial_payment: paymentMethod === 'on_credit' && initPayNum > 0 ? initPayNum : undefined,
         initial_payment_method:
           paymentMethod === 'on_credit' && initPayNum > 0 ? initialPaymentMethod : undefined,
+      });
+
+      // Notifica Dashboard e painéis imediatamente (atualização instantânea 0ms)
+      notifyMutation({
+        type: 'sale',
+        sale: {
+          totalAmount,
+          paymentMethod,
+          accountId: accountId || null,
+          clientName: finalClientName,
+          itemsCount: selectedItems.length,
+          isCredit: paymentMethod === 'on_credit',
+        },
       });
 
       invalidateClientCache(['accounts', 'clients']);
