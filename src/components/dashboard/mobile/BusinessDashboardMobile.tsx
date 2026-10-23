@@ -145,6 +145,29 @@ export function BusinessDashboardMobile({
             </div>
           </div>
         </div>
+
+        {/* Card 4: A Receber (Fiados) */}
+        <Link
+          href="/fiados"
+          className="block p-4 bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 rounded-2xl transition-all active:scale-[0.99]"
+        >
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
+              A Receber • Fiados em Aberto
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <ArrowUpRight className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-2xl font-extrabold text-amber-400 block tracking-tight">
+              {formatHidden(formatCurrency(summary.totalReceivables || 0))}
+            </span>
+            <span className="text-xs text-amber-400/80 font-medium">
+              Abrir central &rarr;
+            </span>
+          </div>
+        </Link>
       </div>
 
       {/* 2. Divisão de Faturamento: Serviços vs Produtos */}

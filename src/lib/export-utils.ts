@@ -524,3 +524,178 @@ export function exportSalesReport({
 
   doc.save(`${baseFilename}.pdf`);
 }
+
+export interface ExportDebtsReportOptions {
+  format: ExportFormat;
+  clients: {
+    clientName: string;
+    clientPhone?: string | null;
+    totalDebt: number;
+    pendingSalesCount: number;
+    mostUrgentDueDate?: string | null;
+    isOverdue?: boolean;
+    daysDiff?: number | null;
+  }[];
+  totalPendingDebt: number;
+  totalOverdueDebt: number;
+}
+
+export function exportDebtsReport({
+  format,
+  clients,
+  totalPendingDebt,
+  totalOverdueDebt,
+}: ExportDebtsReportOptions) {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const baseFilename = `relatorio-fiados-receber-${dateStr}`;
+
+  const headers = [
+    'Cliente',
+    'Telefone',
+    'Situação Vencimento',
+    'Comandas Abertas',
+    'Valor a Receber (R$)',
+  ];
+
+  const rows = clients.map((c) => {
+    let situacao = 'Sem prazo';
+    if (c.isOverdue) {
+      situacao = `Vencido (${c.daysDiff || 0} dias)`;
+    } else if (c.mostUrgentDueDate) {
+      situacao = `Vence em ${c.mostUrgentDueDate.split('-').reverse().join('/')}`;
+    }
+
+    return [
+      c.clientName,
+      c.clientPhone || '-',
+      situacao,
+      c.pendingSalesCount,
+      c.totalDebt,
+    ];
+  });
+
+  if (format === 'csv') {
+    const formattedRows = rows.map((r) => [
+      ...r.slice(0, 4),
+      Number(r[4]).toFixed(2).replace('.', ','),
+    ]);
+    exportToCsv(baseFilename, headers, formattedRows);
+    return;
+  }
+
+  if (format === 'xlsx') {
+    const summaryRows: (string | number)[][] = [
+      ['RESUMO GERAL DE FIADOS', ''],
+      ['Total a Receber', totalPendingDebt],
+      ['Total Vencido em Atraso', totalOverdueDebt],
+      ['Clientes com Pendências', clients.length],
+    ];
+    exportToExcel(baseFilename, 'Fiados a Receber', headers, rows, summaryRows);
+    return;
+  }
+
+  // GERAÇÃO DE PDF
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Cabeçalho
+  doc.setFillColor(24, 24, 27); // zinc-900
+  doc.rect(0, 0, pageWidth, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BARBEARIA • CENTRAL DE FIADOS A RECEBER', 14, 13);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(161, 161, 170);
+  doc.text(
+    `Gerado em: ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+    14,
+    21
+  );
+
+  // Cards de resumo
+  const startY = 34;
+  const cardWidth = (pageWidth - 28 - 6) / 3;
+  const cardHeight = 16;
+
+  const cards = [
+    { title: 'TOTAL A RECEBER', val: formatCurrency(totalPendingDebt), color: [217, 119, 6] }, // amber-600
+    { title: 'TOTAL VENCIDO', val: formatCurrency(totalOverdueDebt), color: [225, 29, 72] }, // rose-600
+    { title: 'CLIENTES DEVEDORES', val: `${clients.length} clientes`, color: [37, 99, 235] },
+  ];
+
+  cards.forEach((card, idx) => {
+    const x = 14 + idx * (cardWidth + 3);
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, startY, cardWidth, cardHeight, 2, 2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(card.color[0], card.color[1], card.color[2]);
+    doc.text(card.title, x + 4, startY + 6);
+
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(card.val, x + 4, startY + 12);
+  });
+
+  const tableRows = rows.map((r) => [
+    r[0],
+    r[1],
+    r[2],
+    r[3],
+    formatCurrency(Number(r[4])),
+  ]);
+
+  autoTable(doc, {
+    startY: startY + cardHeight + 6,
+    head: [headers],
+    body: tableRows,
+    theme: 'striped',
+    styles: {
+      fontSize: 8.5,
+      cellPadding: 3,
+      textColor: [51, 65, 85],
+    },
+    headStyles: {
+      fillColor: [30, 41, 59],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { cellWidth: 50 }, // Cliente
+      1: { cellWidth: 35 }, // Telefone
+      2: { cellWidth: 40 }, // Vencimento
+      3: { cellWidth: 25, halign: 'center' }, // Comandas
+      4: { cellWidth: 32, halign: 'right' }, // Valor
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    didDrawPage: (data) => {
+      const pageCount = doc.internal.pages.length - 1;
+      const str = `Página ${data.pageNumber} de ${pageCount}`;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        'Relatório gerado pelo Financeiro App • Gestão de Fiados',
+        14,
+        doc.internal.pageSize.getHeight() - 8
+      );
+      doc.text(
+        str,
+        pageWidth - 14 - doc.getTextWidth(str),
+        doc.internal.pageSize.getHeight() - 8
+      );
+    },
+  });
+
+  doc.save(`${baseFilename}.pdf`);
+}

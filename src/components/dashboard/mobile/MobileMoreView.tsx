@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   LogOut,
   Loader2,
+  Receipt,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
@@ -58,8 +59,9 @@ export function MobileMoreView({
     };
   }, []);
 
-  // Pré-carrega ativamente todas as 6 rotas em segundo plano no momento em que a aba Mais é aberta
+  // Pré-carrega ativamente todas as rotas em segundo plano no momento em que a aba Mais é aberta
   useEffect(() => {
+    router.prefetch('/fiados');
     router.prefetch('/clientes');
     router.prefetch('/produtos');
     router.prefetch('/contas');
@@ -114,6 +116,13 @@ export function MobileMoreView({
           iconColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
           badge: clientsReturnCount > 0 ? `${clientsReturnCount} para retorno` : null,
           badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        },
+        {
+          title: 'Fiados & Contas a Receber',
+          description: 'Vendas a prazo, cobrança no WhatsApp e quitação',
+          href: '/fiados',
+          icon: Receipt,
+          iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
         },
         {
           title: 'Produtos & Estoque',

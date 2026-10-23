@@ -16,6 +16,12 @@ export interface AmortizeTargetSale {
   remaining_amount?: number;
 }
 
+export interface AmortizeClientTarget {
+  id: string;
+  name: string;
+  totalDebt?: number;
+}
+
 interface AmortizeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,7 +29,7 @@ interface AmortizeModalProps {
   // Modo 1: Amortização de comanda específica
   sale?: AmortizeTargetSale | null;
   // Modo 2: Amortização consolidada no cliente
-  client?: ClientWithStats | null;
+  client?: ClientWithStats | AmortizeClientTarget | null;
   onSuccess?: () => void;
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exportToCsv, exportTransactionsReport, exportSalesReport } from './export-utils';
+import { exportToCsv, exportTransactionsReport, exportSalesReport, exportDebtsReport } from './export-utils';
 import { Transaction, Sale } from '../types/database';
 
 describe('export-utils', () => {
@@ -149,6 +149,40 @@ describe('export-utils', () => {
     });
 
     expect(mockLink.download).toContain('relatorio-vendas');
+    expect(mockLink.download).toContain('.csv');
+    expect(mockLink.click).toHaveBeenCalled();
+  });
+
+  it('exportDebtsReport gera CSV de fiados a receber com sucesso', () => {
+    const mockClients = [
+      {
+        clientName: 'João da Silva',
+        clientPhone: '11999998888',
+        totalDebt: 120,
+        pendingSalesCount: 2,
+        mostUrgentDueDate: '2026-10-30',
+        isOverdue: false,
+        daysDiff: -7,
+      },
+      {
+        clientName: 'Carlos Souza',
+        clientPhone: null,
+        totalDebt: 50,
+        pendingSalesCount: 1,
+        mostUrgentDueDate: '2026-10-15',
+        isOverdue: true,
+        daysDiff: 8,
+      },
+    ];
+
+    exportDebtsReport({
+      format: 'csv',
+      clients: mockClients,
+      totalPendingDebt: 170,
+      totalOverdueDebt: 50,
+    });
+
+    expect(mockLink.download).toContain('relatorio-fiados-receber');
     expect(mockLink.download).toContain('.csv');
     expect(mockLink.click).toHaveBeenCalled();
   });

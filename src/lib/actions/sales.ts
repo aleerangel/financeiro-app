@@ -680,6 +680,7 @@ export async function deleteSaleAmortization(amortizationId: string) {
   revalidatePath('/transacoes');
   revalidatePath('/contas');
   revalidatePath('/clientes');
+  revalidatePath('/fiados');
 }
 
 export async function deleteSale(saleId: string) {
@@ -734,5 +735,188 @@ export async function deleteSale(saleId: string) {
   revalidatePath('/dashboard');
   revalidatePath('/transacoes');
   revalidatePath('/contas');
+  revalidatePath('/clientes');
+  revalidatePath('/fiados');
+}
+
+export interface ClientDebtItem {
+  clientId: string;
+  clientName: string;
+  clientPhone: string | null;
+  clientCpf: string | null;
+  totalDebt: number;
+  totalOriginal: number;
+  totalPaid: number;
+  pendingSalesCount: number;
+  mostUrgentDueDate: string | null;
+  isOverdue: boolean;
+  daysDiff: number | null;
+  sales: Sale[];
+}
+
+export interface DebtsOverviewSummary {
+  totalPendingDebt: number;
+  totalOverdueDebt: number;
+  totalClientsWithDebt: number;
+  maxClientDebt: { clientName: string; amount: number } | null;
+  clients: ClientDebtItem[];
+}
+
+export async function getPendingDebtsSummary(): Promise<DebtsOverviewSummary> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const todayStr = getTodayYMD();
+
+  // Busca todas as vendas com saldo devedor em aberto
+  const { data: salesData, error } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      items:sale_items(*),
+      account:accounts(*),
+      client:clients(*),
+      amortizations:sale_amortizations(
+        *,
+        account:accounts(id, name)
+      )
+    `)
+    .eq('user_id', user.id)
+    .in('status', ['pending', 'partially_paid'])
+    .order('sale_date', { ascending: false });
+
+  if (error || !salesData) {
+    return {
+      totalPendingDebt: 0,
+      totalOverdueDebt: 0,
+      totalClientsWithDebt: 0,
+      maxClientDebt: null,
+      clients: [],
+    };
+  }
+
+  const sales = salesData as unknown as Sale[];
+
+  // Agrupa por cliente
+  const clientMap = new Map<string, {
+    clientId: string;
+    clientName: string;
+    clientPhone: string | null;
+    clientCpf: string | null;
+    sales: Sale[];
+  }>();
+
+  for (const s of sales) {
+    const key = s.client_id || s.client_name.trim().toLowerCase();
+    const existing = clientMap.get(key) || {
+      clientId: s.client_id || s.id,
+      clientName: s.client?.name || s.client_name,
+      clientPhone: s.client?.phone || null,
+      clientCpf: s.client?.cpf || null,
+      sales: [],
+    };
+    existing.sales.push(s);
+    clientMap.set(key, existing);
+  }
+
+  let totalPendingDebt = 0;
+  let totalOverdueDebt = 0;
+  const clientsList: ClientDebtItem[] = [];
+
+  for (const group of clientMap.values()) {
+    const totalDebt = group.sales.reduce(
+      (acc, s) => acc + Number(s.remaining_amount ?? s.total_amount ?? 0),
+      0
+    );
+    const totalOriginal = group.sales.reduce((acc, s) => acc + Number(s.total_amount || 0), 0);
+    const totalPaid = group.sales.reduce((acc, s) => acc + Number(s.paid_amount || 0), 0);
+
+    // Encontra a data de vencimento mais urgente / antiga
+    let mostUrgentDueDate: string | null = null;
+    let mostUrgentDaysDiff: number | null = null;
+    let isClientOverdue = false;
+
+    for (const s of group.sales) {
+      if (s.due_date) {
+        // diff em dias: hoje - due_date
+        const diffMs = new Date(todayStr).getTime() - new Date(s.due_date).getTime();
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 0) {
+          isClientOverdue = true;
+        }
+
+        if (mostUrgentDaysDiff === null || diffDays > mostUrgentDaysDiff) {
+          mostUrgentDaysDiff = diffDays;
+          mostUrgentDueDate = s.due_date;
+        }
+      }
+    }
+
+    if (isClientOverdue) {
+      totalOverdueDebt += totalDebt;
+    }
+    totalPendingDebt += totalDebt;
+
+    clientsList.push({
+      clientId: group.clientId,
+      clientName: group.clientName,
+      clientPhone: group.clientPhone,
+      clientCpf: group.clientCpf,
+      totalDebt: Number(totalDebt.toFixed(2)),
+      totalOriginal: Number(totalOriginal.toFixed(2)),
+      totalPaid: Number(totalPaid.toFixed(2)),
+      pendingSalesCount: group.sales.length,
+      mostUrgentDueDate,
+      isOverdue: isClientOverdue,
+      daysDiff: mostUrgentDaysDiff,
+      sales: group.sales,
+    });
+  }
+
+  // Ordena por maior débito
+  clientsList.sort((a, b) => b.totalDebt - a.totalDebt);
+
+  const maxClient = clientsList[0]
+    ? { clientName: clientsList[0].clientName, amount: clientsList[0].totalDebt }
+    : null;
+
+  return {
+    totalPendingDebt: Number(totalPendingDebt.toFixed(2)),
+    totalOverdueDebt: Number(totalOverdueDebt.toFixed(2)),
+    totalClientsWithDebt: clientsList.length,
+    maxClientDebt: maxClient,
+    clients: clientsList,
+  };
+}
+
+export async function updateSaleDebt(input: {
+  saleId: string;
+  dueDate?: string | null;
+  notes?: string | null;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const { error } = await supabase
+    .from('sales')
+    .update({
+      due_date: input.dueDate || null,
+      notes: input.notes?.trim() || null,
+    })
+    .eq('id', input.saleId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    throw new Error(error.message || 'Erro ao atualizar comanda.');
+  }
+
+  revalidatePath('/vendas');
+  revalidatePath('/fiados');
+  revalidatePath('/dashboard');
   revalidatePath('/clientes');
 }

@@ -126,7 +126,7 @@ export function BusinessDashboardDesktop({
   return (
     <div className="space-y-6">
       {/* KPIs de Resultado Real da Barbearia no Mês Selecionado */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {/* 1. Faturamento Bruto */}
         <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
@@ -254,6 +254,29 @@ export function BusinessDashboardDesktop({
             </div>
           </div>
         </div>
+
+        {/* 6. A Receber (Fiados) */}
+        <Link
+          href="/fiados"
+          className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 hover:bg-zinc-850 rounded-2xl flex flex-col justify-between transition-all duration-200 group cursor-pointer shadow-sm"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-400 group-hover:text-amber-300">
+              A Receber (Fiados)
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 group-hover:bg-amber-500/20 flex items-center justify-center text-amber-400 transition-colors">
+              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <span className="text-lg sm:text-2xl font-extrabold text-amber-400 block tracking-tight">
+              {formatCurrency(summary.totalReceivables || 0)}
+            </span>
+            <span className="text-[11px] text-zinc-400 group-hover:text-zinc-300 mt-1 flex items-center gap-1 transition-colors">
+              Ver cobranças &rarr;
+            </span>
+          </div>
+        </Link>
       </div>
 
       {/* Alerta de Retenção: Clientes para Retorno (+30 dias) */}
