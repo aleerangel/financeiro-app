@@ -235,6 +235,9 @@ export function DashboardView({
             yearlyStats={generalData.yearlyStats}
             formattedMonth={formattedMonth}
             month={month}
+            year={year}
+            transactions={transactions}
+            accounts={accounts}
           />
         )}
 
