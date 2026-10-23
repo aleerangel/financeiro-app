@@ -9,6 +9,8 @@ import {
   Tag,
   Scissors,
   User,
+  CreditCard as CardIcon,
+  HelpCircle,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { Account, CreditCard, Category, PaymentMethod, FinancialScope } from '@/types/database';
@@ -18,6 +20,7 @@ import { getCategories } from '@/lib/actions/categories';
 import { createTransaction } from '@/lib/actions/transactions';
 import { isBusinessCategory } from '@/lib/business-scope-utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export function MobileQuickTransactionModal() {
@@ -48,6 +51,7 @@ function MobileQuickTransactionModalDialog() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [accountId, setAccountId] = useState('');
   const [cardId, setCardId] = useState('');
+  const [installments, setInstallments] = useState<number>(1);
   const [date, setDate] = useState(getTodayYMD());
   const [isPaid, setIsPaid] = useState(newTransactionModal.type === 'income' || paymentMethod !== 'credit');
   const [submitting, setSubmitting] = useState(false);
@@ -90,6 +94,11 @@ function MobileQuickTransactionModalDialog() {
     return availableCategories[0]?.id || '';
   }, [availableCategories, categoryId]);
 
+  const parsedAmount = useMemo(() => {
+    const val = parseFloat(amountStr.replace(',', '.'));
+    return isNaN(val) || val <= 0 ? 0 : val;
+  }, [amountStr]);
+
   const handleClose = () => {
     setNewTransactionModal({ ...newTransactionModal, open: false });
   };
@@ -106,10 +115,15 @@ function MobileQuickTransactionModalDialog() {
       return;
     }
 
+    const isCredit = type === 'expense' && paymentMethod === 'credit';
+    if (isCredit && !cardId) {
+      toast.error('Selecione um cartão de crédito cadastrado');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
-      const isCredit = paymentMethod === 'credit';
       await createTransaction({
         description: description.trim(),
         amount: numericAmount,
@@ -121,16 +135,22 @@ function MobileQuickTransactionModalDialog() {
         category_id: activeCategoryId || null,
         account_id: isCredit ? null : accountId || null,
         credit_card_id: isCredit ? cardId || null : null,
+        total_installments: isCredit ? installments : 1,
         is_paid: isCredit ? false : isPaid,
       });
 
       toast.success(
-        type === 'income' ? 'Receita lançada com sucesso!' : 'Despesa lançada com sucesso!'
+        type === 'income'
+          ? 'Receita lançada com sucesso!'
+          : isCredit && installments > 1
+          ? `Despesa parcelada em ${installments}x lançada com sucesso!`
+          : 'Despesa lançada com sucesso!'
       );
 
       if (keepOpen) {
         setAmountStr('');
         setDescription('');
+        setInstallments(1);
       } else {
         handleClose();
       }
@@ -143,6 +163,7 @@ function MobileQuickTransactionModalDialog() {
   };
 
   const isExpense = type === 'expense';
+  const isCredit = isExpense && paymentMethod === 'credit';
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
@@ -262,7 +283,7 @@ function MobileQuickTransactionModalDialog() {
           {/* Campo de Valor em Destaque */}
           <div className="bg-zinc-950/80 p-4 rounded-2xl border border-zinc-800 text-center">
             <span className="text-[11px] uppercase font-bold text-zinc-500 tracking-wider block mb-1">
-              Valor
+              Valor Total
             </span>
             <div className="flex items-center justify-center gap-1">
               <span className="text-2xl font-bold text-zinc-400">R$</span>
@@ -333,7 +354,13 @@ function MobileQuickTransactionModalDialog() {
               </label>
               <select
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                onChange={(e) => {
+                  const newMethod = e.target.value as PaymentMethod;
+                  setPaymentMethod(newMethod);
+                  if (newMethod === 'credit') {
+                    setIsPaid(false);
+                  }
+                }}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700"
               >
                 <option value="pix">Pix</option>
@@ -346,19 +373,23 @@ function MobileQuickTransactionModalDialog() {
 
             <div>
               <label className="text-xs font-semibold text-zinc-300 block mb-1">
-                {paymentMethod === 'credit' ? 'Cartão' : 'Conta'}
+                {isCredit ? 'Cartão de Crédito' : 'Conta'}
               </label>
-              {paymentMethod === 'credit' ? (
+              {isCredit ? (
                 <select
                   value={cardId}
                   onChange={(e) => setCardId(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700"
+                  className="w-full bg-zinc-950 border border-purple-500/40 rounded-xl px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-purple-400"
                 >
-                  {cards.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  {cards.length === 0 ? (
+                    <option value="">Nenhum cartão cadastrado</option>
+                  ) : (
+                    cards.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} (Vence dia {c.due_day})
+                      </option>
+                    ))
+                  )}
                 </select>
               ) : (
                 <select
@@ -375,6 +406,48 @@ function MobileQuickTransactionModalDialog() {
               )}
             </div>
           </div>
+
+          {/* Opção de Compra Parcelada (Exibida SOMENTE quando Cartão de Crédito) */}
+          {isCredit && (
+            <div className="p-3 bg-purple-950/20 border border-purple-500/30 rounded-2xl space-y-2 animate-in fade-in-50">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                  <CardIcon className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Condição de Pagamento</span>
+                </label>
+                {installments > 1 && (
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                    {installments}x de {formatCurrency(parsedAmount > 0 ? parsedAmount / installments : 0)}
+                  </span>
+                )}
+              </div>
+
+              <select
+                value={installments}
+                onChange={(e) => setInstallments(parseInt(e.target.value, 10) || 1)}
+                className="w-full bg-zinc-950 border border-purple-500/30 rounded-xl px-3 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-purple-400"
+              >
+                <option value={1}>1x à vista ({formatCurrency(parsedAmount)})</option>
+                {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24].map((num) => {
+                  const installmentVal = parsedAmount > 0 ? parsedAmount / num : 0;
+                  return (
+                    <option key={num} value={num}>
+                      {num}x de {formatCurrency(installmentVal)} (Total: {formatCurrency(parsedAmount)})
+                    </option>
+                  );
+                })}
+              </select>
+
+              {installments > 1 && (
+                <div className="flex items-start gap-1.5 text-[11px] text-purple-300/80 pt-0.5">
+                  <HelpCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-purple-400" />
+                  <span>
+                    O sistema lançará automaticamente as <strong>{installments} parcelas</strong> nas faturas dos meses subsequentes.
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Data e Status de Pagamento */}
           <div className="grid grid-cols-2 gap-2.5 pt-1">
@@ -393,7 +466,7 @@ function MobileQuickTransactionModalDialog() {
               </div>
             </div>
 
-            {paymentMethod !== 'credit' && (
+            {!isCredit && (
               <div className="flex flex-col justify-end">
                 <label className="flex items-center gap-2 p-2 bg-zinc-950 border border-zinc-800 rounded-xl cursor-pointer text-xs text-zinc-300">
                   <input
@@ -432,4 +505,3 @@ function MobileQuickTransactionModalDialog() {
     </div>
   );
 }
-
