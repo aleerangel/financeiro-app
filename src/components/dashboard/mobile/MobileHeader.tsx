@@ -16,8 +16,8 @@ export function MobileHeader() {
   const { formattedMonth, prevMonth, nextMonth } = useDateContext();
   const { activeTab, contextMode, setContextMode, showValues, setShowValues } = useMobileNavigation();
 
-  // Na aba "Mais", o seletor de mês e contexto não são necessários
-  if (activeTab === 'more') return null;
+  // Na aba "Mais" e na aba "Resumo" (que tem seu próprio seletor único no topo), o cabeçalho padrão não é renderizado
+  if (activeTab === 'more' || activeTab === 'summary') return null;
 
   const isHome = activeTab === 'home';
 

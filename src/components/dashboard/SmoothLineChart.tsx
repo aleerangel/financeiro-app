@@ -132,12 +132,12 @@ export function SmoothLineChart({
   }, [series, dynamicYScale]);
 
   // Dimensões SVG internas
-  const svgWidth = compactLayout ? 460 : 650;
+  const svgWidth = compactLayout ? 360 : 650;
   const svgHeight = height;
-  const padLeft = compactLayout ? 58 : 85;
-  const padRight = compactLayout ? 12 : 25;
+  const padLeft = compactLayout ? 48 : 85;
+  const padRight = compactLayout ? 10 : 25;
   const padTop = compactLayout ? 16 : 25;
-  const padBottom = compactLayout ? 28 : 35;
+  const padBottom = compactLayout ? 26 : 35;
 
   const formatTickLabel = (tick: number) => {
     if (compactLayout) {
@@ -200,7 +200,11 @@ export function SmoothLineChart({
   }, [series, minVal, maxVal, chartW, chartH, totalPoints]);
 
   return (
-    <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between relative">
+    <div
+      className={`${
+        compactLayout ? 'p-3 sm:p-5' : 'p-5'
+      } bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between relative`}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
         <div>
           <h3 className="font-bold text-zinc-100 text-base">{title}</h3>
@@ -298,7 +302,7 @@ export function SmoothLineChart({
               d={p.path}
               fill="none"
               stroke={series[i].color}
-              strokeWidth="2.5"
+              strokeWidth={compactLayout ? '3.5' : '2.5'}
               strokeLinecap="round"
               strokeLinejoin="round"
               className="pointer-events-none"
@@ -331,10 +335,10 @@ export function SmoothLineChart({
                       key={`pt-${mIdx}`}
                       cx={pt.x}
                       cy={pt.y}
-                      r={isHovered ? 5.5 : 3.5}
+                      r={isHovered ? 6 : (compactLayout ? 4.5 : 3.5)}
                       fill="#09090b"
                       stroke={s.color}
-                      strokeWidth={isHovered ? 3 : 2}
+                      strokeWidth={isHovered ? 3.5 : (compactLayout ? 2.5 : 2)}
                       className="transition-all duration-150 pointer-events-none"
                     />
                   );

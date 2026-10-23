@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import {
   TrendingUp,
@@ -10,9 +10,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ShoppingBag,
-  Calendar,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import {
   BusinessDashboardData,
@@ -24,21 +25,19 @@ import { AccountWithBalance } from '@/lib/actions/accounts';
 import { Transaction } from '@/types/database';
 import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
 import { formatCurrency } from '@/lib/utils';
+import { useDateContext } from '@/context/DateContext';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { MonthlyBarChart } from '../MonthlyBarChart';
 import { CategoryDonutChart } from '../CategoryDonutChart';
 import { SmoothLineChart, ChartSeries } from '../SmoothLineChart';
-import {
-  ChartPeriodToolbar,
-  useIndependentChartPeriod,
-} from '../ChartPeriodToolbar';
+import { useIndependentChartPeriod } from '../ChartPeriodToolbar';
 
 const CategoryEvolutionModal = dynamic(
   () => import('../CategoryEvolutionModal').then((m) => m.CategoryEvolutionModal),
   { ssr: false }
 );
 
-const MONTH_NAMES = [
+const MONTH_FULL_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
@@ -58,46 +57,16 @@ export function MobileSummaryView({
   businessData,
   generalData,
   yearlyStats = [],
-  formattedMonth = '',
   month = new Date().getMonth(),
   year = new Date().getFullYear(),
   transactions = [],
   accounts = [],
 }: MobileSummaryViewProps) {
-  const { showValues } = useMobileNavigation();
+  const { showValues, setShowValues } = useMobileNavigation();
+  const { setMonthYear } = useDateContext();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
-  // Mês e ano de referência para as seções de detalhamento (Receitas, Despesas e Barbearia)
-  const [refMonth, setRefMonth] = useState<number>(month);
-  const [refYear, setRefYear] = useState<number>(year);
-
-  // Navegação do seletor único de mês de referência
-  const handlePrevRefMonth = () => {
-    if (refMonth === 0) {
-      setRefMonth(11);
-      setRefYear((y) => y - 1);
-    } else {
-      setRefMonth((m) => m - 1);
-    }
-  };
-
-  const handleNextRefMonth = () => {
-    if (refMonth === 11) {
-      setRefMonth(0);
-      setRefYear((y) => y + 1);
-    } else {
-      setRefMonth((m) => m + 1);
-    }
-  };
-
-  // Estado do Modal de Evolução por Categoria (quando clicar em Expandir no gráfico)
-  const [evolutionModalState, setEvolutionModalState] = useState<{
-    type: 'income' | 'expense';
-    refMonth: number;
-    refYear: number;
-  } | null>(null);
-
-  // 1. MOTOR NATIVO WEB DE EVOLUÇÃO (SmoothLineChart + ChartPeriodToolbar)
+  // 1. MOTOR NATIVO WEB DE EVOLUÇÃO (Inicializado com 'monthly' como default)
   const flowChart = useIndependentChartPeriod(
     year,
     month,
@@ -106,6 +75,62 @@ export function MobileSummaryView({
     getGeneralDashboardData
   );
 
+  // Garante que o modo inicial seja 'monthly' (Mensal como default)
+  useEffect(() => {
+    if (flowChart.period !== 'monthly') {
+      flowChart.setPeriod('monthly');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Navegação unificada pelo seletor único do topo
+  const handlePrevPeriod = () => {
+    if (flowChart.period === 'monthly') {
+      const newMonth = flowChart.month === 0 ? 11 : flowChart.month - 1;
+      const newYear = flowChart.month === 0 ? flowChart.year - 1 : flowChart.year;
+      flowChart.handleMonthChange(newMonth, newYear);
+      setMonthYear(newMonth, newYear);
+    } else if (flowChart.period === 'weekly') {
+      if (flowChart.selectedWeekIndex > 0) {
+        flowChart.handleWeekChange(flowChart.selectedWeekIndex - 1);
+      }
+    } else if (flowChart.period === 'yearly') {
+      const newYear = flowChart.year - 1;
+      flowChart.handleYearChange(newYear);
+      setMonthYear(flowChart.month, newYear);
+    }
+  };
+
+  const handleNextPeriod = () => {
+    if (flowChart.period === 'monthly') {
+      const newMonth = flowChart.month === 11 ? 0 : flowChart.month + 1;
+      const newYear = flowChart.month === 11 ? flowChart.year + 1 : flowChart.year;
+      flowChart.handleMonthChange(newMonth, newYear);
+      setMonthYear(newMonth, newYear);
+    } else if (flowChart.period === 'weekly') {
+      if (flowChart.selectedWeekIndex < flowChart.weeksMeta.length - 1) {
+        flowChart.handleWeekChange(flowChart.selectedWeekIndex + 1);
+      }
+    } else if (flowChart.period === 'yearly') {
+      const newYear = flowChart.year + 1;
+      flowChart.handleYearChange(newYear);
+      setMonthYear(flowChart.month, newYear);
+    }
+  };
+
+  // Label do período ativo para o seletor único
+  const activePeriodLabel = useMemo(() => {
+    if (flowChart.period === 'monthly') {
+      return `${MONTH_FULL_NAMES[flowChart.month]} de ${flowChart.year}`;
+    }
+    if (flowChart.period === 'weekly') {
+      const currentWeek = flowChart.weeksMeta?.[flowChart.selectedWeekIndex];
+      return currentWeek ? currentWeek.label : `Semana ${flowChart.selectedWeekIndex + 1}`;
+    }
+    return `Ano de ${flowChart.year}`;
+  }, [flowChart.period, flowChart.month, flowChart.year, flowChart.weeksMeta, flowChart.selectedWeekIndex]);
+
+  // Séries do Gráfico
   const flowSeries: ChartSeries[] = useMemo(
     () => [
       {
@@ -120,7 +145,7 @@ export function MobileSummaryView({
       {
         id: 'totalExpense',
         name: 'Saídas',
-        color: '#f43f5e', // Rosa/Vermelho
+        color: '#f43f5e', // Coral/Vermelho
         values: flowChart.activeStats.map((s) => s.generalExpense || 0),
         formatValue: (v) => formatCurrency(v),
       },
@@ -146,6 +171,23 @@ export function MobileSummaryView({
     () => flowChart.activeStats.map((s) => s.fullLabel || s.label),
     [flowChart.activeStats]
   );
+
+  // Totais do período ativo para exibição no cabeçalho do gráfico
+  const periodTotals = useMemo(() => {
+    const totalInc = flowChart.activeStats.reduce(
+      (sum, s) => sum + (s.serviceRevenue || 0) + (s.generalIncome || 0),
+      0
+    );
+    const totalExp = flowChart.activeStats.reduce(
+      (sum, s) => sum + (s.generalExpense || 0),
+      0
+    );
+    return {
+      income: totalInc,
+      expense: totalExp,
+      balance: totalInc - totalExp,
+    };
+  }, [flowChart.activeStats]);
 
   // 2. RECEITAS E DESPESAS (REALIZADO + PREVISTO COM O QUE AINDA FALTA)
   const {
@@ -179,7 +221,7 @@ export function MobileSummaryView({
         }
       }
     } else {
-      const curYearStat = yearlyStats[refMonth] || generalData?.yearlyStats?.[refMonth];
+      const curYearStat = yearlyStats[flowChart.month] || generalData?.yearlyStats?.[flowChart.month];
       recInc = (curYearStat?.serviceRevenue || 0) + (curYearStat?.generalIncome || 0);
       pdExp = curYearStat?.generalExpense || 0;
       pendExp = businessData.monthSummary?.pendingExpenses || 0;
@@ -193,7 +235,7 @@ export function MobileSummaryView({
       pendingExpense: pendExp,
       totalExpense: pdExp + pendExp,
     };
-  }, [transactions, yearlyStats, generalData?.yearlyStats, refMonth, businessData.monthSummary]);
+  }, [transactions, yearlyStats, generalData?.yearlyStats, flowChart.month, businessData.monthSummary]);
 
   // 3. DIAS MAIS FORTES DA BARBEARIA NO MÊS
   const strongDaysStats = useMemo(() => {
@@ -217,7 +259,6 @@ export function MobileSummaryView({
       Dom: 'Domingo',
     };
 
-    // Somar a partir de weeklyStatsByWeek
     Object.values(businessData.weeklyStatsByWeek || {}).forEach((weekDays) => {
       weekDays.forEach((stat) => {
         if (stat.label && dayTotals[stat.label] !== undefined) {
@@ -226,7 +267,6 @@ export function MobileSummaryView({
       });
     });
 
-    // Fallback nas transações caso weeklyStatsByWeek esteja vazio
     const totalRevFromWeeks = Object.values(dayTotals).reduce((a, b) => a + b, 0);
     if (totalRevFromWeeks === 0 && transactions && transactions.length > 0) {
       const bizTxs = transactions.filter((t) => t.is_paid && isBarbeariaServiceIncome(t));
@@ -278,36 +318,149 @@ export function MobileSummaryView({
     productCount: 0,
   };
 
+  // Estado do Modal de Evolução por Categoria
+  const [evolutionModalState, setEvolutionModalState] = useState<{
+    type: 'income' | 'expense';
+    refMonth: number;
+    refYear: number;
+  } | null>(null);
+
   return (
     <div className="space-y-4 pb-16">
-      {/* 1. TOPO DA PÁGINA: EVOLUÇÃO FINANCEIRA AMPLIADA */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 sm:p-5">
+      {/* ============================================================== */}
+      {/* SELETOR ÚNICO NO TOPO (SEMANAL | MENSAL [DEFAULT] | ANUAL)     */}
+      {/* ============================================================== */}
+      <div className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5 shadow-sm">
+        {/* Linha 1: Pílulas de Granularidade e Botão de Privacidade */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 flex items-center bg-zinc-950 p-1 rounded-xl border border-zinc-800/80">
+            <button
+              type="button"
+              onClick={() => flowChart.setPeriod('weekly')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                flowChart.period === 'weekly'
+                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Semanal
+            </button>
+            <button
+              type="button"
+              onClick={() => flowChart.setPeriod('monthly')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                flowChart.period === 'monthly'
+                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Mensal
+            </button>
+            <button
+              type="button"
+              onClick={() => flowChart.setPeriod('yearly')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                flowChart.period === 'yearly'
+                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Anual
+            </button>
+          </div>
+
+          {/* Botão de Privacidade */}
+          <button
+            type="button"
+            onClick={() => setShowValues((prev) => !prev)}
+            className="p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-400 hover:text-zinc-200 transition active:scale-95"
+            aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+            title={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+          >
+            {showValues ? (
+              <Eye className="w-4 h-4" />
+            ) : (
+              <EyeOff className="w-4 h-4 text-emerald-400" />
+            )}
+          </button>
+        </div>
+
+        {/* Linha 2: Navegação Touch do Período (< Período Ativo >) */}
+        <div className="flex items-center justify-between bg-zinc-950/80 border border-zinc-800/80 px-2 py-1 rounded-xl">
+          <button
+            type="button"
+            onClick={handlePrevPeriod}
+            disabled={flowChart.period === 'weekly' && flowChart.selectedWeekIndex <= 0}
+            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 disabled:opacity-25 disabled:pointer-events-none active:scale-90 transition"
+            aria-label="Período anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <span className="text-xs font-extrabold uppercase tracking-wider text-zinc-200 text-center truncate px-2">
+            {activePeriodLabel}
+          </span>
+
+          <button
+            type="button"
+            onClick={handleNextPeriod}
+            disabled={
+              flowChart.period === 'weekly' &&
+              flowChart.selectedWeekIndex >= flowChart.weeksMeta.length - 1
+            }
+            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 disabled:opacity-25 disabled:pointer-events-none active:scale-90 transition"
+            aria-label="Próximo período"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* 1. EVOLUÇÃO FINANCEIRA AMPLIADA (ALTA VISIBILIDADE)             */}
+      {/* ============================================================== */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 sm:p-5 space-y-2">
+        {/* Badges de Resumo Rápido do Período */}
+        <div className="grid grid-cols-3 gap-2 p-2 bg-zinc-950/80 rounded-xl border border-zinc-800/70 text-center">
+          <div>
+            <span className="text-[10px] text-zinc-400 block font-medium">Entradas</span>
+            <span className="text-xs font-bold text-emerald-400">
+              {formatHidden(formatCurrency(periodTotals.income))}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] text-zinc-400 block font-medium">Saídas</span>
+            <span className="text-xs font-bold text-rose-400">
+              {formatHidden(formatCurrency(periodTotals.expense))}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] text-zinc-400 block font-medium">Balanço</span>
+            <span
+              className={`text-xs font-black ${
+                periodTotals.balance >= 0 ? 'text-zinc-100' : 'text-rose-400'
+              }`}
+            >
+              {formatHidden(formatCurrency(periodTotals.balance))}
+            </span>
+          </div>
+        </div>
+
+        {/* Gráfico Amplo e Nítido */}
         <SmoothLineChart
           title="Evolução Financeira"
           subtitle={flowChart.subtitle}
           series={flowSeries}
           labels={flowLabels}
           tooltipLabels={flowTooltipLabels}
-          height={280}
+          height={320}
           compactLayout={true}
-          rightAction={
-            <ChartPeriodToolbar
-              period={flowChart.period}
-              onPeriodChange={flowChart.setPeriod}
-              year={flowChart.year}
-              month={flowChart.month}
-              onYearChange={flowChart.handleYearChange}
-              onMonthChange={flowChart.handleMonthChange}
-              weeksMeta={flowChart.weeksMeta}
-              selectedWeekIndex={flowChart.selectedWeekIndex}
-              onWeekChange={flowChart.handleWeekChange}
-              loading={flowChart.loading}
-            />
-          }
         />
       </div>
 
-      {/* 2. ABAIXO DA EVOLUÇÃO: RECEITAS E DESPESAS */}
+      {/* ============================================================== */}
+      {/* 2. RECEITAS E DESPESAS                                          */}
+      {/* ============================================================== */}
       <div className="grid grid-cols-2 gap-2.5">
         {/* Card Receita */}
         <div className="p-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between space-y-2">
@@ -356,71 +509,38 @@ export function MobileSummaryView({
         </div>
       </div>
 
-      {/* 3. SELETOR DE MÊS DE REFERÊNCIA CENTRALIZADO */}
-      <div className="flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-            Mês de Referência
-          </span>
-        </div>
-        <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl px-1.5 py-1 text-xs">
-          <button
-            type="button"
-            onClick={handlePrevRefMonth}
-            className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
-            title="Mês anterior"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <select
-            value={refMonth}
-            onChange={(e) => setRefMonth(Number(e.target.value))}
-            className="bg-transparent text-zinc-100 font-bold text-xs px-2 py-0.5 focus:outline-none cursor-pointer"
-          >
-            {MONTH_NAMES.map((m, idx) => (
-              <option key={m} value={idx} className="bg-zinc-900 text-zinc-100">
-                {m}/{refYear}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={handleNextRefMonth}
-            className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
-            title="Próximo mês"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* 4. DEPOIS O RESTO: RECEITAS E BALANÇO GERAL (SEM SELETOR INTERNO) */}
+      {/* ============================================================== */}
+      {/* 3. RECEITAS E BALANÇO GERAL (SEM SELETOR INTERNO)               */}
+      {/* ============================================================== */}
       <MonthlyBarChart
         transactions={transactions}
         accounts={accounts}
         incomeEvolution={generalData?.incomeCategoryEvolution || []}
-        currentMonth={refMonth}
-        year={refYear}
+        currentMonth={flowChart.month}
+        year={flowChart.year}
         hideMonthSelector={true}
         onExpandEvolution={(m, y) =>
           setEvolutionModalState({ type: 'income', refMonth: m, refYear: y })
         }
       />
 
-      {/* 5. GASTOS POR CATEGORIA (SEM SELETOR INTERNO) */}
+      {/* ============================================================== */}
+      {/* 4. GASTOS POR CATEGORIA (SEM SELETOR INTERNO)                  */}
+      {/* ============================================================== */}
       <CategoryDonutChart
         transactions={transactions}
         expenseEvolution={generalData?.expenseCategoryEvolution || []}
-        currentMonth={refMonth}
-        year={refYear}
+        currentMonth={flowChart.month}
+        year={flowChart.year}
         hideMonthSelector={true}
         onExpandEvolution={(m, y) =>
           setEvolutionModalState({ type: 'expense', refMonth: m, refYear: y })
         }
       />
 
-      {/* 6. INTELIGÊNCIA OPERACIONAL DA BARBEARIA */}
+      {/* ============================================================== */}
+      {/* 5. INTELIGÊNCIA OPERACIONAL DA BARBEARIA                       */}
+      {/* ============================================================== */}
       <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -550,7 +670,7 @@ export function MobileSummaryView({
         )}
       </div>
 
-      {/* Modal de Evolução por Categoria (quando aberto) */}
+      {/* Modal de Evolução por Categoria */}
       <CategoryEvolutionModal
         isOpen={evolutionModalState !== null}
         onClose={() => setEvolutionModalState(null)}
@@ -561,9 +681,9 @@ export function MobileSummaryView({
             : generalData?.expenseCategoryEvolution || []
         }
         transactions={transactions}
-        currentMonth={evolutionModalState?.refMonth ?? refMonth}
-        year={evolutionModalState?.refYear ?? refYear}
-        formattedMonth={formattedMonth}
+        currentMonth={evolutionModalState?.refMonth ?? flowChart.month}
+        year={evolutionModalState?.refYear ?? flowChart.year}
+        formattedMonth={activePeriodLabel}
       />
     </div>
   );
