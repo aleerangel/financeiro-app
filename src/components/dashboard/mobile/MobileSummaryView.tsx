@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import {
   Scissors,
   Users,
@@ -28,11 +27,6 @@ import { MonthlyBarChart } from '../MonthlyBarChart';
 import { CategoryDonutChart } from '../CategoryDonutChart';
 import { SmoothLineChart, ChartSeries } from '../SmoothLineChart';
 import { useIndependentChartPeriod } from '../ChartPeriodToolbar';
-
-const CategoryEvolutionModal = dynamic(
-  () => import('../CategoryEvolutionModal').then((m) => m.CategoryEvolutionModal),
-  { ssr: false }
-);
 
 const MONTH_FULL_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -313,13 +307,6 @@ export function MobileSummaryView({
     productCount: 0,
   };
 
-  // Estado do Modal de Evolução por Categoria
-  const [evolutionModalState, setEvolutionModalState] = useState<{
-    type: 'income' | 'expense';
-    refMonth: number;
-    refYear: number;
-  } | null>(null);
-
   return (
     <div className="space-y-4 pb-16">
       {/* ============================================================== */}
@@ -536,7 +523,7 @@ export function MobileSummaryView({
       </div>
 
       {/* ============================================================== */}
-      {/* 2. RECEITAS E BALANÇO GERAL (SEM SELETOR INTERNO)               */}
+      {/* 2. RECEITAS E BALANÇO GERAL (SEM SELETOR INTERNO E SEM BOTÃO EVOLUÇÃO) */}
       {/* ============================================================== */}
       <MonthlyBarChart
         transactions={transactions}
@@ -545,13 +532,10 @@ export function MobileSummaryView({
         currentMonth={flowChart.month}
         year={flowChart.year}
         hideMonthSelector={true}
-        onExpandEvolution={(m, y) =>
-          setEvolutionModalState({ type: 'income', refMonth: m, refYear: y })
-        }
       />
 
       {/* ============================================================== */}
-      {/* 4. GASTOS POR CATEGORIA (SEM SELETOR INTERNO)                  */}
+      {/* 3. GASTOS POR CATEGORIA (SEM SELETOR INTERNO E SEM BOTÃO EVOLUÇÃO) */}
       {/* ============================================================== */}
       <CategoryDonutChart
         transactions={transactions}
@@ -559,9 +543,6 @@ export function MobileSummaryView({
         currentMonth={flowChart.month}
         year={flowChart.year}
         hideMonthSelector={true}
-        onExpandEvolution={(m, y) =>
-          setEvolutionModalState({ type: 'expense', refMonth: m, refYear: y })
-        }
       />
 
       {/* ============================================================== */}
@@ -695,22 +676,6 @@ export function MobileSummaryView({
           </div>
         )}
       </div>
-
-      {/* Modal de Evolução por Categoria */}
-      <CategoryEvolutionModal
-        isOpen={evolutionModalState !== null}
-        onClose={() => setEvolutionModalState(null)}
-        type={evolutionModalState?.type || 'expense'}
-        categories={
-          evolutionModalState?.type === 'income'
-            ? generalData?.incomeCategoryEvolution || []
-            : generalData?.expenseCategoryEvolution || []
-        }
-        transactions={transactions}
-        currentMonth={evolutionModalState?.refMonth ?? flowChart.month}
-        year={evolutionModalState?.refYear ?? flowChart.year}
-        formattedMonth={activePeriodLabel}
-      />
     </div>
   );
 }
