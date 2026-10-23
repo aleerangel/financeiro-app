@@ -210,4 +210,131 @@ export async function setCreditCardInvoicePaid(
   revalidatePath('/dashboard');
 }
 
+export interface PayInvoiceResult {
+  paidAmount: number;
+  remainingPending: number;
+  isFullyPaid: boolean;
+}
+
+export async function payCreditCardInvoiceAmount(
+  cardId: string,
+  month: number,
+  year: number,
+  amountToPay: number
+): Promise<PayInvoiceResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  if (isNaN(amountToPay) || amountToPay <= 0) {
+    throw new Error('Informe um valor de pagamento válido maior que zero.');
+  }
+
+  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  // Busca todos os lançamentos pendentes desta fatura
+  const { data: pendingTxs, error: fetchError } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('credit_card_id', cardId)
+    .eq('is_paid', false)
+    .gte('due_date', startDate)
+    .lte('due_date', endDate)
+    .order('transaction_date', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
+  const items = (pendingTxs as unknown as Transaction[]) || [];
+  const totalPending = items.reduce((sum, item) => sum + Number(item.amount), 0);
+
+  if (items.length === 0 || totalPending <= 0) {
+    return { paidAmount: 0, remainingPending: 0, isFullyPaid: true };
+  }
+
+  const nowIso = new Date().toISOString();
+
+  // Caso 1: Pagamento total ou valor maior/igual ao total pendente
+  if (amountToPay >= totalPending - 0.009) {
+    await setCreditCardInvoicePaid(cardId, month, year, true);
+    return { paidAmount: totalPending, remainingPending: 0, isFullyPaid: true };
+  }
+
+  // Caso 2: Pagamento parcial
+  let remaining = amountToPay;
+
+  for (const item of items) {
+    if (remaining <= 0.001) break;
+
+    const itemAmt = Number(item.amount);
+
+    if (itemAmt <= remaining + 0.009) {
+      // Quita o item inteiro
+      await supabase
+        .from('transactions')
+        .update({
+          is_paid: true,
+          paid_at: nowIso,
+        })
+        .eq('id', item.id)
+        .eq('user_id', user.id);
+
+      remaining -= itemAmt;
+    } else {
+      // Abate parcialmente este item: divide em parcela paga e saldo pendente
+      const paidPart = Math.round(remaining * 100) / 100;
+      const unpaidPart = Math.round((itemAmt - remaining) * 100) / 100;
+
+      // 1. Atualiza o item original para o valor restante não pago
+      await supabase
+        .from('transactions')
+        .update({
+          amount: unpaidPart,
+        })
+        .eq('id', item.id)
+        .eq('user_id', user.id);
+
+      // 2. Insere a parte quitada
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          description: `${item.description} (Parcial)`,
+          amount: paidPart,
+          type: item.type,
+          payment_method: item.payment_method,
+          transaction_date: item.transaction_date,
+          due_date: item.due_date,
+          category_id: item.category_id,
+          credit_card_id: item.credit_card_id,
+          installment_group_id: item.installment_group_id,
+          current_installment: item.current_installment,
+          total_installments: item.total_installments,
+          notes: item.notes,
+          is_paid: true,
+          paid_at: nowIso,
+        });
+
+      remaining = 0;
+      break;
+    }
+  }
+
+  revalidatePath('/cartoes');
+  revalidatePath('/transacoes');
+  revalidatePath('/dashboard');
+
+  return {
+    paidAmount: amountToPay,
+    remainingPending: Math.max(0, totalPending - amountToPay),
+    isFullyPaid: false,
+  };
+}
+
 

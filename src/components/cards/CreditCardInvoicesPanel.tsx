@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useDateContext } from '@/context/DateContext';
 import { useRouter } from 'next/navigation';
+import { PayInvoiceModal } from './PayInvoiceModal';
 
 interface CreditCardInvoicesPanelProps {
   card: CreditCardWithUsage;
@@ -61,6 +62,7 @@ export function CreditCardInvoicesPanel({
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [itemLoadingId, setItemLoadingId] = useState<string | null>(null);
+  const [payModalOpen, setPayModalOpen] = useState<boolean>(false);
 
   const currentGlobalKey = `${globalYear}-${globalMonth}`;
   if (prevGlobalKey !== currentGlobalKey) {
@@ -468,9 +470,9 @@ export function CreditCardInvoicesPanel({
           <div className="flex items-center gap-2">
             {currentInvoice.pendingTotal > 0 ? (
               <button
-                onClick={() => handlePayEntireInvoice(true)}
+                onClick={() => setPayModalOpen(true)}
                 disabled={actionLoading}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10 active:scale-95"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
                 {actionLoading
@@ -632,6 +634,26 @@ export function CreditCardInvoicesPanel({
           </span>
         </div>
       )}
+
+      {/* Modal de Pagamento de Fatura (Total ou Parcial Estilo Nubank) */}
+      <PayInvoiceModal
+        isOpen={payModalOpen}
+        onClose={() => setPayModalOpen(false)}
+        card={card}
+        month={selectedMonth}
+        year={selectedYear}
+        monthName={MONTH_FULL_NAMES[selectedMonth]}
+        totalAmount={currentInvoice.total}
+        paidAmount={currentInvoice.paidTotal}
+        pendingAmount={currentInvoice.pendingTotal}
+        isInvoiceOpen={getTodayYMD() < invoiceDatesInfo.closingDateStr}
+        dueDateStr={invoiceDatesInfo.dueDateStr}
+        closingDateStr={invoiceDatesInfo.closingDateStr}
+        onSuccess={async () => {
+          await refreshCardTransactions();
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
