@@ -20,6 +20,7 @@ import { ClientDebtItem, deleteSale } from '@/lib/actions/sales';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
+import { BusinessMessageSettings } from '@/lib/whatsapp-templates';
 import { WhatsAppChargeModal } from './WhatsAppChargeModal';
 import { EditSaleDebtModal } from './EditSaleDebtModal';
 import { AmortizeModal } from '../sales/AmortizeModal';
@@ -27,13 +28,17 @@ import { AmortizeModal } from '../sales/AmortizeModal';
 interface DebtClientCardProps {
   clientDebt: ClientDebtItem;
   accounts: Account[];
+  messageSettings?: BusinessMessageSettings | null;
   onRefresh?: () => void;
+  onSettingsSaved?: (settings: BusinessMessageSettings) => void;
 }
 
 export function DebtClientCard({
   clientDebt,
   accounts,
+  messageSettings,
   onRefresh,
+  onSettingsSaved,
 }: DebtClientCardProps) {
   const { confirm } = useConfirm();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -356,6 +361,9 @@ export function DebtClientCard({
         pendingSalesCount={clientDebt.pendingSalesCount}
         mostUrgentDueDate={clientDebt.mostUrgentDueDate}
         isOverdue={clientDebt.isOverdue}
+        daysDiff={clientDebt.daysDiff}
+        messageSettings={messageSettings}
+        onSettingsSaved={onSettingsSaved}
       />
 
       {/* Modal de Edição de Vencimento e Anotações da Pendência */}

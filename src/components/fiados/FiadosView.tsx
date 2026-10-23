@@ -16,27 +16,49 @@ import {
   Filter,
   ArrowUpDown,
   CheckCircle2,
+  Settings,
+  QrCode,
 } from 'lucide-react';
 import { Account } from '@/types/database';
 import { DebtsOverviewSummary } from '@/lib/actions/sales';
+import { BusinessMessageSettings } from '@/lib/whatsapp-templates';
 import { DebtClientCard } from './DebtClientCard';
+import { MessageSettingsModal } from './MessageSettingsModal';
 import { formatCurrency } from '@/lib/utils';
 import { exportDebtsReport, ExportFormat } from '@/lib/export-utils';
 
 interface FiadosViewProps {
   initialSummary: DebtsOverviewSummary;
   accounts: Account[];
+  initialMessageSettings?: BusinessMessageSettings;
 }
 
 type FilterTab = 'all' | 'overdue' | 'soon' | 'no_due';
 type SortOption = 'amount_desc' | 'amount_asc' | 'urgency' | 'name_asc';
 
-export function FiadosView({ initialSummary, accounts }: FiadosViewProps) {
+export function FiadosView({
+  initialSummary,
+  accounts,
+  initialMessageSettings,
+}: FiadosViewProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [sortOption, setSortOption] = useState<SortOption>('amount_desc');
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [messageSettings, setMessageSettings] = useState<BusinessMessageSettings>(
+    initialMessageSettings || {
+      pix_key_type: 'phone',
+      pix_key: null,
+      pix_holder_name: null,
+      template_friendly: null,
+      template_default: null,
+      template_firm: null,
+      template_sale_credit_receipt: null,
+      include_pix_default: true,
+    }
+  );
 
   const handleRefresh = () => {
     router.refresh();
@@ -154,43 +176,83 @@ export function FiadosView({ initialSummary, accounts }: FiadosViewProps) {
           </p>
         </div>
 
-        {/* Menu de Exportação */}
-        <div className="relative shrink-0">
+        {/* Ações do Topo */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {/* Botão Configurações WhatsApp & Pix */}
           <button
-            onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+            title="Configurar chave Pix e modelos de cobrança"
           >
-            <Download className="w-4 h-4 text-slate-400" />
-            <span>Exportar Relatório</span>
+            <Settings className="w-4 h-4 text-amber-400" />
+            <span>Configurar WhatsApp & Pix</span>
           </button>
 
-          {isExportMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-xl z-20 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-              <button
-                onClick={() => handleExport('pdf')}
-                className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
-              >
-                <FileText className="w-4 h-4 text-rose-400" />
-                <span>Salvar em PDF</span>
-              </button>
-              <button
-                onClick={() => handleExport('xlsx')}
-                className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                <span>Planilha Excel (.xlsx)</span>
-              </button>
-              <button
-                onClick={() => handleExport('csv')}
-                className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
-              >
-                <FileCode className="w-4 h-4 text-blue-400" />
-                <span>Arquivo CSV</span>
-              </button>
-            </div>
-          )}
+          {/* Menu de Exportação */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+            >
+              <Download className="w-4 h-4 text-slate-400" />
+              <span>Exportar Relatório</span>
+            </button>
+
+            {isExportMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-xl z-20 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                <button
+                  onClick={() => handleExport('pdf')}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
+                >
+                  <FileText className="w-4 h-4 text-rose-400" />
+                  <span>Salvar em PDF</span>
+                </button>
+                <button
+                  onClick={() => handleExport('xlsx')}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <span>Planilha Excel (.xlsx)</span>
+                </button>
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
+                >
+                  <FileCode className="w-4 h-4 text-blue-400" />
+                  <span>Arquivo CSV</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Alerta caso a Chave Pix ainda não esteja configurada */}
+      {!messageSettings.pix_key && (
+        <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+              <QrCode className="w-4 h-4" />
+            </div>
+            <div className="text-xs">
+              <p className="font-semibold text-amber-300">
+                Cadastre sua Chave Pix para agilizar o recebimento
+              </p>
+              <p className="text-slate-400">
+                Sua chave será inserida automaticamente nas cobranças do WhatsApp, permitindo ao cliente copiar e pagar na hora.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0 transition-colors shadow-sm"
+          >
+            Cadastrar Chave Pix
+          </button>
+        </div>
+      )}
 
       {/* 4 Cards de Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -413,7 +475,9 @@ export function FiadosView({ initialSummary, accounts }: FiadosViewProps) {
               key={clientDebt.clientId}
               clientDebt={clientDebt}
               accounts={accounts}
+              messageSettings={messageSettings}
               onRefresh={handleRefresh}
+              onSettingsSaved={setMessageSettings}
             />
           ))
         ) : (
@@ -455,6 +519,16 @@ export function FiadosView({ initialSummary, accounts }: FiadosViewProps) {
           </div>
         )}
       </div>
+
+      {/* Modal de Configurações de Mensagens & Pix */}
+      <MessageSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        initialSettings={messageSettings}
+        onSaved={(newSettings) => {
+          setMessageSettings(newSettings);
+        }}
+      />
     </div>
   );
 }

@@ -25,6 +25,7 @@ import {
 import { filterClientsBySearch, findExactClientMatch } from '@/lib/client-search-utils';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { ClientModal } from '@/components/clients/ClientModal';
+import { SaleCreditReceiptModal } from '@/components/fiados/SaleCreditReceiptModal';
 import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
 import { toast } from 'sonner';
@@ -68,6 +69,14 @@ function MobileNewSaleDrawerDialog() {
   const [promptSaveItem, setPromptSaveItem] = useState<{
     name: string;
     price: number;
+  } | null>(null);
+
+  const [creditReceiptData, setCreditReceiptData] = useState<{
+    clientName: string;
+    clientPhone?: string | null;
+    totalAmount: number;
+    dueDate?: string | null;
+    items: CreateSaleItemInput[];
   } | null>(null);
 
   // Carrega produtos, contas e clientes com cache imediato em memória (0ms de latência)
@@ -250,8 +259,16 @@ function MobileNewSaleDrawerDialog() {
 
       toast.success('Atendimento concluído com sucesso! 💈✂️');
 
-      // Se teve item avulso, abre prompt para salvar no catálogo
-      if (customItems.length > 0) {
+      if (paymentMethod === 'on_credit') {
+        const targetClient = clients.find((c) => c.id === finalClientId);
+        setCreditReceiptData({
+          clientName: finalClientName,
+          clientPhone: targetClient?.phone || null,
+          totalAmount: totalAmount - initPayNum,
+          dueDate: dueDate || null,
+          items: selectedItems,
+        });
+      } else if (customItems.length > 0) {
         setPromptSaveItem({
           name: customItems[0].product_name,
           price: customItems[0].unit_price,
@@ -844,6 +861,21 @@ function MobileNewSaleDrawerDialog() {
           setClientModalOpen(false);
         }}
       />
+
+      {creditReceiptData && (
+        <SaleCreditReceiptModal
+          isOpen={Boolean(creditReceiptData)}
+          onClose={() => {
+            setCreditReceiptData(null);
+            handleClose();
+          }}
+          clientName={creditReceiptData.clientName}
+          clientPhone={creditReceiptData.clientPhone}
+          totalAmount={creditReceiptData.totalAmount}
+          dueDate={creditReceiptData.dueDate}
+          items={creditReceiptData.items}
+        />
+      )}
     </>
   );
 }

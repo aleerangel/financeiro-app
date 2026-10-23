@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { getPendingDebtsSummary } from '@/lib/actions/sales';
 import { getAccounts } from '@/lib/actions/accounts';
+import { getMessageSettings } from '@/lib/actions/message-settings';
 import { FiadosView } from '@/components/fiados/FiadosView';
 
 export const metadata = {
@@ -19,14 +20,20 @@ export default async function FiadosPage() {
     redirect('/login');
   }
 
-  const [summary, accounts] = await Promise.all([
+  const [summary, accounts, messageSettings] = await Promise.all([
     getPendingDebtsSummary(),
     getAccounts(),
+    getMessageSettings(),
   ]);
 
   return (
     <AppShell userEmail={user.email}>
-      <FiadosView initialSummary={summary} accounts={accounts} />
+      <FiadosView
+        initialSummary={summary}
+        accounts={accounts}
+        initialMessageSettings={messageSettings}
+      />
     </AppShell>
   );
 }
+

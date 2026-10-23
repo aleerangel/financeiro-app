@@ -9,6 +9,7 @@ import { getTodayYMD } from '@/lib/date-utils';
 import { findExactClientMatch } from '@/lib/client-search-utils';
 import { toast } from 'sonner';
 import { ClientModal } from '@/components/clients/ClientModal';
+import { SaleCreditReceiptModal } from '@/components/fiados/SaleCreditReceiptModal';
 
 interface NewSaleModalProps {
   isOpen: boolean;
@@ -48,8 +49,15 @@ export function NewSaleModal({
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creditReceiptData, setCreditReceiptData] = useState<{
+    clientName: string;
+    clientPhone?: string | null;
+    totalAmount: number;
+    dueDate?: string | null;
+    items: CreateSaleItemInput[];
+  } | null>(null);
 
-  if (!isOpen) return null;
+  if (!isOpen && !creditReceiptData) return null;
 
   const handleAddItem = (product: Product) => {
     setSelectedItems((prev) => {
@@ -163,8 +171,20 @@ export function NewSaleModal({
       setNotes('');
       setSaleDate(getTodayYMD());
       toast.success(`Atendimento de "${finalClientName}" registrado com sucesso!`);
-      onClose();
-      if (onSuccess) onSuccess();
+
+      if (paymentMethod === 'on_credit') {
+        const targetClient = clientsList.find((c) => c.id === finalClientId);
+        setCreditReceiptData({
+          clientName: finalClientName,
+          clientPhone: targetClient?.phone || null,
+          totalAmount: totalAmount - initPayNum,
+          dueDate: dueDate || null,
+          items: selectedItems,
+        });
+      } else {
+        onClose();
+        if (onSuccess) onSuccess();
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao registrar atendimento.';
       setError(msg);
@@ -546,6 +566,22 @@ export function NewSaleModal({
           setClientModalOpen(false);
         }}
       />
+
+      {creditReceiptData && (
+        <SaleCreditReceiptModal
+          isOpen={Boolean(creditReceiptData)}
+          onClose={() => {
+            setCreditReceiptData(null);
+            onClose();
+            if (onSuccess) onSuccess();
+          }}
+          clientName={creditReceiptData.clientName}
+          clientPhone={creditReceiptData.clientPhone}
+          totalAmount={creditReceiptData.totalAmount}
+          dueDate={creditReceiptData.dueDate}
+          items={creditReceiptData.items}
+        />
+      )}
     </div>
   );
 }
