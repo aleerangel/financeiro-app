@@ -124,6 +124,12 @@ export function SmoothLineChart({
       ticks.push(niceMin + i * tickStep);
     }
 
+    // Garante que 0 está sempre presente nos ticks do eixo Y
+    if (!ticks.some((t) => Math.abs(t) < 0.001)) {
+      ticks.push(0);
+      ticks.sort((a, b) => a - b);
+    }
+
     return {
       minVal: niceMin,
       maxVal: niceMax || 100,
@@ -134,12 +140,15 @@ export function SmoothLineChart({
   // Dimensões SVG internas
   const svgWidth = compactLayout ? 360 : 650;
   const svgHeight = height;
-  const padLeft = compactLayout ? 48 : 85;
-  const padRight = compactLayout ? 10 : 25;
-  const padTop = compactLayout ? 16 : 25;
-  const padBottom = compactLayout ? 26 : 35;
+  const padLeft = compactLayout ? 50 : 85;
+  const padRight = compactLayout ? 12 : 25;
+  const padTop = compactLayout ? 18 : 25;
+  const padBottom = compactLayout ? 30 : 35;
 
   const formatTickLabel = (tick: number) => {
+    if (Math.abs(tick) < 0.001) {
+      return 'R$ 0';
+    }
     if (compactLayout) {
       if (Math.abs(tick) >= 1000) {
         const kVal = tick / 1000;
@@ -240,6 +249,7 @@ export function SmoothLineChart({
           {/* Linhas de Grade Horizontais */}
           {yTicks.map((tick, i) => {
             const yPos = getY(tick);
+            const isZero = Math.abs(tick) < 0.001;
             return (
               <g key={`tick-${i}`}>
                 <line
@@ -247,17 +257,17 @@ export function SmoothLineChart({
                   y1={yPos}
                   x2={svgWidth - padRight}
                   y2={yPos}
-                  stroke="#27272a"
-                  strokeDasharray="4 4"
-                  strokeWidth="1"
+                  stroke={isZero ? '#52525b' : '#27272a'}
+                  strokeDasharray={isZero ? undefined : '4 4'}
+                  strokeWidth={isZero ? '1.5' : '1'}
                 />
                 <text
                   x={padLeft - 8}
                   y={yPos + 4}
                   textAnchor="end"
-                  fill="#71717a"
-                  fontSize={compactLayout ? '11' : '11'}
-                  fontWeight="600"
+                  fill={isZero ? '#d4d4d8' : '#71717a'}
+                  fontSize="11"
+                  fontWeight={isZero ? '700' : '600'}
                 >
                   {formatTickLabel(tick)}
                 </text>

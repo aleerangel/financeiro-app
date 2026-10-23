@@ -158,10 +158,12 @@ export function MobileSummaryView({
     [flowChart.activeStats]
   );
 
-  const flowLabels = useMemo(
-    () => flowChart.activeStats.map((s) => s.label),
-    [flowChart.activeStats]
-  );
+  const flowLabels = useMemo(() => {
+    if (flowChart.period === 'monthly') {
+      return flowChart.activeStats.map((_, idx) => `Sem ${idx + 1}`);
+    }
+    return flowChart.activeStats.map((s) => s.label);
+  }, [flowChart.period, flowChart.activeStats]);
 
   const flowTooltipLabels = useMemo(
     () => flowChart.activeStats.map((s) => s.fullLabel || s.label),
@@ -499,6 +501,12 @@ export function MobileSummaryView({
             </span>
           </button>
         </div>
+
+        {/* Dica para o usuário tocar e alternar as métricas */}
+        <p className="text-[10px] text-zinc-400 text-center flex items-center justify-center gap-1.5 py-0.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400/80 animate-pulse" />
+          <span>Toque em Entradas, Saídas ou Balanço para isolar a curva no gráfico</span>
+        </p>
 
         {/* Gráfico Amplo e Nítido com a Métrica Selecionada */}
         <SmoothLineChart
