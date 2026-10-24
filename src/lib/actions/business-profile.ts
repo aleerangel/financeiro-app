@@ -236,3 +236,4 @@ export async function dismissLegacyWelcomeBanner(): Promise<void> {
 
   revalidatePath('/dashboard');
 }
+

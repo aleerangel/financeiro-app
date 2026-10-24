@@ -29,7 +29,14 @@ export interface TemplateVariables {
   chave_pix?: string | null;
 }
 
-export const SYSTEM_WHATSAPP_SIGNATURE = '\n\n_Mensagem enviada via BarberFin_';
+export const SYSTEM_WHATSAPP_SIGNATURE = '\n\n_Mensagem enviada via Canário_';
+
+export function resolveWhatsAppSignature(businessName?: string | null): string {
+  if (businessName && businessName.trim()) {
+    return `\n\n_— ${businessName.trim()} • via Canário_`;
+  }
+  return SYSTEM_WHATSAPP_SIGNATURE;
+}
 
 export const DEFAULT_TEMPLATES = {
   // Cobranças
@@ -76,6 +83,58 @@ export const DEFAULT_TEMPLATES = {
     'Fala {primeiro_nome}, tudo bem, irmão? 💈 Confirmamos o recebimento da sua mensalidade da barbearia ({plano}) no valor de {valor}{metodo_pagamento_texto}! Muito obrigado pela confiança e parceria de sempre! Estilo sempre em dia! Tmj! ✂️🔥{assinatura}',
 };
 
+export const DEFAULT_NEUTRAL_TEMPLATES = {
+  // Cobranças
+  friendly:
+    'Olá {primeiro_nome}, tudo bem? Passando para lembrar do seu acerto de {valor}{vencimento_texto}. Seguem os dados para acerto via Pix quando puder. Agradecemos pela parceria!{bloco_pix}{assinatura}',
+
+  default:
+    'Olá {primeiro_nome}, tudo bem? Passando para atualizar o seu saldo pendente de {valor}{vencimento_texto}. Seguem as informações para acerto. Qualquer dúvida estou à disposição!{bloco_pix}{assinatura}',
+
+  firm:
+    'Olá {nome}, tudo bem? Consta uma pendência financeira em aberto no valor de {valor}{atraso_texto}. Solicitamos a gentileza de realizar a quitação ou entrar em contato para combinarmos o acerto o quanto antes.{bloco_pix}{assinatura}',
+
+  // Recibo de Fiado / Venda a Prazo
+  creditReceipt:
+    'Olá {primeiro_nome}, muito obrigado pela preferência!\n\nRegistramos seu atendimento a prazo:\n{itens}\nTotal: {valor}\nCombinado para: {vencimento}\n\nQualquer dúvida estou à disposição!{bloco_pix}{assinatura}',
+
+  // Radar de Retorno
+  returnWindowCasual:
+    'Olá {primeiro_nome}, tudo bem? Já faz cerca de {dias_ultima_visita} dias desde o seu último atendimento com a gente. Como estão as coisas? Se precisar agendar novos serviços, estamos à disposição!{assinatura}',
+
+  returnWindowVip:
+    'Olá {primeiro_nome}! Como está sua semana? Notamos que seu ciclo de atendimento está no momento ideal ({dias_ultima_visita} dias). Se desejar agendar seu próximo horário com prioridade, estou à disposição!{assinatura}',
+
+  // Resgate de Inativos
+  inactiveRecoveryCasual:
+    'Olá {primeiro_nome}, tudo bem? Já faz mais de {dias_ultima_visita} dias desde a sua última visita. Estamos à disposição caso precise de novos atendimentos ou serviços!{assinatura}',
+
+  inactiveRecoveryPromo:
+    'Olá {primeiro_nome}! Sentimos sua falta por aqui. Que tal agendar seu próximo atendimento essa semana? Temos condições especiais esperando por você!{assinatura}',
+
+  // Aniversário
+  birthdayCasual:
+    'Olá {primeiro_nome}, parabéns pelo seu aniversário! 🎂🎉 Muita saúde, paz e sucesso! Que seu novo ciclo seja repleto de realizações!{assinatura}',
+
+  birthdayGift:
+    'Parabéns {primeiro_nome}! Hoje é o seu dia! 🎂 Passando para desejar um feliz aniversário e um novo ciclo repleto de conquistas! Conte sempre com a gente!{assinatura}',
+
+  // Mensalidade / Assinatura
+  subscriptionInvoice:
+    'Olá {primeiro_nome}, tudo bem? Passando para lembrar da sua mensalidade ({plano}) no valor de {valor}, com vencimento em {vencimento}. Segue a nossa chave para acerto via Pix. Obrigado pela parceria!{bloco_pix}{assinatura}',
+
+  // Recibo de Quitação
+  subscriptionReceipt:
+    'Olá {primeiro_nome}, tudo bem? Confirmamos o recebimento da sua mensalidade ({plano}) no valor de {valor}{metodo_pagamento_texto}! Muito obrigado pela confiança e parceria de sempre!{assinatura}',
+};
+
+export function getTemplatesForSegment(segment?: string | null) {
+  if (segment === 'barbearia') {
+    return DEFAULT_TEMPLATES;
+  }
+  return DEFAULT_NEUTRAL_TEMPLATES;
+}
+
 export const PIX_KEY_LABELS: Record<PixKeyType, string> = {
   phone: 'Celular / WhatsApp',
   cpf: 'CPF',
@@ -105,7 +164,8 @@ export function renderWhatsAppTemplate(
     key?: string | null;
     keyType?: PixKeyType;
     holderName?: string | null;
-  }
+  },
+  businessName?: string | null
 ): string {
   const nomeCompleto = vars.nome.trim();
   const primeiroNome =
@@ -129,6 +189,7 @@ export function renderWhatsAppTemplate(
       ? formatPixBlock(pixSettings.key, pixSettings.keyType, pixSettings.holderName)
       : '';
 
+  const signature = resolveWhatsAppSignature(businessName);
   let output = template;
 
   output = output.replace(/\{nome\}/g, nomeCompleto);
@@ -143,7 +204,7 @@ export function renderWhatsAppTemplate(
     String(vars.dias_ultima_visita || 30)
   );
   output = output.replace(/\{itens\}/g, vars.itens || 'Atendimento / Serviços');
-  output = output.replace(/\{plano\}/g, vars.plano || 'Assinatura Barbearia');
+  output = output.replace(/\{plano\}/g, vars.plano || 'Assinatura');
   output = output.replace(
     /\{metodo_pagamento\}/g,
     vars.metodo_pagamento || 'Pix'
@@ -153,23 +214,23 @@ export function renderWhatsAppTemplate(
     vars.metodo_pagamento ? ` via ${vars.metodo_pagamento}` : ''
   );
   output = output.replace(/\{bloco_pix\}/g, blocoPix);
-  output = output.replace(/\{assinatura\}/g, SYSTEM_WHATSAPP_SIGNATURE);
+  output = output.replace(/\{assinatura\}/g, signature);
 
   // Se o template personalizado não tiver a tag {bloco_pix} mas o usuário quis incluir Pix, anexa antes da assinatura
   if (includePix && blocoPix && !template.includes('{bloco_pix}')) {
-    if (output.includes(SYSTEM_WHATSAPP_SIGNATURE)) {
+    if (output.includes(signature)) {
       output = output.replace(
-        SYSTEM_WHATSAPP_SIGNATURE,
-        `${blocoPix}${SYSTEM_WHATSAPP_SIGNATURE}`
+        signature,
+        `${blocoPix}${signature}`
       );
     } else {
       output = `${output}${blocoPix}`;
     }
   }
 
-  // Garante que a assinatura do sistema esteja sempre presente se não estiver
-  if (!output.includes('_Mensagem enviada via BarberFin_')) {
-    output = `${output.trim()}${SYSTEM_WHATSAPP_SIGNATURE}`;
+  // Garante que a assinatura do sistema ou negócio esteja presente
+  if (!output.includes(signature) && !output.includes('via Canário')) {
+    output = `${output.trim()}${signature}`;
   }
 
   return output;

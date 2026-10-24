@@ -9,6 +9,7 @@ import {
   ClientAnalytics,
   RawClientSale,
 } from '@/lib/client-analytics';
+import { getBusinessProfile } from '@/lib/actions/business-profile';
 
 export interface CreateClientInput {
   name: string;
@@ -74,7 +75,10 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
     query = query.or(`name.ilike.${term},phone.ilike.${term},cpf.ilike.${term}`);
   }
 
-  const { data, error } = await query;
+  const [profile, { data, error }] = await Promise.all([
+    getBusinessProfile().catch(() => null),
+    query,
+  ]);
 
   if (error) {
     console.error('Erro ao buscar clientes:', error);
@@ -102,7 +106,7 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
       (a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime()
     );
     const lastSaleDate = sortedSales[0]?.sale_date || null;
-    const analytics = analyzeClientSales(sales, now);
+    const analytics = analyzeClientSales(sales, now, profile?.default_cycle_days);
 
     return {
       id: c.id,

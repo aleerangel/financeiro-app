@@ -189,7 +189,8 @@ export function computePreferredWeekdays(uniqueDates: string[]): {
  */
 export function analyzeClientSales(
   sales: RawClientSale[],
-  now: Date = new Date()
+  now: Date = new Date(),
+  customCycleDays?: number | null
 ): ClientAnalytics {
   if (!sales || sales.length === 0) {
     return {
@@ -257,7 +258,12 @@ export function analyzeClientSales(
     };
   }
 
-  const cycleDays = computeWeightedCycleDays(uniqueDates);
+  const computedCycle = computeWeightedCycleDays(uniqueDates);
+  const cycleDays =
+    computedCycle ||
+    (customCycleDays && customCycleDays >= MIN_CYCLE_DAYS
+      ? Math.min(MAX_CYCLE_DAYS, customCycleDays)
+      : null);
   if (!cycleDays) {
     return {
       status: 'new',

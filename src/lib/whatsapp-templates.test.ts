@@ -3,6 +3,9 @@ import {
   renderWhatsAppTemplate,
   formatPixBlock,
   DEFAULT_TEMPLATES,
+  DEFAULT_NEUTRAL_TEMPLATES,
+  getTemplatesForSegment,
+  resolveWhatsAppSignature,
   SYSTEM_WHATSAPP_SIGNATURE,
 } from './whatsapp-templates';
 
@@ -179,6 +182,37 @@ describe('whatsapp-templates', () => {
     expect(text).toContain('via Pix');
     expect(text).toContain('Confirmamos o recebimento');
     expect(text).toContain(SYSTEM_WHATSAPP_SIGNATURE);
+  });
+
+  it('anexa assinatura personalizada com o nome do negócio quando fornecido', () => {
+    const sig = resolveWhatsAppSignature('Studio Bela Vista');
+    expect(sig).toBe('\n\n_— Studio Bela Vista • via Canário_');
+
+    const text = renderWhatsAppTemplate(
+      DEFAULT_NEUTRAL_TEMPLATES.friendly,
+      {
+        nome: 'Mariana Silva',
+        valor: 'R$ 150,00',
+        vencimento: '28/10/2026',
+      },
+      false,
+      undefined,
+      'Studio Bela Vista'
+    );
+
+    expect(text).toContain('Mariana');
+    expect(text).toContain('R$ 150,00');
+    expect(text).toContain('— Studio Bela Vista • via Canário');
+  });
+
+  it('retorna templates neutros para segmentos gerais ou consultoria', () => {
+    const templates = getTemplatesForSegment('servicos_gerais');
+    expect(templates).toEqual(DEFAULT_NEUTRAL_TEMPLATES);
+    expect(templates.returnWindowCasual).toContain('último atendimento com a gente');
+
+    const barbeariaTemplates = getTemplatesForSegment('barbearia');
+    expect(barbeariaTemplates).toEqual(DEFAULT_TEMPLATES);
+    expect(barbeariaTemplates.returnWindowCasual).toContain('renovar o visual');
   });
 });
 

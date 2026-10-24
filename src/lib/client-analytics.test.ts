@@ -119,6 +119,27 @@ describe('analyzeClientSales', () => {
     expect(res.favoriteItems[0]).toEqual({ name: 'Corte', count: 2, totalSpent: 70 });
     expect(res.favoriteItems[1]).toEqual({ name: 'Barba', count: 1, totalSpent: 25 });
   });
+
+  it('mantém status Novo para cliente com 1 visita mesmo se customCycleDays for fornecido', () => {
+    const sales = [
+      { id: '1', total_amount: 40, sale_date: '2026-09-20T14:00:00Z' },
+    ];
+    const res = analyzeClientSales(sales, now, 30);
+    expect(res.status).toBe('new');
+    expect(res.cycleDays).toBeNull();
+    expect(res.expectedNextDate).toBeNull();
+  });
+
+  it('utiliza customCycleDays como fallback para cliente com 2 visitas sem intervalo computado', () => {
+    // 2 visitas em datas distintas mas com fallback de customCycleDays se os intervalos forem descartados
+    const sales = [
+      { id: '1', total_amount: 50, sale_date: '2026-08-01T14:00:00Z' },
+      { id: '2', total_amount: 50, sale_date: '2026-09-01T14:00:00Z' },
+    ];
+    const res = analyzeClientSales(sales, now, 31);
+    expect(res.cycleDays).toBe(31);
+    expect(res.status).toBeDefined();
+  });
 });
 
 describe('computeVipClientIds', () => {

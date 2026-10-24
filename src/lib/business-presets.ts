@@ -180,3 +180,4 @@ export function resolveBusinessProfile(
     updated_at: raw.updated_at || new Date().toISOString(),
   };
 }
+
