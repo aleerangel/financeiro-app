@@ -2,6 +2,7 @@ import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAccounts } from '@/lib/actions/accounts';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { AccountsList } from '@/components/accounts/AccountsList';
 
 export default async function ContasPage() {
@@ -16,12 +17,10 @@ export default async function ContasPage() {
   return (
     <AppShell userEmail={user.email}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Contas e Carteiras</h1>
-          <p className="text-sm text-zinc-400">
-            Gerencie suas contas bancárias, poupanças e dinheiro em espécie.
-          </p>
-        </div>
+        <PageHeader
+          title="Contas e Carteiras"
+          description="Gerencie suas contas bancárias, poupanças e dinheiro em espécie com controle de saldo e rendimento."
+        />
 
         <AccountsList initialAccounts={accounts} />
       </div>

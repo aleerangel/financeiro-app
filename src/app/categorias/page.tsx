@@ -1,6 +1,7 @@
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { getCategories } from '@/lib/actions/categories';
 import { CategoriesList } from '@/components/categories/CategoriesList';
 
@@ -16,12 +17,10 @@ export default async function CategoriasPage() {
   return (
     <AppShell userEmail={user.email}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Categorias</h1>
-          <p className="text-sm text-zinc-400">
-            Organize suas despesas e receitas personalizando nomes, cores e ícones.
-          </p>
-        </div>
+        <PageHeader
+          title="Categorias"
+          description="Organize suas despesas e receitas personalizando nomes, cores, ícones e escopo (pessoal ou barbearia)."
+        />
 
         <CategoriesList initialCategories={categories} />
       </div>

@@ -2,6 +2,7 @@ import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { getAccounts } from '@/lib/actions/accounts';
 import { getCreditCards } from '@/lib/actions/credit-cards';
 import { getCategories } from '@/lib/actions/categories';
@@ -33,12 +34,10 @@ export default async function TransacoesPage() {
   return (
     <AppShell userEmail={user.email}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Transações</h1>
-          <p className="text-sm text-zinc-400">
-            Acompanhe receitas, despesas à vista e faturas de cartão de crédito.
-          </p>
-        </div>
+        <PageHeader
+          title="Transações & Extrato"
+          description="Acompanhe receitas, despesas à vista e faturas de cartão de crédito."
+        />
 
         <TransactionsView
           initialAccounts={accounts}
