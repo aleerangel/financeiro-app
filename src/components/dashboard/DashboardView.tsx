@@ -7,6 +7,7 @@ import {
   Plus,
   Scissors,
   Layers,
+  Store,
 } from 'lucide-react';
 import { AccountWithBalance, getAccounts } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -30,6 +31,9 @@ import { seedClientCache, getCachedSimpleClients, getCachedProducts } from '@/li
 import { MobileHeader } from './mobile/MobileHeader';
 import { BusinessDashboardMobile } from './mobile/BusinessDashboardMobile';
 import { GeneralDashboardMobile } from './mobile/GeneralDashboardMobile';
+import { LegacyWelcomeBanner } from './LegacyWelcomeBanner';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { BusinessSettingsModal } from '@/components/settings/BusinessSettingsModal';
 
 // Abas secundárias do mobile carregadas sob demanda (evita sobrecarga de JS inicial)
 const MobileStatementView = dynamic(
@@ -125,8 +129,10 @@ export function DashboardView({
   const { month, year, formattedMonth } = useDateContext();
   const isMobile = useIsMobile(768, initialIsMobile);
   const { activeTab, contextMode } = useMobileNavigation();
+  const { businessName, hasBusiness } = useBusinessProfile();
 
-  const [viewMode, setViewMode] = useState<'business' | 'general'>('business');
+  const [businessSettingsOpen, setBusinessSettingsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'business' | 'general'>(hasBusiness ? 'business' : 'general');
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [accounts, setAccounts] = useState<AccountWithBalance[]>(initialAccounts);
   const [businessData, setBusinessData] = useState<BusinessDashboardData>(initialBusinessData);
@@ -480,6 +486,9 @@ export function DashboardView({
         {/* Cabeçalho Fixo Touch: Barbearia vs Pessoal, Mês/Ano e Olho de Privacidade */}
         <MobileHeader />
 
+        {/* Banner de Boas-Vindas para usuários legados no mobile */}
+        {activeTab === 'home' && <LegacyWelcomeBanner />}
+
         {/* Conteúdo da Aba Selecionada */}
         {activeTab === 'home' && (
           contextMode === 'business' ? (
@@ -582,7 +591,10 @@ export function DashboardView({
   // Desktop View
   return (
     <div className="space-y-6">
-      {/* Header com Toggle Barbearia vs Geral */}
+      {/* Banner de Boas-Vindas para usuários legados no desktop */}
+      <LegacyWelcomeBanner />
+
+      {/* Header com Toggle Negócio vs Geral */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-zinc-800">
         <div>
           <h1 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
@@ -590,37 +602,50 @@ export function DashboardView({
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400">
             {viewMode === 'business'
-              ? 'Métricas de atendimento, estoque e desempenho da barbearia'
+              ? `Métricas operacionais e desempenho de ${businessName}`
               : 'Visão consolidada de todas as contas, cartões e patrimônio'}
           </p>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          {/* Alternador Principal: Barbearia vs Geral */}
-          <div className="flex items-center bg-zinc-900 border border-zinc-800 p-1 rounded-xl shadow-sm">
-            <button
-              onClick={() => setViewMode('business')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                viewMode === 'business'
-                  ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <Scissors className="w-3.5 h-3.5" />
-              Barbearia
-            </button>
-            <button
-              onClick={() => setViewMode('general')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                viewMode === 'general'
-                  ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              Visão Geral
-            </button>
-          </div>
+          {/* Alternador Principal: Negócio vs Geral (Apenas se hasBusiness for true) */}
+          {hasBusiness && (
+            <div className="flex items-center bg-zinc-900 border border-zinc-800 p-1 rounded-xl shadow-sm">
+              <button
+                onClick={() => setViewMode('business')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  viewMode === 'business'
+                    ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                {businessName}
+              </button>
+              <button
+                onClick={() => setViewMode('general')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  viewMode === 'general'
+                    ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                Visão Geral
+              </button>
+            </div>
+          )}
+
+          {/* Atalho para Configurações do Meu Negócio */}
+          <button
+            type="button"
+            onClick={() => setBusinessSettingsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-300 hover:text-zinc-100 transition"
+            title="Configurações do Meu Negócio"
+          >
+            <Store className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Meu Negócio</span>
+          </button>
 
           {/* Exportação */}
           <ExportDropdown onExport={handleExport} />
@@ -733,6 +758,13 @@ export function DashboardView({
         account={accountToAdjustBalance}
         defaultMode="adjust"
         onSuccess={refreshData}
+      />
+
+      {/* Modal de Configurações do Meu Negócio */}
+      <BusinessSettingsModal
+        isOpen={businessSettingsOpen}
+        onClose={() => setBusinessSettingsOpen(false)}
+        onSaved={refreshData}
       />
     </div>
   );

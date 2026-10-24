@@ -20,7 +20,9 @@ import {
   MessageSquare,
   Bell,
   Crown,
+  Store,
 } from 'lucide-react';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
 import { AccountWithBalance } from '@/lib/actions/accounts';
@@ -39,6 +41,11 @@ const MessageSettingsModal = dynamic(
 
 const NotificationPreferencesModal = dynamic(
   () => import('@/components/notifications/NotificationPreferencesModal').then((m) => m.NotificationPreferencesModal),
+  { ssr: false }
+);
+
+const BusinessSettingsModal = dynamic(
+  () => import('@/components/settings/BusinessSettingsModal').then((m) => m.BusinessSettingsModal),
   { ssr: false }
 );
 
@@ -73,11 +80,13 @@ export function MobileMoreView({
   const router = useRouter();
   const pathname = usePathname();
   const { showValues } = useMobileNavigation();
+  const { businessName, hasBusiness } = useBusinessProfile();
   const [loggingOut, setLoggingOut] = useState(false);
   const [navigatingHref, setNavigatingHref] = useState<string | null>(null);
   const [prevPathname, setPrevPathname] = useState(pathname);
   const [isMessageSettingsOpen, setIsMessageSettingsOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isBusinessSettingsOpen, setIsBusinessSettingsOpen] = useState(false);
   const [messageSettings, setMessageSettings] = useState<BusinessMessageSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(false);
 
@@ -162,49 +171,69 @@ export function MobileMoreView({
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
   const menuSections: MenuSection[] = [
-    {
-      title: 'Operação da Barbearia',
-      items: [
-        {
-          title: 'Clientes & Fidelização (CRM)',
-          description: 'Histórico de cortes, radar de retorno WhatsApp e VIPs',
-          href: '/clientes',
-          icon: Users,
-          iconColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-          badge: clientsReturnCount > 0 ? `${clientsReturnCount} para retorno` : null,
-          badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    hasBusiness
+      ? {
+          title: businessName,
+          items: [
+            {
+              title: 'Configurações do Meu Negócio',
+              description: 'Nome fantasia, segmento, rotinas e preferências',
+              onClick: () => setIsBusinessSettingsOpen(true),
+              icon: Store,
+              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+            },
+            {
+              title: 'Clientes & Fidelização (CRM)',
+              description: 'Histórico de atendimentos, radar de retorno WhatsApp e VIPs',
+              href: '/clientes',
+              icon: Users,
+              iconColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+              badge: clientsReturnCount > 0 ? `${clientsReturnCount} para retorno` : null,
+              badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+            },
+            {
+              title: 'Mensalidades & Planos',
+              description: 'Assinaturas recorrentes, cobrança WhatsApp e recebimento',
+              href: '/mensalidades',
+              icon: Crown,
+              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+            },
+            {
+              title: 'Fiados & Contas a Receber',
+              description: 'Vendas a prazo, cobrança no WhatsApp e quitação',
+              href: '/fiados',
+              icon: Receipt,
+              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+            },
+            {
+              title: 'Serviços & Catálogo de Produtos',
+              description: 'Catálogo de serviços, itens e controle de estoque',
+              href: '/produtos',
+              icon: Package,
+              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+            },
+            {
+              title: 'Configurar WhatsApp & Chave Pix',
+              description: 'Chave Pix de recebimento e modelos de mensagens automáticas',
+              onClick: handleOpenMessageSettings,
+              isLoading: loadingSettings,
+              icon: MessageSquare,
+              iconColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+            },
+          ],
+        }
+      : {
+          title: 'Atividade Profissional',
+          items: [
+            {
+              title: 'Ativar Meu Negócio (PJ)',
+              description: 'Ative controle de atendimentos, clientes, catálogo e fiados',
+              onClick: () => setIsBusinessSettingsOpen(true),
+              icon: Store,
+              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+            },
+          ],
         },
-        {
-          title: 'Mensalidades & Clube',
-          description: 'Assinaturas recorrentes, cobrança WhatsApp e recebimento',
-          href: '/mensalidades',
-          icon: Crown,
-          iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-        },
-        {
-          title: 'Fiados & Contas a Receber',
-          description: 'Vendas a prazo, cobrança no WhatsApp e quitação',
-          href: '/fiados',
-          icon: Receipt,
-          iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-        },
-        {
-          title: 'Produtos & Estoque',
-          description: 'Catálogo de serviços, pomadas, minoxidil e controle de estoque',
-          href: '/produtos',
-          icon: Package,
-          iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-        },
-        {
-          title: 'Configurar WhatsApp & Chave Pix',
-          description: 'Chave Pix de recebimento e modelos de mensagens automáticas',
-          onClick: handleOpenMessageSettings,
-          isLoading: loadingSettings,
-          icon: MessageSquare,
-          iconColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-        },
-      ],
-    },
     {
       title: 'Gestão Financeira & Meios',
       items: [
@@ -385,6 +414,14 @@ export function MobileMoreView({
         <NotificationPreferencesModal
           isOpen={isNotificationsOpen}
           onClose={() => setIsNotificationsOpen(false)}
+        />
+      )}
+
+      {/* Modal de Configurações do Meu Negócio */}
+      {isBusinessSettingsOpen && (
+        <BusinessSettingsModal
+          isOpen={isBusinessSettingsOpen}
+          onClose={() => setIsBusinessSettingsOpen(false)}
         />
       )}
     </div>
