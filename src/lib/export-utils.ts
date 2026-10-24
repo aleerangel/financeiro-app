@@ -115,7 +115,7 @@ export function exportTransactionsReport({
   // Linhas
   const rows: (string | number)[][] = transactions.map((t) => {
     const isBiz = isBusinessTransaction(t);
-    const scopeLabel = isBiz ? 'Barbearia' : 'Pessoal';
+    const scopeLabel = isBiz ? 'Negócio' : 'Pessoal';
     const typeLabel = t.type === 'income' ? 'Receita' : 'Despesa';
     const statusLabel = t.is_paid ? 'Pago' : 'Pendente';
     const sourceLabel = t.credit_card?.name
@@ -251,7 +251,7 @@ export function exportTransactionsReport({
       t.description,
       t.category?.name || 'Sem categoria',
       sourceLabel,
-      isBiz ? 'Barbearia' : 'Pessoal',
+      isBiz ? 'Negócio' : 'Pessoal',
       t.type === 'income' ? 'Receita' : 'Despesa',
       t.is_paid ? 'Pago' : 'Pendente',
       formatCurrency(Number(t.amount)),
@@ -510,7 +510,7 @@ export function exportSalesReport({
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
       doc.text(
-        'Relatório gerado pelo Financeiro App • Gestão da Barbearia',
+        'Relatório gerado pelo Canário PRO • Gestão Financeira',
         14,
         doc.internal.pageSize.getHeight() - 8
       );

@@ -71,7 +71,7 @@ function SubscriptionInvoicesHistoryDialog({
   const planName =
     subscription.custom_plan_name ||
     subscription.plan?.name ||
-    'Clube da Barbearia';
+    'Plano de Assinatura';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">

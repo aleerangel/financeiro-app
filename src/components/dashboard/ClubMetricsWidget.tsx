@@ -52,7 +52,7 @@ export function ClubMetricsWidget({ overview }: ClubMetricsWidgetProps) {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-zinc-100">Clube da Barbearia</h3>
+                <h3 className="text-sm font-bold text-zinc-100">Clube de Assinaturas</h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   {overview.activeSubscribersCount} assinantes
                 </span>

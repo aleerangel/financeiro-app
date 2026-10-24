@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Check, Scissors, User } from 'lucide-react';
+import { X, Check, Scissors, User, Store } from 'lucide-react';
 import { Category, CategoryType, FinancialScope } from '@/types/database';
 import { createCategory, updateCategory } from '@/lib/actions/categories';
 import { CATEGORY_ICONS_LIST, CategoryIcon } from './CategoryIcon';
 import { isBusinessCategory } from '@/lib/business-scope-utils';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 
 const PRESET_COLORS = [
   '#ef4444', // Red
@@ -55,11 +56,12 @@ function CategoryModalDialog({
   onSuccess: (savedCategory: Category) => void;
 }) {
   const isEditing = !!category;
+  const { hasBusiness, businessName } = useBusinessProfile();
 
   const [name, setName] = useState(category?.name || '');
   const [type, setType] = useState<CategoryType>(category?.type || 'expense');
   const [scope, setScope] = useState<FinancialScope>(
-    category && isBusinessCategory(category) ? 'business' : 'personal'
+    hasBusiness && category && isBusinessCategory(category) ? 'business' : 'personal'
   );
   const [color, setColor] = useState(category?.color || '#10b981');
   const [icon, setIcon] = useState(category?.icon || 'tag');
@@ -135,38 +137,40 @@ function CategoryModalDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Escopo: Pessoal vs Barbearia */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-              Uso da Categoria
-            </label>
-            <div className="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
-              <button
-                type="button"
-                onClick={() => setScope('personal')}
-                className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
-                  scope === 'personal'
-                    ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                Pessoal
-              </button>
-              <button
-                type="button"
-                onClick={() => setScope('business')}
-                className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
-                  scope === 'business'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <Scissors className="w-3.5 h-3.5" />
-                Barbearia
-              </button>
+          {/* Escopo: Pessoal vs Negócio (Apenas se hasBusiness for true) */}
+          {hasBusiness && (
+            <div>
+              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                Uso da Categoria
+              </label>
+              <div className="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setScope('personal')}
+                  className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                    scope === 'personal'
+                      ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  Pessoal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScope('business')}
+                  className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 truncate ${
+                    scope === 'business'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <Store className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{businessName}</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Tipo de Categoria */}
           <div>

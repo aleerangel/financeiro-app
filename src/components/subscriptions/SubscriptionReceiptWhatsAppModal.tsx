@@ -39,7 +39,7 @@ export function SubscriptionReceiptWhatsAppModal({
   const planName =
     invoice.subscription?.custom_plan_name ||
     invoice.subscription?.plan?.name ||
-    'Clube da Barbearia';
+    'Plano de Assinatura';
 
   const methodLabelMap: Record<string, string> = {
     pix: 'Pix',

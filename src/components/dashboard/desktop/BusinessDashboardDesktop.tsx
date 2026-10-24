@@ -35,6 +35,7 @@ import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 import { useState } from 'react';
 import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 
 export type ChartPeriod = ChartViewPeriod;
 
@@ -71,13 +72,14 @@ export function BusinessDashboardDesktop({
     daysSinceLastVisit: number;
   } | null>(null);
 
+  const { businessName, salesLabel } = useBusinessProfile();
   const { month, year } = useDateContext();
   const businessChart = useIndependentChartPeriod<
     BusinessDashboardData,
     BusinessPeriodStat
   >(year, month, data, EMPTY_BUSINESS_STATS, getBusinessDashboardData);
 
-  // Configura as séries do gráfico: Faturamento, Gastos da Barbearia e Lucro Líquido
+  // Configura as séries do gráfico: Faturamento, Gastos do Negócio e Lucro Líquido
   const chartSeries: ChartSeries[] = [
     {
       id: 'revenue',
@@ -88,7 +90,7 @@ export function BusinessDashboardDesktop({
     },
     {
       id: 'expenses',
-      name: 'Gastos Barbearia',
+      name: `Gastos ${businessName}`,
       color: '#f43f5e', // Rosa/Vermelho
       values: businessChart.activeStats.map((s) => s.expenses || 0),
       formatValue: (v) => formatCurrency(v),
@@ -125,7 +127,7 @@ export function BusinessDashboardDesktop({
 
   return (
     <div className="space-y-6">
-      {/* KPIs de Resultado Real da Barbearia no Mês Selecionado */}
+      {/* KPIs de Resultado do Negócio no Mês Selecionado */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {/* 1. Faturamento Bruto */}
         <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
@@ -159,7 +161,7 @@ export function BusinessDashboardDesktop({
           </div>
           <div className="mt-2">
             <span className="text-lg sm:text-2xl font-extrabold text-blue-400 block">
-              {summary.salesCount} {summary.salesCount === 1 ? 'atendimento' : 'atendimentos'}
+              {summary.salesCount} {summary.salesCount === 1 ? salesLabel.toLowerCase().replace(/s$/, '') : salesLabel.toLowerCase()}
             </span>
             <span className="text-[11px] text-zinc-400 mt-1 block">
               {summary.uniqueClientsCount} {summary.uniqueClientsCount === 1 ? 'cliente único' : 'clientes únicos'}
@@ -168,11 +170,11 @@ export function BusinessDashboardDesktop({
           </div>
         </div>
 
-        {/* 2. Gastos da Barbearia */}
+        {/* 3. Gastos do Negócio */}
         <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400">
-              Gastos da Barbearia
+              Gastos do Negócio
             </span>
             <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
               <TrendingDown className="w-3.5 h-3.5" />
@@ -371,7 +373,7 @@ export function BusinessDashboardDesktop({
         {/* Gráfico (Ocupa 2 colunas no desktop) */}
         <div className="lg:col-span-2">
           <SmoothLineChart
-            title="Faturamento, Gastos e Lucro da Barbearia"
+            title={`Faturamento, Gastos e Lucro - ${businessName}`}
             subtitle={businessChart.subtitle}
             series={chartSeries}
             labels={chartLabels}
@@ -472,10 +474,10 @@ export function BusinessDashboardDesktop({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-bold text-zinc-100 text-base">
-                  Consumo da Barbearia por Cartão / Conta
+                  Consumo por Meio de Pagamento
                 </h3>
                 <p className="text-xs text-zinc-400">
-                  Quanto os gastos da barbearia utilizaram de cada meio em {formattedMonth || 'mês atual'}
+                  Quanto os gastos de {businessName} utilizaram de cada meio em {formattedMonth || 'mês atual'}
                 </p>
               </div>
               {onAddBusinessExpense && (
@@ -530,22 +532,22 @@ export function BusinessDashboardDesktop({
               </div>
             ) : (
               <div className="py-10 text-center text-xs text-zinc-500">
-                Nenhum gasto da barbearia registrado neste mês.
+                Nenhum gasto do negócio registrado neste mês.
               </div>
             )}
           </div>
         </div>
 
-        {/* Últimos Gastos da Barbearia (Insumos, Lâminas, Produtos, etc.) */}
+        {/* Últimos Gastos do Negócio (Insumos, Ferramentas, Produtos, etc.) */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-bold text-zinc-100 text-base">
-                  Últimos Gastos da Barbearia
+                  Últimos Gastos do Negócio
                 </h3>
                 <p className="text-xs text-zinc-400">
-                  Insumos, descartáveis, produtos e contas fixas do negócio
+                  Insumos, ferramentas, produtos e contas fixas de {businessName}
                 </p>
               </div>
               <Link

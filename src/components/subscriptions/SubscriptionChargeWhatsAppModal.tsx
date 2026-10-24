@@ -44,7 +44,7 @@ export function SubscriptionChargeWhatsAppModal({
   const planName =
     invoice.subscription?.custom_plan_name ||
     invoice.subscription?.plan?.name ||
-    'Clube da Barbearia';
+    'Plano de Assinatura';
 
   const dueDateFormatted = new Date(invoice.due_date + 'T12:00:00Z').toLocaleDateString(
     'pt-BR'

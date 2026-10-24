@@ -12,6 +12,9 @@ import {
 import { useMobileNavigation, MobileTab } from '@/context/MobileNavigationContext';
 
 const MORE_ROUTES = [
+  '/vendas',
+  '/fiados',
+  '/mensalidades',
   '/clientes',
   '/produtos',
   '/contas',

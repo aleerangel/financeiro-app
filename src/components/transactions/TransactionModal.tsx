@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, Scissors, User } from 'lucide-react';
+import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, Scissors, User, Store } from 'lucide-react';
 import { Account, CreditCard, Category, Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { createTransaction, updateTransaction } from '@/lib/actions/transactions';
 import { formatCurrency } from '@/lib/utils';
@@ -13,6 +13,7 @@ import {
 } from '@/lib/business-scope-utils';
 import { getTodayYMD } from '@/lib/date-utils';
 import { useOptionalMobileNavigation } from '@/context/MobileNavigationContext';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -68,7 +69,9 @@ function TransactionModalDialog({
     (c) => c.type === 'expense' && isBusinessCategory(c)
   );
 
-  const [scope, setScope] = useState<FinancialScope>(initialScope);
+  const { hasBusiness, businessName } = useBusinessProfile();
+  const effectiveInitialScope = hasBusiness ? initialScope : 'personal';
+  const [scope, setScope] = useState<FinancialScope>(effectiveInitialScope);
   const [tab, setTab] = useState<TabType>(initialTab);
   const [description, setDescription] = useState(transaction?.description || '');
   const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : '');
@@ -230,39 +233,41 @@ function TransactionModalDialog({
           {isEditing ? 'Editar Transação' : 'Nova Transação'}
         </h2>
 
-        {/* Seletor de Escopo: Pessoal vs Barbearia (Negócio) */}
-        <div className="mb-3">
-          <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-            Destino do Lançamento
-          </label>
-          <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
-            <button
-              type="button"
-              onClick={() => handleScopeChange('personal')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
-                scope === 'personal'
-                  ? 'bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              Pessoal
-            </button>
+        {/* Seletor de Escopo: Pessoal vs Negócio (Apenas se hasBusiness for true) */}
+        {hasBusiness && (
+          <div className="mb-3">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+              Destino do Lançamento
+            </label>
+            <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
+              <button
+                type="button"
+                onClick={() => handleScopeChange('personal')}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+                  scope === 'personal'
+                    ? 'bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                Pessoal
+              </button>
 
-            <button
-              type="button"
-              onClick={() => handleScopeChange('business')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
-                scope === 'business'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <Scissors className="w-3.5 h-3.5" />
-              Barbearia (Negócio)
-            </button>
+              <button
+                type="button"
+                onClick={() => handleScopeChange('business')}
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition truncate ${
+                  scope === 'business'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Store className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{businessName}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Abas de Tipo */}
         <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-5">

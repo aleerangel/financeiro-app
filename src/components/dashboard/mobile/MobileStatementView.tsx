@@ -18,6 +18,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { deleteTransaction, toggleTransactionPaid } from '@/lib/actions/transactions';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 
@@ -42,6 +43,7 @@ export function MobileStatementView({
   onRefresh,
 }: MobileStatementViewProps) {
   const { showValues } = useMobileNavigation();
+  const { hasBusiness, businessName } = useBusinessProfile();
   const { confirm } = useConfirm();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'pending'>('all');
@@ -256,28 +258,32 @@ export function MobileStatementView({
 
           <span className="text-zinc-700 mx-1">|</span>
 
-          {/* Filtro Escopo */}
-          <button
-            type="button"
-            onClick={() =>
-              setFilterScope((prev) =>
-                prev === 'all' ? 'business' : prev === 'business' ? 'personal' : 'all'
-              )
-            }
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 flex items-center gap-1 border transition ${
-              filterScope === 'business'
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                : filterScope === 'personal'
-                ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
-                : 'bg-zinc-900 text-zinc-400 border-zinc-800'
-            }`}
-          >
-            {filterScope === 'business'
-              ? '✂️ Só Barbearia'
-              : filterScope === 'personal'
-              ? '👤 Só Pessoal'
-              : 'Escopo: Todos'}
-          </button>
+          {/* Filtro Escopo: Apenas se o usuário tiver negócio */}
+          {hasBusiness && (
+            <button
+              type="button"
+              onClick={() =>
+                setFilterScope((prev) =>
+                  prev === 'all' ? 'business' : prev === 'business' ? 'personal' : 'all'
+                )
+              }
+              className={`px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 flex items-center gap-1 border transition truncate max-w-[150px] ${
+                filterScope === 'business'
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                  : filterScope === 'personal'
+                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                  : 'bg-zinc-900 text-zinc-400 border-zinc-800'
+              }`}
+            >
+              <span className="truncate">
+                {filterScope === 'business'
+                  ? `💼 ${businessName}`
+                  : filterScope === 'personal'
+                  ? '👤 Só Pessoal'
+                  : 'Escopo: Todos'}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 

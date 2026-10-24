@@ -15,9 +15,11 @@ import {
   Repeat,
   Layers,
   Scissors,
+  Store,
 } from 'lucide-react';
 import { Transaction } from '@/types/database';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import {
   CreditCardWithUsage,
   getCreditCardTransactions,
@@ -54,6 +56,7 @@ export function CreditCardInvoicesPanel({
 }: CreditCardInvoicesPanelProps) {
   const router = useRouter();
   const { confirm } = useConfirm();
+  const { hasBusiness, businessName } = useBusinessProfile();
   const { month: globalMonth, year: globalYear } = useDateContext();
 
   const [selectedMonth, setSelectedMonth] = useState<number>(globalMonth);
@@ -439,19 +442,21 @@ export function CreditCardInvoicesPanel({
             </span>
           </div>
 
-          <div>
-            <span className="text-[11px] uppercase tracking-wider text-amber-300 font-semibold flex items-center gap-1">
-              <Scissors className="w-3 h-3" />
-              Gasto Barbearia
-            </span>
-            <span className="text-base sm:text-xl font-bold text-amber-300 mt-0.5 block">
-              {formatCurrency(
-                currentInvoice.items
-                  .filter((i) => isBusinessTransaction(i))
-                  .reduce((sum, i) => sum + (Number(i.amount) || 0), 0)
-              )}
-            </span>
-          </div>
+          {hasBusiness && (
+            <div>
+              <span className="text-[11px] uppercase tracking-wider text-amber-300 font-semibold flex items-center gap-1">
+                <Store className="w-3 h-3" />
+                Gasto {businessName}
+              </span>
+              <span className="text-base sm:text-xl font-bold text-amber-300 mt-0.5 block">
+                {formatCurrency(
+                  currentInvoice.items
+                    .filter((i) => isBusinessTransaction(i))
+                    .reduce((sum, i) => sum + (Number(i.amount) || 0), 0)
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         {currentInvoice.items.length > 0 && (
@@ -534,9 +539,9 @@ export function CreditCardInvoicesPanel({
                       </span>
 
                       {isBusinessTransaction(tx) && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                          <Scissors className="w-2.5 h-2.5" />
-                          Barbearia
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 truncate max-w-[120px]">
+                          <Store className="w-2.5 h-2.5 shrink-0" />
+                          <span className="truncate">{hasBusiness ? businessName : 'Negócio'}</span>
                         </span>
                       )}
 

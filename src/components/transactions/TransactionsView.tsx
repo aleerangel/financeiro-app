@@ -13,6 +13,7 @@ import {
   Filter,
   Pencil,
   Scissors,
+  Store,
   Search,
   CalendarDays,
   List,
@@ -43,6 +44,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ExportDropdown } from '@/components/ui/ExportDropdown';
 import { exportTransactionsReport, ExportFormat } from '@/lib/export-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
 import { getZonedParts } from '@/lib/date-utils';
@@ -87,6 +89,7 @@ export function TransactionsView({
 }: TransactionsViewProps) {
   const { confirm } = useConfirm();
   const { month, year, formattedMonth, prevMonth, nextMonth } = useDateContext();
+  const { hasBusiness, businessName } = useBusinessProfile();
   const isInitialMount = useRef(true);
   const [transactions, setTransactions] = useState<Transaction[]>(
     initialTransactions || []
@@ -326,7 +329,7 @@ export function TransactionsView({
     let filterLabel = 'Todas as movimentações';
     if (filter === 'income') filterLabel = 'Apenas Receitas';
     else if (filter === 'expense') filterLabel = 'Apenas Despesas';
-    else if (filter === 'business') filterLabel = 'Apenas Barbearia';
+    else if (filter === 'business') filterLabel = `Apenas ${hasBusiness ? businessName : 'Negócio'}`;
     else if (filter === 'personal') filterLabel = 'Apenas Pessoal';
     else if (filter === 'credit') filterLabel = 'Cartão de Crédito';
     else if (filter === 'pending') filterLabel = 'Apenas Pendentes';
@@ -381,9 +384,9 @@ export function TransactionsView({
                 {t.description}
               </h4>
               {isBusinessTransaction(t) && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
-                  <Scissors className="w-2.5 h-2.5" />
-                  Barbearia
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0 truncate max-w-[140px]">
+                  <Store className="w-2.5 h-2.5 shrink-0" />
+                  <span className="truncate">{hasBusiness ? businessName : 'Negócio'}</span>
                 </span>
               )}
               {t.total_installments && t.total_installments > 1 && (
@@ -658,17 +661,19 @@ export function TransactionsView({
               disabled={filteredTransactions.length === 0}
             />
 
-            <button
-              onClick={() => {
-                setTransactionToEdit(null);
-                setModalDefaultScope('business');
-                setModalOpen(true);
-              }}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs rounded-xl transition"
-            >
-              <Scissors className="w-3.5 h-3.5" />
-              + Gasto Barbearia
-            </button>
+            {hasBusiness && (
+              <button
+                onClick={() => {
+                  setTransactionToEdit(null);
+                  setModalDefaultScope('business');
+                  setModalOpen(true);
+                }}
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs rounded-xl transition truncate max-w-[200px]"
+              >
+                <Store className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">+ Gasto {businessName}</span>
+              </button>
+            )}
 
             <button
               onClick={() => {
@@ -689,17 +694,19 @@ export function TransactionsView({
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <Filter className="w-3.5 h-3.5 text-zinc-500 mr-1 hidden sm:inline shrink-0" />
             {[
-              { id: 'all', label: 'Todos' },
-              { id: 'business', label: '✂️ Barbearia' },
-              { id: 'personal', label: '👤 Pessoal' },
-              { id: 'income', label: 'Receitas' },
-              { id: 'expense', label: 'Despesas' },
-              { id: 'credit', label: 'Cartão' },
-              { id: 'pending', label: 'Pendentes' },
+              { id: 'all' as FilterType, label: 'Todos' },
+              ...(hasBusiness
+                ? [{ id: 'business' as FilterType, label: `💼 ${businessName}` }]
+                : []),
+              { id: 'personal' as FilterType, label: '👤 Pessoal' },
+              { id: 'income' as FilterType, label: 'Receitas' },
+              { id: 'expense' as FilterType, label: 'Despesas' },
+              { id: 'credit' as FilterType, label: 'Cartão' },
+              { id: 'pending' as FilterType, label: 'Pendentes' },
             ].map((f) => (
               <button
                 key={f.id}
-                onClick={() => setFilter(f.id as FilterType)}
+                onClick={() => setFilter(f.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${
                   filter === f.id
                     ? 'bg-zinc-100 text-zinc-900 font-semibold'

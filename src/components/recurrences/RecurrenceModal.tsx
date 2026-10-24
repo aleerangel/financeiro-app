@@ -2,10 +2,11 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { X, ArrowDownRight, ArrowUpRight, Scissors, User } from 'lucide-react';
+import { X, ArrowDownRight, ArrowUpRight, Scissors, User, Store } from 'lucide-react';
 import { Account, CreditCard, Category, TransactionType, Recurrence, FinancialScope } from '@/types/database';
 import { createRecurrence, updateRecurrence } from '@/lib/actions/recurrences';
 import { isBusinessCategory, isBusinessRecurrence } from '@/lib/business-scope-utils';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 
 interface RecurrenceModalProps {
   isOpen: boolean;
@@ -51,9 +52,10 @@ function RecurrenceModalDialog({
   onSuccess,
 }: RecurrenceModalProps) {
   const isEditing = !!recurrence;
+  const { hasBusiness, businessName } = useBusinessProfile();
 
   const [scope, setScope] = useState<FinancialScope>(
-    recurrence && isBusinessRecurrence(recurrence) ? 'business' : 'personal'
+    hasBusiness && recurrence && isBusinessRecurrence(recurrence) ? 'business' : 'personal'
   );
   const [type, setType] = useState<TransactionType>(recurrence?.type || 'expense');
   const [description, setDescription] = useState(recurrence?.description || '');
@@ -154,34 +156,36 @@ function RecurrenceModalDialog({
             : 'Cadastre despesas ou receitas automáticas que se repetem todo mês.'}
         </p>
 
-        {/* Escopo: Pessoal ou Barbearia */}
-        <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-3">
-          <button
-            type="button"
-            onClick={() => setScope('personal')}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
-              scope === 'personal'
-                ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            Pessoal
-          </button>
+        {/* Escopo: Pessoal vs Negócio (Apenas se hasBusiness for true) */}
+        {hasBusiness && (
+          <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-3">
+            <button
+              type="button"
+              onClick={() => setScope('personal')}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+                scope === 'personal'
+                  ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              Pessoal
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setScope('business')}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
-              scope === 'business'
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <Scissors className="w-3.5 h-3.5" />
-            Barbearia (Negócio)
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setScope('business')}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition truncate ${
+                scope === 'business'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <Store className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{businessName}</span>
+            </button>
+          </div>
+        )}
 
         {/* Tipo: Despesa Fixa ou Receita Fixa */}
         <div className="grid grid-cols-2 gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-4">
