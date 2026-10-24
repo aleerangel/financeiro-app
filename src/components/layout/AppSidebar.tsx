@@ -15,14 +15,8 @@ import {
   Users,
   Crown,
   Package,
-  PanelLeftClose,
-  PanelLeftOpen,
-  LogOut,
 } from 'lucide-react';
 import { useSidebar } from '@/context/SidebarContext';
-import { createClient } from '@/lib/supabase/client';
-import { signOutServerAction } from '@/lib/actions/auth';
-import { clearAppClientStorage } from '@/lib/auth-storage';
 
 interface NavItem {
   href: string;
@@ -66,42 +60,9 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-interface AppSidebarProps {
-  userEmail?: string;
-}
-
-export function AppSidebar({ userEmail }: AppSidebarProps) {
+export function AppSidebar() {
   const pathname = usePathname();
-  const { collapsed, toggleSidebar } = useSidebar();
-  const [loggingOut, setLoggingOut] = React.useState(false);
-
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      const supabase = createClient();
-      await Promise.allSettled([
-        supabase.auth.signOut(),
-        signOutServerAction(),
-      ]);
-
-      if (typeof window !== 'undefined') {
-        clearAppClientStorage();
-        if ('caches' in window) {
-          try {
-            const keys = await window.caches.keys();
-            await Promise.all(keys.map((key) => window.caches.delete(key)));
-          } catch {
-            // Ignora erro
-          }
-        }
-      }
-    } finally {
-      window.location.replace('/login');
-    }
-  };
-
-  const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : 'B';
+  const { collapsed } = useSidebar();
 
   return (
     <aside
@@ -188,61 +149,6 @@ export function AppSidebar({ userEmail }: AppSidebarProps) {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* 3. Rodapé da Sidebar: Perfil & Toggle */}
-      <div className="p-3 border-t border-zinc-800/80 bg-zinc-950/50 shrink-0 space-y-2">
-        {/* Card do Usuário */}
-        <div
-          className={`flex items-center gap-2.5 p-2 rounded-xl bg-zinc-900/60 border border-zinc-850 ${
-            collapsed ? 'justify-center p-1.5' : ''
-          }`}
-        >
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs shrink-0">
-            {userInitial}
-          </div>
-
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-xs font-medium text-zinc-200 truncate"
-                title={userEmail || 'Usuário'}
-              >
-                {userEmail || 'Barbeiro'}
-              </p>
-              <p className="text-[10px] text-zinc-500 truncate">Sessão Ativa</p>
-            </div>
-          )}
-
-          {!collapsed && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition disabled:opacity-50"
-              title="Sair da conta"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Botão de Recolher / Expandir */}
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition ${
-            collapsed ? 'justify-center px-0' : 'justify-between'
-          }`}
-          title={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
-        >
-          {!collapsed && <span>Recolher Menu</span>}
-          {collapsed ? (
-            <PanelLeftOpen className="w-4 h-4 text-emerald-400" />
-          ) : (
-            <PanelLeftClose className="w-4 h-4 text-zinc-500 hover:text-zinc-300" />
-          )}
-        </button>
       </div>
     </aside>
   );

@@ -53,7 +53,7 @@ export function AppShell({ userEmail, children }: AppShellProps) {
         <SidebarProvider>
           <div className="min-h-screen flex bg-zinc-950 text-zinc-100">
             {/* 1. Sidebar Fixa Desktop */}
-            <AppSidebar userEmail={userEmail} />
+            <AppSidebar />
 
             {/* 2. Área Principal com Header e Conteúdo Full-Width */}
             <div className="flex-1 flex flex-col min-w-0">
