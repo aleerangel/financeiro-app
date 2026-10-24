@@ -148,7 +148,7 @@ export function SubscriptionsList({
 
     const confirmed = await confirm({
       title: `${newStatus === 'paused' ? 'Pausar' : 'Reativar'} Assinatura?`,
-      message: `Deseja realmente ${actionText} a assinatura de ${sub.client?.name}?`,
+      description: `Deseja realmente ${actionText} a assinatura de ${sub.client?.name}?`,
       confirmLabel: newStatus === 'paused' ? 'Pausar' : 'Reativar',
     });
 
@@ -166,7 +166,7 @@ export function SubscriptionsList({
   const handleDelete = async (sub: ClientSubscription) => {
     const confirmed = await confirm({
       title: 'Cancelar Assinatura?',
-      message: `Deseja remover a assinatura de ${sub.client?.name}? O histórico financeiro existente será mantido.`,
+      description: `Deseja remover a assinatura de ${sub.client?.name}? O histórico financeiro existente será mantido.`,
       confirmLabel: 'Cancelar Assinatura',
       variant: 'danger',
     });
