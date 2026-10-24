@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ExportDropdown } from '@/components/ui/ExportDropdown';
 import { exportSalesReport, ExportFormat } from '@/lib/export-utils';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { AmortizeModal } from './AmortizeModal';
 
 const NewSaleModal = dynamic(
@@ -53,6 +54,7 @@ export function SalesView({
   initialClientId = null,
 }: SalesViewProps) {
   const { confirm } = useConfirm();
+  const { salesLabel } = useBusinessProfile();
   const [sales, setSales] = useState<Sale[]>(initialSales);
   const [modalOpen, setModalOpen] = useState(Boolean(initialClientId));
   const [amortizeSaleTarget, setAmortizeSaleTarget] = useState<Sale | null>(null);
@@ -125,9 +127,9 @@ export function SalesView({
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
-      title: 'Estornar Atendimento',
+      title: `Estornar ${salesLabel}`,
       description:
-        'Deseja estornar e excluir este atendimento? As receitas e amortizações correspondentes serão removidas do financeiro.',
+        `Deseja estornar e excluir este registro de ${salesLabel.toLowerCase()}? As receitas e amortizações correspondentes serão removidas do financeiro.`,
       confirmLabel: 'Estornar e Excluir',
       variant: 'danger',
     });
@@ -137,9 +139,9 @@ export function SalesView({
         setDeletingId(id);
         await deleteSale(id);
         setSales((prev) => prev.filter((s) => s.id !== id));
-        toast.success('Atendimento estornado e excluído com sucesso!');
+        toast.success(`${salesLabel} estornado e excluído com sucesso!`);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao excluir atendimento');
+        toast.error(err instanceof Error ? err.message : `Erro ao excluir ${salesLabel.toLowerCase()}`);
       } finally {
         setDeletingId(null);
       }
@@ -228,7 +230,7 @@ export function SalesView({
         <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-400 mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
-              Atendimentos Hoje
+              {salesLabel} Hoje
             </span>
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
               <Users className="w-4 h-4" />
@@ -276,7 +278,7 @@ export function SalesView({
                 : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
             }`}
           >
-            Todas as Comandas ({sales.length})
+            Todos os Registros ({sales.length})
           </button>
         </div>
 
@@ -284,7 +286,7 @@ export function SalesView({
           <ExportDropdown
             onExport={handleExport}
             buttonLabel="Exportar"
-            title="Exportar Atendimentos"
+            title={`Exportar ${salesLabel}`}
             disabled={displayedSales.length === 0}
           />
 
@@ -293,19 +295,19 @@ export function SalesView({
             className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10 active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            Novo Atendimento
+            Novo(a) {salesLabel}
           </button>
         </div>
       </div>
 
-      {/* Histórico de Comandas */}
+      {/* Histórico de Comandas / Vendas */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl divide-y divide-zinc-800/80 overflow-hidden shadow-sm">
         {displayedSales.map((sale) => {
           const itemsDesc = sale.items
             ? sale.items
                 .map((i) => `${i.quantity > 1 ? `${i.quantity}x ` : ''}${i.product_name}`)
                 .join(', ')
-            : 'Atendimento';
+            : salesLabel;
 
           const isOnCredit = sale.payment_method === 'on_credit';
           const remainingAmount = Number(sale.remaining_amount ?? (isOnCredit ? sale.total_amount : 0));

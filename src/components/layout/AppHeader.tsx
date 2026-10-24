@@ -9,6 +9,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useSidebar } from '@/context/SidebarContext';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
@@ -19,22 +20,22 @@ interface RouteBreadcrumb {
   label: string;
 }
 
-const ROUTE_MAP: Record<string, RouteBreadcrumb> = {
-  '/dashboard': { section: 'Visão Geral', label: 'Dashboard' },
-  '/vendas': { section: 'Barbearia', label: 'Atendimentos & Vendas' },
-  '/fiados': { section: 'Barbearia', label: 'Fiados & Contas a Receber' },
-  '/clientes': { section: 'Barbearia', label: 'Clientes & CRM' },
-  '/mensalidades': { section: 'Barbearia', label: 'Clube & Mensalidades' },
-  '/produtos': { section: 'Barbearia', label: 'Serviços & Produtos' },
-  '/transacoes': { section: 'Finanças', label: 'Transações & Extrato' },
-  '/contas': { section: 'Finanças', label: 'Contas Bancárias' },
-  '/cartoes': { section: 'Finanças', label: 'Cartões de Crédito' },
-  '/recorrencias': { section: 'Finanças', label: 'Recorrências Fixas' },
-  '/categorias': { section: 'Finanças', label: 'Categorias' },
-};
+function getBreadcrumb(pathname: string, businessName: string, salesLabel: string): RouteBreadcrumb {
+  const routeMap: Record<string, RouteBreadcrumb> = {
+    '/dashboard': { section: 'Visão Geral', label: 'Dashboard' },
+    '/vendas': { section: businessName, label: `${salesLabel} & Vendas` },
+    '/fiados': { section: businessName, label: 'Fiados & Contas a Receber' },
+    '/clientes': { section: businessName, label: 'Clientes & CRM' },
+    '/mensalidades': { section: businessName, label: 'Planos & Mensalidades' },
+    '/produtos': { section: businessName, label: 'Serviços & Catálogo' },
+    '/transacoes': { section: 'Finanças', label: 'Transações & Extrato' },
+    '/contas': { section: 'Finanças', label: 'Contas Bancárias' },
+    '/cartoes': { section: 'Finanças', label: 'Cartões de Crédito' },
+    '/recorrencias': { section: 'Finanças', label: 'Recorrências Fixas' },
+    '/categorias': { section: 'Finanças', label: 'Categorias' },
+  };
 
-function getBreadcrumb(pathname: string): RouteBreadcrumb {
-  for (const [route, crumb] of Object.entries(ROUTE_MAP)) {
+  for (const [route, crumb] of Object.entries(routeMap)) {
     if (pathname === route || (route !== '/dashboard' && pathname.startsWith(route))) {
       return crumb;
     }
@@ -49,9 +50,10 @@ interface AppHeaderProps {
 export function AppHeader({ userEmail }: AppHeaderProps) {
   const pathname = usePathname();
   const { collapsed, toggleSidebar } = useSidebar();
+  const { businessName, salesLabel } = useBusinessProfile();
   const [loggingOut, setLoggingOut] = React.useState(false);
 
-  const breadcrumb = getBreadcrumb(pathname);
+  const breadcrumb = getBreadcrumb(pathname, businessName, salesLabel);
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -91,7 +93,7 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
           aria-label="Alternar menu lateral"
         >
           {collapsed ? (
-            <PanelLeftOpen className="w-4 h-4 text-emerald-400" />
+            <PanelLeftOpen className="w-4 h-4 text-amber-400" />
           ) : (
             <PanelLeftClose className="w-4 h-4 text-zinc-400" />
           )}
@@ -113,7 +115,7 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
 
         {userEmail && (
           <div className="flex items-center gap-2 pl-2 border-l border-zinc-800">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-xs">
               {userEmail.charAt(0).toUpperCase()}
             </div>
             <span

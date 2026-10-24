@@ -7,8 +7,29 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
+  Briefcase,
+  ShoppingBag,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+
+function SegmentSalesIcon({ segment, className }: { segment: string; className?: string }) {
+  switch (segment) {
+    case 'barbearia':
+      return <Scissors className={className} />;
+    case 'saude_estetica':
+      return <Sparkles className={className} />;
+    case 'consultoria_servicos':
+      return <Briefcase className={className} />;
+    case 'comercio_produtos':
+      return <ShoppingBag className={className} />;
+    case 'alimentacao':
+      return <UtensilsCrossed className={className} />;
+    default:
+      return <Briefcase className={className} />;
+  }
+}
 
 export function QuickActionDrawer() {
   const {
@@ -18,6 +39,8 @@ export function QuickActionDrawer() {
     openQuickTransaction,
     openYieldCorrection,
   } = useMobileNavigation();
+
+  const { profile, businessName, salesLabel, hasBusiness } = useBusinessProfile();
 
   if (!quickActionOpen) return null;
 
@@ -52,29 +75,31 @@ export function QuickActionDrawer() {
           </button>
         </div>
 
-        {/* 5 Ações Rápidas */}
+        {/* Ações Rápidas */}
         <div className="grid grid-cols-1 gap-2.5">
-          {/* Ação 1: Novo Atendimento Barbearia */}
-          <button
-            type="button"
-            onClick={() => {
-              setQuickActionOpen(false);
-              setNewSaleOpen(true);
-            }}
-            className="w-full flex items-center gap-3.5 p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-left transition group active:scale-[0.98]"
-          >
-            <div className="w-11 h-11 rounded-xl bg-emerald-500 text-zinc-950 flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
-              <Scissors className="w-5 h-5 stroke-[2.5]" />
-            </div>
-            <div>
-              <span className="font-bold text-sm text-emerald-400 block">
-                Novo Atendimento Barbearia
-              </span>
-              <span className="text-[11px] text-zinc-400 block">
-                Cortes, barba, venda de produtos e forma de pagamento
-              </span>
-            </div>
-          </button>
+          {/* Ação 1: Nova Venda / Atendimento (se hasBusiness) */}
+          {hasBusiness && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuickActionOpen(false);
+                setNewSaleOpen(true);
+              }}
+              className="w-full flex items-center gap-3.5 p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-left transition group active:scale-[0.98]"
+            >
+              <div className="w-11 h-11 rounded-xl bg-emerald-500 text-zinc-950 flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+                <SegmentSalesIcon segment={profile.segment} className="w-5 h-5 stroke-[2.5]" />
+              </div>
+              <div>
+                <span className="font-bold text-sm text-emerald-400 block">
+                  Novo(a) {salesLabel} • {businessName}
+                </span>
+                <span className="text-[11px] text-zinc-400 block">
+                  Serviços, produtos, valores e forma de pagamento
+                </span>
+              </div>
+            </button>
+          )}
 
           {/* Ação 2: Nova Entrada / Receita */}
           <button
@@ -95,7 +120,7 @@ export function QuickActionDrawer() {
             </div>
           </button>
 
-          {/* Ação 3: Nova Saída (Despesa Pessoal ou Barbearia) */}
+          {/* Ação 3: Nova Saída (Despesa Pessoal ou Negócio) */}
           <button
             type="button"
             onClick={() => openQuickTransaction('expense', 'personal')}
@@ -109,12 +134,14 @@ export function QuickActionDrawer() {
                 Nova Saída (Despesa)
               </span>
               <span className="text-[11px] text-zinc-400 block">
-                Gastos pessoais ou da barbearia (contas, compras, produtos, insumos)
+                {hasBusiness
+                  ? `Gastos pessoais ou de ${businessName} (contas, compras, insumos)`
+                  : 'Gastos e contas pessoais do dia a dia'}
               </span>
             </div>
           </button>
 
-          {/* Ação 5: Correção de Rendimentos */}
+          {/* Ação 4: Correção de Rendimentos */}
           <button
             type="button"
             onClick={() => openYieldCorrection()}
@@ -137,4 +164,3 @@ export function QuickActionDrawer() {
     </div>
   );
 }
-

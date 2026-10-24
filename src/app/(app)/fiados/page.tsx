@@ -7,7 +7,7 @@ import { getMessageSettings } from '@/lib/actions/message-settings';
 import { FiadosView } from '@/components/fiados/FiadosView';
 
 export const metadata = {
-  title: 'Fiados & Contas a Receber | BarberFin',
+  title: 'Fiados & Contas a Receber | Canário',
   description: 'Gestão de vendas a prazo, controle de vencimentos e cobrança de fiados via WhatsApp.',
 };
 

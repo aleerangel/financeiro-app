@@ -11,6 +11,7 @@ import { findExactClientMatch } from '@/lib/client-search-utils';
 import { toast } from 'sonner';
 import { ClientModal } from '@/components/clients/ClientModal';
 import { SaleCreditReceiptModal } from '@/components/fiados/SaleCreditReceiptModal';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 
 interface NewSaleModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export function NewSaleModal({
   const initialClient = initialClientId
     ? clients.find((c) => c.id === initialClientId) || null
     : null;
+  const { businessName, salesLabel } = useBusinessProfile();
   const [clientsList, setClientsList] = useState<Client[]>(clients);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(
     initialClient ? initialClient.id : null
@@ -175,7 +177,7 @@ export function NewSaleModal({
       if (isRecurring && finalClientId) {
         const dueDayNum = parseInt(recurringDueDay, 10) || 10;
         const planDescription =
-          selectedItems.map((i) => i.product_name).join(' + ') || 'Mensalidade Barbearia';
+          selectedItems.map((i) => i.product_name).join(' + ') || `Assinatura ${businessName}`;
         await saveClientSubscription({
           client_id: finalClientId,
           custom_plan_name: planDescription,
@@ -194,7 +196,7 @@ export function NewSaleModal({
       setInitialPayment('');
       setNotes('');
       setSaleDate(getTodayYMD());
-      toast.success(`Atendimento de "${finalClientName}" registrado com sucesso!`);
+      toast.success(`${salesLabel} de "${finalClientName}" registrado com sucesso!`);
 
       if (paymentMethod === 'on_credit') {
         const targetClient = clientsList.find((c) => c.id === finalClientId);
@@ -210,7 +212,7 @@ export function NewSaleModal({
         if (onSuccess) onSuccess();
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro ao registrar atendimento.';
+      const msg = err instanceof Error ? err.message : `Erro ao registrar ${salesLabel.toLowerCase()}.`;
       setError(msg);
       toast.error(msg);
     } finally {
@@ -229,10 +231,10 @@ export function NewSaleModal({
         </button>
 
         <h2 className="text-xl font-extrabold text-zinc-100 mb-1">
-          Novo Atendimento
+          Novo(a) {salesLabel}
         </h2>
         <p className="text-xs text-zinc-400 mb-5">
-          Comanda rápida: informe o cliente, data, serviços prestados e finalize.
+          Registro rápido: informe o cliente, data, serviços prestados e finalize.
         </p>
 
         {error && (

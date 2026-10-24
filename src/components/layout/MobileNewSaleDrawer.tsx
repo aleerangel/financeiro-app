@@ -14,6 +14,7 @@ import {
   Crown,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { Product, Account, PaymentMethod, SalePaymentMethod, Client } from '@/types/database';
 import { createProduct } from '@/lib/actions/products';
 import { SimpleClient } from '@/lib/actions/clients';
@@ -42,6 +43,7 @@ export function MobileNewSaleDrawer() {
 
 function MobileNewSaleDrawerDialog() {
   const { setNewSaleOpen, notifyMutation } = useMobileNavigation();
+  const { businessName, salesLabel } = useBusinessProfile();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
@@ -269,7 +271,7 @@ function MobileNewSaleDrawerDialog() {
       if (isRecurring && finalClientId) {
         const dueDayNum = parseInt(recurringDueDay, 10) || 10;
         const planDescription =
-          selectedItems.map((i) => i.product_name).join(' + ') || 'Mensalidade Barbearia';
+          selectedItems.map((i) => i.product_name).join(' + ') || `Assinatura ${businessName}`;
         await saveClientSubscription({
           client_id: finalClientId,
           custom_plan_name: planDescription,
@@ -361,7 +363,7 @@ function MobileNewSaleDrawerDialog() {
             <div>
               <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
                 <Scissors className="w-4 h-4 text-emerald-400 stroke-[2.5]" />
-                <span>Novo Atendimento • Barbearia</span>
+                <span>Novo(a) {salesLabel} • {businessName}</span>
               </h3>
               <span className="text-[11px] text-zinc-400">
                 Checkout rápido de balcão

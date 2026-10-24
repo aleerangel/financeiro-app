@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { DateProvider } from '@/context/DateContext';
 import { MobileNavigationProvider, useMobileNavigation } from '@/context/MobileNavigationContext';
 import { SidebarProvider } from '@/context/SidebarContext';
+import { BusinessProfile } from '@/types/database';
+import { BusinessProfileProvider } from '@/context/BusinessProfileContext';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { BottomNav } from './BottomNav';
@@ -30,6 +32,7 @@ const MobileYieldCorrectionModal = dynamic(
 
 interface AppShellProps {
   userEmail?: string;
+  initialProfile: BusinessProfile;
   children: React.ReactNode;
 }
 
@@ -46,31 +49,33 @@ function AppShellDrawers() {
   );
 }
 
-export function AppShell({ userEmail, children }: AppShellProps) {
+export function AppShell({ userEmail, initialProfile, children }: AppShellProps) {
   return (
-    <DateProvider key={userEmail || 'anonymous'}>
-      <MobileNavigationProvider>
-        <SidebarProvider>
-          <div className="min-h-screen flex bg-zinc-950 text-zinc-100">
-            {/* 1. Sidebar Fixa Desktop */}
-            <AppSidebar />
+    <BusinessProfileProvider initialProfile={initialProfile}>
+      <DateProvider key={userEmail || 'anonymous'}>
+        <MobileNavigationProvider>
+          <SidebarProvider>
+            <div className="min-h-screen flex bg-zinc-950 text-zinc-100">
+              {/* 1. Sidebar Fixa Desktop */}
+              <AppSidebar />
 
-            {/* 2. Área Principal com Header e Conteúdo Full-Width */}
-            <div className="flex-1 flex flex-col min-w-0">
-              <AppHeader userEmail={userEmail} />
+              {/* 2. Área Principal com Header e Conteúdo Full-Width */}
+              <div className="flex-1 flex flex-col min-w-0">
+                <AppHeader userEmail={userEmail} />
 
-              <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-8 md:py-8 md:pb-12 min-w-0">
-                <MobileBackButton />
-                {children}
-              </main>
+                <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-8 md:py-8 md:pb-12 min-w-0">
+                  <MobileBackButton />
+                  {children}
+                </main>
+              </div>
+
+              {/* 3. Navegação e Drawers Mobile preservados 100% */}
+              <BottomNav />
+              <AppShellDrawers />
             </div>
-
-            {/* 3. Navegação e Drawers Mobile preservados 100% */}
-            <BottomNav />
-            <AppShellDrawers />
-          </div>
-        </SidebarProvider>
-      </MobileNavigationProvider>
-    </DateProvider>
+          </SidebarProvider>
+        </MobileNavigationProvider>
+      </DateProvider>
+    </BusinessProfileProvider>
   );
 }

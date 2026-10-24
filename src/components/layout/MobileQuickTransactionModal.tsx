@@ -13,6 +13,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { Account, CreditCard, Category, PaymentMethod, FinancialScope } from '@/types/database';
 import {
   getCachedAccounts,
@@ -40,6 +41,7 @@ export function MobileQuickTransactionModal() {
 
 function MobileQuickTransactionModalDialog() {
   const { newTransactionModal, setNewTransactionModal, notifyMutation } = useMobileNavigation();
+  const { businessName, hasBusiness } = useBusinessProfile();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -225,7 +227,7 @@ function MobileQuickTransactionModalDialog() {
               )}
             </h3>
             <span className="text-[11px] text-zinc-400">
-              {scope === 'business' ? 'Barbearia • PJ' : 'Finanças Pessoais'}
+              {scope === 'business' ? `${businessName} • PJ` : 'Finanças Pessoais'}
             </span>
           </div>
           <button
@@ -273,42 +275,44 @@ function MobileQuickTransactionModalDialog() {
             </button>
           </div>
 
-          {/* Seletor Escopo: Pessoal vs Barbearia */}
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-400 font-medium">Contexto:</span>
-            <div className="flex items-center gap-1.5 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setScope('personal');
-                  setCategoryId('');
-                }}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition ${
-                  scope === 'personal'
-                    ? 'bg-blue-500 text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <User className="w-3 h-3" />
-                Pessoal
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setScope('business');
-                  setCategoryId('');
-                }}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition ${
-                  scope === 'business'
-                    ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <Scissors className="w-3 h-3" />
-                Barbearia
-              </button>
+          {/* Seletor Escopo: Pessoal vs Negócio (apenas se hasBusiness for true) */}
+          {hasBusiness && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-400 font-medium">Contexto:</span>
+              <div className="flex items-center gap-1.5 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScope('personal');
+                    setCategoryId('');
+                  }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition ${
+                    scope === 'personal'
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <User className="w-3 h-3" />
+                  Pessoal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScope('business');
+                    setCategoryId('');
+                  }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition max-w-[140px] truncate ${
+                    scope === 'business'
+                      ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <Scissors className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{businessName}</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Campo de Valor em Destaque */}
           <div className="bg-zinc-950/80 p-4 rounded-2xl border border-zinc-800 text-center">
