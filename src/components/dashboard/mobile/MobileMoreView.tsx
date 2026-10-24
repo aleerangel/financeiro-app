@@ -381,7 +381,7 @@ export function MobileMoreView({
       <div className="p-4 bg-zinc-900/60 border border-zinc-800 rounded-2xl flex items-center justify-between gap-3 text-xs text-zinc-400">
         <div className="flex items-center gap-2 min-w-0">
           <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="truncate">Finanças & Barbearia • V2.0</span>
+          <span className="truncate">Canário PRO • Gestão Financeira</span>
         </div>
         <button
           type="button"
