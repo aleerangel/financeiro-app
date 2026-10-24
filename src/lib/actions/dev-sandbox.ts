@@ -69,6 +69,55 @@ export async function createSandboxAccount(
 }
 
 /**
+ * Realiza login rápido na conta fixa de desenvolvimento sem forçar o auto-reset se ela já existir.
+ * Se a conta ainda não existir ou não possuir perfil inicial, executa o setup correspondente.
+ */
+export async function loginOrCreateSandboxUser(
+  mode: 'clean' | 'demo' = 'demo',
+  segment?: BusinessSegment
+): Promise<CreateSandboxAccountResult> {
+  if (process.env.NODE_ENV !== 'development') {
+    throw new Error('O modo Dev Sandbox só está disponível no ambiente local de desenvolvimento.');
+  }
+
+  const supabase = await createClient();
+  const email = mode === 'clean' ? DEV_CLEAN_EMAIL : DEV_DEMO_EMAIL;
+
+  // 1. Tenta login direto com credenciais fixas
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password: DEV_PASSWORD,
+  });
+
+  if (!signInError && signInData?.user) {
+    const userId = signInData.user.id;
+    const { data: profile } = await supabase
+      .from('business_profiles')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!profile) {
+      if (mode === 'clean') {
+        await resetCleanAccount(supabase, userId, segment || 'barbearia');
+      } else {
+        await seedDemoData(supabase, userId, segment || 'barbearia');
+      }
+    }
+
+    return {
+      success: true,
+      email,
+      mode,
+      redirectUrl: '/dashboard',
+    };
+  }
+
+  // 2. Se o usuário não existe ou falhou, cria e inicializa
+  return createSandboxAccount({ mode, segment });
+}
+
+/**
  * Garante que a conta de teste existe no Supabase Auth, está confirmada e autenticada.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,6 +1,6 @@
 # Especificação de Requisitos: Conta Simulada de Testes (Dev Sandbox)
 
-Este documento especifica a criação de um ambiente de simulação e gerenciamento de contas de teste no **Canário**, restrito ao ambiente de desenvolvimento local (`localhost`), permitindo testar fluxos em contas zeradas ou pré-populadas com 1 clique, com estratégia de **Contas Fixas com Auto-Reset**.
+Este documento especifica a criação de um ambiente de simulação e gerenciamento de contas de teste no **Canário**, restrito ao ambiente de desenvolvimento local (`localhost`), permitindo testar fluxos em contas zeradas ou pré-populadas com 1 clique, com estratégia de **Contas Fixas com Auto-Reset** e **Acesso Direto Sem Exigência de Login**.
 
 ---
 
@@ -8,45 +8,58 @@ Este documento especifica a criação de um ambiente de simulação e gerenciame
 
 1. **Restrição Estrita de Ambiente:**
    - Funcionalidade ativa **exclusivamente** em ambiente local (`process.env.NODE_ENV === 'development'`).
-   - Em produção (`NODE_ENV === 'production'`), todo o código do sandbox, botões e Server Actions retornam erro/bloqueio imediato e não são expostos.
+   - Em produção (`NODE_ENV === 'production'`), todo o código do sandbox, botões, switcher flutuante e rotas de auto-login retornam erro/bloqueio 403 e são eliminados no bundle via Dead Code Elimination.
 
-2. **Acesso Secreto / Discreto:**
-   - Acessível na tela de login por URL parametrizada: `http://localhost:3000/login?dev=true`
-   - Em `localhost`, exibe um rodapé discreto: `🧪 Modo Desenvolvedor (Sandbox)` que abre o painel modal de simulação.
+2. **Acesso Direto Sem Login em Desenvolvimento Local:**
+   - **Auto-Login Automático ao Iniciar:** Ao abrir `localhost:3000` (ou qualquer rota protegida) sem sessão ativa, o middleware redireciona transparentemente para `/auth/dev-auto-login`, autenticando diretamente na **Conta Demo** e abrindo o Dashboard sem qualquer exigência de digitar credenciais ou passar pelo Google OAuth.
+   - **Botões Diretos na Tela de Login:** Caso o usuário acesse `/login?manual=true` (ex: após clicar em "Sair da conta"), a página exibe no topo botões diretos de 1 clique:
+     - `⭐ Entrar como Conta Demo` (com dados realistas)
+     - `✨ Entrar como Conta Zerada` (para testar Onboarding)
+     - `Entrar com Google` (fluxo tradicional)
+   - **Switcher Flutuante em Todo o App (`DevAccountSwitcher`):** Fixo no canto inferior em ambiente de desenvolvimento, permitindo com 1 clique:
+     - Alternar entre Conta Demo e Conta Zerada
+     - Resetar os dados da Conta Demo
+     - Ir para a tela de login manual
 
 3. **Estratégia de Contas Fixas com Auto-Reset (Zero Poluição de Banco):**
-   - Para não acumular dezenas de usuários temporários no Supabase Auth nem no banco de dados, o sandbox utiliza **duas contas fixas dedicadas**:
+   - Utiliza **duas contas fixas dedicadas**:
      - Conta Zerada: `dev_zerada@canario.app`
      - Conta Demo: `dev_demo@canario.app`
-   - Toda vez que o botão é acionado, a Server Action:
-     1. Autentica ou cria a conta fixa no Supabase Auth caso ainda não exista.
-     2. Executa um **auto-reset completo** apagando todos os registros anteriores criados naquela conta (transações, vendas, clientes, contas, etc.).
-     3. Prepara o estado limpo ou popula uma massa de dados fresca.
-     4. Conecta o navegador na sessão correspondente.
-   - O desenvolvedor desloga a qualquer momento pelo botão usual "Sair da conta" no app.
+   - O banco de dados nunca acumula usuários temporários.
 
 ---
 
-## 2. Modos de Simulação Disponíveis
+## 2. Fluxo de Navegação e Arquitetura
 
 ```mermaid
 flowchart TD
-    Login["Tela de Login (/login?dev=true)"] --> Modal["Painel Dev Sandbox"]
-    Modal --> Choice{"Qual conta acessar?"}
-    Choice -->|Opção 1| Zerada["Conta Fixa Zerada (dev_zerada@canario.app)"]
-    Choice -->|Opção 2| Demo["Conta Fixa Demo (dev_demo@canario.app)"]
+    Start["Desenvolvedor abre localhost:3000"] --> CheckAuth{"Possui sessão ativa?"}
     
-    Zerada --> Reset1["Auto-Reset: Deleta dados anteriores da conta"]
-    Reset1 --> Onboarding["Abre no Assistente de Onboarding (onboarding_completed: false)"]
+    CheckAuth -->|Sim| Dashboard["Dashboard do Canário"]
+    CheckAuth -->|Não| DevAutoLogin["/auth/dev-auto-login (Rota Server)"]
     
-    Demo --> Reset2["Auto-Reset: Deleta dados anteriores da conta"]
-    Reset2 --> Seed["Seed automático de dados realistas no segmento escolhido"]
-    Seed --> Dashboard["Abre diretamente no Dashboard preenchido"]
+    DevAutoLogin --> EnsureUser["Garante login em dev_demo@canario.app"]
+    EnsureUser --> SeedCheck{"Conta já possui dados?"}
+    SeedCheck -->|Sim| RedirectDash["Redireciona para /dashboard"]
+    SeedCheck -->|Não| Seed["Seed automático de massa de dados"]
+    Seed --> RedirectDash
+    RedirectDash --> Dashboard
+    
+    Dashboard --> Switcher["DevAccountSwitcher (Canto Inferior)"]
+    Switcher -->|Alternar para Zerada| ResetClean["Auto-Reset e Login em dev_zerada@canario.app"]
+    ResetClean --> Onboarding["Abre Onboarding (Primeiro Acesso)"]
+    
+    Switcher -->|Resetar Demo| ResetDemo["Auto-Reset e Seed Fresco da Demo"]
+    ResetDemo --> Dashboard
 ```
+
+---
+
+## 3. Modos de Simulação Disponíveis
 
 ### Opção A: Conta Fixa Zerada (`dev_zerada@canario.app`)
 - **Objetivo:** Testar a experiência exata de um novo usuário do Canário (onboarding, primeiro acesso, primeiras configurações).
-- **Comportamento no Auto-Reset:**
+- **Comportamento:**
   - Limpa dados anteriores criados na conta de testes zerada.
   - Recria a `Conta Principal` zerada e as categorias pessoais essenciais.
   - `onboarding_completed` é definido como `false`.
@@ -54,64 +67,28 @@ flowchart TD
 
 ### Opção B: Conta Fixa Demo (`dev_demo@canario.app`)
 - **Objetivo:** Testar relatórios, gráficos, CRM e fluxos avançados sem precisar cadastrar tudo manualmente.
-- **Comportamento no Auto-Reset:**
-  - Limpa todos os dados anteriores da conta demo.
-  - Popula uma massa de dados rica e atualizada referente à data atual:
-    - **Perfil do Negócio:** Segmento selecionado no modal (Barbearia, Estética, Serviços, etc.), nome fantasia "Studio & Negócio Demo", ciclo de 21 dias e onboarding concluído.
-    - **Contas Bancárias:** 
-      - Nubank PJ (R$ 3.250,00 com rendimento CDI ativo)
-      - Itaú Pessoal (R$ 6.100,00)
-      - Dinheiro em Caixa (R$ 450,00)
-    - **Cartão de Crédito:** 
-      - Nubank Ultravioleta (Limite R$ 10.000,00, compras à vista e parceladas)
-    - **Categorias:** Separadas em escopo pessoal e negócio.
-    - **Catálogo de Serviços & Produtos:** Serviços e produtos com preços e ícones.
-    - **Clientes & CRM Preditivo:**
-      - 5 clientes simulando os principais status:
-        - 🟢 *Cliente Na Janela* (pronto para convite no WhatsApp)
-        - 🟡 *Cliente Em Dia* (atendimento recente)
-        - 🟠 *Cliente Atrasado* (passou da janela)
-        - 🔴 *Cliente Sumido* (inativo para resgate promocional)
-    - **Venda a Prazo (Fiado):** Cliente com saldo devedor em aberto para testar amortização e recibo.
+- **Comportamento:**
+  - Ao entrar via auto-login, preserva os dados existentes sem apagar caso já esteja configurada.
+  - Ao acionar o botão de reset, limpa todos os dados anteriores e popula uma massa rica e atualizada referente à data atual:
+    - **Perfil do Negócio:** Barbearia ou segmento selecionado, nome "Studio & Negócio Demo", ciclo de 21 dias e onboarding concluído.
+    - **Contas Bancárias:** Nubank PJ (R$ 3.250,00 com CDI), Itaú Pessoal (R$ 6.100,00), Dinheiro em Caixa (R$ 450,00).
+    - **Cartão de Crédito:** Nubank Ultravioleta (Limite R$ 10.000,00).
+    - **Categorias & Serviços:** Pessoal e Negócio; serviços de corte, barba e produtos.
+    - **Clientes & CRM Preditivo:** 5 clientes em diferentes estágios (Na Janela, Em Dia, Atrasado, Sumido).
+    - **Venda a Prazo (Fiado):** Cliente com saldo devedor em aberto para testar cobrança e amortização.
     - **Assinatura Recorrente:** Cliente mensalista ativo.
-    - **Movimentações Financeiras:** Receitas e despesas pagas e pendentes para preencher DRE, gráficos e indicadores.
-
----
-
-## 3. Arquitetura Técnica & Banco de Dados
-
-### 1. Migração SQL (`20261024040000_dev_sandbox_auth.sql`)
-Função com `SECURITY DEFINER` para confirmar o e-mail do usuário de teste no Supabase Auth imediatamente:
-
-```sql
-CREATE OR REPLACE FUNCTION public.confirm_dev_user(p_email text)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-  UPDATE auth.users
-  SET email_confirmed_at = COALESCE(email_confirmed_at, now())
-  WHERE email = p_email;
-  RETURN true;
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION public.confirm_dev_user(text) TO anon, authenticated;
-```
-
-### 2. Server Action (`src/lib/actions/dev-sandbox.ts`)
-- `ensureDevUser(supabase, email)`: Verifica se o usuário de teste já existe. Se não existir, executa `signUp` + `confirm_dev_user`. Autentica e inicia a sessão no Next.js.
-- `clearUserData(supabase, userId)`: Exclui registros anteriores de forma transacional e respeitando restrições de integridade referencial.
-- `resetCleanAccount(supabase, userId, segment)`: Restaura estado em branco com `onboarding_completed: false`.
-- `seedDemoData(supabase, userId, segment)`: Insere massa realista atualizada.
+    - **Movimentações Financeiras:** Receitas e despesas pagas e pendentes.
 
 ---
 
 ## 4. Arquivos e Componentes
 
 1. `supabase/migrations/20261024040000_dev_sandbox_auth.sql` (RPC de confirmação de e-mail de desenvolvimento)
-2. `src/lib/actions/dev-sandbox.ts` (Lógica de autenticação fixa, auto-reset e seed)
-3. `src/components/auth/DevSandboxModal.tsx` (Interface do modal de desenvolvimento)
-4. `src/app/login/page.tsx` (Integração discreta na tela de login)
-5. `src/lib/actions/dev-sandbox.test.ts` (Testes unitários de isolamento e bloqueio em produção)
+2. `src/lib/dev-sandbox-constants.ts` (Constantes de credenciais fixas de sandbox)
+3. `src/lib/actions/dev-sandbox.ts` (`createSandboxAccount`, `loginOrCreateSandboxUser`)
+4. `src/app/auth/dev-auto-login/route.ts` (Route handler de auto-login para localhost)
+5. `src/middleware.ts` (Interceptação inteligente em dev: direciona sessões anônimas para auto-login)
+6. `src/components/auth/DevAccountSwitcher.tsx` (Menu flutuante global em dev para troca instantânea de contas)
+7. `src/components/auth/DevSandboxModal.tsx` (Modal de opções avançadas e seleção de segmentos)
+8. `src/app/login/page.tsx` (Tela de login com botões diretos de 1 clique em desenvolvimento)
+9. `src/lib/actions/dev-sandbox.test.ts` (Testes unitários de isolamento e bloqueio em produção)

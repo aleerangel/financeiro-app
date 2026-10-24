@@ -159,7 +159,8 @@ export function MobileMoreView({
         }
       }
     } finally {
-      window.location.replace('/login');
+      const loginUrl = process.env.NODE_ENV === 'development' ? '/login?manual=true' : '/login';
+      window.location.replace(loginUrl);
     }
   };
 

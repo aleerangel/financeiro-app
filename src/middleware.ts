@@ -32,11 +32,33 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Não autenticado tentando acessar rota privada -> redireciona direto sem latência de rede
+  // Não autenticado tentando acessar rota privada -> redireciona
   if (!hasAuthCookie && !isPublicRoute) {
+    if (process.env.NODE_ENV === 'development') {
+      const devAutoLoginUrl = request.nextUrl.clone();
+      devAutoLoginUrl.pathname = '/auth/dev-auto-login';
+      devAutoLoginUrl.searchParams.set('returnTo', pathname);
+      return NextResponse.redirect(devAutoLoginUrl);
+    }
+
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
+  }
+
+  // Visitando tela de login em desenvolvimento sem autenticação:
+  // Se não foi explicitamente solicitada a tela manual de logout/dev, entra direto na Conta Demo
+  if (!hasAuthCookie && isAuthPage && process.env.NODE_ENV === 'development') {
+    const isManualOrDev =
+      request.nextUrl.searchParams.get('manual') === 'true' ||
+      request.nextUrl.searchParams.get('dev') === 'true';
+
+    if (!isManualOrDev) {
+      const devAutoLoginUrl = request.nextUrl.clone();
+      devAutoLoginUrl.pathname = '/auth/dev-auto-login';
+      devAutoLoginUrl.searchParams.set('returnTo', '/dashboard');
+      return NextResponse.redirect(devAutoLoginUrl);
+    }
   }
 
   // Visitando rota pública sem autenticação -> libera imediatamente
@@ -80,6 +102,13 @@ export async function middleware(request: NextRequest) {
 
   // Redireciona quem não está logado para o login se tentar acessar qualquer rota privada
   if (!user && !isPublicRoute) {
+    if (process.env.NODE_ENV === 'development') {
+      const devAutoLoginUrl = request.nextUrl.clone();
+      devAutoLoginUrl.pathname = '/auth/dev-auto-login';
+      devAutoLoginUrl.searchParams.set('returnTo', pathname);
+      return NextResponse.redirect(devAutoLoginUrl, { headers: response.headers });
+    }
+
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url, { headers: response.headers });

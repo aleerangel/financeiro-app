@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 import { Toaster } from "sonner";
+import { DevAccountSwitcher } from "@/components/auth/DevAccountSwitcher";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -75,6 +76,7 @@ export default function RootLayout({
         <ConfirmProvider>
           {children}
         </ConfirmProvider>
+        {process.env.NODE_ENV === 'development' && <DevAccountSwitcher />}
       </body>
     </html>
   );
