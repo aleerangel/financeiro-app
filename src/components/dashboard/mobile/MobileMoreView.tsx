@@ -18,6 +18,7 @@ import {
   Receipt,
   ArrowLeftRight,
   MessageSquare,
+  Bell,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
@@ -34,6 +35,28 @@ const MessageSettingsModal = dynamic(
   () => import('@/components/fiados/MessageSettingsModal').then((m) => m.MessageSettingsModal),
   { ssr: false }
 );
+
+const NotificationPreferencesModal = dynamic(
+  () => import('@/components/notifications/NotificationPreferencesModal').then((m) => m.NotificationPreferencesModal),
+  { ssr: false }
+);
+
+interface MenuItem {
+  title: string;
+  description: string;
+  href?: string;
+  onClick?: () => void;
+  isLoading?: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
+  badge?: string | null;
+  badgeColor?: string;
+}
+
+interface MenuSection {
+  title: string;
+  items: MenuItem[];
+}
 
 interface MobileMoreViewProps {
   accounts: AccountWithBalance[];
@@ -53,6 +76,7 @@ export function MobileMoreView({
   const [navigatingHref, setNavigatingHref] = useState<string | null>(null);
   const [prevPathname, setPrevPathname] = useState(pathname);
   const [isMessageSettingsOpen, setIsMessageSettingsOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [messageSettings, setMessageSettings] = useState<BusinessMessageSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(false);
 
@@ -136,7 +160,7 @@ export function MobileMoreView({
 
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
-  const menuSections = [
+  const menuSections: MenuSection[] = [
     {
       title: 'Operação da Barbearia',
       items: [
@@ -210,6 +234,13 @@ export function MobileMoreView({
           href: '/categorias',
           icon: Tag,
           iconColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+        },
+        {
+          title: 'Configurações de Notificações',
+          description: 'Avisos no app, push no celular e resumos por e-mail',
+          onClick: () => setIsNotificationsOpen(true),
+          icon: Bell,
+          iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
         },
       ],
     },
@@ -338,6 +369,14 @@ export function MobileMoreView({
           onSaved={(newSettings) => {
             setMessageSettings(newSettings);
           }}
+        />
+      )}
+
+      {/* Modal de Preferências de Notificação */}
+      {isNotificationsOpen && (
+        <NotificationPreferencesModal
+          isOpen={isNotificationsOpen}
+          onClose={() => setIsNotificationsOpen(false)}
         />
       )}
     </div>

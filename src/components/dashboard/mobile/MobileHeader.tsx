@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useDateContext } from '@/context/DateContext';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 export function MobileHeader() {
   const { formattedMonth, prevMonth, nextMonth, month, year, setMonthYear } = useDateContext();
@@ -65,20 +66,23 @@ export function MobileHeader() {
             </button>
           </div>
 
-          {/* Botão de Privacidade */}
-          <button
-            type="button"
-            onClick={() => setShowValues((prev) => !prev)}
-            className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-400 hover:text-zinc-200 transition active:scale-95"
-            aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
-            title={showValues ? 'Ocultar valores' : 'Mostrar valores'}
-          >
-            {showValues ? (
-              <Eye className="w-4 h-4" />
-            ) : (
-              <EyeOff className="w-4 h-4 text-emerald-400" />
-            )}
-          </button>
+          {/* Ações da Direita: Notificações & Privacidade */}
+          <div className="flex items-center gap-1.5">
+            <NotificationBell />
+            <button
+              type="button"
+              onClick={() => setShowValues((prev) => !prev)}
+              className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-400 hover:text-zinc-200 transition active:scale-95"
+              aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+              title={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+            >
+              {showValues ? (
+                <Eye className="w-4 h-4" />
+              ) : (
+                <EyeOff className="w-4 h-4 text-emerald-400" />
+              )}
+            </button>
+          </div>
         </div>
       )}
 

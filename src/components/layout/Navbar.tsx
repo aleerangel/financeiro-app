@@ -18,6 +18,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
 import { clearAppClientStorage } from '@/lib/auth-storage';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useState } from 'react';
 
 interface NavbarProps {
@@ -104,6 +105,8 @@ export function Navbar({ userEmail }: NavbarProps) {
 
         {/* Perfil & Logout */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <NotificationBell userEmail={userEmail} />
+
           {userEmail && (
             <span
               className="text-[11px] sm:text-xs text-zinc-400 max-w-[100px] sm:max-w-[160px] truncate bg-zinc-900/80 border border-zinc-800/80 px-2 py-1 rounded-md"
