@@ -186,6 +186,12 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
         'Para liberar instantaneamente no ambiente local, vá em Supabase > Authentication > Providers > Email e desmarque a opção "Confirm email", ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
       );
     }
+    if (signUpError.message.toLowerCase().includes('signups are disabled')) {
+      throw new Error(
+        'Os cadastros por e-mail estão desativados no Supabase (Email signups are disabled). ' +
+        'No painel do Supabase > Authentication > Providers > Email, mantenha "Enable Email provider" e "Allow new users to sign up" ATIVADOS (e desative apenas "Confirm email"), ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
+      );
+    }
     if (!signUpError.message.toLowerCase().includes('already registered')) {
       throw new Error(signUpError.message || 'Erro ao registrar usuário de teste no Supabase Auth.');
     }
