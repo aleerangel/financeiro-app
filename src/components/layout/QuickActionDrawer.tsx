@@ -6,7 +6,6 @@ import {
   Scissors,
   ArrowUpRight,
   ArrowDownRight,
-  Plus,
   Sparkles,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
@@ -96,7 +95,7 @@ export function QuickActionDrawer() {
             </div>
           </button>
 
-          {/* Ação 3: Nova Saída (Despesa Pessoal) */}
+          {/* Ação 3: Nova Saída (Despesa Pessoal ou Barbearia) */}
           <button
             type="button"
             onClick={() => openQuickTransaction('expense', 'personal')}
@@ -107,29 +106,10 @@ export function QuickActionDrawer() {
             </div>
             <div>
               <span className="font-bold text-sm text-rose-300 block">
-                Nova Saída (Despesa Pessoal)
+                Nova Saída (Despesa)
               </span>
               <span className="text-[11px] text-zinc-400 block">
-                Alimentação, mercado, lazer, transporte e contas do dia
-              </span>
-            </div>
-          </button>
-
-          {/* Ação 4: Gasto da Barbearia */}
-          <button
-            type="button"
-            onClick={() => openQuickTransaction('expense', 'business')}
-            className="w-full flex items-center gap-3.5 p-3.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-2xl text-left transition group active:scale-[0.98]"
-          >
-            <div className="w-11 h-11 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center shrink-0">
-              <Plus className="w-5 h-5 stroke-[2.5]" />
-            </div>
-            <div>
-              <span className="font-bold text-sm text-amber-300 block">
-                Gasto da Barbearia
-              </span>
-              <span className="text-[11px] text-zinc-400 block">
-                Aluguel do ponto, lâminas, produtos, energia e contas operacionais
+                Gastos pessoais ou da barbearia (contas, compras, produtos, insumos)
               </span>
             </div>
           </button>

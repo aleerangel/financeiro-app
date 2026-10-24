@@ -279,7 +279,10 @@ function MobileQuickTransactionModalDialog() {
             <div className="flex items-center gap-1.5 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
               <button
                 type="button"
-                onClick={() => setScope('personal')}
+                onClick={() => {
+                  setScope('personal');
+                  setCategoryId('');
+                }}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition ${
                   scope === 'personal'
                     ? 'bg-blue-500 text-white shadow-sm'
@@ -291,7 +294,10 @@ function MobileQuickTransactionModalDialog() {
               </button>
               <button
                 type="button"
-                onClick={() => setScope('business')}
+                onClick={() => {
+                  setScope('business');
+                  setCategoryId('');
+                }}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition ${
                   scope === 'business'
                     ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
