@@ -1,113 +1,98 @@
-# 💈 BarberFin — SaaS Open Source de Gestão Financeira & Negócios Autônomos
+# 🐤 Canário — Plataforma de Gestão Financeira Pessoal & Negócios Autônomos
 
 🌐 **Acesse a aplicação online:** **[https://financeiro-app-rust.vercel.app/](https://financeiro-app-rust.vercel.app/)**
 
-Uma plataforma web e mobile moderna, ágil e completa para **gestão financeira pessoal e de negócios autônomos**, desenvolvida com **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, **Vitest** e **Supabase (PostgreSQL)** com isolamento multi-usuário via **Row Level Security (RLS)** e transações atômicas.
+Uma plataforma web e mobile moderna, ágil e completa para **controle financeiro pessoal e gestão operacional de profissionais autônomos e pequenos negócios**. Desenvolvida com **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, **Vitest** (111 testes unitários) e **Supabase (PostgreSQL)** com isolamento multi-tenant rigoroso via **Row Level Security (RLS)** e transações atômicas.
 
 ---
 
-## 🚀 Visão do Projeto & Roadmap (SaaS Open Source)
+## 🚀 Da Barbearia à Plataforma Multi-Segmento
 
-O **BarberFin** nasceu com a proposta de ser um **SaaS de código aberto** (*Open Source SaaS*) focado em unir, sem burocracia, a gestão do caixa do trabalho com o controle das finanças pessoais:
+O projeto nasceu originalmente focado em barbearias (*BarberFin*) e evoluiu para o **Canário**: uma plataforma completa capaz de atender diferentes tipos de atividades profissionais sem burocracia, além de permitir o uso exclusivo para **Finanças Pessoais**.
 
-1. **Fase Atual — Uso em Produção & Testes de Expansão:**
-   * Utilizado em produção no dia a dia real de balcão e em fase de expansão com múltiplos usuários isolados (*multi-tenant* via Supabase RLS).
-2. **Próximo Passo — Generalização para Todo Tipo de Negócio Autônomo:**
-   * Generalizar a estrutura atual (otimizada para barbearias) para atender **qualquer profissional ou negócio autônomo** (estúdios de estética, salões, oficinas, consultórios, freelancers, prestadores de serviços e microempreendedores).
-3. **Futuro — Planos de Assinatura (Mensal e Anual):**
-   * Estruturação comercial com **planos mensais e anuais**, relatórios consolidados para declaração, CRM avançado de retenção e automações financeiras.
+### 💼 Segmentos Nativamente Suportados:
+1. 💈 **Barbearias & Salões:** Atendimentos, cortes, barba, venda de pomadas e clube de assinaturas.
+2. ✨ **Beleza, Estética & Bem-Estar:** Salões, manicures, clínicas de estética, spas e tatuadores.
+3. 🔧 **Serviços Gerais & Manutenção:** Oficinas mecânicas, assistência técnica de celulares/computadores, eletricistas e encanadores (com Ordens de Serviço).
+4. 🩺 **Saúde & Consultórios:** Psicólogos, fisioterapeutas, nutricionistas, dentistas e terapeutas (Consultas & Sessões).
+5. 🎓 **Aulas, Treinamento & Consultoria:** Personal trainers, professores particulares, instrutores e consultores.
+6. 🛍️ **Comércio Rápido & Autônomos:** Vendas de mercadorias, doces, lanches, pequenos artesãos e MEIs.
+7. 👤 **Apenas Finanças Pessoais:** Modo minimalista que oculta ferramentas de balcão e foca em contas bancárias, cartões de crédito, despesas do dia a dia e investimentos.
 
----
-
-## 📱 Redesign Mobile — Experiência Dedicada & Rápida
-
-A versão mobile do BarberFin foi reformulada com **arquitetura 100% desacoplada da versão desktop**, combinando a clareza visual e hierarquia do **Nubank** com a velocidade operacional de balcão do **Trinta**:
-
-* **Barra de Navegação Inferior Fixa (5 Destinos)**:
-  1. **Início**: Dashboard touch sem gráficos pesados para carregamento instantâneo, com saldos consolidados, faturamento, clientes atendidos, lucro líquido e últimas movimentações.
-  2. **Extrato**: Linha do tempo cronológica com agrupamento por dia, filtros rápidos (Entradas, Saídas, Pendentes, Barbearia vs Pessoal) e confirmação de recebimento/pagamento com 1 toque.
-  3. **Botão Central Elevado (+)**: Gaveta touch com 4 ações imediatas:
-     - ✂️ *Novo Atendimento Barbearia*
-     - 📈 *Nova Entrada (Receita)*
-     - 💳 *Nova Saída (Despesa Pessoal)*
-     - 💈 *Gasto da Barbearia*
-  4. **Resumo**: Gráficos minimalistas dos últimos 6 meses, divisão de faturamento (Serviços vs Produtos) e maiores despesas por categoria.
-  5. **Mais**: Hub de módulos touch para Clientes (CRM & WhatsApp), Produtos & Estoque, Contas Bancárias, Cartões, Contas Fixas e Categorias.
-* **PDV Mobile Inteligente (Checkout de Balcão)**:
-  - Registro de atendimento em tela única com botões rápidos dos serviços mais frequentes.
-  - Suporte a **item avulso** (descrição + valor): após a venda, o sistema sugere cadastrar o item no catálogo para os próximos atendimentos.
-  - Venda atômica com baixa de estoque, vínculo de cliente e lançamento no caixa.
-* **Cadastro Rápido de Transações**:
-  - Destaque para o valor em fonte grande com `inputMode="decimal"`.
-  - Botão **"Salvar e Outra"** para agilizar o lançamento contínuo de múltiplos recibos e notas.
-* **Modo Privacidade & Contexto Persistente**:
-  - Botão de olho para ocultar valores sensíveis (`••••••`) em público.
-  - Alternador direto `[ Barbearia ] [ Pessoal ]` sincronizado em todo o app.
+> [!NOTE]
+> **Compatibilidade Total para Usuários Existentes:** Todos os dados, históricos de vendas, clientes e finanças dos usuários da barbearia foram **100% preservados** na transição, acompanhados de um banner de boas-vindas para personalização opcional do Nome Fantasia.
 
 ---
 
-## ✨ Funcionalidades Completas
+## ✨ Funcionalidades Principais
 
-### 💈 Módulo de Negócio, Caixa & Custos Operacionais
-* **Caixa & Comandas Rápidas (`/vendas`)**:
-  * Seleção ágil de múltiplos produtos e serviços com busca de clientes ou atendimento avulso.
-  * Cadastro instantâneo de novo cliente sem sair da tela de atendimento.
-  * Formas de pagamento: Pix, Dinheiro, Débito e Crédito com direcionamento para a conta bancária de destino.
-  * Processamento via RPC PostgreSQL com integridade transacional garantida.
-* **Custos da Barbearia & Lucro Líquido Real (`/dashboard` e `/transacoes`)**:
-  * Classificação de despesas e contas fixas com escopo **Pessoal** ou **Negócio (Barbearia)**.
-  * **DRE Simplificado**: Faturamento Bruto (`+`), Custos Operacionais Pagos e Pendentes (`-`), **Lucro Líquido Real (`=`)** e Margem Líquida (`%`).
-  * **Ponto de Equilíbrio (*Break-even*)**: Indicador visual mostrando quanto falta faturar no mês para cobrir 100% dos custos fixos e variáveis, além do ticket médio.
-* **Catálogo de Serviços & Produtos (`/produtos`)**:
-  * Preço de venda, custo de reposição, comissão e alerta de estoque baixo ($\le 2$).
-
----
-
-### 🤝 CRM de Clientes & Retenção Ativa (`/clientes`)
-* **Inteligência de Retorno & Fidelização**:
-  * Configuração do ciclo esperado de retorno por cliente (ex: 15, 21 ou 30 dias).
-  * Status automático: 🟢 **Em dia**, 🟡 **Atenção (Prestes a vencer)**, 🔴 **Inativo / Sumido** e ⚪ **Sem visitas**.
-* **Painel de Retenção & Aniversariantes**:
-  * Filtros imediatos de clientes sumidos e aniversariantes do mês.
-  * **Atalho WhatsApp Inteligente**: Gera mensagem personalizada no WhatsApp com um clique (convite de retorno, lembrete amigável ou parabéns de aniversário).
-* **Raio-X do Cliente (*Drawer* de Histórico)**:
-  * LTV (*Lifetime Value*), ticket médio, serviço favorito, frequência de visitas e linha do tempo de atendimentos realizados.
+### 1. 🏪 Gestão Operacional & Balcão ("Meu Negócio")
+* **Checkout & Comandas Rápidas (`/vendas`)**:
+  * Registro ágil de múltiplos produtos e serviços com busca preditiva de clientes ou atendimento avulso.
+  * Nomenclatura dinâmica adaptada ao segmento (`sales_label`): *Atendimentos*, *Vendas*, *Consultas* ou *Ordens de Serviço*.
+  * Formas de pagamento: Pix, Dinheiro, Débito, Crédito e **Venda a Prazo (Fiado)**.
+  * Cadastro instantâneo de novos clientes sem sair do fluxo de venda.
+* **Central de Fiados & Contas a Receber (`/fiados`)**:
+  * Gestão de pendências com amortização proporcional e quitação automática via algoritmo FIFO.
+  * Cobrança amigável via WhatsApp com dados Pix formatados e geração de recibos detalhados.
+* **Clube & Assinaturas Recorrentes (`/mensalidades`)**:
+  * Gestão de mensalistas com controle de status (Em Dia, A Vencer, Atrasado).
+  * Lembrete de vencimento e recibo de quitação em 1 clique via WhatsApp.
+* **Catálogo de Serviços & Estoque (`/produtos`)**:
+  * Controle de preço de venda, custo de reposição e alertas de estoque baixo ($\le 2$).
 
 ---
 
-### 📊 Dashboard Híbrido Desktop & Mobile (`/dashboard`)
-* **Alternância Negócio vs. Geral**:
-  * **Modo Negócio**: Foco total na operação — Faturamento, Custos, Lucro Líquido, Ponto de Equilíbrio, ranking de serviços/produtos e clientes atendidos.
-  * **Modo Geral**: Visão consolidada de todas as contas, faturas de cartão, despesas pessoais/profissionais e receitas do período.
-* **Gráficos Analíticos e Comparativos**:
-  * Curvas de evolução histórica, comparativo de receitas vs despesas e projeção de fechamento do mês.
-  * Gráfico de distribuição percentual de gastos por categoria.
-  * Exportação de relatórios em CSV e JSON.
+### 2. 🤝 CRM Inteligente & Retenção Ativa (`/clientes`)
+* **Radar Preditivo de Retorno**:
+  * Algoritmo de cálculo de ciclo médio ponderado baseado no hábito real de visitação ($\ge 2$ atendimentos).
+  * Classificação automática: 🟢 **Na Janela**, 🟡 **Em Dia**, 🟠 **Atrasado**, 🔴 **Sumido** e ⚪ **Novo**.
+  * Selo VIP automático para clientes frequentes ($\ge 5$ visitas) ou que integram o Top 20% de faturamento.
+* **Comunicação WhatsApp Inteligente**:
+  * Modelos de mensagens personalizados (Cobrança Amigável/Firme, Recibo de Venda a Prazo, Radar de Retorno, Resgate de Inativos e Parabéns de Aniversário).
+  * Assinatura profissional padronizada: `— {Nome Fantasia} • via Canário`.
 
 ---
 
-### 💳 Cartões de Crédito & Painel de Faturas (`/cartoes`)
-* **Design de Cartão Físico**: Limite total, limite utilizado em tempo real e limite disponível.
-* **Navegação por Faturas**:
-  * Status automático por competência (**Aberta**, **Fechada**, **Paga**, **Atrasada** ou **Futura**).
-  * Detalhamento de compras à vista e parceladas `(X/Y)`.
-  * **Pagamento de Fatura**: Quitação integral ou parcial debitando diretamente da conta bancária escolhida.
+### 3. 📊 Dashboard Híbrido Desktop & Mobile (`/dashboard`)
+* **Alternador Direto [ Meu Negócio ] [ Visão Geral / Pessoal ]**:
+  * **Visão Negócio**: Faturamento bruto, custos operacionais (fixos e variáveis), **Lucro Líquido Real**, **Ponto de Equilíbrio (*Break-even*)** e ticket médio.
+  * **Visão Geral**: Saldo consolidado de todas as contas, faturas de cartão de crédito e patrimônio líquido.
+* **Banner de Boas-Vindas & Painel "Meu Negócio"**:
+  * Personalização do Nome Fantasia, segmento de atuação, ciclo padrão de retorno, dados Pix e opção de pausar/ativar o módulo de negócio.
 
 ---
 
-### 🏦 Contas Bancárias, CDI & Rendimentos (`/contas`)
-* Gestão de contas correntes, poupança, caixinhas/investimentos e carteira física.
-* **Rendimentos Automáticos (`% do CDI` ou `% ao Mês`)**:
-  * Configuração por conta (ex: 100% do CDI para Nubank, Mercado Pago, PicPay ou taxa mensal).
-  * **Conciliação Inteligente**: Ao digitar o saldo atual do app do banco, o sistema calcula o ganho financeiro (`+R$`) e lança automaticamente como receita de investimento.
-  * Projeção composta estimada para +30 dias e +12 meses.
+### 4. 💳 Cartões de Crédito & Faturas (`/cartoes`)
+* **Design de Cartão Físico**: Limite total, utilizado e disponível em tempo real.
+* **Gestão de Faturas por Competência**: Status (Aberta, Fechada, Paga, Atrasada ou Futura) e compras parceladas `(X/Y)`.
+* **Pagamento de Fatura**: Baixa direta da conta bancária escolhida com conciliação automática.
 
 ---
 
-### 🔁 Contas Fixas, Categorias & Extrato (`/recorrencias`, `/categorias`, `/transacoes`)
-* **Contas Fixas & Recorrências**: Sincronização mensal automática de aluguel, luz, internet e assinaturas com escopo Pessoal ou Negócio.
-* **Gestão de Categorias**: Cores, ícones e centros de custo configuráveis.
-* **Extrato Completo**: Busca textual, filtros de escopo/status e exportação.
+### 5. 🏦 Contas Bancárias & Rendimentos CDI (`/contas`)
+* Gestão de contas correntes, poupança, investimentos, caixinhas e dinheiro físico.
+* **Rendimento Automático do CDI (% do CDI ou taxa mensal)**:
+  * Projeção automática para +30 dias e +12 meses.
+  * **Conciliação Inteligente**: Ajuste rápido de rendimentos com lançamento automático do ganho financeiro apurado.
+
+---
+
+### 6. 🔁 Contas Fixas, Categorias & Extrato (`/recorrencias`, `/categorias`, `/transacoes`)
+* **Contas Fixas & Recorrências**: Aluguel, contas de consumo e assinaturas com escopo Pessoal ou PJ.
+* **Categorias Personalizadas**: Cores, ícones e separação clara entre despesas pessoais e custos operacionais.
+* **Extrato Completo**: Busca textual, filtros de período e exportação de relatórios em CSV e JSON.
+
+---
+
+### 7. 📱 Experiência Mobile Dedicada & Rápida
+* **Barra de Navegação Inferior Touch**:
+  1. **Início**: Saldos imediatos, métricas operacionais e alternador de contexto touch.
+  2. **Extrato**: Linha do tempo cronológica com confirmação de pagamento/recebimento com 1 toque.
+  3. **Botão Central Elevado (+)**: Gaveta touch com ações rápidas de balcão e despesas.
+  4. **Resumo**: Gráficos analíticos e divisão de faturamento.
+  5. **Mais**: Hub de módulos, CRM, estoque, WhatsApp e configurações do negócio.
+* **Modo Privacidade**: Ocultação rápida de saldos (`••••••`) para uso em ambientes públicos.
 
 ---
 
@@ -115,13 +100,13 @@ A versão mobile do BarberFin foi reformulada com **arquitetura 100% desacoplada
 
 | Tecnologia | Descrição |
 | :--- | :--- |
-| **Next.js 16** | Framework React com App Router, Server Components e Server Actions |
-| **React 19** | Biblioteca para interfaces reativas de alta performance |
-| **Tailwind CSS v4** | Estilização utility-first responsiva com tema escuro moderno e suporte PWA |
-| **Supabase** | PostgreSQL com Row Level Security (RLS) e Stored Procedures (RPC atômica) |
-| **Vitest** | Testes automatizados cobrindo lógica financeira, analytics, faturas e datas (56 testes) |
+| **Next.js 16** | Framework React com App Router, Turbopack, Server Components e Server Actions |
+| **React 19** | Biblioteca para interfaces reativas de alto desempenho |
+| **Tailwind CSS v4** | Estilização utility-first moderna com tema escuro e suporte PWA |
+| **Supabase (PostgreSQL)** | Banco de dados relacional com Row Level Security (RLS) e Stored Procedures atômicas |
+| **Vitest** | Suíte de testes automatizados com **111 testes unitários** passando |
 | **Lucide React** | Conjunto de ícones vetoriais modernos |
-| **TypeScript** | Tipagem estática rigorosa de ponta a ponta |
+| **TypeScript** | Tipagem estática estrita de ponta a ponta |
 
 ---
 
@@ -129,44 +114,49 @@ A versão mobile do BarberFin foi reformulada com **arquitetura 100% desacoplada
 
 ```text
 financeiro-app/
-├── public/                     # Manifesto PWA, Service Worker e ícones
+├── docs/                           # Documentação técnica e histórico da evolução
+│   ├── saas-canario/               # Diagnóstico, requisitos, planejamento e entrega do Canário
+│   └── especificacoes/             # Especificações de fiados, CRM, WhatsApp e mobile
+├── public/                         # Manifesto PWA, Service Worker e ícones
 ├── src/
-│   ├── app/                    # Rotas da aplicação (Next.js App Router)
-│   │   ├── auth/callback/      # Callback OAuth do Supabase
-│   │   ├── cartoes/            # Cartões de Crédito e Faturas
-│   │   ├── categorias/         # Categorias Pessoais e do Negócio
-│   │   ├── clientes/           # CRM, Retenção e Aniversariantes
-│   │   ├── contas/             # Contas Bancárias, CDI e Rendimentos
-│   │   ├── dashboard/          # Dashboard Híbrido (Desktop & Mobile)
-│   │   ├── login/              # Login com Google OAuth
-│   │   ├── produtos/           # Catálogo de Produtos e Serviços
-│   │   ├── recorrencias/       # Contas Fixas e Assinaturas
-│   │   ├── transacoes/         # Extrato e Filtros
-│   │   └── vendas/             # Checkout e Atendimentos
+│   ├── app/                        # Rotas da aplicação (Next.js App Router)
+│   │   ├── (app)/                  # Rotas autenticadas sob o AppShell
+│   │   │   ├── cartoes/            # Cartões de Crédito e Faturas
+│   │   │   ├── categorias/         # Categorias Pessoais e do Negócio
+│   │   │   ├── clientes/           # CRM, Retenção e Aniversariantes
+│   │   │   ├── contas/             # Contas Bancárias, CDI e Rendimentos
+│   │   │   ├── dashboard/          # Dashboard Híbrido (Desktop & Mobile)
+│   │   │   ├── fiados/             # Central de Fiados & Vendas a Prazo
+│   │   │   ├── mensalidades/       # Clube de Assinaturas e Mensalistas
+│   │   │   ├── produtos/           # Catálogo de Serviços e Produtos
+│   │   │   ├── recorrencias/       # Contas Fixas e Assinaturas
+│   │   │   ├── transacoes/         # Extrato Completo e Filtros
+│   │   │   └── vendas/             # Checkout de Balcão e Atendimentos
+│   │   ├── auth/callback/          # Callback OAuth do Supabase
+│   │   └── login/                  # Autenticação com Google OAuth
 │   ├── components/
-│   │   ├── accounts/           # Modais e cartões de contas
-│   │   ├── cards/              # Gerenciador de cartões e faturas
-│   │   ├── clients/            # CRM, radar WhatsApp e drawer
-│   │   ├── dashboard/
-│   │   │   ├── desktop/        # Visualizações dedicadas Desktop
-│   │   │   ├── mobile/         # Visualizações dedicadas Mobile (Nubank + Balcão)
-│   │   │   ├── BusinessDashboardView.tsx
-│   │   │   ├── GeneralDashboardView.tsx
-│   │   │   └── DashboardView.tsx
-│   │   ├── layout/             # AppShell, Navbar, BottomNav, QuickActionDrawer
-│   │   ├── sales/              # Comandas e PDV
-│   │   └── transactions/       # Extrato e modais de movimentação
-│   ├── context/                # DateContext e MobileNavigationContext
-│   ├── hooks/                  # useIsMobile e hooks de estado
-│   ├── lib/                    # Server Actions, clientes Supabase, utilitários e testes
-│   └── types/                  # Tipagem TypeScript do banco de dados e domínio
+│   │   ├── accounts/               # Modais e cartões de contas
+│   │   ├── cards/                  # Gerenciador de cartões e faturas
+│   │   ├── clients/                # CRM, radar WhatsApp e histórico
+│   │   ├── dashboard/              # Telas Desktop e Mobile do Dashboard
+│   │   ├── fiados/                 # Modais de amortização e recibos
+│   │   ├── layout/                 # AppShell, AppSidebar, AppHeader, BottomNav
+│   │   ├── notifications/          # Central e sino de notificações
+│   │   ├── onboarding/             # Assistente de primeiro acesso (Onboarding)
+│   │   ├── sales/                  # Modais de atendimento e comanda
+│   │   ├── settings/               # Modal Meu Negócio (Configurações)
+│   │   └── transactions/           # Modais de receitas e despesas
+│   ├── context/                    # DateContext, MobileNavigationContext, BusinessProfileContext
+│   ├── hooks/                      # useIsMobile e hooks de estado
+│   ├── lib/                        # Server Actions, utilitários, templates e presets
+│   └── types/                      # Tipagem TypeScript do banco de dados e domínio
 └── supabase/
-    └── migrations/             # Migrações SQL, RLS e RPCs atômicas
+    └── migrations/                 # Migrações SQL, RLS e isolamento multi-tenant
 ```
 
 ---
 
-## 🧪 Testes Automatizados
+## 🧪 Testes Automatizados & Qualidade
 
 Para executar a suíte completa de testes unitários:
 
@@ -174,12 +164,35 @@ Para executar a suíte completa de testes unitários:
 npm test
 ```
 
-Para verificar tipagem estática e regras de linting:
+Para verificar a integridade da tipagem TypeScript:
 
 ```bash
 npx tsc --noEmit
+```
+
+Para checar a qualidade do código com ESLint:
+
+```bash
 npm run lint
 ```
+
+Para gerar a build otimizada de produção:
+
+```bash
+npm run build
+```
+
+---
+
+## 📚 Documentação Técnica
+
+Os documentos detalhados de engenharia de requisitos e arquitetura estão organizados em [`docs/saas-canario/`](docs/saas-canario/):
+
+- [`01-fase1-diagnostico-arquitetura.md`](docs/saas-canario/01-fase1-diagnostico-arquitetura.md): Inventário completo de rotas, banco de dados e acoplamentos.
+- [`02-fase2-mapeamento-reaproveitamento.md`](docs/saas-canario/02-fase2-mapeamento-reaproveitamento.md): Matriz de reaproveitamento de código (70% reaproveitamento direto).
+- [`03-fase3-especificacao-requisitos.md`](docs/saas-canario/03-fase3-especificacao-requisitos.md): Engenharia de requisitos interativa e regras do Canário.
+- [`04-fase4-planejamento-tecnico.md`](docs/saas-canario/04-fase4-planejamento-tecnico.md): Modelagem do banco, RLS e plano de migração.
+- [`05-fase5-entrega-implementacao.md`](docs/saas-canario/05-fase5-entrega-implementacao.md): Relatório de entrega das 5 etapas da implementação.
 
 ---
 
