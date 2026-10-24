@@ -14,6 +14,8 @@ import { BusinessSegment } from '@/types/database';
 import { SEGMENTS_CONFIG } from '@/lib/business-presets';
 import { completeOnboarding } from '@/lib/actions/business-profile';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 const SEGMENT_OPTIONS: { value: BusinessSegment; label: string; icon: string; defaultLabel: string }[] = [
@@ -38,7 +40,9 @@ export function OnboardingModal() {
 }
 
 function OnboardingModalDialog() {
+  const router = useRouter();
   const { setProfile } = useBusinessProfile();
+  const { setContextMode } = useMobileNavigation();
 
   // Passo 1: Escolha do Modo (Negócio vs Pessoal)
   // Passo 2: Configuração do Negócio (se escolheu Negócio)
@@ -77,7 +81,16 @@ function OnboardingModalDialog() {
         business_name: null,
       });
       setProfile(updated);
+      setContextMode('personal');
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('financeiro_mobile_context_mode', 'personal');
+        } catch {
+          // Ignora erro de storage
+        }
+      }
       toast.success('Bem-vindo ao Canário! Seu controle de Finanças Pessoais está pronto.');
+      router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao concluir configuração inicial.';
       setError(msg);
@@ -107,7 +120,16 @@ function OnboardingModalDialog() {
       });
 
       setProfile(updated);
+      setContextMode('business');
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('financeiro_mobile_context_mode', 'business');
+        } catch {
+          // Ignora erro de storage
+        }
+      }
       toast.success(`Bem-vindo ao Canário! O espaço de ${businessName.trim()} está pronto.`);
+      router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao concluir configuração do negócio.';
       setError(msg);

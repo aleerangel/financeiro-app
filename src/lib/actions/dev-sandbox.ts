@@ -281,7 +281,7 @@ async function resetCleanAccount(supabase: any, userId: string, segment: Busines
       user_id: userId,
       business_name: 'Meu Negócio',
       segment,
-      has_business: true,
+      has_business: false, // Inicia como false até o usuário decidir no Onboarding
       sales_label: 'Atendimentos',
       default_cycle_days: 21,
       onboarding_completed: false, // Força a exibição do Onboarding

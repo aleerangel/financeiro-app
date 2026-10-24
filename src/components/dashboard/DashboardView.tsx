@@ -133,6 +133,9 @@ export function DashboardView({
 
   const [businessSettingsOpen, setBusinessSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'business' | 'general'>(hasBusiness ? 'business' : 'general');
+
+  // Deriva o modo efetivo: se o usuário não tem negócio ativo, é sempre 'general' (pessoal)
+  const effectiveViewMode: 'business' | 'general' = hasBusiness ? viewMode : 'general';
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [accounts, setAccounts] = useState<AccountWithBalance[]>(initialAccounts);
   const [businessData, setBusinessData] = useState<BusinessDashboardData>(initialBusinessData);
@@ -458,13 +461,13 @@ export function DashboardView({
   }, [month, year, accounts]);
 
   const handleExport = (format: ExportFormat) => {
-    if (viewMode === 'business') {
+    if (effectiveViewMode === 'business') {
       const bizTxs = transactions.filter((t) => isBusinessTransaction(t));
       exportTransactionsReport({
         format,
-        periodLabel: `${formattedMonth} • Barbearia`,
+        periodLabel: `${formattedMonth} • ${businessName}`,
         transactions: bizTxs,
-        filterLabel: 'Movimentações da Barbearia',
+        filterLabel: `Movimentações de ${businessName}`,
       });
     } else {
       const { month: curM, year: curY } = getZonedParts();
@@ -491,7 +494,7 @@ export function DashboardView({
 
         {/* Conteúdo da Aba Selecionada */}
         {activeTab === 'home' && (
-          contextMode === 'business' ? (
+          (hasBusiness && contextMode === 'business') ? (
             <BusinessDashboardMobile
               data={businessData}
               accounts={accounts}
@@ -601,7 +604,7 @@ export function DashboardView({
             Dashboard Financeiro
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400">
-            {viewMode === 'business'
+            {effectiveViewMode === 'business'
               ? `Métricas operacionais e desempenho de ${businessName}`
               : 'Visão consolidada de todas as contas, cartões e patrimônio'}
           </p>
@@ -614,7 +617,7 @@ export function DashboardView({
               <button
                 onClick={() => setViewMode('business')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  viewMode === 'business'
+                  effectiveViewMode === 'business'
                     ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
                     : 'text-zinc-400 hover:text-zinc-200'
                 }`}
@@ -625,7 +628,7 @@ export function DashboardView({
               <button
                 onClick={() => setViewMode('general')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  viewMode === 'general'
+                  effectiveViewMode === 'general'
                     ? 'bg-zinc-800 text-zinc-100 shadow-sm'
                     : 'text-zinc-400 hover:text-zinc-200'
                 }`}
@@ -636,22 +639,22 @@ export function DashboardView({
             </div>
           )}
 
-          {/* Atalho para Configurações do Meu Negócio */}
+          {/* Atalho para Configurações do Negócio */}
           <button
             type="button"
             onClick={() => setBusinessSettingsOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-300 hover:text-zinc-100 transition"
-            title="Configurações do Meu Negócio"
+            title={hasBusiness ? 'Configurações do Meu Negócio' : 'Ativar gestão de negócio ou autônomo'}
           >
             <Store className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Meu Negócio</span>
+            <span className="hidden sm:inline">{hasBusiness ? businessName : 'Ativar Negócio'}</span>
           </button>
 
           {/* Exportação */}
           <ExportDropdown onExport={handleExport} />
 
           {/* Botões de Ação Rápida */}
-          {viewMode === 'business' ? (
+          {effectiveViewMode === 'business' ? (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
@@ -661,7 +664,7 @@ export function DashboardView({
                 className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold text-xs sm:text-sm rounded-xl transition shadow-sm"
               >
                 <Plus className="w-4 h-4 text-emerald-400" />
-                Despesa Barbearia
+                Despesa Negócio
               </button>
               <Link
                 href="/vendas"
@@ -673,13 +676,15 @@ export function DashboardView({
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Link
-                href="/vendas"
-                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold text-xs sm:text-sm rounded-xl transition shadow-sm"
-              >
-                <Scissors className="w-4 h-4 text-emerald-400" />
-                Balcão Barbearia
-              </Link>
+              {hasBusiness && (
+                <Link
+                  href="/vendas"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold text-xs sm:text-sm rounded-xl transition shadow-sm"
+                >
+                  <Scissors className="w-4 h-4 text-emerald-400" />
+                  Balcão Negócio
+                </Link>
+              )}
               <button
                 onClick={() => {
                   setModalDefaultScope('personal');
@@ -696,7 +701,7 @@ export function DashboardView({
       </div>
 
       {/* Renderização Condicional baseada no modo escolhido */}
-      {viewMode === 'business' ? (
+      {effectiveViewMode === 'business' ? (
         <BusinessDashboardView
           data={businessData}
           accounts={accounts}
