@@ -134,5 +134,31 @@ describe('whatsapp-templates', () => {
     expect(text).toContain('parabéns');
     expect(text).toContain('🎂');
   });
+
+  it('renderiza template de mensalidade de clube com plano, valor e Pix', () => {
+    const text = renderWhatsAppTemplate(
+      DEFAULT_TEMPLATES.subscriptionInvoice,
+      {
+        nome: 'Felipe Santos',
+        plano: 'Clube do Corte Semanal',
+        valor: 'R$ 80,00',
+        vencimento: '10/11/2026',
+      },
+      true,
+      {
+        key: 'barbearia@pix.com',
+        keyType: 'email',
+        holderName: 'Barbearia VIP',
+      }
+    );
+
+    expect(text).toContain('Felipe');
+    expect(text).toContain('Clube do Corte Semanal');
+    expect(text).toContain('R$ 80,00');
+    expect(text).toContain('10/11/2026');
+    expect(text).toContain('barbearia@pix.com');
+    expect(text).toContain('Barbearia VIP');
+    expect(text).toContain(SYSTEM_WHATSAPP_SIGNATURE);
+  });
 });
 

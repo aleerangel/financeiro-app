@@ -11,6 +11,7 @@ import {
   UserPlus,
   Loader2,
   CalendarClock,
+  Crown,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { Product, Account, PaymentMethod, SalePaymentMethod, Client } from '@/types/database';
@@ -24,6 +25,7 @@ import {
 } from '@/lib/client-cache';
 import { filterClientsBySearch, findExactClientMatch } from '@/lib/client-search-utils';
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
+import { saveClientSubscription } from '@/lib/actions/subscriptions';
 import { ClientModal } from '@/components/clients/ClientModal';
 import { SaleCreditReceiptModal } from '@/components/fiados/SaleCreditReceiptModal';
 import { formatCurrency } from '@/lib/utils';
@@ -58,6 +60,8 @@ function MobileNewSaleDrawerDialog() {
   const [dueDate, setDueDate] = useState('');
   const [initialPayment, setInitialPayment] = useState('');
   const [initialPaymentMethod, setInitialPaymentMethod] = useState<PaymentMethod>('pix');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringDueDay, setRecurringDueDay] = useState('10');
   const [notes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -234,6 +238,12 @@ function MobileNewSaleDrawerDialog() {
         return;
       }
 
+      if (isRecurring && !finalClientId) {
+        toast.error('Para cadastrar mensalidade recorrente, selecione ou cadastre um cliente');
+        setSubmitting(false);
+        return;
+      }
+
       const initPayNum = initialPayment ? parseFloat(initialPayment.replace(',', '.')) : 0;
       if (initPayNum > totalAmount) {
         toast.error('O valor de entrada não pode ser maior que o total do atendimento');
@@ -254,6 +264,21 @@ function MobileNewSaleDrawerDialog() {
         initial_payment_method:
           paymentMethod === 'on_credit' && initPayNum > 0 ? initialPaymentMethod : undefined,
       });
+
+      // Se marcou como mensalidade recorrente, salva também a assinatura
+      if (isRecurring && finalClientId) {
+        const dueDayNum = parseInt(recurringDueDay, 10) || 10;
+        const planDescription =
+          selectedItems.map((i) => i.product_name).join(' + ') || 'Mensalidade Barbearia';
+        await saveClientSubscription({
+          client_id: finalClientId,
+          custom_plan_name: planDescription,
+          price: totalAmount,
+          due_day: dueDayNum,
+          start_date: getTodayYMD(),
+        });
+        toast.success(`Assinatura recorrente vinculada a ${finalClientName}!`);
+      }
 
       // Notifica Dashboard e painéis imediatamente (atualização instantânea 0ms)
       notifyMutation({
@@ -829,6 +854,52 @@ function MobileNewSaleDrawerDialog() {
                     )}
                   </strong>
                 </div>
+              </div>
+            )}
+
+            {/* Opção de Venda Recorrente / Mensalidade (Mobile) */}
+            {paymentMethod !== 'on_credit' && (
+              <div className="p-3 bg-zinc-950/80 rounded-2xl border border-zinc-800">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isRecurring}
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                    className="rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-0"
+                  />
+                  <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="text-xs font-semibold text-zinc-200">
+                    Tornar Venda Recorrente (Clube / Mensalidade)
+                  </span>
+                </label>
+
+                {isRecurring && (
+                  <div className="mt-2.5 pt-2.5 border-t border-zinc-800 grid grid-cols-2 gap-2 animate-in fade-in">
+                    <div>
+                      <label className="block text-[10px] font-medium text-zinc-400 mb-1">
+                        Dia Vencimento *
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={recurringDueDay}
+                        onChange={(e) => setRecurringDueDay(e.target.value)}
+                        placeholder="Ex: 10"
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 font-semibold focus:outline-none focus:border-amber-400"
+                        required={isRecurring}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-zinc-400 mb-1">
+                        Valor Mensal
+                      </label>
+                      <p className="text-xs font-bold text-emerald-400 pt-1">
+                        {formatCurrency(totalAmount)}/mês
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

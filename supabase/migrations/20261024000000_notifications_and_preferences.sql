@@ -104,3 +104,4 @@ CREATE POLICY "user_notification_preferences_delete"
   FOR DELETE
   TO authenticated
   USING (auth.uid() = user_id);
+

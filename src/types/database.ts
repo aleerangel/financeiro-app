@@ -181,3 +181,59 @@ export interface Sale {
   amortizations?: SaleAmortization[];
 }
 
+export interface SubscriptionPlan {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  interval: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type SubscriptionStatus = 'active' | 'paused' | 'canceled';
+export type InvoiceStatus = 'pending' | 'paid' | 'canceled';
+
+export interface ClientSubscription {
+  id: string;
+  user_id: string;
+  client_id: string;
+  plan_id?: string | null;
+  custom_plan_name?: string | null;
+  price: number;
+  due_day: number;
+  start_date: string;
+  status: SubscriptionStatus;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  // Campos populados via joins
+  client?: Client | null;
+  plan?: SubscriptionPlan | null;
+  latest_invoice?: SubscriptionInvoice | null;
+}
+
+export interface SubscriptionInvoice {
+  id: string;
+  user_id: string;
+  subscription_id: string;
+  client_id: string;
+  amount: number;
+  due_date: string;
+  period_start: string;
+  period_end: string;
+  status: InvoiceStatus;
+  paid_at?: string | null;
+  account_id?: string | null;
+  transaction_id?: string | null;
+  created_at: string;
+  updated_at: string;
+  // Campos populados via joins
+  client?: Client | null;
+  subscription?: ClientSubscription | null;
+  account?: Account | null;
+}
+
+

@@ -43,3 +43,4 @@ describe('Notificações - Regras e Idempotência', () => {
     expect(isBirthdayToday('1990-11-24', '2026-10-24')).toBe(false);
   });
 });
+

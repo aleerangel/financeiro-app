@@ -12,6 +12,7 @@ export interface BusinessMessageSettings {
   template_return_window?: string | null;
   template_inactive_recovery?: string | null;
   template_birthday?: string | null;
+  template_subscription_invoice?: string | null;
   include_pix_default: boolean;
 }
 
@@ -23,6 +24,7 @@ export interface TemplateVariables {
   dias_atraso?: number | null;
   dias_ultima_visita?: number | null;
   itens?: string | null;
+  plano?: string | null;
   chave_pix?: string | null;
 }
 
@@ -63,6 +65,10 @@ export const DEFAULT_TEMPLATES = {
 
   birthdayGift:
     'Parabéns {primeiro_nome}! Hoje o dia é todo seu! 🎂✂️ Passando pra te desejar um feliz aniversário e te presentear com aquele talento especial no corte essa semana pra você comemorar em grande estilo! Bora marcar? Tmj! 💈{assinatura}',
+
+  // Mensalidade / Assinatura de Clube
+  subscriptionInvoice:
+    'Fala {primeiro_nome}, tudo na paz, irmão? 💈 Passando para lembrar da sua mensalidade do clube da barbearia ({plano}) no valor de {valor}, com vencimento em {vencimento}. Segue a nossa chave para acerto via Pix. Valeu pela parceria! ✂️🔥{bloco_pix}{assinatura}',
 };
 
 export const PIX_KEY_LABELS: Record<PixKeyType, string> = {
@@ -132,6 +138,7 @@ export function renderWhatsAppTemplate(
     String(vars.dias_ultima_visita || 30)
   );
   output = output.replace(/\{itens\}/g, vars.itens || 'Atendimento / Serviços');
+  output = output.replace(/\{plano\}/g, vars.plano || 'Assinatura Barbearia');
   output = output.replace(/\{bloco_pix\}/g, blocoPix);
   output = output.replace(/\{assinatura\}/g, SYSTEM_WHATSAPP_SIGNATURE);
 

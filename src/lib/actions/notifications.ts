@@ -281,7 +281,42 @@ export async function syncAndGenerateNotifications(): Promise<void> {
     }
   }
 
-  // 4. Inserção com idempotência (ignora se já gerado para aquele evento hoje)
+  // 4. Mensalidades de Assinatura vencendo hoje ou atrasadas
+  if (prefs.notify_credits) {
+    const { data: subInvoices } = await supabase
+      .from('subscription_invoices')
+      .select('id, amount, due_date, status, client:clients(name)')
+      .eq('user_id', user.id)
+      .eq('status', 'pending')
+      .lte('due_date', today)
+      .order('due_date', { ascending: true })
+      .limit(10);
+
+    if (subInvoices && subInvoices.length > 0) {
+      for (const inv of subInvoices) {
+        const isOverdue = inv.due_date < today;
+        const clientData = inv.client as unknown as { name?: string } | null;
+        const clientName = clientData?.name || 'Cliente';
+        const title = isOverdue ? 'Mensalidade em Atraso' : 'Mensalidade Vence Hoje';
+        const message = isOverdue
+          ? `A mensalidade de ${clientName} (${formatCurrency(inv.amount)}) venceu em ${inv.due_date}.`
+          : `A mensalidade de ${clientName} (${formatCurrency(inv.amount)}) vence hoje.`;
+
+        rowsToInsert.push({
+          user_id: user.id,
+          category: isOverdue ? 'credit_overdue' : 'bill_due',
+          title,
+          message,
+          action_url: '/clientes',
+          action_label: 'Ver Assinantes',
+          idempotency_key: `sub_invoice:${inv.id}:${today}`,
+          metadata: { invoice_id: inv.id, amount: inv.amount, client_name: clientName },
+        });
+      }
+    }
+  }
+
+  // 5. Inserção com idempotência (ignora se já gerado para aquele evento hoje)
   if (rowsToInsert.length > 0) {
     try {
       await supabase.from('notifications').upsert(rowsToInsert, {
@@ -293,3 +328,4 @@ export async function syncAndGenerateNotifications(): Promise<void> {
     }
   }
 }
+
