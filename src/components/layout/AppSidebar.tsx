@@ -20,6 +20,9 @@ import {
   ShoppingBag,
   UtensilsCrossed,
   Store,
+  Wrench,
+  Activity,
+  GraduationCap,
 } from 'lucide-react';
 import { useSidebar } from '@/context/SidebarContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
@@ -41,14 +44,16 @@ function getSalesIcon(segment: string) {
   switch (segment) {
     case 'barbearia':
       return Scissors;
-    case 'saude_estetica':
+    case 'beleza_estetica':
       return Sparkles;
-    case 'consultoria_servicos':
-      return Briefcase;
-    case 'comercio_produtos':
+    case 'servicos_manutencao':
+      return Wrench;
+    case 'saude_consultorio':
+      return Activity;
+    case 'aulas_treinamento':
+      return GraduationCap;
+    case 'comercio_geral':
       return ShoppingBag;
-    case 'alimentacao':
-      return UtensilsCrossed;
     default:
       return Briefcase;
   }

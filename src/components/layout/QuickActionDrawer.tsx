@@ -10,6 +10,9 @@ import {
   Briefcase,
   ShoppingBag,
   UtensilsCrossed,
+  Wrench,
+  Activity,
+  GraduationCap,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
@@ -18,14 +21,16 @@ function SegmentSalesIcon({ segment, className }: { segment: string; className?:
   switch (segment) {
     case 'barbearia':
       return <Scissors className={className} />;
-    case 'saude_estetica':
+    case 'beleza_estetica':
       return <Sparkles className={className} />;
-    case 'consultoria_servicos':
-      return <Briefcase className={className} />;
-    case 'comercio_produtos':
+    case 'servicos_manutencao':
+      return <Wrench className={className} />;
+    case 'saude_consultorio':
+      return <Activity className={className} />;
+    case 'aulas_treinamento':
+      return <GraduationCap className={className} />;
+    case 'comercio_geral':
       return <ShoppingBag className={className} />;
-    case 'alimentacao':
-      return <UtensilsCrossed className={className} />;
     default:
       return <Briefcase className={className} />;
   }

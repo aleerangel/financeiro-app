@@ -1,7 +1,8 @@
 'use server';
 
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
-import { Category, CategoryType, FinancialScope } from '@/types/database';
+import { Category, CategoryType, FinancialScope, BusinessSegment } from '@/types/database';
+import { SEGMENTS_CONFIG } from '@/lib/business-presets';
 import { revalidatePath } from 'next/cache';
 
 export interface CreateCategoryInput {
@@ -234,16 +235,25 @@ export async function deleteCategory(id: string): Promise<void> {
   revalidatePath('/recorrencias');
 }
 
-export async function getOrCreateBarbeariaCategory(userId: string): Promise<string> {
+export async function getOrCreateBusinessIncomeCategory(
+  userId: string,
+  segment: BusinessSegment = 'barbearia',
+  businessName?: string | null
+): Promise<string> {
   const supabase = await createClient();
+  const segmentConfig = SEGMENTS_CONFIG[segment] || SEGMENTS_CONFIG.outro;
+  const suggestedIncome = segmentConfig.suggestedCategories?.find((c) => c.type === 'income');
+  const targetCategoryName = suggestedIncome?.name || (businessName ? `Receitas de ${businessName}` : 'Atendimentos & Vendas');
+  const targetIcon = suggestedIncome?.icon || 'briefcase';
+  const targetColor = suggestedIncome?.color || '#10b981';
 
-  // 1. Procura categoria existente com nome Barbearia
+  // 1. Procura categoria de receita existente para este negócio ou segmento
   const { data: existing } = await supabase
     .from('categories')
     .select('id')
     .eq('user_id', userId)
     .eq('type', 'income')
-    .ilike('name', 'Barbearia')
+    .or(`name.ilike.${targetCategoryName},name.ilike.Barbearia,scope.eq.business`)
     .limit(1)
     .maybeSingle();
 
@@ -251,15 +261,16 @@ export async function getOrCreateBarbeariaCategory(userId: string): Promise<stri
     return existing.id;
   }
 
-  // 2. Se não existir, cria a categoria Barbearia
+  // 2. Se não existir, cria a categoria contextual para o segmento
   const { data: created, error } = await supabase
     .from('categories')
     .insert({
       user_id: userId,
-      name: 'Barbearia',
+      name: targetCategoryName,
       type: 'income',
-      icon: 'scissors',
-      color: '#10b981',
+      icon: targetIcon,
+      color: targetColor,
+      scope: 'business',
       is_default: true,
     })
     .select('id')
@@ -269,13 +280,13 @@ export async function getOrCreateBarbeariaCategory(userId: string): Promise<stri
     return created.id;
   }
 
-  // Caso já tenha sido criada em outra chamada paralela
+  // Fallback caso já tenha sido criada concorrentemente
   const { data: fallback } = await supabase
     .from('categories')
     .select('id')
     .eq('user_id', userId)
     .eq('type', 'income')
-    .ilike('name', 'Barbearia')
+    .ilike('name', targetCategoryName)
     .limit(1)
     .maybeSingle();
 
@@ -283,7 +294,12 @@ export async function getOrCreateBarbeariaCategory(userId: string): Promise<stri
     return fallback.id;
   }
 
-  throw new Error(error?.message || 'Não foi possível encontrar ou criar a categoria Barbearia.');
+  throw new Error(error?.message || 'Não foi possível encontrar ou criar a categoria de receita do negócio.');
+}
+
+// Compatibilidade retroativa
+export async function getOrCreateBarbeariaCategory(userId: string): Promise<string> {
+  return getOrCreateBusinessIncomeCategory(userId, 'barbearia');
 }
 
 export async function getOrCreateInvestimentosCategory(userId: string): Promise<string> {

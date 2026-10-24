@@ -41,21 +41,34 @@ export function isBusinessTransaction(
 }
 
 /**
- * Determina se uma transação de receita é um faturamento de atendimento/serviço da Barbearia.
+ * Determina se uma transação de receita é um faturamento de atendimento/serviço comercial ('business').
  */
-export function isBarbeariaServiceIncome(
+export function isBusinessServiceIncome(
   tx: Omit<Partial<Transaction>, 'category'> & { category?: Partial<Category> | null }
 ): boolean {
-  if (tx.description && tx.description.startsWith('Atendimento:')) return true;
-  if (tx.notes && (tx.notes.includes('Atendimento') || tx.notes.includes('Comanda:'))) {
+  if (tx.scope === 'business' && tx.type === 'income') return true;
+  if (tx.description && (tx.description.startsWith('Atendimento:') || tx.description.startsWith('Venda:') || tx.description.startsWith('Mensalidade:'))) {
+    return true;
+  }
+  if (tx.notes && (tx.notes.includes('Atendimento') || tx.notes.includes('Comanda:') || tx.notes.includes('[escopo:business]'))) {
     return true;
   }
   const lowerCat = (tx.category?.name || '').trim().toLowerCase();
-  if (lowerCat.includes('barbearia') || lowerCat.includes('serviço')) {
+  if (
+    lowerCat.includes('barbearia') ||
+    lowerCat.includes('serviço') ||
+    lowerCat.includes('servico') ||
+    lowerCat.includes('atendimento') ||
+    lowerCat.includes('consulta') ||
+    lowerCat.includes('mão de obra') ||
+    lowerCat.includes('mao de obra')
+  ) {
     return true;
   }
   return false;
 }
+
+export const isBarbeariaServiceIncome = isBusinessServiceIncome;
 
 /**
  * Resolve o nome e a cor padronizados da categoria de uma transação de receita.
@@ -63,10 +76,10 @@ export function isBarbeariaServiceIncome(
 export function resolveIncomeCategoryMeta(
   tx: Omit<Partial<Transaction>, 'category'> & { category?: Partial<Category> | null }
 ): { id: string; name: string; color: string } {
-  if (isBarbeariaServiceIncome(tx)) {
+  if (isBusinessServiceIncome(tx)) {
     return {
       id: 'barbearia-servicos',
-      name: 'Barbearia (Serviços)',
+      name: tx.category?.name || 'Barbearia (Serviços)',
       color: '#10b981',
     };
   }

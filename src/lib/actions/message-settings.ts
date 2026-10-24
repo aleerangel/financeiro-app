@@ -5,24 +5,28 @@ import { revalidatePath } from 'next/cache';
 import {
   BusinessMessageSettings,
   PixKeyType,
-  DEFAULT_TEMPLATES,
+  getTemplatesForSegment,
 } from '@/lib/whatsapp-templates';
+import { getBusinessProfile } from '@/lib/actions/business-profile';
 
 export async function getMessageSettings(): Promise<BusinessMessageSettings> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  const profile = await getBusinessProfile();
+  const segmentTemplates = getTemplatesForSegment(profile.segment);
+
   const defaultSettings: BusinessMessageSettings = {
     pix_key_type: 'phone',
     pix_key: null,
     pix_holder_name: null,
-    template_friendly: DEFAULT_TEMPLATES.friendly,
-    template_default: DEFAULT_TEMPLATES.default,
-    template_firm: DEFAULT_TEMPLATES.firm,
-    template_sale_credit_receipt: DEFAULT_TEMPLATES.creditReceipt,
-    template_return_window: DEFAULT_TEMPLATES.returnWindowCasual,
-    template_inactive_recovery: DEFAULT_TEMPLATES.inactiveRecoveryCasual,
-    template_birthday: DEFAULT_TEMPLATES.birthdayCasual,
+    template_friendly: segmentTemplates.friendly,
+    template_default: segmentTemplates.default,
+    template_firm: segmentTemplates.firm,
+    template_sale_credit_receipt: segmentTemplates.creditReceipt,
+    template_return_window: segmentTemplates.returnWindowCasual,
+    template_inactive_recovery: segmentTemplates.inactiveRecoveryCasual,
+    template_birthday: segmentTemplates.birthdayCasual,
     include_pix_default: true,
   };
 
@@ -44,17 +48,17 @@ export async function getMessageSettings(): Promise<BusinessMessageSettings> {
       pix_key_type: (data.pix_key_type as PixKeyType) || 'phone',
       pix_key: data.pix_key || null,
       pix_holder_name: data.pix_holder_name || null,
-      template_friendly: data.template_friendly || DEFAULT_TEMPLATES.friendly,
-      template_default: data.template_default || DEFAULT_TEMPLATES.default,
-      template_firm: data.template_firm || DEFAULT_TEMPLATES.firm,
+      template_friendly: data.template_friendly || segmentTemplates.friendly,
+      template_default: data.template_default || segmentTemplates.default,
+      template_firm: data.template_firm || segmentTemplates.firm,
       template_sale_credit_receipt:
-        data.template_sale_credit_receipt || DEFAULT_TEMPLATES.creditReceipt,
+        data.template_sale_credit_receipt || segmentTemplates.creditReceipt,
       template_return_window:
-        data.template_return_window || DEFAULT_TEMPLATES.returnWindowCasual,
+        data.template_return_window || segmentTemplates.returnWindowCasual,
       template_inactive_recovery:
-        data.template_inactive_recovery || DEFAULT_TEMPLATES.inactiveRecoveryCasual,
+        data.template_inactive_recovery || segmentTemplates.inactiveRecoveryCasual,
       template_birthday:
-        data.template_birthday || DEFAULT_TEMPLATES.birthdayCasual,
+        data.template_birthday || segmentTemplates.birthdayCasual,
       include_pix_default: data.include_pix_default ?? true,
     };
   } catch {
@@ -80,22 +84,25 @@ export async function saveMessageSettings(input: {
 
   if (!user) throw new Error('Não autenticado');
 
+  const profile = await getBusinessProfile();
+  const segmentTemplates = getTemplatesForSegment(profile.segment);
+
   const payload = {
     user_id: user.id,
     pix_key_type: input.pix_key_type || 'phone',
     pix_key: input.pix_key?.trim() || null,
     pix_holder_name: input.pix_holder_name?.trim() || null,
-    template_friendly: input.template_friendly || DEFAULT_TEMPLATES.friendly,
-    template_default: input.template_default || DEFAULT_TEMPLATES.default,
-    template_firm: input.template_firm || DEFAULT_TEMPLATES.firm,
+    template_friendly: input.template_friendly || segmentTemplates.friendly,
+    template_default: input.template_default || segmentTemplates.default,
+    template_firm: input.template_firm || segmentTemplates.firm,
     template_sale_credit_receipt:
-      input.template_sale_credit_receipt || DEFAULT_TEMPLATES.creditReceipt,
+      input.template_sale_credit_receipt || segmentTemplates.creditReceipt,
     template_return_window:
-      input.template_return_window || DEFAULT_TEMPLATES.returnWindowCasual,
+      input.template_return_window || segmentTemplates.returnWindowCasual,
     template_inactive_recovery:
-      input.template_inactive_recovery || DEFAULT_TEMPLATES.inactiveRecoveryCasual,
+      input.template_inactive_recovery || segmentTemplates.inactiveRecoveryCasual,
     template_birthday:
-      input.template_birthday || DEFAULT_TEMPLATES.birthdayCasual,
+      input.template_birthday || segmentTemplates.birthdayCasual,
     include_pix_default: input.include_pix_default ?? true,
     updated_at: new Date().toISOString(),
   };

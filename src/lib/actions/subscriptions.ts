@@ -11,7 +11,8 @@ import {
   PaymentMethod,
 } from '@/types/database';
 import { getTodayYMD } from '@/lib/date-utils';
-import { getOrCreateBarbeariaCategory } from '@/lib/actions/categories';
+import { getOrCreateBusinessIncomeCategory } from '@/lib/actions/categories';
+import { getBusinessProfile } from '@/lib/actions/business-profile';
 
 // ==========================================
 // 1. Planos de Assinatura
@@ -377,7 +378,12 @@ export async function paySubscriptionInvoice(input: {
     'Mensalidade';
 
   const description = `Mensalidade: ${clientName} (${planName})`;
-  const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);
+  const profile = await getBusinessProfile();
+  const businessCategoryId = await getOrCreateBusinessIncomeCategory(
+    user.id,
+    profile.segment,
+    profile.business_name
+  );
 
   // 2. Criar transação de receita no extrato
   const { data: tx, error: txErr } = await supabase
@@ -390,7 +396,7 @@ export async function paySubscriptionInvoice(input: {
       payment_method: paymentMethod,
       transaction_date: paidDate,
       due_date: paidDate,
-      category_id: barbeariaCategoryId,
+      category_id: businessCategoryId,
       account_id: input.accountId,
       is_paid: true,
       paid_at: `${paidDate}T12:00:00Z`,

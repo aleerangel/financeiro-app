@@ -3,7 +3,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Sale, PaymentMethod, SalePaymentMethod } from '@/types/database';
-import { getOrCreateBarbeariaCategory } from '@/lib/actions/categories';
+import { getOrCreateBusinessIncomeCategory } from '@/lib/actions/categories';
+import { getBusinessProfile } from '@/lib/actions/business-profile';
 import {
   getTodayYMD,
   getZonedRangeBoundsIso,
@@ -216,8 +217,13 @@ export async function createSale(input: CreateSaleInput) {
   const transactionDesc = `Atendimento: ${input.client_name.trim()} (${itemsSummary})`;
   const { saleDateIso, dateOnlyStr } = resolveSaleTimestamps(input.sale_date);
 
-  // 3. Obtém ou cria a categoria padrão "Barbearia" para vincular ao atendimento
-  const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);
+  // 3. Obtém ou cria a categoria contextual para vincular ao atendimento
+  const profile = await getBusinessProfile();
+  const businessCategoryId = await getOrCreateBusinessIncomeCategory(
+    user.id,
+    profile.segment,
+    profile.business_name
+  );
 
   const transactionNotes = input.notes
     ? `Comanda: ${input.notes}`
@@ -232,7 +238,7 @@ export async function createSale(input: CreateSaleInput) {
     p_client_name: input.client_name.trim(),
     p_payment_method: input.payment_method,
     p_account_id: input.account_id,
-    p_category_id: barbeariaCategoryId,
+    p_category_id: businessCategoryId,
     p_description: transactionDesc,
     p_notes_transaction: transactionNotes,
     p_notes_sale: input.notes?.trim() || null,
@@ -262,7 +268,7 @@ export async function createSale(input: CreateSaleInput) {
       totalAmount,
       transactionDesc,
       transactionNotes,
-      categoryId: barbeariaCategoryId,
+      categoryId: businessCategoryId,
       saleDateIso,
       dateOnlyStr,
       initialPayment,
@@ -455,7 +461,12 @@ export async function amortizeSale(input: AmortizeSaleInput) {
   }
 
   const { saleDateIso, dateOnlyStr } = resolveSaleTimestamps(input.amortizedAt);
-  const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);
+  const profile = await getBusinessProfile();
+  const businessCategoryId = await getOrCreateBusinessIncomeCategory(
+    user.id,
+    profile.segment,
+    profile.business_name
+  );
 
   const { data: sale, error: saleErr } = await supabase
     .from('sales')
@@ -482,7 +493,7 @@ export async function amortizeSale(input: AmortizeSaleInput) {
     p_amount: input.amount,
     p_payment_method: input.paymentMethod,
     p_account_id: input.accountId,
-    p_category_id: barbeariaCategoryId,
+    p_category_id: businessCategoryId,
     p_description: description,
     p_notes: notes,
     p_amortized_at: saleDateIso,
@@ -501,7 +512,7 @@ export async function amortizeSale(input: AmortizeSaleInput) {
         payment_method: input.paymentMethod,
         transaction_date: dateOnlyStr,
         due_date: dateOnlyStr,
-        category_id: barbeariaCategoryId,
+        category_id: businessCategoryId,
         account_id: input.accountId,
         is_paid: true,
         paid_at: saleDateIso,
@@ -570,14 +581,19 @@ export async function amortizeClientDebt(input: AmortizeClientDebtInput) {
   }
 
   const { saleDateIso, dateOnlyStr } = resolveSaleTimestamps(input.amortizedAt);
-  const barbeariaCategoryId = await getOrCreateBarbeariaCategory(user.id);
+  const profile = await getBusinessProfile();
+  const businessCategoryId = await getOrCreateBusinessIncomeCategory(
+    user.id,
+    profile.segment,
+    profile.business_name
+  );
 
   const { data, error: rpcError } = await supabase.rpc('amortize_client_debt_atomic', {
     p_client_id: input.clientId,
     p_amount: input.amount,
     p_payment_method: input.paymentMethod,
     p_account_id: input.accountId,
-    p_category_id: barbeariaCategoryId,
+    p_category_id: businessCategoryId,
     p_notes: input.notes?.trim() || 'Amortização consolidada de débito do cliente',
     p_amortized_at: saleDateIso,
     p_date_only: dateOnlyStr,
