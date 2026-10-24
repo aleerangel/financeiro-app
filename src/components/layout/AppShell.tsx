@@ -29,6 +29,10 @@ const MobileYieldCorrectionModal = dynamic(
   () => import('./MobileYieldCorrectionModal').then((m) => m.MobileYieldCorrectionModal),
   { ssr: false }
 );
+const OnboardingModal = dynamic(
+  () => import('@/components/onboarding/OnboardingModal').then((m) => m.OnboardingModal),
+  { ssr: false }
+);
 
 interface AppShellProps {
   userEmail?: string;
@@ -72,6 +76,7 @@ export function AppShell({ userEmail, initialProfile, children }: AppShellProps)
               {/* 3. Navegação e Drawers Mobile preservados 100% */}
               <BottomNav />
               <AppShellDrawers />
+              <OnboardingModal />
             </div>
           </SidebarProvider>
         </MobileNavigationProvider>

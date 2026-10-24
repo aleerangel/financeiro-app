@@ -23,6 +23,7 @@ export interface CompleteOnboardingInput {
   business_name?: string | null;
   segment?: BusinessSegment;
   sales_label?: string;
+  default_cycle_days?: number;
   pix_key?: string | null;
   pix_key_type?: 'phone' | 'cpf' | 'cnpj' | 'email' | 'random';
   pix_holder_name?: string | null;
@@ -144,7 +145,7 @@ export async function completeOnboarding(input: CompleteOnboardingInput): Promis
     segment,
     has_business: input.has_business,
     sales_label: salesLabel,
-    default_cycle_days: segmentCfg.defaultCycleDays,
+    default_cycle_days: input.default_cycle_days || segmentCfg.defaultCycleDays,
     onboarding_completed: true,
     legacy_migrated: true,
     updated_at: new Date().toISOString(),
