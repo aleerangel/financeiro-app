@@ -226,6 +226,7 @@ export interface SubscriptionInvoice {
   period_end: string;
   status: InvoiceStatus;
   paid_at?: string | null;
+  payment_method?: PaymentMethod | null;
   account_id?: string | null;
   transaction_id?: string | null;
   created_at: string;

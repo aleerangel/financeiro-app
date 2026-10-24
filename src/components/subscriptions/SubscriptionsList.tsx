@@ -15,6 +15,9 @@ import {
   Pause,
   Play,
   Trash2,
+  History,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Client,
@@ -34,6 +37,8 @@ import { SubscriptionModal } from './SubscriptionModal';
 import { SubscriptionPlanModal } from './SubscriptionPlanModal';
 import { PayInvoiceModal } from './PayInvoiceModal';
 import { SubscriptionChargeWhatsAppModal } from './SubscriptionChargeWhatsAppModal';
+import { SubscriptionReceiptWhatsAppModal } from './SubscriptionReceiptWhatsAppModal';
+import { SubscriptionInvoicesHistoryModal } from './SubscriptionInvoicesHistoryModal';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 
@@ -85,19 +90,51 @@ export function SubscriptionsList({
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
 
+  const today = getTodayYMD();
+  const [selectedMonth, setSelectedMonth] = useState(today.substring(0, 7)); // YYYY-MM
+
   // Modais
   const [subModalOpen, setSubModalOpen] = useState(false);
   const [subToEdit, setSubToEdit] = useState<ClientSubscription | null>(null);
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [invoiceToPay, setInvoiceToPay] = useState<SubscriptionInvoice | null>(null);
   const [invoiceToCharge, setInvoiceToCharge] = useState<SubscriptionInvoice | null>(null);
+  const [invoiceForReceipt, setInvoiceForReceipt] = useState<SubscriptionInvoice | null>(null);
+  const [historySub, setHistorySub] = useState<ClientSubscription | null>(null);
 
-  const today = getTodayYMD();
+  // Navegador Temporal de Meses
+  const [yearNum, monthNum] = selectedMonth.split('-').map(Number);
+  const currentMonthDate = new Date(yearNum, monthNum - 1, 1);
+  const monthDisplay = currentMonthDate.toLocaleDateString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
 
-  // KPIs
+  const handlePrevMonth = () => {
+    const prev = new Date(yearNum, monthNum - 2, 1);
+    const y = prev.getFullYear();
+    const m = String(prev.getMonth() + 1).padStart(2, '0');
+    setSelectedMonth(`${y}-${m}`);
+  };
+
+  const handleNextMonth = () => {
+    const next = new Date(yearNum, monthNum, 1);
+    const y = next.getFullYear();
+    const m = String(next.getMonth() + 1).padStart(2, '0');
+    setSelectedMonth(`${y}-${m}`);
+  };
+
+  const handleCurrentMonth = () => {
+    setSelectedMonth(today.substring(0, 7));
+  };
+
+  // KPIs Analíticos
   const stats = useMemo(() => {
     let activeCount = 0;
     let mrr = 0;
+    let totalPaid = 0;
+    let totalPending = 0;
+    let totalOverdue = 0;
     let pendingCount = 0;
     let overdueCount = 0;
 
@@ -107,15 +144,37 @@ export function SubscriptionsList({
         mrr += Number(sub.price || 0);
 
         const statusInfo = getSubscriptionStatusInfo(sub, today);
-        if (statusInfo.type === 'overdue') {
+        const amount = Number(sub.latest_invoice?.amount || sub.price || 0);
+
+        if (statusInfo.type === 'paid') {
+          totalPaid += amount;
+        } else if (statusInfo.type === 'overdue') {
+          totalOverdue += amount;
           overdueCount++;
         } else if (statusInfo.type === 'pending') {
+          totalPending += amount;
           pendingCount++;
         }
       }
     }
 
-    return { activeCount, mrr, pendingCount, overdueCount };
+    const totalExpected = totalPaid + totalPending + totalOverdue;
+    const efficiencyRate =
+      totalExpected > 0 ? Math.round((totalPaid / totalExpected) * 100) : 0;
+    const overdueRate =
+      totalExpected > 0 ? Math.round((totalOverdue / totalExpected) * 100) : 0;
+
+    return {
+      activeCount,
+      mrr,
+      totalPaid,
+      totalPending,
+      totalOverdue,
+      pendingCount,
+      overdueCount,
+      efficiencyRate,
+      overdueRate,
+    };
   }, [subscriptions, today]);
 
   // Filtros
@@ -184,7 +243,54 @@ export function SubscriptionsList({
 
   return (
     <div className="space-y-6">
-      {/* Cards de Métricas (MRR, Assinantes, etc.) */}
+      {/* Barra de Navegação Temporal (Mês / Auditoria) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-3xl bg-zinc-900 border border-zinc-800">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
+            <Crown className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-zinc-100 capitalize">
+              {monthDisplay}
+            </h3>
+            <p className="text-[11px] text-zinc-400">
+              Ciclo de cobrança e receita de assinantes
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+          <button
+            type="button"
+            onClick={handlePrevMonth}
+            className="p-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+            title="Mês anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          {selectedMonth !== today.substring(0, 7) && (
+            <button
+              type="button"
+              onClick={handleCurrentMonth}
+              className="px-2.5 py-1.5 rounded-xl bg-zinc-950 border border-zinc-800 text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition"
+            >
+              Mês Atual
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="p-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+            title="Próximo mês"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Cards de Métricas Analíticas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800 relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
@@ -194,31 +300,39 @@ export function SubscriptionsList({
             </div>
           </div>
           <p className="text-2xl font-black text-zinc-100">{stats.activeCount}</p>
-          <p className="text-[11px] text-zinc-500 mt-1">Clientes fidelizados</p>
+          <p className="text-[11px] text-emerald-400/90 font-medium mt-1">
+            MRR: {formatCurrency(stats.mrr)}
+          </p>
         </div>
 
         <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800 relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-zinc-400">MRR (Recorrência)</span>
-            <div className="w-7 h-7 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+            <span className="text-xs font-semibold text-zinc-400">Arrecadado no Mês</span>
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
           <p className="text-2xl font-black text-emerald-400">
-            {formatCurrency(stats.mrr)}
+            {formatCurrency(stats.totalPaid)}
           </p>
-          <p className="text-[11px] text-zinc-500 mt-1">Previsão mensal garantida</p>
+          <p className="text-[11px] text-zinc-500 mt-1">
+            {stats.efficiencyRate}% da meta recebido
+          </p>
         </div>
 
         <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800 relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-zinc-400">Vencendo no Mês</span>
+            <span className="text-xs font-semibold text-zinc-400">A Receber (No Prazo)</span>
             <div className="w-7 h-7 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-amber-400">{stats.pendingCount}</p>
-          <p className="text-[11px] text-zinc-500 mt-1">Aguardando pagamento</p>
+          <p className="text-2xl font-black text-amber-400">
+            {formatCurrency(stats.totalPending)}
+          </p>
+          <p className="text-[11px] text-zinc-500 mt-1">
+            {stats.pendingCount} mensalidades aguardando
+          </p>
         </div>
 
         <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800 relative overflow-hidden">
@@ -228,8 +342,12 @@ export function SubscriptionsList({
               <AlertCircle className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-rose-400">{stats.overdueCount}</p>
-          <p className="text-[11px] text-zinc-500 mt-1">Cobrança prioritária</p>
+          <p className="text-2xl font-black text-rose-400">
+            {formatCurrency(stats.totalOverdue)}
+          </p>
+          <p className="text-[11px] text-rose-400/80 font-medium mt-1">
+            {stats.overdueCount} clientes ({stats.overdueRate}% inadimplência)
+          </p>
         </div>
       </div>
 
@@ -422,6 +540,15 @@ export function SubscriptionsList({
 
                     <button
                       type="button"
+                      onClick={() => setHistorySub(sub)}
+                      className="p-2 rounded-xl text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 transition"
+                      title="Ver histórico de faturas do cliente"
+                    >
+                      <History className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleDelete(sub)}
                       className="p-2 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
                       title="Cancelar assinatura"
@@ -431,8 +558,20 @@ export function SubscriptionsList({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {/* Botão de WhatsApp */}
-                    {invoice && (
+                    {/* Botão de WhatsApp (Cobrança) */}
+                    {invoice && !canPay && invoice.status === 'paid' && (
+                      <button
+                        type="button"
+                        onClick={() => setInvoiceForReceipt(invoice)}
+                        className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition flex items-center gap-1 text-xs"
+                        title="Enviar comprovante via WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="hidden sm:inline">Recibo</span>
+                      </button>
+                    )}
+
+                    {invoice && canPay && (
                       <button
                         type="button"
                         onClick={() => setInvoiceToCharge(invoice)}
@@ -495,6 +634,7 @@ export function SubscriptionsList({
           invoice={invoiceToPay}
           accounts={accounts}
           onSuccess={onRefresh}
+          onRequestReceipt={(paidInv) => setInvoiceForReceipt(paidInv)}
         />
       )}
 
@@ -504,6 +644,26 @@ export function SubscriptionsList({
           onClose={() => setInvoiceToCharge(null)}
           invoice={invoiceToCharge}
           messageSettings={messageSettings}
+        />
+      )}
+
+      {invoiceForReceipt && (
+        <SubscriptionReceiptWhatsAppModal
+          isOpen={Boolean(invoiceForReceipt)}
+          onClose={() => setInvoiceForReceipt(null)}
+          invoice={invoiceForReceipt}
+          messageSettings={messageSettings}
+        />
+      )}
+
+      {historySub && (
+        <SubscriptionInvoicesHistoryModal
+          isOpen={Boolean(historySub)}
+          onClose={() => setHistorySub(null)}
+          subscription={historySub}
+          onPayInvoice={(inv) => setInvoiceToPay(inv)}
+          onChargeWhatsApp={(inv) => setInvoiceToCharge(inv)}
+          onSendReceipt={(inv) => setInvoiceForReceipt(inv)}
         />
       )}
     </div>

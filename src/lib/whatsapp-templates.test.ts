@@ -160,5 +160,25 @@ describe('whatsapp-templates', () => {
     expect(text).toContain('Barbearia VIP');
     expect(text).toContain(SYSTEM_WHATSAPP_SIGNATURE);
   });
+
+  it('renderiza recibo de quitação da mensalidade com método de pagamento', () => {
+    const text = renderWhatsAppTemplate(
+      DEFAULT_TEMPLATES.subscriptionReceipt,
+      {
+        nome: 'Lucas Mendes',
+        plano: 'VIP Barba & Cabelo',
+        valor: 'R$ 130,00',
+        metodo_pagamento: 'Pix',
+      },
+      false
+    );
+
+    expect(text).toContain('Lucas');
+    expect(text).toContain('VIP Barba & Cabelo');
+    expect(text).toContain('R$ 130,00');
+    expect(text).toContain('via Pix');
+    expect(text).toContain('Confirmamos o recebimento');
+    expect(text).toContain(SYSTEM_WHATSAPP_SIGNATURE);
+  });
 });
 

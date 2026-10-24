@@ -18,6 +18,7 @@ import { AccountWithBalance } from '@/lib/actions/accounts';
 import { BusinessDashboardData } from '@/lib/actions/dashboard';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
 
 export interface BusinessDashboardMobileProps {
   data: BusinessDashboardData;
@@ -167,6 +168,11 @@ export function BusinessDashboardMobile({
             </span>
           </div>
         </Link>
+
+        {/* Widget do Clube da Barbearia (Mobile) */}
+        {data.clubOverview && (
+          <ClubMetricsWidget overview={data.clubOverview} />
+        )}
       </div>
 
       {/* 2. Divisão de Faturamento: Serviços vs Produtos */}

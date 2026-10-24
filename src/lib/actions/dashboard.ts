@@ -16,6 +16,7 @@ import {
   RawEvolutionTransaction,
 } from '@/lib/category-evolution-utils';
 import { Transaction } from '@/types/database';
+import { ClubMonthlyOverview, getClubMonthlyOverview } from '@/lib/actions/subscriptions';
 
 export interface BusinessPeriodStat {
   label: string; // Ex: 'Jan', '01-07', 'Seg'
@@ -123,6 +124,7 @@ export interface BusinessDashboardData {
   recentExpenses: RecentBusinessExpense[];
   expensesBySource: BusinessExpenseSourceStat[];
   monthSummary: BusinessMonthSummary;
+  clubOverview?: ClubMonthlyOverview;
 }
 
 export interface PeriodStat {
@@ -191,12 +193,14 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   const { startIso: bizSalesStartIso, endIso: bizSalesEndIso } =
     getZonedRangeBoundsIso(earliestDate, latestDate);
 
-  // 1. Busca vendas, despesas, clientes e débitos a receber em paralelo
+  // 1. Busca vendas, despesas, clientes, débitos a receber e métricas do clube em paralelo
+  const currentMonthStr = `${year}-${String(currentMonth + 1).padStart(2, '0')}`;
   const [
     { data: salesData, error: salesError },
     { data: txData, error: txError },
     { data: clientsData, error: clientsError },
     { data: pendingSalesData },
+    clubOverview,
   ] = await Promise.all([
     supabase
       .from('sales')
@@ -255,6 +259,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       .select('remaining_amount')
       .eq('user_id', user.id)
       .in('status', ['pending', 'partially_paid']),
+    getClubMonthlyOverview(currentMonthStr).catch(() => undefined),
   ]);
 
   if (salesError || !salesData) {
@@ -713,6 +718,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     recentExpenses,
     expensesBySource,
     monthSummary,
+    clubOverview,
   };
 }
 

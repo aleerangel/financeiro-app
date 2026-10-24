@@ -25,6 +25,7 @@ export interface TemplateVariables {
   dias_ultima_visita?: number | null;
   itens?: string | null;
   plano?: string | null;
+  metodo_pagamento?: string | null;
   chave_pix?: string | null;
 }
 
@@ -69,6 +70,10 @@ export const DEFAULT_TEMPLATES = {
   // Mensalidade / Assinatura de Clube
   subscriptionInvoice:
     'Fala {primeiro_nome}, tudo na paz, irmão? 💈 Passando para lembrar da sua mensalidade do clube da barbearia ({plano}) no valor de {valor}, com vencimento em {vencimento}. Segue a nossa chave para acerto via Pix. Valeu pela parceria! ✂️🔥{bloco_pix}{assinatura}',
+
+  // Recibo de Quitação da Mensalidade
+  subscriptionReceipt:
+    'Fala {primeiro_nome}, tudo bem, irmão? 💈 Confirmamos o recebimento da sua mensalidade da barbearia ({plano}) no valor de {valor}{metodo_pagamento_texto}! Muito obrigado pela confiança e parceria de sempre! Estilo sempre em dia! Tmj! ✂️🔥{assinatura}',
 };
 
 export const PIX_KEY_LABELS: Record<PixKeyType, string> = {
@@ -139,6 +144,14 @@ export function renderWhatsAppTemplate(
   );
   output = output.replace(/\{itens\}/g, vars.itens || 'Atendimento / Serviços');
   output = output.replace(/\{plano\}/g, vars.plano || 'Assinatura Barbearia');
+  output = output.replace(
+    /\{metodo_pagamento\}/g,
+    vars.metodo_pagamento || 'Pix'
+  );
+  output = output.replace(
+    /\{metodo_pagamento_texto\}/g,
+    vars.metodo_pagamento ? ` via ${vars.metodo_pagamento}` : ''
+  );
   output = output.replace(/\{bloco_pix\}/g, blocoPix);
   output = output.replace(/\{assinatura\}/g, SYSTEM_WHATSAPP_SIGNATURE);
 

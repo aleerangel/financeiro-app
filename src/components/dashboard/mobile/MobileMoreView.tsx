@@ -19,6 +19,7 @@ import {
   ArrowLeftRight,
   MessageSquare,
   Bell,
+  Crown,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
@@ -172,6 +173,13 @@ export function MobileMoreView({
           iconColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
           badge: clientsReturnCount > 0 ? `${clientsReturnCount} para retorno` : null,
           badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        },
+        {
+          title: 'Mensalidades & Clube',
+          description: 'Assinaturas recorrentes, cobrança WhatsApp e recebimento',
+          href: '/mensalidades',
+          icon: Crown,
+          iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
         },
         {
           title: 'Fiados & Contas a Receber',

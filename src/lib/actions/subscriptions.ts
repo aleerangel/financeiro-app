@@ -8,6 +8,7 @@ import {
   SubscriptionInvoice,
   SubscriptionStatus,
   InvoiceStatus,
+  PaymentMethod,
 } from '@/types/database';
 import { getTodayYMD } from '@/lib/date-utils';
 import { getOrCreateBarbeariaCategory } from '@/lib/actions/categories';
@@ -336,6 +337,7 @@ export async function paySubscriptionInvoice(input: {
   invoiceId: string;
   accountId: string;
   paidDate?: string;
+  paymentMethod?: PaymentMethod;
 }): Promise<void> {
   const supabase = await createClient();
   const user = await getAuthenticatedUser();
@@ -367,6 +369,7 @@ export async function paySubscriptionInvoice(input: {
   }
 
   const paidDate = input.paidDate || getTodayYMD();
+  const paymentMethod = input.paymentMethod || 'pix';
   const clientName = invoice.client?.name || 'Cliente';
   const planName =
     invoice.subscription?.custom_plan_name ||
@@ -384,7 +387,7 @@ export async function paySubscriptionInvoice(input: {
       description,
       amount: invoice.amount,
       type: 'income',
-      payment_method: 'pix',
+      payment_method: paymentMethod,
       transaction_date: paidDate,
       due_date: paidDate,
       category_id: barbeariaCategoryId,
@@ -406,6 +409,7 @@ export async function paySubscriptionInvoice(input: {
     .update({
       status: 'paid',
       paid_at: paidDate,
+      payment_method: paymentMethod,
       account_id: input.accountId,
       transaction_id: tx.id,
       updated_at: new Date().toISOString(),
@@ -418,8 +422,166 @@ export async function paySubscriptionInvoice(input: {
   }
 
   revalidatePath('/clientes');
+  revalidatePath('/mensalidades');
   revalidatePath('/transacoes');
   revalidatePath('/');
+}
+
+export async function getSubscriptionInvoicesBySubscriptionId(
+  subscriptionId: string
+): Promise<SubscriptionInvoice[]> {
+  const supabase = await createClient();
+  const user = await getAuthenticatedUser();
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('subscription_invoices')
+    .select(`
+      *,
+      client:clients(name, phone),
+      subscription:client_subscriptions(
+        custom_plan_name,
+        due_day,
+        plan:subscription_plans(name)
+      ),
+      account:accounts(name)
+    `)
+    .eq('user_id', user.id)
+    .eq('subscription_id', subscriptionId)
+    .order('period_start', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao buscar histórico de faturas:', error);
+    return [];
+  }
+
+  return (data || []).map((inv) => ({
+    ...inv,
+    amount: Number(inv.amount),
+  }));
+}
+
+export interface ClubMonthlyOverview {
+  month: string;
+  totalExpected: number;
+  totalPaid: number;
+  totalPending: number;
+  totalOverdue: number;
+  paidCount: number;
+  pendingCount: number;
+  overdueCount: number;
+  efficiencyRate: number;
+  overdueRate: number;
+  activeSubscribersCount: number;
+  mrr: number;
+}
+
+export async function getClubMonthlyOverview(
+  monthStr?: string // YYYY-MM
+): Promise<ClubMonthlyOverview> {
+  const supabase = await createClient();
+  const user = await getAuthenticatedUser();
+
+  const currentMonthStr = monthStr || getTodayYMD().substring(0, 7);
+  const today = getTodayYMD();
+
+  const emptyOverview: ClubMonthlyOverview = {
+    month: currentMonthStr,
+    totalExpected: 0,
+    totalPaid: 0,
+    totalPending: 0,
+    totalOverdue: 0,
+    paidCount: 0,
+    pendingCount: 0,
+    overdueCount: 0,
+    efficiencyRate: 0,
+    overdueRate: 0,
+    activeSubscribersCount: 0,
+    mrr: 0,
+  };
+
+  if (!user) return emptyOverview;
+
+  // Garante que as faturas do mês corrente foram geradas
+  await ensureCurrentMonthInvoicesInternal(supabase, user.id);
+
+  // 1. Assinaturas ativas para calcular MRR e total de assinantes
+  const { data: activeSubs } = await supabase
+    .from('client_subscriptions')
+    .select('id, price')
+    .eq('user_id', user.id)
+    .eq('status', 'active');
+
+  const activeSubscribersCount = activeSubs?.length || 0;
+  const mrr = (activeSubs || []).reduce((acc, s) => acc + Number(s.price || 0), 0);
+
+  // 2. Faturas do mês selecionado
+  const [year, month] = currentMonthStr.split('-');
+  const startDate = `${year}-${month}-01`;
+  const lastDay = new Date(Number(year), Number(month), 0).getDate();
+  const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+
+  const { data: invoices } = await supabase
+    .from('subscription_invoices')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('period_start', startDate)
+    .lte('period_start', endDate);
+
+  if (!invoices || invoices.length === 0) {
+    return {
+      ...emptyOverview,
+      activeSubscribersCount,
+      mrr,
+    };
+  }
+
+  let totalPaid = 0;
+  let totalPending = 0;
+  let totalOverdue = 0;
+  let paidCount = 0;
+  let pendingCount = 0;
+  let overdueCount = 0;
+
+  for (const inv of invoices) {
+    if (inv.status === 'canceled') continue;
+    const amount = Number(inv.amount || 0);
+
+    if (inv.status === 'paid') {
+      totalPaid += amount;
+      paidCount++;
+    } else {
+      if (inv.due_date < today) {
+        totalOverdue += amount;
+        overdueCount++;
+      } else {
+        totalPending += amount;
+        pendingCount++;
+      }
+    }
+  }
+
+  const totalExpected = totalPaid + totalPending + totalOverdue;
+  const efficiencyRate =
+    totalExpected > 0 ? Math.round((totalPaid / totalExpected) * 100) : 0;
+  const overdueRate =
+    totalExpected > 0 ? Math.round((totalOverdue / totalExpected) * 100) : 0;
+
+  return {
+    month: currentMonthStr,
+    totalExpected,
+    totalPaid,
+    totalPending,
+    totalOverdue,
+    paidCount,
+    pendingCount,
+    overdueCount,
+    efficiencyRate,
+    overdueRate,
+    activeSubscribersCount,
+    mrr,
+  };
 }
 
 export async function cancelSubscriptionInvoice(invoiceId: string): Promise<void> {

@@ -14,6 +14,7 @@ import {
   Users,
   Tags,
   Receipt,
+  Crown,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
@@ -61,6 +62,7 @@ export function Navbar({ userEmail }: NavbarProps) {
     { href: '/vendas', label: 'Atendimentos', icon: Scissors },
     { href: '/fiados', label: 'Fiados', icon: Receipt },
     { href: '/clientes', label: 'Clientes', icon: Users },
+    { href: '/mensalidades', label: 'Mensalidades', icon: Crown },
     { href: '/produtos', label: 'Serviços', icon: Package },
     { href: '/transacoes', label: 'Transações', icon: ArrowLeftRight },
     { href: '/cartoes', label: 'Cartões', icon: CreditCard },

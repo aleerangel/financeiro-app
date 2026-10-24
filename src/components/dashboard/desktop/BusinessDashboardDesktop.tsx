@@ -34,6 +34,7 @@ import {
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 import { useState } from 'react';
 import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
+import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
 
 export type ChartPeriod = ChartViewPeriod;
 
@@ -277,6 +278,11 @@ export function BusinessDashboardDesktop({
           </div>
         </Link>
       </div>
+
+      {/* Widget do Clube de Assinaturas & Mensalidades */}
+      {data.clubOverview && (
+        <ClubMetricsWidget overview={data.clubOverview} />
+      )}
 
       {/* Alerta de Retenção: Clientes para Retorno (+30 dias) */}
       {data.inactiveClientsAlerts && data.inactiveClientsAlerts.length > 0 && (
