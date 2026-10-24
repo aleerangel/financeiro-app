@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { TestTube, Sparkles, Database, RotateCcw, LogOut, ChevronUp } from 'lucide-react';
 import { createSandboxAccount, loginOrCreateSandboxUser } from '@/lib/actions/dev-sandbox';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 export function DevAccountSwitcher() {
@@ -93,13 +94,24 @@ export function DevAccountSwitcher() {
               <span>Resetar dados da Demo</span>
             </button>
 
-            <a
-              href="/login?manual=true"
-              className="w-full text-left px-2.5 py-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-zinc-800 flex items-center gap-2 transition text-[11px]"
+            <button
+              type="button"
+              disabled={loading !== null}
+              onClick={async () => {
+                try {
+                  setLoading('logout');
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  window.location.href = '/login?manual=true';
+                } catch {
+                  window.location.href = '/login?manual=true';
+                }
+              }}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-zinc-800 flex items-center gap-2 transition text-[11px] disabled:opacity-50"
             >
               <LogOut className="w-3.5 h-3.5 shrink-0" />
-              <span>Ir para Tela de Login</span>
-            </a>
+              <span>Sair / Ir para Tela de Login</span>
+            </button>
           </div>
         </div>
       )}

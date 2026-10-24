@@ -137,18 +137,36 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
   const adminClient = createAdminClient();
   if (adminClient) {
     try {
+      // 2.1. Tenta criar diretamente com confirmação de email ativa
       const { data: adminCreated, error: adminError } = await adminClient.auth.admin.createUser({
         email,
         password: DEV_PASSWORD,
         email_confirm: true,
       });
 
-      if (!adminError && adminCreated?.user) {
-        const { data: loginData } = await supabase.auth.signInWithPassword({
+      let targetUserId = adminCreated?.user?.id;
+
+      // 2.2. Se o usuário já existia no Auth, localiza e atualiza sua senha e confirmação
+      if (!targetUserId && adminError) {
+        const { data: listData } = await adminClient.auth.admin.listUsers();
+        const existing = listData?.users?.find(
+          (u) => u.email?.toLowerCase() === email.toLowerCase()
+        );
+        if (existing) {
+          await adminClient.auth.admin.updateUserById(existing.id, {
+            password: DEV_PASSWORD,
+            email_confirm: true,
+          });
+          targetUserId = existing.id;
+        }
+      }
+
+      if (targetUserId) {
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
           email,
           password: DEV_PASSWORD,
         });
-        if (loginData?.user) {
+        if (!loginError && loginData?.user) {
           return loginData.user.id;
         }
       }
@@ -173,27 +191,29 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
     }
   }
 
-  // 4. Criação padrão via signUp
-  const { error: signUpError } = await supabase.auth.signUp({
-    email,
-    password: DEV_PASSWORD,
-  });
+  // 4. Criação padrão via signUp (apenas se adminClient não estiver disponível)
+  if (!adminClient) {
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password: DEV_PASSWORD,
+    });
 
-  if (signUpError) {
-    if (signUpError.message.toLowerCase().includes('rate limit')) {
-      throw new Error(
-        'O Supabase bloqueou novos e-mails (email rate limit exceeded). ' +
-        'Para liberar instantaneamente no ambiente local, vá em Supabase > Authentication > Providers > Email e desmarque a opção "Confirm email", ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
-      );
-    }
-    if (signUpError.message.toLowerCase().includes('signups are disabled')) {
-      throw new Error(
-        'Os cadastros por e-mail estão desativados no Supabase (Email signups are disabled). ' +
-        'No painel do Supabase > Authentication > Providers > Email, mantenha "Enable Email provider" e "Allow new users to sign up" ATIVADOS (e desative apenas "Confirm email"), ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
-      );
-    }
-    if (!signUpError.message.toLowerCase().includes('already registered')) {
-      throw new Error(signUpError.message || 'Erro ao registrar usuário de teste no Supabase Auth.');
+    if (signUpError) {
+      if (signUpError.message.toLowerCase().includes('rate limit')) {
+        throw new Error(
+          'O Supabase bloqueou novos e-mails (email rate limit exceeded). ' +
+          'Para liberar instantaneamente no ambiente local, vá em Supabase > Authentication > Providers > Email e desmarque a opção "Confirm email", ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
+        );
+      }
+      if (signUpError.message.toLowerCase().includes('signups are disabled')) {
+        throw new Error(
+          'Os cadastros por e-mail estão desativados no Supabase (Email signups are disabled). ' +
+          'No painel do Supabase > Authentication > Providers > Email, mantenha "Enable Email provider" e "Allow new users to sign up" ATIVADOS (e desative apenas "Confirm email"), ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
+        );
+      }
+      if (!signUpError.message.toLowerCase().includes('already registered')) {
+        throw new Error(signUpError.message || 'Erro ao registrar usuário de teste no Supabase Auth.');
+      }
     }
   }
 
@@ -497,7 +517,7 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
     const date2 = addDaysYMD(today, -38);
     const date3 = addDaysYMD(today, -18);
 
-    await supabase.from('sales').insert([
+    const { data: createdSales } = await supabase.from('sales').insert([
       {
         user_id: userId,
         client_id: cliLucas.id,
@@ -531,13 +551,42 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
         paid_amount: 80.0,
         sale_date: `${date3}T15:00:00Z`,
       },
-    ]);
+    ]).select('id, total_amount');
+
+    if (createdSales && createdSales.length >= 3) {
+      await supabase.from('sale_items').insert([
+        {
+          sale_id: createdSales[0].id,
+          product_name: 'Corte Degradê Especial',
+          quantity: 1,
+          unit_price: 45.0,
+        },
+        {
+          sale_id: createdSales[1].id,
+          product_name: 'Corte Degradê Especial',
+          quantity: 1,
+          unit_price: 45.0,
+        },
+        {
+          sale_id: createdSales[2].id,
+          product_name: 'Corte Degradê Especial',
+          quantity: 1,
+          unit_price: 45.0,
+        },
+        {
+          sale_id: createdSales[2].id,
+          product_name: 'Barba Terapia com Toalha Quente',
+          quantity: 1,
+          unit_price: 35.0,
+        },
+      ]);
+    }
   }
 
   // 8. Venda a Prazo (Fiado) para testar cobrança e amortização
   if (cliCarlos) {
     const saleDueDate = addDaysYMD(today, 5);
-    await supabase.from('sales').insert({
+    const { data: createdCreditSale } = await supabase.from('sales').insert({
       user_id: userId,
       client_id: cliCarlos.id,
       client_name: cliCarlos.name,
@@ -549,7 +598,24 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
       due_date: saleDueDate,
       sale_date: `${addDaysYMD(today, -2)}T16:00:00Z`,
       notes: '1x Corte Degradê + 1x Pomada Matte a prazo',
-    });
+    }).select('id').single();
+
+    if (createdCreditSale) {
+      await supabase.from('sale_items').insert([
+        {
+          sale_id: createdCreditSale.id,
+          product_name: 'Corte Degradê Especial',
+          quantity: 1,
+          unit_price: 45.0,
+        },
+        {
+          sale_id: createdCreditSale.id,
+          product_name: 'Pomada Matte Efeito Seco',
+          quantity: 1,
+          unit_price: 40.0,
+        },
+      ]);
+    }
   }
 
   // 9. Assinatura Recorrente (Mensalista)
@@ -574,7 +640,10 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
     description: string;
     amount: number;
     type: 'income' | 'expense';
-    date: string;
+    payment_method: 'cash' | 'debit' | 'credit' | 'pix' | 'transfer';
+    transaction_date: string;
+    due_date: string;
+    scope: 'business' | 'personal';
     is_paid: boolean;
     notes: string;
   }
@@ -587,9 +656,12 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
       description: 'Atendimentos do dia (Pix)',
       amount: 480.0,
       type: 'income',
-      date: today,
+      payment_method: 'pix',
+      transaction_date: today,
+      due_date: today,
+      scope: 'business',
       is_paid: true,
-      notes: '[escopo:business] Balcão de atendimento',
+      notes: 'Balcão de atendimento',
     },
     {
       user_id: userId,
@@ -598,9 +670,12 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
       description: 'Compra de Lâminas e Pomadas',
       amount: 140.0,
       type: 'expense',
-      date: addDaysYMD(today, -3),
+      payment_method: 'pix',
+      transaction_date: addDaysYMD(today, -3),
+      due_date: addDaysYMD(today, -3),
+      scope: 'business',
       is_paid: true,
-      notes: '[escopo:business] Reposição de estoque',
+      notes: 'Reposição de estoque',
     },
     {
       user_id: userId,
@@ -609,9 +684,12 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
       description: 'Supermercado e Restaurante',
       amount: 220.0,
       type: 'expense',
-      date: addDaysYMD(today, -1),
+      payment_method: 'debit',
+      transaction_date: addDaysYMD(today, -1),
+      due_date: addDaysYMD(today, -1),
+      scope: 'personal',
       is_paid: true,
-      notes: '[escopo:personal] Almoço em família',
+      notes: 'Almoço em família',
     },
   ];
 
@@ -624,11 +702,17 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
       description: 'Maquininha de Cartão e Acessórios',
       amount: 350.0,
       type: 'expense',
-      date: addDaysYMD(today, -5),
+      payment_method: 'credit',
+      transaction_date: addDaysYMD(today, -5),
+      due_date: addDaysYMD(today, -5),
+      scope: 'business',
       is_paid: false,
-      notes: '[escopo:business] Parcela 1 de 3',
+      notes: 'Parcela 1 de 3',
     });
   }
 
-  await supabase.from('transactions').insert(transactionsToInsert);
+  const { error: txError } = await supabase.from('transactions').insert(transactionsToInsert);
+  if (txError) {
+    console.error('Erro ao inserir transações de teste no sandbox:', txError);
+  }
 }
