@@ -6,7 +6,9 @@ import { getSales } from '@/lib/actions/sales';
 import { getProducts } from '@/lib/actions/products';
 import { getAccounts } from '@/lib/actions/accounts';
 import { getClients } from '@/lib/actions/clients';
+import { getBusinessProfile } from '@/lib/actions/business-profile';
 import { SalesView } from '@/components/sales/SalesView';
+import { BusinessRequiredView } from '@/components/layout/BusinessRequiredView';
 
 export const instant = false;
 
@@ -20,6 +22,16 @@ export default async function VendasPage({
 
   if (!user) {
     redirect('/login');
+  }
+
+  const profile = await getBusinessProfile();
+  if (!profile.has_business) {
+    return (
+      <BusinessRequiredView
+        moduleName="Atendimentos & Vendas"
+        description="Registre atendimentos aos clientes, venda produtos e serviços e receba os valores diretamente no seu caixa."
+      />
+    );
   }
 
   const params = searchParams ? await searchParams : undefined;

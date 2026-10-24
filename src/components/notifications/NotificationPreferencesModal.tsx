@@ -8,7 +8,7 @@ import {
   Smartphone,
   Calendar,
   DollarSign,
-  Scissors,
+  Users,
   Cake,
   Save,
   Loader2,
@@ -19,6 +19,7 @@ import {
   saveNotificationPreferences,
 } from '@/lib/actions/notifications';
 import { UserNotificationPreferences } from '@/types/notifications';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { toast } from 'sonner';
 
 interface NotificationPreferencesModalProps {
@@ -32,6 +33,7 @@ export function NotificationPreferencesModal({
   onClose,
   userEmail,
 }: NotificationPreferencesModalProps) {
+  const { hasBusiness } = useBusinessProfile();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [prefs, setPrefs] = useState<UserNotificationPreferences | null>(null);
@@ -279,72 +281,77 @@ export function NotificationPreferencesModal({
                   />
                 </label>
 
-                {/* 2. Fiados / Contas a Receber */}
-                <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
-                  <div className="flex items-center gap-2.5">
-                    <DollarSign className="w-4 h-4 text-amber-400" />
-                    <div>
-                      <span className="text-xs font-bold text-zinc-200 block">
-                        Fiados & Vendas a Prazo
-                      </span>
-                      <span className="text-[10px] text-zinc-400">
-                        Alertas de fiados vencidos prontos para cobrança
-                      </span>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={prefs.notify_credits}
-                    onChange={(e) => setPrefs({ ...prefs, notify_credits: e.target.checked })}
-                    className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
-                  />
-                </label>
+                {/* Seção Comercial (Apenas se hasBusiness for true) */}
+                {hasBusiness && (
+                  <>
+                    {/* 2. Fiados / Contas a Receber */}
+                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
+                      <div className="flex items-center gap-2.5">
+                        <DollarSign className="w-4 h-4 text-amber-400" />
+                        <div>
+                          <span className="text-xs font-bold text-zinc-200 block">
+                            Fiados & Vendas a Prazo
+                          </span>
+                          <span className="text-[10px] text-zinc-400">
+                            Alertas de fiados vencidos prontos para cobrança
+                          </span>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={prefs.notify_credits}
+                        onChange={(e) => setPrefs({ ...prefs, notify_credits: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
+                      />
+                    </label>
 
-                {/* 3. Retorno de Clientes Barbearia */}
-                <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
-                  <div className="flex items-center gap-2.5">
-                    <Scissors className="w-4 h-4 text-blue-400" />
-                    <div>
-                      <span className="text-xs font-bold text-zinc-200 block">
-                        Radar de Retorno de Corte (CRM)
-                      </span>
-                      <span className="text-[10px] text-zinc-400">
-                        Clientes que atingiram o período ideal para novo corte
-                      </span>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={prefs.notify_client_returns}
-                    onChange={(e) =>
-                      setPrefs({ ...prefs, notify_client_returns: e.target.checked })
-                    }
-                    className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
-                  />
-                </label>
+                    {/* 3. Retorno de Clientes (CRM) */}
+                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
+                      <div className="flex items-center gap-2.5">
+                        <Users className="w-4 h-4 text-blue-400" />
+                        <div>
+                          <span className="text-xs font-bold text-zinc-200 block">
+                            Radar de Retorno de Clientes (CRM)
+                          </span>
+                          <span className="text-[10px] text-zinc-400">
+                            Clientes que atingiram o período ideal para novo atendimento
+                          </span>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={prefs.notify_client_returns}
+                        onChange={(e) =>
+                          setPrefs({ ...prefs, notify_client_returns: e.target.checked })
+                        }
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
+                      />
+                    </label>
 
-                {/* 4. Aniversariantes do Dia */}
-                <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
-                  <div className="flex items-center gap-2.5">
-                    <Cake className="w-4 h-4 text-pink-400" />
-                    <div>
-                      <span className="text-xs font-bold text-zinc-200 block">
-                        Aniversariantes do Dia
-                      </span>
-                      <span className="text-[10px] text-zinc-400">
-                        Lembretes matinais para enviar mensagens de felicitações
-                      </span>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={prefs.notify_birthdays}
-                    onChange={(e) =>
-                      setPrefs({ ...prefs, notify_birthdays: e.target.checked })
-                    }
-                    className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
-                  />
-                </label>
+                    {/* 4. Aniversariantes do Dia */}
+                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
+                      <div className="flex items-center gap-2.5">
+                        <Cake className="w-4 h-4 text-pink-400" />
+                        <div>
+                          <span className="text-xs font-bold text-zinc-200 block">
+                            Aniversariantes do Dia
+                          </span>
+                          <span className="text-[10px] text-zinc-400">
+                            Lembretes matinais para enviar mensagens de felicitações
+                          </span>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={prefs.notify_birthdays}
+                        onChange={(e) =>
+                          setPrefs({ ...prefs, notify_birthdays: e.target.checked })
+                        }
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
+                      />
+                    </label>
+                  </>
+                )}
               </div>
             </div>
 

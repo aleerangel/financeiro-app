@@ -20,6 +20,7 @@ import { Transaction } from '@/types/database';
 import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
 import { formatCurrency } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { MonthlyBarChart } from '../MonthlyBarChart';
 import { CategoryDonutChart } from '../CategoryDonutChart';
 import { SmoothLineChart, ChartSeries } from '../SmoothLineChart';
@@ -51,6 +52,7 @@ export function MobileSummaryView({
   accounts = [],
 }: MobileSummaryViewProps) {
   const { showValues } = useMobileNavigation();
+  const { hasBusiness, businessName } = useBusinessProfile();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
   // Filtro de métrica selecionada para a Evolução Financeira ('all' ou individual)
@@ -637,135 +639,137 @@ export function MobileSummaryView({
       />
 
       {/* ============================================================== */}
-      {/* 4. INTELIGÊNCIA OPERACIONAL DA BARBEARIA                       */}
+      {/* 4. INTELIGÊNCIA OPERACIONAL DO NEGÓCIO (Apenas com negócio ativo) */}
       {/* ============================================================== */}
-      <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Scissors className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-              Inteligência da Barbearia
-            </h3>
-          </div>
-          <span className="text-xs font-extrabold text-emerald-400">
-            {formatHidden(formatCurrency(bizPeriodRevenue))}
-          </span>
-        </div>
-
-        {/* Divisão Serviços vs Produtos */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span>Divisão de Receitas • {activePeriodLabel}</span>
-            <span className="font-semibold text-zinc-300">
-              {revenueSplit.servicePercentage}% Serviços • {revenueSplit.productPercentage}% Produtos
+      {hasBusiness && (
+        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Scissors className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                Inteligência de {businessName}
+              </h3>
+            </div>
+            <span className="text-xs font-extrabold text-emerald-400">
+              {formatHidden(formatCurrency(bizPeriodRevenue))}
             </span>
           </div>
-          <div className="w-full h-3 bg-zinc-800 rounded-full flex overflow-hidden">
-            <div
-              style={{ width: `${revenueSplit.servicePercentage}%` }}
-              className="bg-emerald-500 h-full transition-all duration-300"
-            />
-            <div
-              style={{ width: `${revenueSplit.productPercentage}%` }}
-              className="bg-blue-500 h-full transition-all duration-300"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-emerald-400 block">Serviços</span>
-                <span className="text-xs font-extrabold text-zinc-200">
-                  {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
-                </span>
-              </div>
-              <Scissors className="w-4 h-4 text-emerald-500/50" />
-            </div>
-            <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-blue-400 block">Produtos</span>
-                <span className="text-xs font-extrabold text-zinc-200">
-                  {formatHidden(formatCurrency(revenueSplit.productRevenue))}
-                </span>
-              </div>
-              <ShoppingBag className="w-4 h-4 text-blue-500/50" />
-            </div>
-          </div>
-        </div>
 
-        {/* Dias Mais Fortes */}
-        <div className="pt-2 border-t border-zinc-800/80 space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-zinc-400" />
-              {flowChart.period === 'weekly' ? 'Receita por Dia da Semana' : 'Dias Mais Fortes no Período'}
-            </span>
-            <span className="text-[10px] text-zinc-400 uppercase">Receita no dia</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {strongDaysStats.slice(0, 4).map((day, idx) => (
+          {/* Divisão Serviços vs Produtos */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs text-zinc-400">
+              <span>Divisão de Receitas • {activePeriodLabel}</span>
+              <span className="font-semibold text-zinc-300">
+                {revenueSplit.servicePercentage}% Serviços • {revenueSplit.productPercentage}% Produtos
+              </span>
+            </div>
+            <div className="w-full h-3 bg-zinc-800 rounded-full flex overflow-hidden">
               <div
-                key={day.code}
-                className="p-2 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between"
-              >
+                style={{ width: `${revenueSplit.servicePercentage}%` }}
+                className="bg-emerald-500 h-full transition-all duration-300"
+              />
+              <div
+                style={{ width: `${revenueSplit.productPercentage}%` }}
+                className="bg-blue-500 h-full transition-all duration-300"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-black text-zinc-200">{day.fullName}</span>
-                    <span className="text-[10px] font-bold text-emerald-400">
-                      {day.percentage}%
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-bold text-zinc-400">
-                    {formatHidden(formatCurrency(day.revenue))}
+                  <span className="text-[10px] font-bold text-emerald-400 block">Serviços</span>
+                  <span className="text-xs font-extrabold text-zinc-200">
+                    {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
                   </span>
                 </div>
-                <div className="w-7 h-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[10px] font-black text-zinc-400">
-                  #{idx + 1}
-                </div>
+                <Scissors className="w-4 h-4 text-emerald-500/50" />
               </div>
-            ))}
+              <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-blue-400 block">Produtos</span>
+                  <span className="text-xs font-extrabold text-zinc-200">
+                    {formatHidden(formatCurrency(revenueSplit.productRevenue))}
+                  </span>
+                </div>
+                <ShoppingBag className="w-4 h-4 text-blue-500/50" />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Top Clientes */}
-        {businessData.topClients && businessData.topClients.length > 0 && (
+          {/* Dias Mais Fortes */}
           <div className="pt-2 border-t border-zinc-800/80 space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
               <span className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-zinc-400" />
-                Clientes Mais Frequentes
+                <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                {flowChart.period === 'weekly' ? 'Receita por Dia da Semana' : 'Dias Mais Fortes no Período'}
               </span>
-              <span className="text-[10px] text-zinc-400">Visitas & Total</span>
+              <span className="text-[10px] text-zinc-400 uppercase">Receita no dia</span>
             </div>
 
-            <div className="space-y-1.5">
-              {businessData.topClients.slice(0, 3).map((client, idx) => (
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              {strongDaysStats.slice(0, 4).map((day, idx) => (
                 <div
-                  key={idx}
-                  className="p-2 bg-zinc-950/60 rounded-xl border border-zinc-800/80 flex items-center justify-between text-xs"
+                  key={day.code}
+                  className="p-2 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
-                      {idx + 1}
-                    </span>
-                    <span className="font-semibold text-zinc-200 truncate max-w-[140px]">
-                      {client.name}
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black text-zinc-200">{day.fullName}</span>
+                      <span className="text-[10px] font-bold text-emerald-400">
+                        {day.percentage}%
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold text-zinc-400">
+                      {formatHidden(formatCurrency(day.revenue))}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-emerald-400 block">
-                      {formatHidden(formatCurrency(client.totalSpent))}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 font-medium">
-                      {client.visitsCount} {client.visitsCount === 1 ? 'visita' : 'visitas'}
-                    </span>
+                  <div className="w-7 h-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[10px] font-black text-zinc-400">
+                    #{idx + 1}
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Top Clientes */}
+          {businessData.topClients && businessData.topClients.length > 0 && (
+            <div className="pt-2 border-t border-zinc-800/80 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
+                <span className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-zinc-400" />
+                  Clientes Mais Frequentes
+                </span>
+                <span className="text-[10px] text-zinc-400">Visitas & Total</span>
+              </div>
+
+              <div className="space-y-1.5">
+                {businessData.topClients.slice(0, 3).map((client, idx) => (
+                  <div
+                    key={idx}
+                    className="p-2 bg-zinc-950/60 rounded-xl border border-zinc-800/80 flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                        {idx + 1}
+                      </span>
+                      <span className="font-semibold text-zinc-200 truncate max-w-[140px]">
+                        {client.name}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-emerald-400 block">
+                        {formatHidden(formatCurrency(client.totalSpent))}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 font-medium">
+                        {client.visitsCount} {client.visitsCount === 1 ? 'visita' : 'visitas'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

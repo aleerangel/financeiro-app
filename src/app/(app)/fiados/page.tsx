@@ -4,7 +4,9 @@ import { redirect } from 'next/navigation';
 import { getPendingDebtsSummary } from '@/lib/actions/sales';
 import { getAccounts } from '@/lib/actions/accounts';
 import { getMessageSettings } from '@/lib/actions/message-settings';
+import { getBusinessProfile } from '@/lib/actions/business-profile';
 import { FiadosView } from '@/components/fiados/FiadosView';
+import { BusinessRequiredView } from '@/components/layout/BusinessRequiredView';
 
 export const metadata = {
   title: 'Fiados & Contas a Receber | Canário',
@@ -17,6 +19,16 @@ export default async function FiadosPage() {
 
   if (!user) {
     redirect('/login');
+  }
+
+  const profile = await getBusinessProfile();
+  if (!profile.has_business) {
+    return (
+      <BusinessRequiredView
+        moduleName="Fiados & Contas a Receber"
+        description="Acompanhe vendas a prazo, controle vencimentos, amortizações e envie lembretes automáticos pelo WhatsApp."
+      />
+    );
   }
 
   const [summary, accounts, messageSettings] = await Promise.all([

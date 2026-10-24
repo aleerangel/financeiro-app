@@ -5,7 +5,9 @@ import { getClients } from '@/lib/actions/clients';
 import { getAccounts } from '@/lib/actions/accounts';
 import { getSubscriptionPlans, getClientSubscriptions } from '@/lib/actions/subscriptions';
 import { getMessageSettings } from '@/lib/actions/message-settings';
+import { getBusinessProfile } from '@/lib/actions/business-profile';
 import { ClientsPageTabs } from '@/components/clients/ClientsPageTabs';
+import { BusinessRequiredView } from '@/components/layout/BusinessRequiredView';
 
 export default async function ClientesPage({
   searchParams,
@@ -16,6 +18,16 @@ export default async function ClientesPage({
 
   if (!user) {
     redirect('/login');
+  }
+
+  const profile = await getBusinessProfile();
+  if (!profile.has_business) {
+    return (
+      <BusinessRequiredView
+        moduleName="Clientes & CRM"
+        description="Acompanhe sua base de clientes, histórico de visitas, aniversariantes do dia e ciclo de retorno."
+      />
+    );
   }
 
   const resolvedParams = searchParams ? await searchParams : undefined;

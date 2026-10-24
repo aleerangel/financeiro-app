@@ -35,7 +35,9 @@ import { CategoryDonutChart } from '../CategoryDonutChart';
 import { UpcomingBillsAlert } from '../UpcomingBillsAlert';
 import { PendingReceiptsAlert } from '../PendingReceiptsAlert';
 import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { Store } from 'lucide-react';
 
 const CategoryEvolutionModal = dynamic(
   () => import('../CategoryEvolutionModal').then((m) => m.CategoryEvolutionModal),
@@ -74,6 +76,7 @@ export function GeneralDashboardDesktop({
   onEditBalance,
 }: GeneralDashboardDesktopProps) {
   const { month, year } = useDateContext();
+  const { hasBusiness, businessName } = useBusinessProfile();
   const [evolutionModalState, setEvolutionModalState] = useState<{
     type: 'income' | 'expense';
     refMonth: number;
@@ -263,16 +266,18 @@ export function GeneralDashboardDesktop({
                 </span>
               )}
             </div>
-            <div className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px]">
-              <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                <Scissors className="w-3 h-3" /> Barbearia: {formatCurrency(barberShopIncome)}
-              </span>
-              {otherIncome > 0 && (
-                <span className="text-zinc-400 font-medium">
-                  Outras: {formatCurrency(otherIncome)}
+            {hasBusiness && (
+              <div className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px]">
+                <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                  <Store className="w-3 h-3" /> {businessName}: {formatCurrency(barberShopIncome)}
                 </span>
-              )}
-            </div>
+                {otherIncome > 0 && (
+                  <span className="text-zinc-400 font-medium">
+                    Outras: {formatCurrency(otherIncome)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
