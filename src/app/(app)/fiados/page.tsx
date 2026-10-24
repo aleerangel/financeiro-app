@@ -1,7 +1,6 @@
 import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { AppShell } from '@/components/layout/AppShell';
 import { getPendingDebtsSummary } from '@/lib/actions/sales';
 import { getAccounts } from '@/lib/actions/accounts';
 import { getMessageSettings } from '@/lib/actions/message-settings';
@@ -27,13 +26,11 @@ export default async function FiadosPage() {
   ]);
 
   return (
-    <AppShell userEmail={user.email}>
-      <FiadosView
-        initialSummary={summary}
-        accounts={accounts}
-        initialMessageSettings={messageSettings}
-      />
-    </AppShell>
+    <FiadosView
+      initialSummary={summary}
+      accounts={accounts}
+      initialMessageSettings={messageSettings}
+    />
   );
 }
 

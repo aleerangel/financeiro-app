@@ -1,6 +1,5 @@
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getRecurrences } from '@/lib/actions/recurrences';
 import { getAccounts } from '@/lib/actions/accounts';
@@ -23,21 +22,19 @@ export default async function RecorrenciasPage() {
   ]);
 
   return (
-    <AppShell userEmail={user.email}>
-      <div className="space-y-6">
-        <PageHeader
-          title="Contas Fixas & Recorrências"
-          description="Configure suas receitas e despesas que se repetem todo mês e gere lançamentos automáticos no vencimento."
-        />
+    <div className="space-y-6">
+      <PageHeader
+        title="Contas Fixas & Recorrências"
+        description="Configure suas receitas e despesas que se repetem todo mês e gere lançamentos automáticos no vencimento."
+      />
 
-        <RecurrencesList
-          initialRecurrences={recurrences}
-          accounts={accounts}
-          cards={cards}
-          categories={categories}
-        />
-      </div>
-    </AppShell>
+      <RecurrencesList
+        initialRecurrences={recurrences}
+        accounts={accounts}
+        cards={cards}
+        categories={categories}
+      />
+    </div>
   );
 }
 

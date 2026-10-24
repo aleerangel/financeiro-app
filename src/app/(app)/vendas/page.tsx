@@ -1,7 +1,6 @@
 import { connection } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getSales } from '@/lib/actions/sales';
 import { getProducts } from '@/lib/actions/products';
@@ -34,22 +33,20 @@ export default async function VendasPage({
   ]);
 
   return (
-    <AppShell userEmail={user.email}>
-      <div className="space-y-6">
-        <PageHeader
-          title="Atendimentos & Vendas"
-          description="Registre os clientes atendidos, serviços prestados e receba os valores diretamente no seu caixa."
-        />
+    <div className="space-y-6">
+      <PageHeader
+        title="Atendimentos & Vendas"
+        description="Registre os clientes atendidos, serviços prestados e receba os valores diretamente no seu caixa."
+      />
 
-        <SalesView
-          initialSales={sales}
-          products={products}
-          accounts={accounts}
-          clients={clients}
-          initialClientId={initialClientId}
-        />
-      </div>
-    </AppShell>
+      <SalesView
+        initialSales={sales}
+        products={products}
+        accounts={accounts}
+        clients={clients}
+        initialClientId={initialClientId}
+      />
+    </div>
   );
 }
 

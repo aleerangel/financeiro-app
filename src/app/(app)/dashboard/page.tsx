@@ -13,7 +13,6 @@ import {
 } from '@/lib/actions/transactions';
 import { syncMonthlyRecurrences } from '@/lib/actions/recurrences';
 import { getZonedParts } from '@/lib/date-utils';
-import { AppShell } from '@/components/layout/AppShell';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 
 export const instant = false;
@@ -63,18 +62,16 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <AppShell userEmail={user.email}>
-      <DashboardView
-        initialAccounts={accounts}
-        initialCards={cards}
-        categories={categories}
-        initialBusinessData={businessData}
-        initialGeneralData={generalData}
-        initialUpcomingBills={upcomingBills}
-        initialPendingReceipts={pendingReceipts}
-        initialTransactions={transactions}
-        initialIsMobile={isMobile}
-      />
-    </AppShell>
+    <DashboardView
+      initialAccounts={accounts}
+      initialCards={cards}
+      categories={categories}
+      initialBusinessData={businessData}
+      initialGeneralData={generalData}
+      initialUpcomingBills={upcomingBills}
+      initialPendingReceipts={pendingReceipts}
+      initialTransactions={transactions}
+      initialIsMobile={isMobile}
+    />
   );
 }

@@ -1,6 +1,5 @@
 import { getAuthenticatedUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getClients } from '@/lib/actions/clients';
 import { getAccounts } from '@/lib/actions/accounts';
@@ -31,22 +30,20 @@ export default async function ClientesPage({
   ]);
 
   return (
-    <AppShell userEmail={user.email}>
-      <div className="space-y-6">
-        <PageHeader
-          title="Clientes & Clube"
-          description="Gerencie sua carteira de clientes, fidelização, recorrência mensal e histórico de atendimentos."
-        />
+    <div className="space-y-6">
+      <PageHeader
+        title="Clientes & Clube"
+        description="Gerencie sua carteira de clientes, fidelização, recorrência mensal e histórico de atendimentos."
+      />
 
-        <ClientsPageTabs
-          initialClients={clients}
-          initialSubscriptions={subscriptions}
-          plans={plans}
-          accounts={accounts}
-          messageSettings={messageSettings}
-          defaultTab={defaultTab}
-        />
-      </div>
-    </AppShell>
+      <ClientsPageTabs
+        initialClients={clients}
+        initialSubscriptions={subscriptions}
+        plans={plans}
+        accounts={accounts}
+        messageSettings={messageSettings}
+        defaultTab={defaultTab}
+      />
+    </div>
   );
 }
