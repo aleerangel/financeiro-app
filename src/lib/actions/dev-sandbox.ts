@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { BusinessSegment } from '@/types/database';
 import { getTodayYMD } from '@/lib/date-utils';
 import { addDaysYMD } from '@/lib/client-analytics';
+import { DEV_CLEAN_EMAIL, DEV_DEMO_EMAIL, DEV_PASSWORD } from '@/lib/dev-sandbox-constants';
 
 export interface CreateSandboxAccountInput {
   mode: 'clean' | 'demo';
@@ -19,8 +20,9 @@ export interface CreateSandboxAccountResult {
 }
 
 /**
- * Cria e autentica automaticamente uma nova conta efêmera de teste (Sandbox).
+ * Cria ou reseta e autentica a conta fixa de sandbox selecionada.
  * Disponível exclusivamente em ambiente local de desenvolvimento (localhost).
+ * Evita o acúmulo de usuários no banco de dados mantendo no máximo 2 contas dedicadas.
  */
 export async function createSandboxAccount(
   input: CreateSandboxAccountInput
@@ -30,69 +32,22 @@ export async function createSandboxAccount(
   }
 
   const supabase = await createClient();
+  const email = input.mode === 'clean' ? DEV_CLEAN_EMAIL : DEV_DEMO_EMAIL;
 
-  const timestamp = Date.now();
-  const randomSuffix = Math.random().toString(36).substring(2, 7);
-  const email = `dev_${input.mode}_${timestamp}_${randomSuffix}@canario.app`;
-  const password = `CanarioDev_${timestamp}!`;
+  // 1. Garante que o usuário existe no Supabase Auth e está autenticado na sessão
+  const userId = await ensureDevUser(supabase, email);
 
-  // 1. Cadastra o usuário de teste
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password,
-  });
+  // 2. Limpa dados prévios da conta fixa para garantir auto-reset completo
+  await clearUserData(supabase, userId);
 
-  if (signUpError || !signUpData.user) {
-    throw new Error(signUpError?.message || 'Erro ao criar usuário de teste no Supabase Auth.');
-  }
-
-  const userId = signUpData.user.id;
-
-  // 2. Confirma o e-mail via RPC para permitir login imediato sem envio de link externo
-  try {
-    await supabase.rpc('confirm_dev_user', { p_email: email });
-  } catch (rpcErr) {
-    console.warn('Aviso: RPC confirm_dev_user não disponível ou falhou:', rpcErr);
-  }
-
-  // 3. Efetua login para emitir e gravar os cookies de sessão no Next.js
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (signInError) {
-    // Se o Supabase exigir confirmação manual e a RPC não estiver aplicada, avisa claramente
-    if (signInError.message.includes('Email not confirmed')) {
-      throw new Error(
-        'E-mail da conta de teste não foi confirmado automaticamente. ' +
-        'Por favor, aplique a migração supabase/migrations/20261024040000_dev_sandbox_auth.sql no SQL Editor do Supabase.'
-      );
-    }
-    throw new Error(signInError.message);
-  }
-
-  // 4. Configuração inicial de acordo com o modo
+  // 3. Configuração inicial de acordo com o modo
   const segment: BusinessSegment = input.segment || 'barbearia';
 
   if (input.mode === 'clean') {
-    // Conta zerada: garante onboarding_completed = false para abrir no assistente de primeiro acesso
-    await supabase.from('business_profiles').upsert(
-      {
-        user_id: userId,
-        business_name: 'Meu Negócio',
-        segment,
-        has_business: true,
-        sales_label: 'Atendimentos',
-        default_cycle_days: 21,
-        onboarding_completed: false,
-        legacy_migrated: true,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    );
+    // Modo Zerado: Garante perfil em branco com onboarding_completed = false
+    await resetCleanAccount(supabase, userId, segment);
   } else {
-    // Conta Demo: popula dados ricos para visualização completa
+    // Modo Demo: Popula dados ricos e consistentes
     await seedDemoData(supabase, userId, segment);
   }
 
@@ -114,10 +69,141 @@ export async function createSandboxAccount(
 }
 
 /**
+ * Garante que a conta de teste existe no Supabase Auth, está confirmada e autenticada.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function ensureDevUser(supabase: any, email: string): Promise<string> {
+  // 1. Tenta login direto (caso o usuário já exista)
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password: DEV_PASSWORD,
+  });
+
+  if (!signInError && signInData?.user) {
+    return signInData.user.id;
+  }
+
+  // 2. Se falhar por e-mail não confirmado, tenta confirmar via RPC e logar novamente
+  if (signInError && signInError.message.toLowerCase().includes('email not confirmed')) {
+    try {
+      await supabase.rpc('confirm_dev_user', { p_email: email });
+      const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+        email,
+        password: DEV_PASSWORD,
+      });
+      if (!retryError && retryData?.user) {
+        return retryData.user.id;
+      }
+    } catch (e) {
+      console.warn('Aviso ao tentar confirmar email:', e);
+    }
+  }
+
+  // 3. Se usuário não existir, cria a conta no Supabase Auth
+  const { error: signUpError } = await supabase.auth.signUp({
+    email,
+    password: DEV_PASSWORD,
+  });
+
+  if (signUpError && !signUpError.message.toLowerCase().includes('already registered')) {
+    throw new Error(signUpError.message || 'Erro ao registrar usuário de teste no Supabase Auth.');
+  }
+
+  // 4. Confirma o e-mail via RPC
+  try {
+    await supabase.rpc('confirm_dev_user', { p_email: email });
+  } catch (rpcErr) {
+    console.warn('Aviso: RPC confirm_dev_user não disponível ou falhou:', rpcErr);
+  }
+
+  // 5. Efetua o login final
+  const { data: finalSignIn, error: finalSignInError } = await supabase.auth.signInWithPassword({
+    email,
+    password: DEV_PASSWORD,
+  });
+
+  if (finalSignInError || !finalSignIn?.user) {
+    if (finalSignInError?.message.toLowerCase().includes('email not confirmed')) {
+      throw new Error(
+        'E-mail da conta de teste não foi confirmado automaticamente. ' +
+        'Por favor, aplique a migração supabase/migrations/20261024040000_dev_sandbox_auth.sql no SQL Editor do Supabase.'
+      );
+    }
+    throw new Error(finalSignInError?.message || 'Falha ao autenticar conta de sandbox.');
+  }
+
+  return finalSignIn.user.id;
+}
+
+/**
+ * Remove todos os dados existentes da conta fixa, garantindo estado limpo sem afetar outras contas.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function clearUserData(supabase: any, userId: string): Promise<void> {
+  // Limpa tabelas na ordem inversa de dependências / chaves estrangeiras
+  await supabase.from('sale_amortizations').delete().eq('user_id', userId);
+  await supabase.from('subscription_invoices').delete().eq('user_id', userId);
+  await supabase.from('client_subscriptions').delete().eq('user_id', userId);
+  await supabase.from('subscription_plans').delete().eq('user_id', userId);
+  await supabase.from('sales').delete().eq('user_id', userId);
+  await supabase.from('transactions').delete().eq('user_id', userId);
+  await supabase.from('recurrences').delete().eq('user_id', userId);
+  await supabase.from('notifications').delete().eq('user_id', userId);
+  await supabase.from('clients').delete().eq('user_id', userId);
+  await supabase.from('products').delete().eq('user_id', userId);
+  await supabase.from('credit_cards').delete().eq('user_id', userId);
+  await supabase.from('categories').delete().eq('user_id', userId);
+  await supabase.from('accounts').delete().eq('user_id', userId);
+  await supabase.from('business_message_settings').delete().eq('user_id', userId);
+}
+
+/**
+ * Prepara uma conta zerada para testar o assistente de Onboarding.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resetCleanAccount(supabase: any, userId: string, segment: BusinessSegment): Promise<void> {
+  // 1. Cria Conta Principal padrão limpa
+  await supabase.from('accounts').insert({
+    user_id: userId,
+    name: 'Conta Principal',
+    type: 'checking',
+    initial_balance: 0.0,
+    color: '#3b82f6',
+  });
+
+  // 2. Cria categorias padrão pessoais
+  await supabase.from('categories').insert([
+    { user_id: userId, name: 'Alimentação', type: 'expense', icon: 'utensils', color: '#ef4444', is_default: true, scope: 'personal' },
+    { user_id: userId, name: 'Moradia', type: 'expense', icon: 'home', color: '#f97316', is_default: true, scope: 'personal' },
+    { user_id: userId, name: 'Transporte', type: 'expense', icon: 'car', color: '#f59e0b', is_default: true, scope: 'personal' },
+    { user_id: userId, name: 'Lazer', type: 'expense', icon: 'film', color: '#8b5cf6', is_default: true, scope: 'personal' },
+    { user_id: userId, name: 'Saúde', type: 'expense', icon: 'activity', color: '#ec4899', is_default: true, scope: 'personal' },
+    { user_id: userId, name: 'Salário', type: 'income', icon: 'briefcase', color: '#3b82f6', is_default: true, scope: 'personal' },
+    { user_id: userId, name: 'Outras Receitas', type: 'income', icon: 'plus-circle', color: '#34d399', is_default: true, scope: 'personal' },
+  ]);
+
+  // 3. Define business_profile com onboarding_completed = false
+  await supabase.from('business_profiles').upsert(
+    {
+      user_id: userId,
+      business_name: 'Meu Negócio',
+      segment,
+      has_business: true,
+      sales_label: 'Atendimentos',
+      default_cycle_days: 21,
+      onboarding_completed: false, // Força a exibição do Onboarding
+      legacy_migrated: true,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' }
+  );
+}
+
+/**
  * Popula a conta com dados simulados realistas para testes completos do Canário.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function seedDemoData(supabase: any, userId: string, segment: BusinessSegment) {
+async function seedDemoData(supabase: any, userId: string, segment: BusinessSegment): Promise<void> {
   const today = getTodayYMD();
 
   // 1. Perfil do Negócio Demo
@@ -298,7 +384,7 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
     .select()
     .single();
 
-  // Cliente 4: Sumido (veio há 65 dias) e Cliente 5: Novo (apenas 1 visita)
+  // Cliente 4: Sumido (veio há 65 dias) e Cliente 5: Novo
   await supabase.from('clients').insert([
     {
       user_id: userId,
@@ -314,7 +400,6 @@ async function seedDemoData(supabase: any, userId: string, segment: BusinessSegm
 
   // 7. Vendas e Histórico dos Clientes
   if (cliLucas) {
-    // 3 atendimentos anteriores para gerar ciclo de 20 dias
     const date1 = addDaysYMD(today, -58);
     const date2 = addDaysYMD(today, -38);
     const date3 = addDaysYMD(today, -18);

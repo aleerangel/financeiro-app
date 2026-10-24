@@ -46,8 +46,8 @@ export function DevSandboxModal({ isOpen, onClose }: DevSandboxModalProps) {
 
       toast.success(
         mode === 'clean'
-          ? 'Conta zerada criada com sucesso! Redirecionando para o Onboarding...'
-          : 'Conta Demo criada com dados realistas! Redirecionando para o Dashboard...'
+          ? 'Conta zerada resetada e autenticada! Abrindo Onboarding...'
+          : 'Conta Demo resetada e populada com dados! Abrindo Dashboard...'
       );
 
       // Redirecionamento completo para carregar a nova sessão com cookies limpos
@@ -109,7 +109,7 @@ export function DevSandboxModal({ isOpen, onClose }: DevSandboxModalProps) {
                   Conta 100% Zerada (Novo Usuário)
                 </span>
                 <span className="text-xs text-zinc-400 block mt-0.5 leading-relaxed">
-                  Inicia no assistente de primeiro acesso (Onboarding) para validar a experiência de um usuário recém-cadastrado.
+                  Conta fixa (<code className="text-blue-400">dev_zerada@canario.app</code>). Executa auto-reset completo e abre o assistente de Onboarding.
                 </span>
               </div>
             </div>
@@ -123,11 +123,11 @@ export function DevSandboxModal({ isOpen, onClose }: DevSandboxModalProps) {
               {loadingMode === 'clean' ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Criando e autenticando...
+                  Resetando e autenticando...
                 </>
               ) : (
                 <>
-                  <span>Criar Conta Zerada</span>
+                  <span>Acessar / Resetar Conta Zerada</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
@@ -145,7 +145,7 @@ export function DevSandboxModal({ isOpen, onClose }: DevSandboxModalProps) {
                   Conta Demo Pré-Populada (Dados Realistas)
                 </span>
                 <span className="text-xs text-zinc-400 block mt-0.5 leading-relaxed">
-                  Já inclui 2 contas, 1 cartão, 5 clientes no CRM, 2 fiados, 1 mensalista e movimentações no mês para testar gráficos.
+                  Conta fixa (<code className="text-amber-400">dev_demo@canario.app</code>). Executa auto-reset e popula 2 contas, 1 cartão, 5 clientes no CRM, 2 fiados, 1 mensalista e movimentações.
                 </span>
               </div>
             </div>
@@ -184,11 +184,11 @@ export function DevSandboxModal({ isOpen, onClose }: DevSandboxModalProps) {
               {loadingMode === 'demo' ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Gerando massa de dados e autenticando...
+                  Resetando, gerando massa e autenticando...
                 </>
               ) : (
                 <>
-                  <span>Criar Conta Demo com Dados</span>
+                  <span>Acessar / Resetar Conta Demo</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
@@ -199,3 +199,4 @@ export function DevSandboxModal({ isOpen, onClose }: DevSandboxModalProps) {
     </div>
   );
 }
+
