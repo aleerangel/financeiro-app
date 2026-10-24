@@ -121,6 +121,9 @@ function ClientModalDialog({ clientToEdit, onClose, onSuccess }: DialogProps) {
                 placeholder="(11) 99999-9999"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
               />
+              <span className="text-[10px] text-zinc-400 mt-1 block">
+                Cadastre o número para mensagens automáticas
+              </span>
             </div>
 
             <div>
