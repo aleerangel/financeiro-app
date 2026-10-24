@@ -6,6 +6,7 @@ import { BusinessSegment } from '@/types/database';
 import { getTodayYMD } from '@/lib/date-utils';
 import { addDaysYMD } from '@/lib/client-analytics';
 import { DEV_CLEAN_EMAIL, DEV_DEMO_EMAIL, DEV_PASSWORD } from '@/lib/dev-sandbox-constants';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export interface CreateSandboxAccountInput {
   mode: 'clean' | 'demo';
@@ -119,11 +120,10 @@ export async function loginOrCreateSandboxUser(
 
 /**
  * Garante que a conta de teste existe no Supabase Auth, está confirmada e autenticada.
- * Utiliza provisionamento direto via banco de dados para contornar o rate limit de envio de e-mails do Supabase.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ensureDevUser(supabase: any, email: string): Promise<string> {
-  // 1. Tenta login direto com credenciais fixas (caso o usuário já exista)
+  // 1. Tenta login direto com credenciais fixas (caso a conta já exista)
   const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
     email,
     password: DEV_PASSWORD,
@@ -133,7 +133,31 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
     return signInData.user.id;
   }
 
-  // 2. Se falhar por e-mail não confirmado, tenta confirmar via RPC e logar novamente
+  // 2. Se a Service Role Key estiver configurada, provisiona via API oficial de Admin
+  const adminClient = createAdminClient();
+  if (adminClient) {
+    try {
+      const { data: adminCreated, error: adminError } = await adminClient.auth.admin.createUser({
+        email,
+        password: DEV_PASSWORD,
+        email_confirm: true,
+      });
+
+      if (!adminError && adminCreated?.user) {
+        const { data: loginData } = await supabase.auth.signInWithPassword({
+          email,
+          password: DEV_PASSWORD,
+        });
+        if (loginData?.user) {
+          return loginData.user.id;
+        }
+      }
+    } catch (adminErr) {
+      console.warn('Tentativa via admin client:', adminErr);
+    }
+  }
+
+  // 3. Se falhar por e-mail não confirmado, tenta confirmar via RPC
   if (signInError && signInError.message.toLowerCase().includes('email not confirmed')) {
     try {
       await supabase.rpc('confirm_dev_user', { p_email: email });
@@ -149,78 +173,52 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
     }
   }
 
-  // 3. Tenta provisionar diretamente no banco via RPC provision_dev_user (sem envio de e-mails)
-  let provisionWorked = false;
-  try {
-    const { error: rpcError } = await supabase.rpc('provision_dev_user', {
-      p_email: email,
-      p_password: DEV_PASSWORD,
-    });
-    if (!rpcError) {
-      provisionWorked = true;
-    }
-  } catch (rpcErr) {
-    console.warn('RPC provision_dev_user ainda não executada no banco:', rpcErr);
-  }
-
-  // 4. Se a RPC provisionou ou já confirmou, tenta o login novamente
-  const { data: secondSignIn, error: secondSignInError } = await supabase.auth.signInWithPassword({
+  // 4. Criação padrão via signUp
+  const { error: signUpError } = await supabase.auth.signUp({
     email,
     password: DEV_PASSWORD,
   });
 
-  if (!secondSignInError && secondSignIn?.user) {
-    return secondSignIn.user.id;
-  }
-
-  // 5. Fallback caso a RPC ainda não tenha sido rodada no SQL Editor do Supabase
-  if (!provisionWorked) {
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password: DEV_PASSWORD,
-    });
-
-    if (signUpError) {
-      if (signUpError.message.toLowerCase().includes('rate limit')) {
-        throw new Error(
-          'O Supabase bloqueou novos e-mails (email rate limit exceeded). ' +
-          'Execute o script supabase/migrations/20261024050000_dev_sandbox_direct_provisioning.sql no SQL Editor do Supabase ' +
-          'para provisionar as contas de teste diretamente no banco sem depender do envio de e-mail.'
-        );
-      }
-      if (!signUpError.message.toLowerCase().includes('already registered')) {
-        throw new Error(signUpError.message || 'Erro ao registrar usuário de teste no Supabase Auth.');
-      }
-    }
-
-    try {
-      await supabase.rpc('confirm_dev_user', { p_email: email });
-    } catch {
-      // Ignora erro
-    }
-
-    const { data: finalSignIn, error: finalSignInError } = await supabase.auth.signInWithPassword({
-      email,
-      password: DEV_PASSWORD,
-    });
-
-    if (!finalSignInError && finalSignIn?.user) {
-      return finalSignIn.user.id;
-    }
-
-    if (finalSignInError?.message.toLowerCase().includes('email not confirmed')) {
+  if (signUpError) {
+    if (signUpError.message.toLowerCase().includes('rate limit')) {
       throw new Error(
-        'E-mail da conta de teste não foi confirmado automaticamente. ' +
-        'Por favor, aplique o script supabase/migrations/20261024050000_dev_sandbox_direct_provisioning.sql no SQL Editor do Supabase.'
+        'O Supabase bloqueou novos e-mails (email rate limit exceeded). ' +
+        'Para liberar instantaneamente no ambiente local, vá em Supabase > Authentication > Providers > Email e desmarque a opção "Confirm email", ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
       );
     }
+    if (!signUpError.message.toLowerCase().includes('already registered')) {
+      throw new Error(signUpError.message || 'Erro ao registrar usuário de teste no Supabase Auth.');
+    }
+  }
 
-    throw new Error(finalSignInError?.message || 'Falha ao autenticar conta de sandbox.');
+  // 5. Confirma o e-mail via RPC caso o projeto exija confirmação
+  try {
+    await supabase.rpc('confirm_dev_user', { p_email: email });
+  } catch {
+    // Ignora se não existir
+  }
+
+  // 6. Login final
+  const { data: finalSignIn, error: finalSignInError } = await supabase.auth.signInWithPassword({
+    email,
+    password: DEV_PASSWORD,
+  });
+
+  if (!finalSignInError && finalSignIn?.user) {
+    return finalSignIn.user.id;
+  }
+
+  if (finalSignInError?.message.toLowerCase().includes('database error querying schema')) {
+    throw new Error(
+      'Erro no schema de autenticação do Supabase. ' +
+      'Por favor, execute no SQL Editor: DELETE FROM auth.users WHERE email LIKE \'dev_%@canario.app\'; ' +
+      'e desmarque "Confirm email" em Authentication > Providers > Email.'
+    );
   }
 
   throw new Error(
-    secondSignInError?.message ||
-    'Falha ao autenticar conta de sandbox. Execute o script da migração no SQL Editor do Supabase.'
+    finalSignInError?.message ||
+    'Falha ao autenticar conta de sandbox.'
   );
 }
 
