@@ -237,4 +237,27 @@ export interface SubscriptionInvoice {
   account?: Account | null;
 }
 
+export type BusinessSegment =
+  | 'barbearia'
+  | 'beleza_estetica'
+  | 'servicos_manutencao'
+  | 'saude_consultorio'
+  | 'aulas_treinamento'
+  | 'comercio_geral'
+  | 'outro';
+
+export interface BusinessProfile {
+  user_id: string;
+  business_name: string | null;
+  segment: BusinessSegment;
+  has_business: boolean;
+  sales_label: string;
+  default_cycle_days: number;
+  onboarding_completed: boolean;
+  legacy_migrated: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+
 

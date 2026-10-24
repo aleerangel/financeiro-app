@@ -43,3 +43,4 @@ Registros de engenharia de requisitos de funcionalidades anteriores implementada
 | [`requisitos_assinaturas_mensalidades_barbearia.md`](./historico-requisitos/requisitos_assinaturas_mensalidades_barbearia.md) | Clube de assinaturas e mensalidades recorrentes |
 | [`requisitos_gestao_avancada_mensalidades.md`](./historico-requisitos/requisitos_gestao_avancada_mensalidades.md) | Gestão avançada de faturas, MRR e inadimplência |
 | [`requisitos_refatoracao_visual_desktop.md`](./historico-requisitos/requisitos_refatoracao_visual_desktop.md) | Refatoração visual desktop (Sidebar recolhível e AppHeader) |
+
