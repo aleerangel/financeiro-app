@@ -34,10 +34,13 @@ import {
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 import { formatSalesUnit, formatSplitCount } from '@/lib/business-presets';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { Transaction } from '@/types/database';
+import { isBusinessTransaction } from '@/lib/business-scope-utils';
+import { PendingReceiptsAlert } from '../PendingReceiptsAlert';
 
 export type ChartPeriod = ChartViewPeriod;
 
@@ -46,6 +49,8 @@ export interface BusinessDashboardDesktopProps {
   accounts: AccountWithBalance[];
   formattedMonth?: string;
   loading?: boolean;
+  pendingReceipts?: Transaction[];
+  onReceiptConfirmed?: (receiptId: string) => void;
   onEditBalance?: (account: AccountWithBalance) => void;
   onAddBusinessExpense?: () => void;
 }
@@ -64,6 +69,8 @@ export function BusinessDashboardDesktop({
   accounts,
   formattedMonth,
   loading = false,
+  pendingReceipts = [],
+  onReceiptConfirmed,
   onEditBalance,
   onAddBusinessExpense,
 }: BusinessDashboardDesktopProps) {
@@ -73,6 +80,10 @@ export function BusinessDashboardDesktop({
     phone?: string | null;
     daysSinceLastVisit: number;
   } | null>(null);
+
+  const businessReceipts = useMemo(() => {
+    return (pendingReceipts || []).filter(isBusinessTransaction);
+  }, [pendingReceipts]);
 
   const { profile, businessName, salesLabel } = useBusinessProfile();
   const { month, year } = useDateContext();
@@ -129,6 +140,9 @@ export function BusinessDashboardDesktop({
 
   return (
     <div className="space-y-6">
+      {/* Alerta de Recebimentos Previstos Pendentes de Confirmação do Negócio */}
+      <PendingReceiptsAlert receipts={businessReceipts} onReceiptConfirmed={onReceiptConfirmed} />
+
       {/* KPIs de Resultado do Negócio no Mês Selecionado */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {/* 1. Faturamento Bruto */}

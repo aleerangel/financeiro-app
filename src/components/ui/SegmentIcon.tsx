@@ -74,3 +74,4 @@ export function SegmentIcon({ segment, className, strokeWidth }: SegmentIconProp
   const Icon = getSegmentIcon(segment);
   return <Icon className={className} strokeWidth={strokeWidth} />;
 }
+

@@ -500,6 +500,11 @@ export function DashboardView({
               accounts={accounts}
               formattedMonth={formattedMonth}
               loading={loading}
+              pendingReceipts={pendingReceipts}
+              onReceiptConfirmed={(id) => {
+                setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
+                refreshData();
+              }}
               onEditBalance={(acc) => {
                 setAccountToAdjustBalance(acc);
                 setBalanceModalOpen(true);
@@ -707,6 +712,11 @@ export function DashboardView({
           accounts={accounts}
           formattedMonth={formattedMonth}
           loading={loading}
+          pendingReceipts={pendingReceipts}
+          onReceiptConfirmed={(id) => {
+            setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
+            refreshData();
+          }}
           onEditBalance={(acc) => {
             setAccountToAdjustBalance(acc);
             setBalanceModalOpen(true);

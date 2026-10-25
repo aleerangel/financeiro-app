@@ -20,6 +20,7 @@ import { GeneralDashboardData } from '@/lib/actions/dashboard';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { getCardInvoiceStatus } from '@/lib/credit-card-utils';
+import { MobilePendingReceiptsAlert } from './MobilePendingReceiptsAlert';
 
 export interface GeneralDashboardMobileProps {
   generalData?: GeneralDashboardData;
@@ -41,6 +42,8 @@ export function GeneralDashboardMobile({
   cards,
   formattedMonth,
   upcomingBills = [],
+  pendingReceipts = [],
+  onReceiptConfirmed,
 }: GeneralDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
 
@@ -155,6 +158,12 @@ export function GeneralDashboardMobile({
           </Link>
         </div>
       </div>
+
+      {/* Alerta Retrátil de Recebimentos Previstos Pendentes de Confirmação */}
+      <MobilePendingReceiptsAlert
+        receipts={pendingReceipts}
+        onReceiptConfirmed={onReceiptConfirmed}
+      />
 
       {/* Alerta de Contas a Vencer (se houver) */}
       {upcomingBills.length > 0 && (
