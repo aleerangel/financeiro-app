@@ -13,10 +13,12 @@ import {
 import {
   BusinessMessageSettings,
   PixKeyType,
-  DEFAULT_TEMPLATES,
+  getTemplatesForSegment,
   PIX_KEY_LABELS,
 } from '@/lib/whatsapp-templates';
 import { saveMessageSettings } from '@/lib/actions/message-settings';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { getSegmentConfig } from '@/lib/business-presets';
 import { toast } from 'sonner';
 
 interface MessageSettingsModalProps {
@@ -32,6 +34,10 @@ export function MessageSettingsModal({
   initialSettings,
   onSaved,
 }: MessageSettingsModalProps) {
+  const { profile, businessName } = useBusinessProfile();
+  const segmentConfig = getSegmentConfig(profile.segment);
+  const segmentTemplates = getTemplatesForSegment(profile.segment);
+
   const [activeTab, setActiveTab] = useState<'pix' | 'templates'>('pix');
   const [pixKeyType, setPixKeyType] = useState<PixKeyType>(
     initialSettings.pix_key_type || 'phone'
@@ -44,28 +50,28 @@ export function MessageSettingsModal({
     initialSettings.include_pix_default ?? true
   );
 
-  // Templates
+  // Templates especializados no segmento ativo
   const [templateFriendly, setTemplateFriendly] = useState(
-    initialSettings.template_friendly || DEFAULT_TEMPLATES.friendly
+    initialSettings.template_friendly || segmentTemplates.friendly
   );
   const [templateDefault, setTemplateDefault] = useState(
-    initialSettings.template_default || DEFAULT_TEMPLATES.default
+    initialSettings.template_default || segmentTemplates.default
   );
   const [templateFirm, setTemplateFirm] = useState(
-    initialSettings.template_firm || DEFAULT_TEMPLATES.firm
+    initialSettings.template_firm || segmentTemplates.firm
   );
   const [templateCreditReceipt, setTemplateCreditReceipt] = useState(
-    initialSettings.template_sale_credit_receipt || DEFAULT_TEMPLATES.creditReceipt
+    initialSettings.template_sale_credit_receipt || segmentTemplates.creditReceipt
   );
   const [templateReturnWindow, setTemplateReturnWindow] = useState(
-    initialSettings.template_return_window || DEFAULT_TEMPLATES.returnWindowCasual
+    initialSettings.template_return_window || segmentTemplates.returnWindowCasual
   );
   const [templateInactiveRecovery, setTemplateInactiveRecovery] = useState(
     initialSettings.template_inactive_recovery ||
-      DEFAULT_TEMPLATES.inactiveRecoveryCasual
+      segmentTemplates.inactiveRecoveryCasual
   );
   const [templateBirthday, setTemplateBirthday] = useState(
-    initialSettings.template_birthday || DEFAULT_TEMPLATES.birthdayCasual
+    initialSettings.template_birthday || segmentTemplates.birthdayCasual
   );
 
   const [selectedTemplateTab, setSelectedTemplateTab] = useState<
@@ -83,14 +89,14 @@ export function MessageSettingsModal({
   if (!isOpen) return null;
 
   const handleResetDefaults = () => {
-    setTemplateFriendly(DEFAULT_TEMPLATES.friendly);
-    setTemplateDefault(DEFAULT_TEMPLATES.default);
-    setTemplateFirm(DEFAULT_TEMPLATES.firm);
-    setTemplateCreditReceipt(DEFAULT_TEMPLATES.creditReceipt);
-    setTemplateReturnWindow(DEFAULT_TEMPLATES.returnWindowCasual);
-    setTemplateInactiveRecovery(DEFAULT_TEMPLATES.inactiveRecoveryCasual);
-    setTemplateBirthday(DEFAULT_TEMPLATES.birthdayCasual);
-    toast.info('Modelos de mensagens restaurados para o padrão.');
+    setTemplateFriendly(segmentTemplates.friendly);
+    setTemplateDefault(segmentTemplates.default);
+    setTemplateFirm(segmentTemplates.firm);
+    setTemplateCreditReceipt(segmentTemplates.creditReceipt);
+    setTemplateReturnWindow(segmentTemplates.returnWindowCasual);
+    setTemplateInactiveRecovery(segmentTemplates.inactiveRecoveryCasual);
+    setTemplateBirthday(segmentTemplates.birthdayCasual);
+    toast.info(`Modelos restaurados para o padrão de ${segmentConfig.label}.`);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -161,7 +167,7 @@ export function MessageSettingsModal({
             }`}
           >
             <QrCode className="w-4 h-4" />
-            <span>Chave Pix da Barbearia</span>
+            <span>Chave Pix</span>
           </button>
 
           <button
@@ -229,7 +235,7 @@ export function MessageSettingsModal({
                       : pixKeyType === 'cpf'
                       ? 'Ex: 123.456.789-00'
                       : pixKeyType === 'email'
-                      ? 'Ex: seuemail@barbearia.com'
+                      ? 'Ex: contato@seunegocio.com'
                       : 'Digite a chave Pix'
                   }
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
@@ -239,13 +245,13 @@ export function MessageSettingsModal({
               {/* Nome do Favorecido */}
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  Nome do Favorecido / Barbearia (Opcional)
+                  Nome do Favorecido / {businessName || 'Negócio'} (Opcional)
                 </label>
                 <input
                   type="text"
                   value={pixHolderName}
                   onChange={(e) => setPixHolderName(e.target.value)}
-                  placeholder="Ex: Barbearia Silva ou Alexandre Rangel"
+                  placeholder={`Ex: ${businessName || 'Meu Negócio'} ou Alexandre Rangel`}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
@@ -272,18 +278,27 @@ export function MessageSettingsModal({
 
           {activeTab === 'templates' && (
             <div className="space-y-4">
+              <div className="p-3 bg-zinc-950/70 border border-zinc-800 rounded-xl flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-400">Modelos baseados em:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold border border-amber-500/30">
+                    {segmentConfig.label}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResetDefaults}
+                  className="text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Restaurar padrões</span>
+                </button>
+              </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-300">
                   Selecione o modelo para editar:
                 </span>
-                <button
-                  type="button"
-                  onClick={handleResetDefaults}
-                  className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Restaurar padrões de fábrica</span>
-                </button>
               </div>
 
               {/* Sub-abas de templates */}

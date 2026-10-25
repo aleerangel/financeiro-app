@@ -205,14 +205,41 @@ describe('whatsapp-templates', () => {
     expect(text).toContain('— Studio Bela Vista • via Canário');
   });
 
-  it('retorna templates neutros para segmentos gerais ou consultoria', () => {
-    const templates = getTemplatesForSegment('servicos_gerais');
-    expect(templates).toEqual(DEFAULT_NEUTRAL_TEMPLATES);
-    expect(templates.returnWindowCasual).toContain('último atendimento com a gente');
-
+  it('retorna templates especializados para cada um dos 7 segmentos', () => {
+    // 1. Barbearia
     const barbeariaTemplates = getTemplatesForSegment('barbearia');
-    expect(barbeariaTemplates).toEqual(DEFAULT_TEMPLATES);
     expect(barbeariaTemplates.returnWindowCasual).toContain('renovar o visual');
+    expect(barbeariaTemplates.friendly).toContain('barbearia');
+
+    // 2. Beleza & Estética
+    const belezaTemplates = getTemplatesForSegment('beleza_estetica');
+    expect(belezaTemplates.returnWindowCasual).toContain('autocuidado');
+    expect(belezaTemplates.friendly).toContain('💖');
+
+    // 3. Serviços & Manutenção
+    const manutencaoTemplates = getTemplatesForSegment('servicos_manutencao');
+    expect(manutencaoTemplates.friendly).toContain('ordem de serviço');
+    expect(manutencaoTemplates.creditReceipt).toContain('garantia');
+
+    // 4. Saúde & Consultório
+    const saudeTemplates = getTemplatesForSegment('saude_consultorio');
+    expect(saudeTemplates.friendly).toContain('consulta/sessão');
+    expect(saudeTemplates.returnWindowCasual).toContain('retorno');
+
+    // 5. Aulas & Treinamento
+    const aulasTemplates = getTemplatesForSegment('aulas_treinamento');
+    expect(aulasTemplates.friendly).toContain('aulas/treinos');
+    expect(aulasTemplates.returnWindowCasual).toContain('consistência');
+
+    // 6. Comércio Geral
+    const comercioTemplates = getTemplatesForSegment('comercio_geral');
+    expect(comercioTemplates.friendly).toContain('compras');
+    expect(comercioTemplates.returnWindowCasual).toContain('novidades');
+
+    // 7. Geral / Outro (fallback)
+    const outroTemplates = getTemplatesForSegment('outro');
+    expect(outroTemplates).toEqual(DEFAULT_NEUTRAL_TEMPLATES);
+    expect(outroTemplates.returnWindowCasual).toContain('último atendimento com a gente');
   });
 });
 

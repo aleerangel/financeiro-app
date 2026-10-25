@@ -9,13 +9,20 @@ import {
   Clock,
   QrCode,
   Sliders,
+  MessageCircle,
+  Sparkles,
 } from 'lucide-react';
 import { BusinessSegment } from '@/types/database';
 import { SEGMENTS_CONFIG } from '@/lib/business-presets';
 import { saveBusinessProfile } from '@/lib/actions/business-profile';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
-import { PixKeyType, PIX_KEY_LABELS } from '@/lib/whatsapp-templates';
-import { getMessageSettings, saveMessageSettings } from '@/lib/actions/message-settings';
+import { PixKeyType, PIX_KEY_LABELS, BusinessMessageSettings } from '@/lib/whatsapp-templates';
+import {
+  getMessageSettings,
+  saveMessageSettings,
+  resetMessageSettingsToSegment,
+} from '@/lib/actions/message-settings';
+import { MessageSettingsModal } from '@/components/fiados/MessageSettingsModal';
 import { toast } from 'sonner';
 
 interface BusinessSettingsModalProps {
@@ -51,12 +58,17 @@ export function BusinessSettingsModal({
   const [pixKey, setPixKey] = useState<string>('');
   const [pixHolderName, setPixHolderName] = useState<string>('');
 
+  const [messageSettings, setMessageSettings] = useState<BusinessMessageSettings | null>(null);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [updateTemplatesOnSave, setUpdateTemplatesOnSave] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       getMessageSettings().then((msgSettings) => {
+        setMessageSettings(msgSettings);
         if (msgSettings.pix_key_type) setPixKeyType(msgSettings.pix_key_type);
         if (msgSettings.pix_key) setPixKey(msgSettings.pix_key);
         if (msgSettings.pix_holder_name) setPixHolderName(msgSettings.pix_holder_name);
@@ -74,6 +86,11 @@ export function BusinessSettingsModal({
     if (config) {
       setSalesLabel(config.defaultSalesLabel);
       setDefaultCycleDays(config.defaultCycleDays);
+    }
+    if (newSegment !== profile.segment) {
+      setUpdateTemplatesOnSave(true);
+    } else {
+      setUpdateTemplatesOnSave(false);
     }
   };
 
@@ -96,8 +113,11 @@ export function BusinessSettingsModal({
         has_business: hasBusiness,
       });
 
-      // Salva dados Pix se preenchidos
-      if (pixKey.trim()) {
+      // Se o usuário optou por atualizar os modelos de WhatsApp para o novo segmento
+      if (updateTemplatesOnSave && segment !== profile.segment) {
+        await resetMessageSettingsToSegment(segment).catch(() => null);
+      } else if (pixKey.trim()) {
+        // Salva dados Pix se preenchidos mantendo templates
         await saveMessageSettings({
           pix_key_type: pixKeyType,
           pix_key: pixKey.trim(),
@@ -228,6 +248,47 @@ export function BusinessSettingsModal({
                     );
                   })}
                 </div>
+
+                {/* Diálogo/Aviso contextual de atualização de templates WhatsApp ao trocar segmento */}
+                {segment !== profile.segment && (
+                  <div className="mt-3 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="text-xs">
+                        <span className="font-bold text-amber-300 block">
+                          Segmento alterado para {SEGMENTS_CONFIG[segment]?.label}
+                        </span>
+                        <span className="text-zinc-300 block mt-0.5">
+                          Deseja atualizar os modelos padrão de WhatsApp para o estilo deste novo segmento ou manter seus textos atuais?
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 pl-6">
+                      <button
+                        type="button"
+                        onClick={() => setUpdateTemplatesOnSave(true)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                          updateTemplatesOnSave
+                            ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                        }`}
+                      >
+                        ✓ Atualizar textos para {SEGMENTS_CONFIG[segment]?.label}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUpdateTemplatesOnSave(false)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                          !updateTemplatesOnSave
+                            ? 'bg-zinc-700 text-zinc-100 border border-zinc-600'
+                            : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        Manter meus textos atuais
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 4. Nomenclatura das Vendas e Ciclo Padrão */}
@@ -320,6 +381,32 @@ export function BusinessSettingsModal({
                   />
                 </div>
               </div>
+
+              {/* 6. Atalho para Personalização de Modelos de Mensagens WhatsApp */}
+              <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-2xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-zinc-200 block">
+                      Modelos de Mensagens do WhatsApp
+                    </span>
+                    <span className="text-[11px] text-zinc-400 block mt-0.5">
+                      Personalize textos de cobrança, fiados, radar de retorno e aniversários
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setMessageModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-xl text-xs font-bold transition active:scale-95 shrink-0"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>Personalizar Textos</span>
+                </button>
+              </div>
             </>
           )}
 
@@ -354,6 +441,31 @@ export function BusinessSettingsModal({
           </div>
         </form>
       </div>
+
+      {messageModalOpen && (
+        <MessageSettingsModal
+          isOpen={messageModalOpen}
+          onClose={() => setMessageModalOpen(false)}
+          initialSettings={
+            messageSettings || {
+              pix_key_type: pixKeyType,
+              pix_key: pixKey || null,
+              pix_holder_name: pixHolderName || null,
+              template_friendly: null,
+              template_default: null,
+              template_firm: null,
+              template_sale_credit_receipt: null,
+              include_pix_default: true,
+            }
+          }
+          onSaved={(newSettings) => {
+            setMessageSettings(newSettings);
+            if (newSettings.pix_key_type) setPixKeyType(newSettings.pix_key_type);
+            if (newSettings.pix_key) setPixKey(newSettings.pix_key);
+            if (newSettings.pix_holder_name) setPixHolderName(newSettings.pix_holder_name);
+          }}
+        />
+      )}
     </div>
   );
 }

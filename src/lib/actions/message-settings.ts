@@ -8,6 +8,7 @@ import {
   getTemplatesForSegment,
 } from '@/lib/whatsapp-templates';
 import { getBusinessProfile } from '@/lib/actions/business-profile';
+import { BusinessSegment } from '@/types/database';
 
 export async function getMessageSettings(): Promise<BusinessMessageSettings> {
   const supabase = await createClient();
@@ -122,3 +123,57 @@ export async function saveMessageSettings(input: {
 
   return payload;
 }
+
+/**
+ * Restaura e persiste os modelos padrão de WhatsApp para um segmento específico
+ * mantendo as credenciais Pix existentes do usuário intactas.
+ */
+export async function resetMessageSettingsToSegment(
+  targetSegment?: BusinessSegment
+): Promise<BusinessMessageSettings> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  const profile = await getBusinessProfile();
+  const seg = targetSegment || profile.segment;
+  const segmentTemplates = getTemplatesForSegment(seg);
+
+  // Obtém chaves Pix atuais para não apagar a chave cadastrada
+  const current = await getMessageSettings();
+
+  const payload: BusinessMessageSettings = {
+    user_id: user.id,
+    pix_key_type: current.pix_key_type || 'phone',
+    pix_key: current.pix_key || null,
+    pix_holder_name: current.pix_holder_name || null,
+    template_friendly: segmentTemplates.friendly,
+    template_default: segmentTemplates.default,
+    template_firm: segmentTemplates.firm,
+    template_sale_credit_receipt: segmentTemplates.creditReceipt,
+    template_return_window: segmentTemplates.returnWindowCasual,
+    template_inactive_recovery: segmentTemplates.inactiveRecoveryCasual,
+    template_birthday: segmentTemplates.birthdayCasual,
+    include_pix_default: current.include_pix_default ?? true,
+  };
+
+  const { error } = await supabase
+    .from('business_message_settings')
+    .upsert({
+      ...payload,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+
+  if (error) {
+    throw new Error(error.message || 'Erro ao restaurar modelos do segmento.');
+  }
+
+  revalidatePath('/fiados');
+  revalidatePath('/vendas');
+  revalidatePath('/clientes');
+  revalidatePath('/dashboard');
+
+  return payload;
+}
+
