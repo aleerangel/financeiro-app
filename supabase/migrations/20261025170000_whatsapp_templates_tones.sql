@@ -9,3 +9,4 @@ ADD COLUMN IF NOT EXISTS template_inactive_recovery_promo TEXT,
 ADD COLUMN IF NOT EXISTS template_birthday_gift TEXT,
 ADD COLUMN IF NOT EXISTS template_subscription_invoice TEXT,
 ADD COLUMN IF NOT EXISTS template_subscription_receipt TEXT;
+

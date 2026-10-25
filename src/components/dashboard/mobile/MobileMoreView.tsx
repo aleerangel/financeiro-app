@@ -16,7 +16,6 @@ import {
   LogOut,
   Loader2,
   Receipt,
-  ArrowLeftRight,
   MessageSquare,
   Bell,
   Crown,
@@ -238,13 +237,6 @@ export function MobileMoreView({
     {
       title: 'Gestão Financeira & Meios',
       items: [
-        {
-          title: 'Lançamentos & Extrato Completo',
-          description: 'Visão tabular avançada, busca por texto, filtros e exportação',
-          href: '/transacoes',
-          icon: ArrowLeftRight,
-          iconColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
-        },
         {
           title: 'Contas Bancárias',
           description: `${accounts.length} contas cadastradas • Saldo: ${formatHidden(formatCurrency(totalBalance))}`,

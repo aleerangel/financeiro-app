@@ -21,6 +21,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   Transaction,
@@ -63,6 +64,14 @@ const CategoryEvolutionModal = dynamic(
   () =>
     import('@/components/dashboard/CategoryEvolutionModal').then(
       (m) => m.CategoryEvolutionModal
+    ),
+  { ssr: false }
+);
+
+const MobileTransactionFiltersDrawer = dynamic(
+  () =>
+    import('./MobileTransactionFiltersDrawer').then(
+      (m) => m.MobileTransactionFiltersDrawer
     ),
   { ssr: false }
 );
@@ -112,6 +121,7 @@ export function TransactionsView({
   const [evolutionModalType, setEvolutionModalType] = useState<
     'income' | 'expense' | null
   >(null);
+  const [mobileFilterDrawerOpen, setMobileFilterDrawerOpen] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDefaultScope, setModalDefaultScope] =
@@ -302,6 +312,11 @@ export function TransactionsView({
     selectedSourceId !== 'all' ||
     searchTerm.trim().length > 0;
 
+  const activeAdvancedFiltersCount =
+    (selectedCategoryId !== 'all' ? 1 : 0) +
+    (selectedSourceId !== 'all' ? 1 : 0) +
+    (!groupByDay ? 1 : 0);
+
   const filteredSummary = useMemo(() => {
     let inc = 0;
     let exp = 0;
@@ -346,17 +361,16 @@ export function TransactionsView({
     });
   };
 
-  const renderTransactionRow = (t: Transaction) => {
+  const renderDesktopRow = (t: Transaction) => {
     const isCredit = t.payment_method === 'credit';
     const isIncome = t.type === 'income';
 
     return (
       <div
-        key={t.id}
         className="p-4 flex items-center justify-between gap-3 hover:bg-zinc-800/40 transition group"
       >
         {/* Lado Esquerdo: Ícone + Descrição + Detalhes */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
             style={{
@@ -377,7 +391,7 @@ export function TransactionsView({
             )}
           </div>
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="text-sm font-semibold text-zinc-100 truncate">
                 {t.description}
@@ -482,6 +496,136 @@ export function TransactionsView({
     );
   };
 
+  const renderMobileRow = (t: Transaction) => {
+    const isCredit = t.payment_method === 'credit';
+    const isIncome = t.type === 'income';
+
+    return (
+      <div
+        onClick={() => {
+          setTransactionToEdit(t);
+          setModalOpen(true);
+        }}
+        className="p-3.5 hover:bg-zinc-800/40 active:bg-zinc-800/60 transition cursor-pointer"
+      >
+        {/* Linha 1: Ícone + Título Fluido + Valor Alinhado à Direita */}
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+              style={{
+                backgroundColor: isIncome
+                  ? 'rgba(16, 185, 129, 0.15)'
+                  : isCredit
+                  ? 'rgba(168, 85, 247, 0.15)'
+                  : 'rgba(244, 63, 94, 0.15)',
+                color: isIncome ? '#10b981' : isCredit ? '#c084fc' : '#fb7185',
+              }}
+            >
+              {isIncome ? (
+                <ArrowUpRight className="w-4 h-4" />
+              ) : isCredit ? (
+                <CardIcon className="w-4 h-4" />
+              ) : (
+                <ArrowDownRight className="w-4 h-4" />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-semibold text-zinc-100 truncate">
+                {t.description}
+              </h4>
+              {t.total_installments && t.total_installments > 1 && (
+                <span className="text-[10px] text-purple-400 font-medium block">
+                  Parcela {t.current_installment}/{t.total_installments}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="text-right shrink-0">
+            <span
+              className={`text-sm font-bold block ${
+                isIncome ? 'text-emerald-400' : 'text-zinc-100'
+              }`}
+            >
+              {isIncome ? '+' : '-'} {formatCurrency(Number(t.amount))}
+            </span>
+          </div>
+        </div>
+
+        {/* Linha 2: Tags de Negócio, Categoria, Conta e Botão de Status */}
+        <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-zinc-800/50 text-xs">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0 text-zinc-400 text-[11px]">
+            {isBusinessTransaction(t) && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
+                <Store className="w-2.5 h-2.5 shrink-0" />
+                <span className="truncate max-w-[90px]">{hasBusiness ? businessName : 'Negócio'}</span>
+              </span>
+            )}
+
+            <span className="inline-flex items-center gap-1 truncate max-w-[120px]">
+              {t.category?.color && (
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: t.category.color }}
+                />
+              )}
+              <span className="truncate">{t.category?.name || 'Sem Categoria'}</span>
+            </span>
+
+            <span>•</span>
+
+            <span className="truncate max-w-[100px]">
+              {isCredit ? t.credit_card?.name : t.account?.name || 'Carteira'}
+            </span>
+
+            {!groupByDay && (
+              <>
+                <span>•</span>
+                <span className="text-[10px]">{formatDate(t.due_date)}</span>
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTogglePaid(t);
+            }}
+            disabled={actionLoadingId === t.id}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition shrink-0 active:scale-95 ${
+              t.is_paid
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
+            }`}
+            title={t.is_paid ? 'Marcar como Pendente' : 'Marcar como Pago'}
+          >
+            {t.is_paid ? (
+              <>
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>Pago</span>
+              </>
+            ) : (
+              <>
+                <Clock className="w-3 h-3 text-amber-400" />
+                <span>Pendente</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTransactionRow = (t: Transaction) => (
+    <div key={t.id}>
+      <div className="hidden md:block">{renderDesktopRow(t)}</div>
+      <div className="md:hidden">{renderMobileRow(t)}</div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Cards de Resumo do Mês */}
@@ -578,8 +722,154 @@ export function TransactionsView({
         </div>
       </div>
 
-      {/* Barra de Busca, Filtros Avançados e Ações */}
-      <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+      {/* Barra de Busca, Filtros e Ações (Mobile) */}
+      <div className="md:hidden p-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+        {/* Linha 1: Mês/Ano + Filtros Gaveta + Nova Transação */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Seletor de Mês Compacto */}
+          <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 px-2 py-1.5 rounded-xl text-xs shrink-0">
+            <button
+              type="button"
+              onClick={prevMonth}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Mês anterior"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="font-semibold text-zinc-200 px-1 capitalize text-xs">
+              {formattedMonth}
+            </span>
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Próximo mês"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Botão de Filtros Avançados & Exportar */}
+            <button
+              type="button"
+              onClick={() => setMobileFilterDrawerOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                activeAdvancedFiltersCount > 0
+                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                  : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:text-zinc-100'
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Filtros</span>
+              {activeAdvancedFiltersCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-emerald-500 text-zinc-950 text-[10px] font-bold flex items-center justify-center">
+                  {activeAdvancedFiltersCount}
+                </span>
+              )}
+            </button>
+
+            {/* Botão Adicionar */}
+            <button
+              type="button"
+              onClick={() => {
+                setTransactionToEdit(null);
+                setModalDefaultScope('personal');
+                setModalOpen(true);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs rounded-xl shadow-md shadow-emerald-500/10 transition"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Novo</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Linha 2: Busca por Texto */}
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar lançamentos..."
+            className="w-full pl-8 pr-8 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Linha 3: Pílulas Rápidas Horizontais Deslizantes */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1">
+          {[
+            { id: 'all' as FilterType, label: 'Todos' },
+            ...(hasBusiness
+              ? [{ id: 'business' as FilterType, label: `💼 ${businessName}` }]
+              : []),
+            { id: 'personal' as FilterType, label: '👤 Pessoal' },
+            { id: 'income' as FilterType, label: 'Receitas' },
+            { id: 'expense' as FilterType, label: 'Despesas' },
+            { id: 'credit' as FilterType, label: 'Cartão' },
+            { id: 'pending' as FilterType, label: 'Pendentes' },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap shrink-0 ${
+                filter === f.id
+                  ? 'bg-zinc-100 text-zinc-900 font-semibold'
+                  : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilter('all');
+                setSelectedCategoryId('all');
+                setSelectedSourceId('all');
+                setSearchTerm('');
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition shrink-0 whitespace-nowrap"
+            >
+              <X className="w-3.5 h-3.5" />
+              Limpar
+            </button>
+          )}
+        </div>
+
+        {/* Resumo do Filtro Ativo no Mobile */}
+        {hasActiveFilter && (
+          <div className="p-2.5 bg-zinc-950/90 border border-zinc-800 rounded-xl flex items-center justify-between gap-2 text-[11px]">
+            <span className="text-zinc-400">
+              <strong className="text-zinc-100">{filteredSummary.count}</strong> itens
+            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`font-bold ${
+                  filteredSummary.net >= 0 ? 'text-zinc-100' : 'text-rose-400'
+                }`}
+              >
+                Saldo: {formatCurrency(filteredSummary.net)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Barra de Busca, Filtros Avançados e Ações (Desktop) */}
+      <div className="hidden md:block p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Busca + Dropdowns de Categoria e Conta/Cartão */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 flex-1">
@@ -889,6 +1179,27 @@ export function TransactionsView({
           {filteredTransactions.map((t) => renderTransactionRow(t))}
         </div>
       )}
+
+      <MobileTransactionFiltersDrawer
+        isOpen={mobileFilterDrawerOpen}
+        onClose={() => setMobileFilterDrawerOpen(false)}
+        categories={initialCategories}
+        accounts={initialAccounts}
+        cards={initialCards}
+        selectedCategoryId={selectedCategoryId}
+        onSelectCategory={setSelectedCategoryId}
+        selectedSourceId={selectedSourceId}
+        onSelectSource={setSelectedSourceId}
+        groupByDay={groupByDay}
+        onToggleGroupByDay={setGroupByDay}
+        onExport={handleExport}
+        hasActiveFilters={activeAdvancedFiltersCount > 0}
+        onClearFilters={() => {
+          setSelectedCategoryId('all');
+          setSelectedSourceId('all');
+          setGroupByDay(true);
+        }}
+      />
 
       <TransactionModal
         isOpen={modalOpen}

@@ -30,9 +30,17 @@ export function BottomNav() {
 
   useEffect(() => {
     router.prefetch('/dashboard');
+    router.prefetch('/transacoes');
   }, [router]);
 
   const handleTabClick = (tab: MobileTab) => {
+    if (tab === 'statement') {
+      setActiveTab('statement');
+      if (pathname !== '/transacoes') {
+        router.push('/transacoes');
+      }
+      return;
+    }
     setActiveTab(tab);
     if (pathname !== '/dashboard') {
       router.push('/dashboard');

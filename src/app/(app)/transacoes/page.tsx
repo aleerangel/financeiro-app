@@ -34,7 +34,8 @@ export default async function TransacoesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Transações & Extrato"
-        description="Acompanhe receitas, despesas à vista e faturas de cartão de crédito."
+        description={<span className="hidden sm:inline">Acompanhe receitas, despesas à vista e faturas de cartão de crédito.</span>}
+        className="mb-2 sm:mb-6"
       />
 
       <TransactionsView
