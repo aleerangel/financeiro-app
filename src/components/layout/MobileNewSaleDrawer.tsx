@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { Product, Account, PaymentMethod, SalePaymentMethod, Client } from '@/types/database';
 import { createProduct } from '@/lib/actions/products';
 import { SimpleClient } from '@/lib/actions/clients';
@@ -43,7 +44,7 @@ export function MobileNewSaleDrawer() {
 
 function MobileNewSaleDrawerDialog() {
   const { setNewSaleOpen, notifyMutation } = useMobileNavigation();
-  const { businessName, salesLabel } = useBusinessProfile();
+  const { profile, businessName, salesLabel } = useBusinessProfile();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
@@ -362,7 +363,7 @@ function MobileNewSaleDrawerDialog() {
           <div className="px-5 py-3 border-b border-zinc-800 flex items-center justify-between shrink-0">
             <div>
               <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
-                <Scissors className="w-4 h-4 text-emerald-400 stroke-[2.5]" />
+                <SegmentIcon segment={profile.segment} className="w-4 h-4 text-emerald-400 stroke-[2.5]" />
                 <span>Novo(a) {salesLabel} • {businessName}</span>
               </h3>
               <span className="text-[11px] text-zinc-400">

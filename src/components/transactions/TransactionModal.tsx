@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, Scissors, User, Store } from 'lucide-react';
+import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, User, Store } from 'lucide-react';
 import { Account, CreditCard, Category, Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { createTransaction, updateTransaction } from '@/lib/actions/transactions';
 import { formatCurrency } from '@/lib/utils';

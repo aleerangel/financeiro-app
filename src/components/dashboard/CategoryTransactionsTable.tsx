@@ -6,12 +6,13 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CreditCard as CardIcon,
-  Scissors,
 } from 'lucide-react';
 import { Transaction } from '@/types/database';
 import { resolveTransactionCategoryInfo } from '@/lib/category-evolution-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 
 interface CategoryTransactionsTableProps {
   type: 'income' | 'expense';
@@ -34,6 +35,7 @@ export function CategoryTransactionsTable({
   searchQuery,
   onSearchChange,
 }: CategoryTransactionsTableProps) {
+  const { profile, businessName } = useBusinessProfile();
   const isIncome = type === 'income';
 
   return (
@@ -141,8 +143,8 @@ export function CategoryTransactionsTable({
                       </span>
                       {isBusinessTransaction(t) && (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
-                          <Scissors className="w-2.5 h-2.5" />
-                          Barbearia
+                          <SegmentIcon segment={profile.segment} className="w-2.5 h-2.5" />
+                          {businessName || 'Negócio'}
                         </span>
                       )}
                       {t.total_installments && t.total_installments > 1 && (

@@ -20,6 +20,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { formatSalesUnit, formatSplitCount } from '@/lib/business-presets';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
 
 export interface BusinessDashboardMobileProps {
@@ -37,7 +38,7 @@ export function BusinessDashboardMobile({
   loading = false,
 }: BusinessDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
-  const { salesLabel } = useBusinessProfile();
+  const { profile, salesLabel } = useBusinessProfile();
   const [engagementClient, setEngagementClient] = useState<{
     id: string;
     name: string;
@@ -207,7 +208,7 @@ export function BusinessDashboardMobile({
         <div className="grid grid-cols-2 gap-2.5 pt-1">
           <div className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl">
             <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 mb-0.5">
-              <Scissors className="w-3 h-3" /> Serviços ({revenueSplit.servicePercentage}%)
+              <SegmentIcon segment={profile.segment} className="w-3 h-3" /> Serviços ({revenueSplit.servicePercentage}%)
             </span>
             <span className="text-sm font-extrabold text-zinc-100 block">
               {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
@@ -310,7 +311,7 @@ export function BusinessDashboardMobile({
               className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <Scissors className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                 <div className="min-w-0">
                   <span className="font-bold text-zinc-100 text-xs block truncate">
                     {p.name}

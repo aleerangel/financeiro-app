@@ -3,38 +3,13 @@
 import React from 'react';
 import {
   X,
-  Scissors,
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
-  Briefcase,
-  ShoppingBag,
-  UtensilsCrossed,
-  Wrench,
-  Activity,
-  GraduationCap,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
-
-function SegmentSalesIcon({ segment, className }: { segment: string; className?: string }) {
-  switch (segment) {
-    case 'barbearia':
-      return <Scissors className={className} />;
-    case 'beleza_estetica':
-      return <Sparkles className={className} />;
-    case 'servicos_manutencao':
-      return <Wrench className={className} />;
-    case 'saude_consultorio':
-      return <Activity className={className} />;
-    case 'aulas_treinamento':
-      return <GraduationCap className={className} />;
-    case 'comercio_geral':
-      return <ShoppingBag className={className} />;
-    default:
-      return <Briefcase className={className} />;
-  }
-}
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 
 export function QuickActionDrawer() {
   const {
@@ -93,7 +68,7 @@ export function QuickActionDrawer() {
               className="w-full flex items-center gap-3.5 p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-left transition group active:scale-[0.98]"
             >
               <div className="w-11 h-11 rounded-xl bg-emerald-500 text-zinc-950 flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
-                <SegmentSalesIcon segment={profile.segment} className="w-5 h-5 stroke-[2.5]" />
+                <SegmentIcon segment={profile.segment} className="w-5 h-5 stroke-[2.5]" />
               </div>
               <div>
                 <span className="font-bold text-sm text-emerald-400 block">

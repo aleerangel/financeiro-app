@@ -7,13 +7,13 @@ import {
   ArrowUpRight,
   Calendar,
   Tag,
-  Scissors,
   User,
   CreditCard as CardIcon,
   HelpCircle,
 } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { Account, CreditCard, Category, PaymentMethod, FinancialScope } from '@/types/database';
 import {
   getCachedAccounts,
@@ -41,7 +41,7 @@ export function MobileQuickTransactionModal() {
 
 function MobileQuickTransactionModalDialog() {
   const { newTransactionModal, setNewTransactionModal, notifyMutation } = useMobileNavigation();
-  const { businessName, hasBusiness } = useBusinessProfile();
+  const { profile, businessName, hasBusiness } = useBusinessProfile();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -307,7 +307,7 @@ function MobileQuickTransactionModalDialog() {
                       : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <Scissors className="w-3 h-3 shrink-0" />
+                  <SegmentIcon segment={profile.segment} className="w-3 h-3 shrink-0" />
                   <span className="truncate">{businessName}</span>
                 </button>
               </div>

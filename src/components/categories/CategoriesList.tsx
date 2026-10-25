@@ -17,13 +17,15 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { CategoryIcon } from './CategoryIcon';
 import { CategoryModal } from './CategoryModal';
 import { isBusinessCategory } from '@/lib/business-scope-utils';
-import { Scissors } from 'lucide-react';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 
 interface CategoriesListProps {
   initialCategories: Category[];
 }
 
 export function CategoriesList({ initialCategories }: CategoriesListProps) {
+  const { profile, businessName } = useBusinessProfile();
   const { confirm } = useConfirm();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [searchTerm, setSearchTerm] = useState('');
@@ -220,8 +222,8 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
                     </span>
                     {isBusinessCategory(category) && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                        <Scissors className="w-2.5 h-2.5" />
-                        Barbearia
+                        <SegmentIcon segment={profile.segment} className="w-2.5 h-2.5" />
+                        {businessName || 'Negócio'}
                       </span>
                     )}
                     {category.is_default && (

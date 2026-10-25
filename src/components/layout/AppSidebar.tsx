@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useSidebar } from '@/context/SidebarContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { getSegmentIcon } from '@/components/ui/SegmentIcon';
 
 interface NavItem {
   href: string;
@@ -40,31 +41,12 @@ interface NavGroup {
   items: NavItem[];
 }
 
-function getSalesIcon(segment: string) {
-  switch (segment) {
-    case 'barbearia':
-      return Scissors;
-    case 'beleza_estetica':
-      return Sparkles;
-    case 'servicos_manutencao':
-      return Wrench;
-    case 'saude_consultorio':
-      return Activity;
-    case 'aulas_treinamento':
-      return GraduationCap;
-    case 'comercio_geral':
-      return ShoppingBag;
-    default:
-      return Briefcase;
-  }
-}
-
 export function AppSidebar() {
   const pathname = usePathname();
   const { collapsed } = useSidebar();
   const { profile, businessName, salesLabel, hasBusiness } = useBusinessProfile();
 
-  const SalesIcon = getSalesIcon(profile.segment);
+  const SalesIcon = getSegmentIcon(profile.segment);
 
   const navGroups: NavGroup[] = [
     {

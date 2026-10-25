@@ -19,7 +19,8 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { RecurrenceModal } from './RecurrenceModal';
 import { useDateContext } from '@/context/DateContext';
 import { isBusinessRecurrence } from '@/lib/business-scope-utils';
-import { Scissors } from 'lucide-react';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 
 interface RecurrencesListProps {
   initialRecurrences: Recurrence[];
@@ -34,6 +35,7 @@ export function RecurrencesList({
   cards,
   categories,
 }: RecurrencesListProps) {
+  const { profile, businessName } = useBusinessProfile();
   const { confirm } = useConfirm();
   const { month, year, formattedMonth } = useDateContext();
   const [recurrences, setRecurrences] = useState<Recurrence[]>(initialRecurrences);
@@ -194,8 +196,8 @@ export function RecurrencesList({
                     </h4>
                     {isBusinessRecurrence(rec) && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                        <Scissors className="w-2.5 h-2.5" />
-                        Barbearia
+                        <SegmentIcon segment={profile.segment} className="w-2.5 h-2.5" />
+                        {businessName || 'Negócio'}
                       </span>
                     )}
                     {!rec.active && (

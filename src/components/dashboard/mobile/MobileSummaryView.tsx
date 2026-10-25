@@ -21,6 +21,7 @@ import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
 import { formatCurrency } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { MonthlyBarChart } from '../MonthlyBarChart';
 import { CategoryDonutChart } from '../CategoryDonutChart';
 import { SmoothLineChart, ChartSeries } from '../SmoothLineChart';
@@ -52,7 +53,7 @@ export function MobileSummaryView({
   accounts = [],
 }: MobileSummaryViewProps) {
   const { showValues } = useMobileNavigation();
-  const { hasBusiness, businessName } = useBusinessProfile();
+  const { profile, hasBusiness, businessName } = useBusinessProfile();
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
   // Filtro de métrica selecionada para a Evolução Financeira ('all' ou individual)
@@ -645,7 +646,7 @@ export function MobileSummaryView({
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Scissors className="w-4 h-4 text-emerald-400" />
+              <SegmentIcon segment={profile.segment} className="w-4 h-4 text-emerald-400" />
               <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
                 Inteligência de {businessName}
               </h3>
@@ -681,7 +682,7 @@ export function MobileSummaryView({
                     {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
                   </span>
                 </div>
-                <Scissors className="w-4 h-4 text-emerald-500/50" />
+                <SegmentIcon segment={profile.segment} className="w-4 h-4 text-emerald-500/50" />
               </div>
               <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
                 <div>

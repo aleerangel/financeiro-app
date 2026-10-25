@@ -1,19 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Scissors, Package, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Package, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Product } from '@/types/database';
 import { toggleProductActive, deleteProduct } from '@/lib/actions/products';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ProductModal } from './ProductModal';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 
 interface ProductsListProps {
   initialProducts: Product[];
 }
 
 export function ProductsList({ initialProducts }: ProductsListProps) {
+  const { profile } = useBusinessProfile();
   const { confirm } = useConfirm();
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [modalOpen, setModalOpen] = useState(false);
@@ -106,7 +109,7 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                     style={{ backgroundColor: prod.color || '#3b82f6' }}
                   >
                     {isService ? (
-                      <Scissors className="w-5 h-5" />
+                      <SegmentIcon segment={profile.segment} className="w-5 h-5" />
                     ) : (
                       <Package className="w-5 h-5" />
                     )}

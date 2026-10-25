@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { X, ArrowDownRight, ArrowUpRight, Scissors, User, Store } from 'lucide-react';
+import { X, ArrowDownRight, ArrowUpRight, User, Store } from 'lucide-react';
 import { Account, CreditCard, Category, TransactionType, Recurrence, FinancialScope } from '@/types/database';
 import { createRecurrence, updateRecurrence } from '@/lib/actions/recurrences';
 import { isBusinessCategory, isBusinessRecurrence } from '@/lib/business-scope-utils';

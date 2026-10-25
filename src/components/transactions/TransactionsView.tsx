@@ -12,7 +12,6 @@ import {
   Trash2,
   Filter,
   Pencil,
-  Scissors,
   Store,
   Search,
   CalendarDays,

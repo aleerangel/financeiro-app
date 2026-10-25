@@ -22,6 +22,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { ExportDropdown } from '@/components/ui/ExportDropdown';
 import { exportSalesReport, ExportFormat } from '@/lib/export-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { AmortizeModal } from './AmortizeModal';
 
 const NewSaleModal = dynamic(
@@ -54,7 +55,7 @@ export function SalesView({
   initialClientId = null,
 }: SalesViewProps) {
   const { confirm } = useConfirm();
-  const { salesLabel } = useBusinessProfile();
+  const { profile, salesLabel } = useBusinessProfile();
   const [sales, setSales] = useState<Sale[]>(initialSales);
   const [modalOpen, setModalOpen] = useState(Boolean(initialClientId));
   const [amortizeSaleTarget, setAmortizeSaleTarget] = useState<Sale | null>(null);
@@ -330,7 +331,7 @@ export function SalesView({
                       : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                   }`}
                 >
-                  <Scissors className="w-5 h-5" />
+                  <SegmentIcon segment={profile.segment} className="w-5 h-5" />
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -443,9 +444,9 @@ export function SalesView({
 
         {displayedSales.length === 0 && (
           <div className="py-16 text-center text-zinc-500">
-            <Scissors className="w-8 h-8 mx-auto mb-2 opacity-30 text-emerald-400" />
+            <SegmentIcon segment={profile.segment} className="w-8 h-8 mx-auto mb-2 opacity-30 text-emerald-400" />
             <p className="text-sm font-medium">
-              Nenhum atendimento registrado{' '}
+              Nenhum(a) {salesLabel.toLowerCase()} registrado(a){' '}
               {filterMode === 'today'
                 ? 'hoje'
                 : filterMode === 'pending'

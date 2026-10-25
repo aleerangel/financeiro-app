@@ -33,6 +33,7 @@ import { BusinessDashboardMobile } from './mobile/BusinessDashboardMobile';
 import { GeneralDashboardMobile } from './mobile/GeneralDashboardMobile';
 import { LegacyWelcomeBanner } from './LegacyWelcomeBanner';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { BusinessSettingsModal } from '@/components/settings/BusinessSettingsModal';
 
 // Abas secundárias do mobile carregadas sob demanda (evita sobrecarga de JS inicial)
@@ -127,9 +128,9 @@ export function DashboardView({
   initialIsMobile = false,
 }: DashboardViewProps) {
   const { month, year, formattedMonth } = useDateContext();
-  const isMobile = useIsMobile(768, initialIsMobile);
+  const { isMobile } = { isMobile: useIsMobile(768, initialIsMobile) };
   const { activeTab, contextMode } = useMobileNavigation();
-  const { businessName, hasBusiness } = useBusinessProfile();
+  const { profile, businessName, hasBusiness, salesLabel } = useBusinessProfile();
 
   const [businessSettingsOpen, setBusinessSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'business' | 'general'>(hasBusiness ? 'business' : 'general');
@@ -621,7 +622,7 @@ export function DashboardView({
                     : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
-                <Scissors className="w-3.5 h-3.5" />
+                <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5" />
                 {businessName}
               </button>
               <button
@@ -669,8 +670,8 @@ export function DashboardView({
                 href="/vendas"
                 className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
               >
-                <Scissors className="w-4 h-4 stroke-[2.5]" />
-                Novo Atendimento
+                <SegmentIcon segment={profile.segment} className="w-4 h-4 stroke-[2.5]" />
+                Novo(a) {salesLabel}
               </Link>
             </div>
           ) : (
@@ -680,7 +681,7 @@ export function DashboardView({
                   href="/vendas"
                   className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold text-xs sm:text-sm rounded-xl transition shadow-sm"
                 >
-                  <Scissors className="w-4 h-4 text-emerald-400" />
+                  <SegmentIcon segment={profile.segment} className="w-4 h-4 text-emerald-400" />
                   Balcão Negócio
                 </Link>
               )}

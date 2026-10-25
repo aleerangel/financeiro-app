@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   DollarSign,
   Cake,
-  Scissors,
   Check,
   ExternalLink,
   Trash2,
@@ -28,6 +27,8 @@ import {
 import { AppNotification } from '@/types/notifications';
 import { NotificationPreferencesModal } from './NotificationPreferencesModal';
 import { toast } from 'sonner';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 
 interface NotificationBellProps {
   userEmail?: string;
@@ -51,6 +52,7 @@ function formatNotificationDate(isoString: string): string {
 
 export function NotificationBell({ userEmail, className = '' }: NotificationBellProps) {
   const router = useRouter();
+  const { profile } = useBusinessProfile();
   const [isOpen, setIsOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -176,7 +178,7 @@ export function NotificationBell({ userEmail, className = '' }: NotificationBell
       case 'birthday':
         return <Cake className="w-4 h-4 text-pink-400" />;
       case 'client_return':
-        return <Scissors className="w-4 h-4 text-blue-400" />;
+        return <SegmentIcon segment={profile.segment} className="w-4 h-4 text-blue-400" />;
       default:
         return <Bell className="w-4 h-4 text-emerald-400" />;
     }

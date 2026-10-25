@@ -13,11 +13,12 @@ import { useDateContext } from '@/context/DateContext';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 
 export function MobileHeader() {
   const { formattedMonth, prevMonth, nextMonth, month, year, setMonthYear } = useDateContext();
   const { activeTab, contextMode, setContextMode, showValues, setShowValues } = useMobileNavigation();
-  const { businessName, hasBusiness } = useBusinessProfile();
+  const { profile, businessName, hasBusiness } = useBusinessProfile();
 
   const isHome = activeTab === 'home';
 
@@ -58,7 +59,7 @@ export function MobileHeader() {
                     : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
-                <Scissors className="w-3.5 h-3.5 stroke-[2.5] shrink-0" />
+                <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 stroke-[2.5] shrink-0" />
                 <span className="truncate">{businessName}</span>
               </button>
               <button

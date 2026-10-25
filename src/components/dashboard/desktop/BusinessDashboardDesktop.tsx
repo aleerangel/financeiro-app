@@ -33,6 +33,7 @@ import {
 } from '../ChartPeriodToolbar';
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 import { formatSalesUnit, formatSplitCount } from '@/lib/business-presets';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { useState } from 'react';
 import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
@@ -73,7 +74,7 @@ export function BusinessDashboardDesktop({
     daysSinceLastVisit: number;
   } | null>(null);
 
-  const { businessName, salesLabel } = useBusinessProfile();
+  const { profile, businessName, salesLabel } = useBusinessProfile();
   const { month, year } = useDateContext();
   const businessChart = useIndependentChartPeriod<
     BusinessDashboardData,
@@ -638,7 +639,7 @@ export function BusinessDashboardDesktop({
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl">
                   <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold mb-1">
-                    <Scissors className="w-3.5 h-3.5" />
+                    <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5" />
                     <span>Serviços ({data.revenueSplit?.servicePercentage || 0}%)</span>
                   </div>
                   <span className="text-base sm:text-lg font-extrabold text-zinc-100 block">
@@ -766,7 +767,7 @@ export function BusinessDashboardDesktop({
                   {data.topProducts.map((p, idx) => (
                     <tr key={`${p.name}-${idx}`} className="hover:bg-zinc-800/30 transition">
                       <td className="py-3 font-medium text-zinc-100 flex items-center gap-2">
-                        <Scissors className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                         <span className="truncate max-w-[130px] sm:max-w-none">{p.name}</span>
                       </td>
                       <td className="py-3 text-center text-zinc-300 font-semibold">

@@ -5,6 +5,8 @@ import { X } from 'lucide-react';
 import { Product, ProductType } from '@/types/database';
 import { createProduct, updateProduct } from '@/lib/actions/products';
 import { toast } from 'sonner';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { getSegmentEmoji } from '@/components/ui/SegmentIcon';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -29,6 +31,7 @@ export function ProductModal({
   productToEdit,
   onSuccess,
 }: ProductModalProps) {
+  const { profile } = useBusinessProfile();
   const [name, setName] = useState(productToEdit?.name || '');
   const [type, setType] = useState<ProductType>(productToEdit?.type || 'service');
   const [price, setPrice] = useState(
@@ -116,7 +119,7 @@ export function ProductModal({
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              ✂️ Serviço
+              {getSegmentEmoji(profile.segment)} Serviço
             </button>
             <button
               type="button"
@@ -127,7 +130,7 @@ export function ProductModal({
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              🧴 Produto Físico
+              📦 Produto Físico
             </button>
           </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Check, Scissors, User, Store } from 'lucide-react';
+import { X, Check, User, Store } from 'lucide-react';
 import { Category, CategoryType, FinancialScope } from '@/types/database';
 import { createCategory, updateCategory } from '@/lib/actions/categories';
 import { CATEGORY_ICONS_LIST, CategoryIcon } from './CategoryIcon';

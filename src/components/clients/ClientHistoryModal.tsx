@@ -17,6 +17,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { ClientWithStats } from '@/lib/actions/clients';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import {
   ClientReturnStatus,
   RawClientSale,
@@ -95,6 +97,7 @@ export function ClientHistoryModal({
   onAmortizeClient,
   onAmortizeSale,
 }: ClientHistoryModalProps) {
+  const { profile, salesLabel } = useBusinessProfile();
   if (!client) return null;
 
   const { analytics, salesHistory } = client;
@@ -166,8 +169,8 @@ export function ClientHistoryModal({
               href={`/vendas?clientId=${client.id}`}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/10"
             >
-              <Scissors className="w-3.5 h-3.5 stroke-[2.5]" />
-              Novo Atendimento
+              <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 stroke-[2.5]" />
+              Novo(a) {salesLabel}
             </Link>
 
             {Number(client.totalDebt || 0) > 0 && onAmortizeClient && (

@@ -14,7 +14,6 @@ import {
   Sparkles,
   Repeat,
   Layers,
-  Scissors,
   Store,
 } from 'lucide-react';
 import { Transaction } from '@/types/database';
