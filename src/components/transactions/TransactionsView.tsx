@@ -52,6 +52,8 @@ import {
   groupTransactionsByDay,
 } from '@/lib/transaction-filter-utils';
 
+import { CategorySelectDropdown } from './CategorySelectDropdown';
+
 const TransactionModal = dynamic(
   () => import('./TransactionModal').then((m) => m.TransactionModal),
   { ssr: false }
@@ -728,61 +730,16 @@ export function TransactionsView({
         </div>
       </div>
 
-      {/* 4. LINHA 4: Categorias Ativas do Mês, Contador & Alternador de Modo */}
+      {/* 4. LINHA 4: Categorias Ativas do Mês & Alternador de Modo */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* Dropdown Inteligente de Categorias */}
-          <div className="flex-1 sm:max-w-xs min-w-0">
-            <select
-              value={selectedCategoryId}
-              onChange={(e) => setSelectedCategoryId(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer truncate"
-            >
-              <option value="all">
-                🏷️ Todas as Categorias ({activeCategoriesWithCount.totalCount})
-              </option>
-              {activeCategoriesWithCount.incomeCategories.length > 0 && (
-                <optgroup label="Receitas do Mês">
-                  {activeCategoriesWithCount.incomeCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      🟢 {c.name} ({c.count})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {activeCategoriesWithCount.expenseCategories.length > 0 && (
-                <optgroup label="Despesas do Mês">
-                  {activeCategoriesWithCount.expenseCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      🔴 {c.name} ({c.count})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {activeCategoriesWithCount.uncategorizedCount > 0 && (
-                <option value="none">
-                  ⚪ Sem Categoria ({activeCategoriesWithCount.uncategorizedCount})
-                </option>
-              )}
-            </select>
-          </div>
-
-          {/* Contador de Lançamentos */}
-          <span className="text-[11px] text-zinc-400 px-2.5 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg shrink-0">
-            <strong className="text-zinc-100 font-bold">{filteredTransactions.length}</strong>{' '}
-            {filteredTransactions.length === 1 ? 'lançamento' : 'lançamentos'}
-          </span>
-
-          {selectedCategoryId !== 'all' && (
-            <button
-              type="button"
-              onClick={() => setSelectedCategoryId('all')}
-              className="p-1.5 text-zinc-400 hover:text-rose-400 rounded-lg hover:bg-zinc-800 transition shrink-0"
-              title="Limpar filtro de categoria"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <CategorySelectDropdown
+            categories={initialCategories}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={setSelectedCategoryId}
+            activeCategories={activeCategoriesWithCount}
+          />
         </div>
 
         {/* Alternador de Visualização: Por Dia vs Lista Corrida */}
