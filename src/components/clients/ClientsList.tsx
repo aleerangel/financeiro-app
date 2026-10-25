@@ -15,7 +15,6 @@ import {
   TrendingUp,
   Clock,
   Crown,
-  Scissors,
   Eye,
   ArrowUpDown,
   Radar,

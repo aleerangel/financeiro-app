@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 import {
-  Scissors,
   TrendingUp,
   Users,
   Wallet,

@@ -102,9 +102,9 @@ export function DevAccountSwitcher() {
                   setLoading('logout');
                   const supabase = createClient();
                   await supabase.auth.signOut();
-                  window.location.href = '/login?manual=true';
+                  window.location.replace('/login?manual=true');
                 } catch {
-                  window.location.href = '/login?manual=true';
+                  window.location.replace('/login?manual=true');
                 }
               }}
               className="w-full text-left px-2.5 py-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-zinc-800 flex items-center gap-2 transition text-[11px] disabled:opacity-50"

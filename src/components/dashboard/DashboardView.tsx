@@ -5,7 +5,6 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
   Plus,
-  Scissors,
   Layers,
   Store,
 } from 'lucide-react';

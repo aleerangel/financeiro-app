@@ -10,19 +10,11 @@ import {
   CreditCard,
   Repeat,
   Tags,
-  Scissors,
   Receipt,
   Users,
   Crown,
   Package,
-  Sparkles,
-  Briefcase,
-  ShoppingBag,
-  UtensilsCrossed,
   Store,
-  Wrench,
-  Activity,
-  GraduationCap,
 } from 'lucide-react';
 import { useSidebar } from '@/context/SidebarContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';

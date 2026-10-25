@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
-  Scissors,
   Pencil,
   TrendingUp,
   TrendingDown,

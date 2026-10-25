@@ -21,24 +21,21 @@ import { BusinessSegment } from '@/types/database';
  * Comércio Geral: ShoppingBag
  * Outro / Geral: Briefcase
  */
+const SEGMENT_ICON_MAP: Record<string, LucideIcon> = {
+  barbearia: Scissors,
+  beleza_estetica: Sparkles,
+  servicos_manutencao: Wrench,
+  saude_consultorio: Stethoscope,
+  aulas_treinamento: Dumbbell,
+  comercio_geral: ShoppingBag,
+  outro: Briefcase,
+};
+
 export function getSegmentIcon(segment?: BusinessSegment | string | null): LucideIcon {
-  switch (segment) {
-    case 'barbearia':
-      return Scissors;
-    case 'beleza_estetica':
-      return Sparkles;
-    case 'servicos_manutencao':
-      return Wrench;
-    case 'saude_consultorio':
-      return Stethoscope;
-    case 'aulas_treinamento':
-      return Dumbbell;
-    case 'comercio_geral':
-      return ShoppingBag;
-    case 'outro':
-    default:
-      return Briefcase;
+  if (segment && segment in SEGMENT_ICON_MAP) {
+    return SEGMENT_ICON_MAP[segment];
   }
+  return Briefcase;
 }
 
 /**
@@ -71,7 +68,22 @@ export interface SegmentIconProps {
 }
 
 export function SegmentIcon({ segment, className, strokeWidth }: SegmentIconProps) {
-  const Icon = getSegmentIcon(segment);
-  return <Icon className={className} strokeWidth={strokeWidth} />;
+  switch (segment) {
+    case 'barbearia':
+      return <Scissors className={className} strokeWidth={strokeWidth} />;
+    case 'beleza_estetica':
+      return <Sparkles className={className} strokeWidth={strokeWidth} />;
+    case 'servicos_manutencao':
+      return <Wrench className={className} strokeWidth={strokeWidth} />;
+    case 'saude_consultorio':
+      return <Stethoscope className={className} strokeWidth={strokeWidth} />;
+    case 'aulas_treinamento':
+      return <Dumbbell className={className} strokeWidth={strokeWidth} />;
+    case 'comercio_geral':
+      return <ShoppingBag className={className} strokeWidth={strokeWidth} />;
+    case 'outro':
+    default:
+      return <Briefcase className={className} strokeWidth={strokeWidth} />;
+  }
 }
 

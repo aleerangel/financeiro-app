@@ -11,7 +11,6 @@ import {
   Landmark,
   ArrowLeftRight,
   Pencil,
-  Scissors,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';

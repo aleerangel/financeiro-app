@@ -4,7 +4,6 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Plus,
-  Scissors,
   Users,
   DollarSign,
   Trash2,
