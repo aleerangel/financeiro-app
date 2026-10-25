@@ -240,6 +240,11 @@ describe('whatsapp-templates', () => {
     const outroTemplates = getTemplatesForSegment('outro');
     expect(outroTemplates).toEqual(DEFAULT_NEUTRAL_TEMPLATES);
     expect(outroTemplates.returnWindowCasual).toContain('último atendimento com a gente');
+
+    // Recibo Amigável para todos os segmentos
+    expect(barbeariaTemplates.receiptFriendly).toBeDefined();
+    expect(manutencaoTemplates.receiptFriendly).toContain('ordem de serviço');
+    expect(belezaTemplates.receiptFriendly).toContain('Adorei te atender hoje!');
   });
 });
 

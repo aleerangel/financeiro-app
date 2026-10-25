@@ -7,14 +7,25 @@ export interface BusinessMessageSettings {
   pix_key_type: PixKeyType;
   pix_key: string | null;
   pix_holder_name: string | null;
+  // Cobrança
   template_friendly: string | null;
   template_default: string | null;
   template_firm: string | null;
+  // Recibo de Venda / Atendimento
   template_sale_credit_receipt: string | null;
+  template_sale_receipt_friendly?: string | null;
+  // Retorno (Pós-Venda)
   template_return_window?: string | null;
+  template_return_window_vip?: string | null;
+  // Inativos (Resgate)
   template_inactive_recovery?: string | null;
+  template_inactive_recovery_promo?: string | null;
+  // Aniversário
   template_birthday?: string | null;
+  template_birthday_gift?: string | null;
+  // Clube / Mensalidades
   template_subscription_invoice?: string | null;
+  template_subscription_receipt?: string | null;
   include_pix_default: boolean;
 }
 
@@ -45,6 +56,7 @@ export interface SegmentWhatsAppTemplates {
   default: string;
   firm: string;
   creditReceipt: string;
+  receiptFriendly: string;
   returnWindowCasual: string;
   returnWindowVip: string;
   inactiveRecoveryCasual: string;
@@ -65,6 +77,8 @@ export const BARBER_TEMPLATES: SegmentWhatsAppTemplates = {
     'Olá {nome}, tudo bem? Consta uma pendência financeira em aberto na barbearia no valor de {valor}{atraso_texto}. Solicitamos a gentileza de realizar a quitação ou entrar em contato para combinarmos o acerto o quanto antes.{bloco_pix}{assinatura}',
   creditReceipt:
     'Fala {primeiro_nome}, valeu demais pela presença hoje aqui na barbearia! 💈✂️\n\nRegistramos seu atendimento a prazo:\n{itens}\nTotal: {valor}\nCombinado para: {vencimento}\n\nTmj e até a próxima!{bloco_pix}{assinatura}',
+  receiptFriendly:
+    'Fala {primeiro_nome}, valeu demais pela confiança e presença hoje aqui na barbearia! 💈✂️\n\nResumo do seu atendimento:\n{itens}\nTotal: {valor}\nForma de pagamento: {metodo_pagamento}\n\nTmj e até a próxima!{bloco_pix}{assinatura}',
   returnWindowCasual:
     'Fala {primeiro_nome}, tudo na paz, irmão? Já faz cerca de {dias_ultima_visita} dias desde o seu último corte aqui com a gente. Bora renovar o visual essa semana? ✂️💈{assinatura}',
   returnWindowVip:
@@ -95,6 +109,8 @@ export const BEAUTY_TEMPLATES: SegmentWhatsAppTemplates = {
     'Olá {nome}, tudo bem? Consta uma pendência financeira em aberto no valor de {valor}{atraso_texto}. Solicitamos a gentileza de realizar a quitação ou nos contatar para combinarmos o acerto.{bloco_pix}{assinatura}',
   creditReceipt:
     'Olá {primeiro_nome}! Muito obrigada pelo carinho e presença hoje! ✨💖\n\nRegistramos seu atendimento a prazo:\n{itens}\nTotal: {valor}\nCombinado para: {vencimento}\n\nAté a próxima!{bloco_pix}{assinatura}',
+  receiptFriendly:
+    'Olá {primeiro_nome}! Adorei te atender hoje! ✨💖\n\nResumo do seu atendimento:\n{itens}\nTotal: {valor}\nForma de pagamento: {metodo_pagamento}\n\nMuito obrigada pela preferência e até breve!{bloco_pix}{assinatura}',
   returnWindowCasual:
     'Olá {primeiro_nome}, tudo bem? ✨ Notamos que já faz cerca de {dias_ultima_visita} dias desde o seu último atendimento. Que tal reservar um momento especial para você e renovar o seu autocuidado essa semana? 💅💖{assinatura}',
   returnWindowVip:
@@ -123,6 +139,8 @@ export const MAINTENANCE_TEMPLATES: SegmentWhatsAppTemplates = {
     'Olá {nome}, tudo bem? Consta uma pendência financeira em aberto referente à ordem de serviço no valor de {valor}{atraso_texto}. Solicitamos a gentileza de efetuar o pagamento ou entrar em contato para alinharmos a quitação.{bloco_pix}{assinatura}',
   creditReceipt:
     'Olá {primeiro_nome}! Segue o comprovante da sua ordem de serviço concluída:\n\n{itens}\nTotal: {valor}\nCombinado para: {vencimento}\n\nServiço entregue com garantia. Obrigado pela preferência! 🔧{bloco_pix}{assinatura}',
+  receiptFriendly:
+    'Olá {primeiro_nome}, muito obrigado pela preferência e confiança no nosso trabalho! 🔧\n\nResumo da ordem de serviço:\n{itens}\nTotal: {valor}\nForma de pagamento: {metodo_pagamento}\n\nQualquer dúvida sobre o serviço ou garantia, estamos à disposição!{bloco_pix}{assinatura}',
   returnWindowCasual:
     'Olá {primeiro_nome}, tudo bem? Já faz cerca de {dias_ultima_visita} dias desde o último serviço realizado. Tudo funcionando perfeitamente? Se precisar de alguma revisão preventiva ou novo reparo, estamos à disposição! 🔧{assinatura}',
   returnWindowVip:
@@ -151,6 +169,8 @@ export const HEALTH_TEMPLATES: SegmentWhatsAppTemplates = {
     'Olá {nome}, tudo bem? Consta uma pendência financeira em aberto referente aos atendimentos clínicos no valor de {valor}{atraso_texto}. Solicitamos a gentileza de realizar a quitação ou nos contatar para organizarmos o acerto.{bloco_pix}{assinatura}',
   creditReceipt:
     'Olá {primeiro_nome}, agradecemos a sua presença na consulta de hoje!\n\nRegistramos seu atendimento:\n{itens}\nTotal: {valor}\nCombinado para: {vencimento}\n\nConte sempre conosco para cuidar da sua saúde e bem-estar! 🩺💙{bloco_pix}{assinatura}',
+  receiptFriendly:
+    'Olá {primeiro_nome}, foi um prazer te atender na consulta de hoje! 🩺💙\n\nResumo do atendimento:\n{itens}\nTotal: {valor}\nForma de pagamento: {metodo_pagamento}\n\nConte sempre conosco para cuidar da sua saúde e bem-estar!{bloco_pix}{assinatura}',
   returnWindowCasual:
     'Olá {primeiro_nome}, tudo bem? Já faz cerca de {dias_ultima_visita} dias desde a sua última consulta. Como você tem passado? Lembre-se de que a continuidade e o acompanhamento regular são essenciais para os seus resultados. Se desejar agendar o retorno, estou à disposição! 🩺{assinatura}',
   returnWindowVip:
@@ -179,6 +199,8 @@ export const TRAINING_TEMPLATES: SegmentWhatsAppTemplates = {
     'Olá {nome}, tudo bem? Consta uma pendência financeira em aberto no valor de {valor}{atraso_texto}. Solicitamos a gentileza de realizar a quitação para mantermos o cronograma de aulas regularizado.{bloco_pix}{assinatura}',
   creditReceipt:
     'Fala {primeiro_nome}! Treino/aula de hoje concluído com sucesso! 🎯\n\nRegistramos seu pacote/sessões:\n{itens}\nTotal: {valor}\nCombinado para: {vencimento}\n\nFoco na evolução e até a próxima! 💪🔥{bloco_pix}{assinatura}',
+  receiptFriendly:
+    'Fala {primeiro_nome}, treino de hoje concluído com sucesso e foco total! 💪🔥\n\nResumo do seu plano/aulas:\n{itens}\nTotal: {valor}\nForma de pagamento: {metodo_pagamento}\n\nFoco na consistência e até a próxima!{bloco_pix}{assinatura}',
   returnWindowCasual:
     'Fala {primeiro_nome}, tudo na paz? Já faz cerca de {dias_ultima_visita} dias desde a sua última sessão. A consistência é a chave para o resultado! Bora agendar os próximos treinos/aulas dessa semana? 💪🎯{assinatura}',
   returnWindowVip:
@@ -207,6 +229,8 @@ export const COMMERCE_TEMPLATES: SegmentWhatsAppTemplates = {
     'Olá {nome}, tudo bem? Consta uma pendência financeira em aberto referente aos pedidos/mercadorias no valor de {valor}{atraso_texto}. Solicitamos a gentileza de realizar a quitação ou nos contatar para combinarmos o pagamento.{bloco_pix}{assinatura}',
   creditReceipt:
     'Olá {primeiro_nome}! Muito obrigado pela compra!\n\nRegistramos seu pedido a prazo:\n{itens}\nTotal: {valor}\nCombinado para: {vencimento}\n\nEsperamos que aproveite muito! Qualquer dúvida estamos por aqui! 🛍️✨{bloco_pix}{assinatura}',
+  receiptFriendly:
+    'Olá {primeiro_nome}! Muito obrigado pelas compras na nossa loja! 🛍️✨\n\nResumo do seu pedido:\n{itens}\nTotal: {valor}\nForma de pagamento: {metodo_pagamento}\n\nEsperamos que aproveite muito! Qualquer dúvida estamos à disposição!{bloco_pix}{assinatura}',
   returnWindowCasual:
     'Olá {primeiro_nome}, tudo bem? Já faz cerca de {dias_ultima_visita} dias desde sua última comprinha com a gente. Recebemos várias novidades incríveis essa semana! Que tal dar uma conferida? 🛍️✨{assinatura}',
   returnWindowVip:
@@ -235,6 +259,8 @@ export const DEFAULT_NEUTRAL_TEMPLATES: SegmentWhatsAppTemplates = {
     'Olá {nome}, tudo bem? Consta uma pendência financeira em aberto no valor de {valor}{atraso_texto}. Solicitamos a gentileza de realizar a quitação ou entrar em contato para combinarmos o acerto o quanto antes.{bloco_pix}{assinatura}',
   creditReceipt:
     'Olá {primeiro_nome}, muito obrigado pela preferência!\n\nRegistramos seu atendimento a prazo:\n{itens}\nTotal: {valor}\nCombinado para: {vencimento}\n\nQualquer dúvida estou à disposição!{bloco_pix}{assinatura}',
+  receiptFriendly:
+    'Olá {primeiro_nome}, agradecemos a sua preferência e parceria!\n\nResumo do atendimento:\n{itens}\nTotal: {valor}\nForma de pagamento: {metodo_pagamento}\n\nQualquer dúvida estou à disposição!{bloco_pix}{assinatura}',
   returnWindowCasual:
     'Olá {primeiro_nome}, tudo bem? Já faz cerca de {dias_ultima_visita} dias desde o seu último atendimento com a gente. Como estão as coisas? Se precisar agendar novos serviços, estamos à disposição!{assinatura}',
   returnWindowVip:

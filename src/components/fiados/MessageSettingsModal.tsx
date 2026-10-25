@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Settings,
@@ -9,6 +9,11 @@ import {
   Save,
   RotateCcw,
   HelpCircle,
+  Receipt,
+  HandCoins,
+  Clock,
+  Cake,
+  Crown,
 } from 'lucide-react';
 import {
   BusinessMessageSettings,
@@ -17,6 +22,7 @@ import {
   PIX_KEY_LABELS,
 } from '@/lib/whatsapp-templates';
 import { saveMessageSettings } from '@/lib/actions/message-settings';
+import { getSubscriptionPlans } from '@/lib/actions/subscriptions';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { getSegmentConfig } from '@/lib/business-presets';
 import { toast } from 'sonner';
@@ -26,19 +32,32 @@ interface MessageSettingsModalProps {
   onClose: () => void;
   initialSettings: BusinessMessageSettings;
   onSaved?: (settings: BusinessMessageSettings) => void;
+  hasSubscriptions?: boolean;
 }
+
+type MessageCategory =
+  | 'sale_receipt'
+  | 'collection'
+  | 'return_window'
+  | 'inactive'
+  | 'birthday'
+  | 'subscription';
 
 export function MessageSettingsModal({
   isOpen,
   onClose,
   initialSettings,
   onSaved,
+  hasSubscriptions: hasSubscriptionsProp,
 }: MessageSettingsModalProps) {
   const { profile, businessName } = useBusinessProfile();
   const segmentConfig = getSegmentConfig(profile.segment);
   const segmentTemplates = getTemplatesForSegment(profile.segment);
 
-  const [activeTab, setActiveTab] = useState<'pix' | 'templates'>('pix');
+  const [activeTab, setActiveTab] = useState<'pix' | 'templates'>('templates');
+  const [hasSubscriptions, setHasSubscriptions] = useState(hasSubscriptionsProp ?? false);
+
+  // Chave Pix
   const [pixKeyType, setPixKeyType] = useState<PixKeyType>(
     initialSettings.pix_key_type || 'phone'
   );
@@ -50,53 +69,227 @@ export function MessageSettingsModal({
     initialSettings.include_pix_default ?? true
   );
 
-  // Templates especializados no segmento ativo
-  const [templateFriendly, setTemplateFriendly] = useState(
-    initialSettings.template_friendly || segmentTemplates.friendly
+  // 1. Recibo de Venda
+  const [receiptFriendly, setReceiptFriendly] = useState(
+    initialSettings.template_sale_receipt_friendly || segmentTemplates.receiptFriendly
   );
-  const [templateDefault, setTemplateDefault] = useState(
-    initialSettings.template_default || segmentTemplates.default
-  );
-  const [templateFirm, setTemplateFirm] = useState(
-    initialSettings.template_firm || segmentTemplates.firm
-  );
-  const [templateCreditReceipt, setTemplateCreditReceipt] = useState(
+  const [receiptDetailed, setReceiptDetailed] = useState(
     initialSettings.template_sale_credit_receipt || segmentTemplates.creditReceipt
   );
-  const [templateReturnWindow, setTemplateReturnWindow] = useState(
+
+  // 2. Cobrança
+  const [collectionFriendly, setCollectionFriendly] = useState(
+    initialSettings.template_friendly || segmentTemplates.friendly
+  );
+  const [collectionDefault, setCollectionDefault] = useState(
+    initialSettings.template_default || segmentTemplates.default
+  );
+  const [collectionFirm, setCollectionFirm] = useState(
+    initialSettings.template_firm || segmentTemplates.firm
+  );
+
+  // 3. Retorno
+  const [returnCasual, setReturnCasual] = useState(
     initialSettings.template_return_window || segmentTemplates.returnWindowCasual
   );
-  const [templateInactiveRecovery, setTemplateInactiveRecovery] = useState(
-    initialSettings.template_inactive_recovery ||
-      segmentTemplates.inactiveRecoveryCasual
+  const [returnVip, setReturnVip] = useState(
+    initialSettings.template_return_window_vip || segmentTemplates.returnWindowVip
   );
-  const [templateBirthday, setTemplateBirthday] = useState(
+
+  // 4. Inativos
+  const [inactiveCasual, setInactiveCasual] = useState(
+    initialSettings.template_inactive_recovery || segmentTemplates.inactiveRecoveryCasual
+  );
+  const [inactivePromo, setInactivePromo] = useState(
+    initialSettings.template_inactive_recovery_promo || segmentTemplates.inactiveRecoveryPromo
+  );
+
+  // 5. Aniversário
+  const [birthdayCasual, setBirthdayCasual] = useState(
     initialSettings.template_birthday || segmentTemplates.birthdayCasual
   );
+  const [birthdayGift, setBirthdayGift] = useState(
+    initialSettings.template_birthday_gift || segmentTemplates.birthdayGift
+  );
 
-  const [selectedTemplateTab, setSelectedTemplateTab] = useState<
-    | 'friendly'
-    | 'default'
-    | 'firm'
-    | 'creditReceipt'
-    | 'returnWindow'
-    | 'inactiveRecovery'
-    | 'birthday'
-  >('friendly');
+  // 6. Mensalidades / Planos
+  const [subInvoice, setSubInvoice] = useState(
+    initialSettings.template_subscription_invoice || segmentTemplates.subscriptionInvoice
+  );
+  const [subReceipt, setSubReceipt] = useState(
+    initialSettings.template_subscription_receipt || segmentTemplates.subscriptionReceipt
+  );
+
+  // 1º Nível: Categoria Ativa
+  const [activeCategory, setActiveCategory] = useState<MessageCategory>('sale_receipt');
+
+  // 2º Nível: Tom Selecionado por categoria
+  const [toneReceipt, setToneReceipt] = useState<'friendly' | 'detailed'>('friendly');
+  const [toneCollection, setToneCollection] = useState<'friendly' | 'default' | 'firm'>('friendly');
+  const [toneReturn, setToneReturn] = useState<'casual' | 'vip'>('casual');
+  const [toneInactive, setToneInactive] = useState<'casual' | 'promo'>('casual');
+  const [toneBirthday, setToneBirthday] = useState<'casual' | 'gift'>('casual');
+  const [toneSubscription, setToneSubscription] = useState<'invoice' | 'receipt'>('invoice');
 
   const [saving, setSaving] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Busca planos apenas se não foi definido via prop
+  useEffect(() => {
+    if (hasSubscriptionsProp !== undefined) return;
+
+    let isMounted = true;
+    getSubscriptionPlans()
+      .then((plans) => {
+        if (isMounted) setHasSubscriptions(plans.length > 0);
+      })
+      .catch(() => {
+        if (isMounted) setHasSubscriptions(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [hasSubscriptionsProp]);
 
   if (!isOpen) return null;
 
+  // Restaurar padrões do segmento para todas as categorias
   const handleResetDefaults = () => {
-    setTemplateFriendly(segmentTemplates.friendly);
-    setTemplateDefault(segmentTemplates.default);
-    setTemplateFirm(segmentTemplates.firm);
-    setTemplateCreditReceipt(segmentTemplates.creditReceipt);
-    setTemplateReturnWindow(segmentTemplates.returnWindowCasual);
-    setTemplateInactiveRecovery(segmentTemplates.inactiveRecoveryCasual);
-    setTemplateBirthday(segmentTemplates.birthdayCasual);
+    setReceiptFriendly(segmentTemplates.receiptFriendly);
+    setReceiptDetailed(segmentTemplates.creditReceipt);
+    setCollectionFriendly(segmentTemplates.friendly);
+    setCollectionDefault(segmentTemplates.default);
+    setCollectionFirm(segmentTemplates.firm);
+    setReturnCasual(segmentTemplates.returnWindowCasual);
+    setReturnVip(segmentTemplates.returnWindowVip);
+    setInactiveCasual(segmentTemplates.inactiveRecoveryCasual);
+    setInactivePromo(segmentTemplates.inactiveRecoveryPromo);
+    setBirthdayCasual(segmentTemplates.birthdayCasual);
+    setBirthdayGift(segmentTemplates.birthdayGift);
+    setSubInvoice(segmentTemplates.subscriptionInvoice);
+    setSubReceipt(segmentTemplates.subscriptionReceipt);
+
     toast.info(`Modelos restaurados para o padrão de ${segmentConfig.label}.`);
+  };
+
+  // Inserção rápida de tag na posição do cursor
+  const handleInsertTag = (tag: string) => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const currentVal = getCurrentTemplateValue();
+    const nextVal = currentVal.substring(0, start) + tag + currentVal.substring(end);
+    setCurrentTemplateValue(nextVal);
+
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + tag.length, start + tag.length);
+    }, 10);
+  };
+
+  // Obtém o valor do template atualmente em edição
+  const getCurrentTemplateValue = (): string => {
+    switch (activeCategory) {
+      case 'sale_receipt':
+        return toneReceipt === 'friendly' ? receiptFriendly : receiptDetailed;
+      case 'collection':
+        if (toneCollection === 'friendly') return collectionFriendly;
+        if (toneCollection === 'default') return collectionDefault;
+        return collectionFirm;
+      case 'return_window':
+        return toneReturn === 'casual' ? returnCasual : returnVip;
+      case 'inactive':
+        return toneInactive === 'casual' ? inactiveCasual : inactivePromo;
+      case 'birthday':
+        return toneBirthday === 'casual' ? birthdayCasual : birthdayGift;
+      case 'subscription':
+        return toneSubscription === 'invoice' ? subInvoice : subReceipt;
+      default:
+        return '';
+    }
+  };
+
+  // Define o valor do template atualmente em edição
+  const setCurrentTemplateValue = (val: string) => {
+    switch (activeCategory) {
+      case 'sale_receipt':
+        if (toneReceipt === 'friendly') setReceiptFriendly(val);
+        else setReceiptDetailed(val);
+        break;
+      case 'collection':
+        if (toneCollection === 'friendly') setCollectionFriendly(val);
+        else if (toneCollection === 'default') setCollectionDefault(val);
+        else setCollectionFirm(val);
+        break;
+      case 'return_window':
+        if (toneReturn === 'casual') setReturnCasual(val);
+        else setReturnVip(val);
+        break;
+      case 'inactive':
+        if (toneInactive === 'casual') setInactiveCasual(val);
+        else setInactivePromo(val);
+        break;
+      case 'birthday':
+        if (toneBirthday === 'casual') setBirthdayCasual(val);
+        else setBirthdayGift(val);
+        break;
+      case 'subscription':
+        if (toneSubscription === 'invoice') setSubInvoice(val);
+        else setSubReceipt(val);
+        break;
+    }
+  };
+
+  // Tags disponíveis por categoria
+  const getAvailableTagsForCategory = (cat: MessageCategory): string[] => {
+    switch (cat) {
+      case 'sale_receipt':
+        return [
+          '{primeiro_nome}',
+          '{nome}',
+          '{valor}',
+          '{itens}',
+          '{metodo_pagamento}',
+          '{bloco_pix}',
+          '{assinatura}',
+        ];
+      case 'collection':
+        return [
+          '{primeiro_nome}',
+          '{nome}',
+          '{valor}',
+          '{vencimento}',
+          '{vencimento_texto}',
+          '{dias_atraso}',
+          '{atraso_texto}',
+          '{itens}',
+          '{bloco_pix}',
+          '{assinatura}',
+        ];
+      case 'return_window':
+      case 'inactive':
+        return [
+          '{primeiro_nome}',
+          '{nome}',
+          '{dias_ultima_visita}',
+          '{assinatura}',
+        ];
+      case 'birthday':
+        return ['{primeiro_nome}', '{nome}', '{assinatura}'];
+      case 'subscription':
+        return [
+          '{primeiro_nome}',
+          '{nome}',
+          '{plano}',
+          '{valor}',
+          '{vencimento}',
+          '{metodo_pagamento}',
+          '{bloco_pix}',
+          '{assinatura}',
+        ];
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -108,16 +301,28 @@ export function MessageSettingsModal({
         pix_key: pixKey.trim() || null,
         pix_holder_name: pixHolderName.trim() || null,
         include_pix_default: includePixDefault,
-        template_friendly: templateFriendly,
-        template_default: templateDefault,
-        template_firm: templateFirm,
-        template_sale_credit_receipt: templateCreditReceipt,
-        template_return_window: templateReturnWindow,
-        template_inactive_recovery: templateInactiveRecovery,
-        template_birthday: templateBirthday,
+        // Cobrança
+        template_friendly: collectionFriendly,
+        template_default: collectionDefault,
+        template_firm: collectionFirm,
+        // Recibo
+        template_sale_receipt_friendly: receiptFriendly,
+        template_sale_credit_receipt: receiptDetailed,
+        // Retorno
+        template_return_window: returnCasual,
+        template_return_window_vip: returnVip,
+        // Inativos
+        template_inactive_recovery: inactiveCasual,
+        template_inactive_recovery_promo: inactivePromo,
+        // Aniversário
+        template_birthday: birthdayCasual,
+        template_birthday_gift: birthdayGift,
+        // Clube
+        template_subscription_invoice: subInvoice,
+        template_subscription_receipt: subReceipt,
       });
 
-      toast.success('Configurações salvas com sucesso!');
+      toast.success('Modelos e configurações salvos com sucesso!');
       onSaved?.(saved);
       onClose();
     } catch (err: unknown) {
@@ -129,10 +334,12 @@ export function MessageSettingsModal({
     }
   };
 
+  const availableTags = getAvailableTagsForCategory(activeCategory);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
-        {/* Header */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[94vh]">
+        {/* Header Superior */}
         <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
@@ -155,21 +362,8 @@ export function MessageSettingsModal({
           </button>
         </div>
 
-        {/* Abas */}
+        {/* Abas Principais: Chave Pix vs Modelos de Mensagens */}
         <div className="flex items-center border-b border-slate-800 bg-slate-950/40 px-5 pt-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('pix')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
-              activeTab === 'pix'
-                ? 'border-amber-500 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <QrCode className="w-4 h-4" />
-            <span>Chave Pix</span>
-          </button>
-
           <button
             type="button"
             onClick={() => setActiveTab('templates')}
@@ -182,10 +376,24 @@ export function MessageSettingsModal({
             <FileText className="w-4 h-4" />
             <span>Modelos de Mensagens</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('pix')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+              activeTab === 'pix'
+                ? 'border-amber-500 text-amber-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>Chave Pix</span>
+          </button>
         </div>
 
-        {/* Formulário */}
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-5">
+        {/* Formulário Principal */}
+        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          {/* ABA CHAVE PIX */}
           {activeTab === 'pix' && (
             <div className="space-y-4">
               <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 flex items-start gap-2.5">
@@ -269,206 +477,354 @@ export function MessageSettingsModal({
                     Incluir Chave Pix por padrão
                   </span>
                   <span className="text-slate-400">
-                    Marca automaticamente o envio de Pix ao abrir os modais de cobrança
+                    Marca automaticamente o envio de Pix ao abrir os modais de cobrança e recibos
                   </span>
                 </div>
               </label>
             </div>
           )}
 
+          {/* ABA MODELOS DE MENSAGENS HIERÁRQUICA */}
           {activeTab === 'templates' && (
-            <div className="space-y-4">
+            <div className="space-y-3.5">
+              {/* Barra de Segmento & Restaurar */}
               <div className="p-3 bg-zinc-950/70 border border-zinc-800 rounded-xl flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-zinc-400">Modelos baseados em:</span>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold border border-amber-500/30">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-zinc-400 shrink-0">Modelos para:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold border border-amber-500/30 truncate">
                     {segmentConfig.label}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleResetDefaults}
-                  className="text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold transition-colors"
+                  className="text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold transition-colors shrink-0"
+                  title="Restaurar textos para o padrão do segmento"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Restaurar padrões</span>
                 </button>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300">
-                  Selecione o modelo para editar:
-                </span>
-              </div>
-
-              {/* Sub-abas de templates */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setSelectedTemplateTab('friendly')}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedTemplateTab === 'friendly'
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Amigável
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTemplateTab('default')}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedTemplateTab === 'default'
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Padrão
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTemplateTab('firm')}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedTemplateTab === 'firm'
-                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Firme
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTemplateTab('creditReceipt')}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedTemplateTab === 'creditReceipt'
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Recibo Fiado
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTemplateTab('returnWindow')}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedTemplateTab === 'returnWindow'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Retorno
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTemplateTab('inactiveRecovery')}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedTemplateTab === 'inactiveRecovery'
-                      ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Inativos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTemplateTab('birthday')}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedTemplateTab === 'birthday'
-                      ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Aniversário
-                </button>
-              </div>
-
-              {/* Editor do template selecionado */}
+              {/* 1º NÍVEL: PÍLULAS DE CATEGORIAS DE MENSAGEM */}
               <div>
-                {selectedTemplateTab === 'friendly' && (
-                  <textarea
-                    value={templateFriendly}
-                    onChange={(e) => setTemplateFriendly(e.target.value)}
-                    rows={6}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
-                  />
-                )}
-                {selectedTemplateTab === 'default' && (
-                  <textarea
-                    value={templateDefault}
-                    onChange={(e) => setTemplateDefault(e.target.value)}
-                    rows={6}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
-                  />
-                )}
-                {selectedTemplateTab === 'firm' && (
-                  <textarea
-                    value={templateFirm}
-                    onChange={(e) => setTemplateFirm(e.target.value)}
-                    rows={6}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
-                  />
-                )}
-                {selectedTemplateTab === 'creditReceipt' && (
-                  <textarea
-                    value={templateCreditReceipt}
-                    onChange={(e) => setTemplateCreditReceipt(e.target.value)}
-                    rows={6}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
-                  />
-                )}
-                {selectedTemplateTab === 'returnWindow' && (
-                  <textarea
-                    value={templateReturnWindow}
-                    onChange={(e) => setTemplateReturnWindow(e.target.value)}
-                    rows={6}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
-                  />
-                )}
-                {selectedTemplateTab === 'inactiveRecovery' && (
-                  <textarea
-                    value={templateInactiveRecovery}
-                    onChange={(e) => setTemplateInactiveRecovery(e.target.value)}
-                    rows={6}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
-                  />
-                )}
-                {selectedTemplateTab === 'birthday' && (
-                  <textarea
-                    value={templateBirthday}
-                    onChange={(e) => setTemplateBirthday(e.target.value)}
-                    rows={6}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed"
-                  />
-                )}
+                <span className="text-xs font-semibold text-slate-300 block mb-1.5">
+                  1. Selecione a Finalidade da Mensagem:
+                </span>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-zinc-800">
+                  {/* Recibo de Venda */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('sale_receipt')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all ${
+                      activeCategory === 'sale_receipt'
+                        ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
+                        : 'bg-zinc-950 border border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>Recibo Venda</span>
+                  </button>
+
+                  {/* Cobrança */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('collection')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all ${
+                      activeCategory === 'collection'
+                        ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                        : 'bg-zinc-950 border border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <HandCoins className="w-3.5 h-3.5" />
+                    <span>Cobrança</span>
+                  </button>
+
+                  {/* Retorno (Pós-Venda) */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('return_window')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all ${
+                      activeCategory === 'return_window'
+                        ? 'bg-blue-500 text-zinc-950 shadow-md shadow-blue-500/20'
+                        : 'bg-zinc-950 border border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Retorno</span>
+                  </button>
+
+                  {/* Inativos */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('inactive')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all ${
+                      activeCategory === 'inactive'
+                        ? 'bg-orange-500 text-zinc-950 shadow-md shadow-orange-500/20'
+                        : 'bg-zinc-950 border border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Inativos</span>
+                  </button>
+
+                  {/* Aniversário */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('birthday')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all ${
+                      activeCategory === 'birthday'
+                        ? 'bg-pink-500 text-zinc-950 shadow-md shadow-pink-500/20'
+                        : 'bg-zinc-950 border border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Cake className="w-3.5 h-3.5" />
+                    <span>Aniversário</span>
+                  </button>
+
+                  {/* Clube / Assinaturas (Condicional) */}
+                  {hasSubscriptions && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategory('subscription')}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all ${
+                        activeCategory === 'subscription'
+                          ? 'bg-purple-500 text-zinc-950 shadow-md shadow-purple-500/20'
+                          : 'bg-zinc-950 border border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                      }`}
+                    >
+                      <Crown className="w-3.5 h-3.5" />
+                      <span>Mensalidades</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Legenda de Tags Dinâmicas */}
+              {/* 2º NÍVEL: SELETOR DE TOM DA CATEGORIA SELECIONADA */}
+              <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/90 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    2. Escolha o Tom de Voz:
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Tons de Recibo de Venda */}
+                  {activeCategory === 'sale_receipt' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setToneReceipt('friendly')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneReceipt === 'friendly'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        😊 Amigável / Caloroso
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setToneReceipt('detailed')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneReceipt === 'detailed'
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        📋 Padrão / Detalhado
+                      </button>
+                    </>
+                  )}
+
+                  {/* Tons de Cobrança */}
+                  {activeCategory === 'collection' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setToneCollection('friendly')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneCollection === 'friendly'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        😊 Amigável (Lembrete leve)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setToneCollection('default')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneCollection === 'default'
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        🤝 Padrão (Educado)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setToneCollection('firm')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneCollection === 'firm'
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        ⚡ Firme (Aviso de pendência)
+                      </button>
+                    </>
+                  )}
+
+                  {/* Tons de Retorno */}
+                  {activeCategory === 'return_window' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setToneReturn('casual')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneReturn === 'casual'
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        ✨ Amigável / Descontraído
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setToneReturn('vip')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneReturn === 'vip'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        ⭐ Padrão / Prioritário
+                      </button>
+                    </>
+                  )}
+
+                  {/* Tons de Inativos */}
+                  {activeCategory === 'inactive' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setToneInactive('casual')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneInactive === 'casual'
+                            ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        💬 Amigável (Sentimos sua falta)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setToneInactive('promo')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneInactive === 'promo'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        🎁 Promocional (Com Oferta Especial)
+                      </button>
+                    </>
+                  )}
+
+                  {/* Tons de Aniversário */}
+                  {activeCategory === 'birthday' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setToneBirthday('casual')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneBirthday === 'casual'
+                            ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        🎂 Amigável (Felicitações)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setToneBirthday('gift')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneBirthday === 'gift'
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        🎁 Com Presente / Desconto
+                      </button>
+                    </>
+                  )}
+
+                  {/* Tons de Mensalidades */}
+                  {activeCategory === 'subscription' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setToneSubscription('invoice')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneSubscription === 'invoice'
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        💳 Lembrete de Cobrança
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setToneSubscription('receipt')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                          toneSubscription === 'receipt'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-transparent'
+                        }`}
+                      >
+                        🧾 Recibo de Quitação
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* EDITOR DE TEXTO DO MODELO ATIVO */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span className="font-semibold text-slate-300">
+                    Mensagem que será enviada:
+                  </span>
+                  <span>{getCurrentTemplateValue().length} caracteres</span>
+                </div>
+
+                <textarea
+                  ref={textareaRef}
+                  value={getCurrentTemplateValue()}
+                  onChange={(e) => setCurrentTemplateValue(e.target.value)}
+                  rows={6}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono leading-relaxed resize-y min-h-[140px]"
+                />
+              </div>
+
+              {/* TAGS CONTEXTUAIS CLICÁVEIS */}
               <div className="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-1.5 text-xs text-slate-400">
                 <span className="font-semibold text-slate-300 block">
-                  Tags disponíveis para usar no texto:
+                  Tags disponíveis (toque para inserir na mensagem):
                 </span>
                 <div className="flex flex-wrap gap-1.5">
-                  <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-400">
-                    {'{primeiro_nome}'}
-                  </code>
-                  <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-400">
-                    {'{nome}'}
-                  </code>
-                  <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-400">
-                    {'{valor}'}
-                  </code>
-                  <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-400">
-                    {'{vencimento}'}
-                  </code>
-                  <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-400">
-                    {'{dias_atraso}'}
-                  </code>
-                  <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-400">
-                    {'{itens}'}
-                  </code>
-                  <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-400">
-                    {'{bloco_pix}'}
-                  </code>
+                  {availableTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleInsertTag(tag)}
+                      className="bg-slate-900 hover:bg-amber-500/20 hover:text-amber-300 border border-slate-800 hover:border-amber-500/40 px-2 py-0.5 rounded text-amber-400 text-xs font-mono transition-all active:scale-95"
+                      title={`Inserir ${tag}`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

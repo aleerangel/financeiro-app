@@ -16,9 +16,10 @@ import {
 import { formatDate } from '@/lib/utils';
 import {
   BusinessMessageSettings,
-  DEFAULT_TEMPLATES,
+  getTemplatesForSegment,
   renderWhatsAppTemplate,
 } from '@/lib/whatsapp-templates';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { markClientContacted } from '@/lib/actions/clients';
 import { toast } from 'sonner';
 
@@ -53,6 +54,9 @@ export function ClientEngagementWhatsAppModal({
   messageSettings,
   onContactRecorded,
 }: ClientEngagementWhatsAppModalProps) {
+  const { profile, businessName } = useBusinessProfile();
+  const segmentTemplates = getTemplatesForSegment(profile.segment);
+
   // Configurações e Templates
   const settings = messageSettings || {
     pix_key_type: 'phone',
@@ -62,9 +66,12 @@ export function ClientEngagementWhatsAppModal({
     template_default: null,
     template_firm: null,
     template_sale_credit_receipt: null,
-    template_return_window: DEFAULT_TEMPLATES.returnWindowCasual,
-    template_inactive_recovery: DEFAULT_TEMPLATES.inactiveRecoveryCasual,
-    template_birthday: DEFAULT_TEMPLATES.birthdayCasual,
+    template_return_window: segmentTemplates.returnWindowCasual,
+    template_return_window_vip: segmentTemplates.returnWindowVip,
+    template_inactive_recovery: segmentTemplates.inactiveRecoveryCasual,
+    template_inactive_recovery_promo: segmentTemplates.inactiveRecoveryPromo,
+    template_birthday: segmentTemplates.birthdayCasual,
+    template_birthday_gift: segmentTemplates.birthdayGift,
     include_pix_default: false,
   };
 
@@ -88,15 +95,15 @@ export function ClientEngagementWhatsAppModal({
       return [
         {
           id: 'birthday_casual',
-          label: 'Parabéns da Barbearia',
+          label: 'Felicitações / Parabéns',
           icon: Cake,
-          template: settings.template_birthday || DEFAULT_TEMPLATES.birthdayCasual,
+          template: settings.template_birthday || segmentTemplates.birthdayCasual,
         },
         {
           id: 'birthday_gift',
-          label: 'Presente no Corte',
+          label: 'Com Presente / Especial',
           icon: Sparkles,
-          template: DEFAULT_TEMPLATES.birthdayGift,
+          template: settings.template_birthday_gift || segmentTemplates.birthdayGift,
         },
       ];
     }
@@ -105,17 +112,19 @@ export function ClientEngagementWhatsAppModal({
       return [
         {
           id: 'inactive_casual',
-          label: 'Saudades / Como vai',
+          label: 'Amigável (Sentimos sua falta)',
           icon: Smile,
           template:
             settings.template_inactive_recovery ||
-            DEFAULT_TEMPLATES.inactiveRecoveryCasual,
+            segmentTemplates.inactiveRecoveryCasual,
         },
         {
           id: 'inactive_promo',
           label: 'Oferta Especial de Retorno',
           icon: Sparkles,
-          template: DEFAULT_TEMPLATES.inactiveRecoveryPromo,
+          template:
+            settings.template_inactive_recovery_promo ||
+            segmentTemplates.inactiveRecoveryPromo,
         },
       ];
     }
@@ -124,16 +133,17 @@ export function ClientEngagementWhatsAppModal({
     return [
       {
         id: 'return_casual',
-        label: 'Casual / Parceria',
+        label: 'Amigável / Descontraído',
         icon: Smile,
         template:
-          settings.template_return_window || DEFAULT_TEMPLATES.returnWindowCasual,
+          settings.template_return_window || segmentTemplates.returnWindowCasual,
       },
       {
         id: 'return_vip',
-        label: 'Convite VIP',
+        label: 'Padrão / Prioritário',
         icon: Sparkles,
-        template: DEFAULT_TEMPLATES.returnWindowVip,
+        template:
+          settings.template_return_window_vip || segmentTemplates.returnWindowVip,
       },
     ];
   })();
@@ -142,7 +152,7 @@ export function ClientEngagementWhatsAppModal({
 
   const generateMessage = (toneId: string) => {
     const selected = toneOptions.find((t) => t.id === toneId) || toneOptions[0];
-    const template = selected?.template || DEFAULT_TEMPLATES.returnWindowCasual;
+    const template = selected?.template || segmentTemplates.returnWindowCasual;
 
     return renderWhatsAppTemplate(
       template,
@@ -150,7 +160,9 @@ export function ClientEngagementWhatsAppModal({
         nome: client.name,
         dias_ultima_visita: daysSinceLastVisit || 30,
       },
-      false
+      false,
+      undefined,
+      businessName
     );
   };
 

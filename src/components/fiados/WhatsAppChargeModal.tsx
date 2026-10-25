@@ -16,9 +16,10 @@ import {
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   BusinessMessageSettings,
-  DEFAULT_TEMPLATES,
+  getTemplatesForSegment,
   renderWhatsAppTemplate,
 } from '@/lib/whatsapp-templates';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { toast } from 'sonner';
 import { MessageSettingsModal } from './MessageSettingsModal';
 
@@ -52,15 +53,18 @@ function WhatsAppChargeContent({
   messageSettings,
   onSettingsSaved,
 }: ContentProps) {
+  const { profile, businessName } = useBusinessProfile();
+  const segmentTemplates = getTemplatesForSegment(profile.segment);
+
   const [activeSettings, setActiveSettings] = useState<BusinessMessageSettings>(
     messageSettings || {
       pix_key_type: 'phone',
       pix_key: null,
       pix_holder_name: null,
-      template_friendly: DEFAULT_TEMPLATES.friendly,
-      template_default: DEFAULT_TEMPLATES.default,
-      template_firm: DEFAULT_TEMPLATES.firm,
-      template_sale_credit_receipt: DEFAULT_TEMPLATES.creditReceipt,
+      template_friendly: segmentTemplates.friendly,
+      template_default: segmentTemplates.default,
+      template_firm: segmentTemplates.firm,
+      template_sale_credit_receipt: segmentTemplates.creditReceipt,
       include_pix_default: true,
     }
   );
@@ -81,11 +85,11 @@ function WhatsAppChargeContent({
 
   // Função pura para renderizar o texto com base no tom e configurações atuais
   const getRenderedText = (tone: ToneType, withPix: boolean) => {
-    let tpl = activeSettings.template_default || DEFAULT_TEMPLATES.default;
+    let tpl = activeSettings.template_default || segmentTemplates.default;
     if (tone === 'friendly') {
-      tpl = activeSettings.template_friendly || DEFAULT_TEMPLATES.friendly;
+      tpl = activeSettings.template_friendly || segmentTemplates.friendly;
     } else if (tone === 'firm') {
-      tpl = activeSettings.template_firm || DEFAULT_TEMPLATES.firm;
+      tpl = activeSettings.template_firm || segmentTemplates.firm;
     }
 
     const formattedValue = formatCurrency(totalDebt);
@@ -104,7 +108,8 @@ function WhatsAppChargeContent({
         key: activeSettings.pix_key,
         keyType: activeSettings.pix_key_type,
         holderName: activeSettings.pix_holder_name,
-      }
+      },
+      businessName
     );
   };
 
@@ -129,10 +134,10 @@ function WhatsAppChargeContent({
     setMessage(
       renderWhatsAppTemplate(
         selectedTone === 'friendly'
-          ? newSettings.template_friendly || DEFAULT_TEMPLATES.friendly
+          ? newSettings.template_friendly || segmentTemplates.friendly
           : selectedTone === 'firm'
-          ? newSettings.template_firm || DEFAULT_TEMPLATES.firm
-          : newSettings.template_default || DEFAULT_TEMPLATES.default,
+          ? newSettings.template_firm || segmentTemplates.firm
+          : newSettings.template_default || segmentTemplates.default,
         {
           nome: clientName,
           valor: formatCurrency(totalDebt),
@@ -144,7 +149,8 @@ function WhatsAppChargeContent({
           key: newSettings.pix_key,
           keyType: newSettings.pix_key_type,
           holderName: newSettings.pix_holder_name,
-        }
+        },
+        businessName
       )
     );
   };

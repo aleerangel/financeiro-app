@@ -25,9 +25,15 @@ export async function getMessageSettings(): Promise<BusinessMessageSettings> {
     template_default: segmentTemplates.default,
     template_firm: segmentTemplates.firm,
     template_sale_credit_receipt: segmentTemplates.creditReceipt,
+    template_sale_receipt_friendly: segmentTemplates.receiptFriendly,
     template_return_window: segmentTemplates.returnWindowCasual,
+    template_return_window_vip: segmentTemplates.returnWindowVip,
     template_inactive_recovery: segmentTemplates.inactiveRecoveryCasual,
+    template_inactive_recovery_promo: segmentTemplates.inactiveRecoveryPromo,
     template_birthday: segmentTemplates.birthdayCasual,
+    template_birthday_gift: segmentTemplates.birthdayGift,
+    template_subscription_invoice: segmentTemplates.subscriptionInvoice,
+    template_subscription_receipt: segmentTemplates.subscriptionReceipt,
     include_pix_default: true,
   };
 
@@ -54,12 +60,24 @@ export async function getMessageSettings(): Promise<BusinessMessageSettings> {
       template_firm: data.template_firm || segmentTemplates.firm,
       template_sale_credit_receipt:
         data.template_sale_credit_receipt || segmentTemplates.creditReceipt,
+      template_sale_receipt_friendly:
+        data.template_sale_receipt_friendly || segmentTemplates.receiptFriendly,
       template_return_window:
         data.template_return_window || segmentTemplates.returnWindowCasual,
+      template_return_window_vip:
+        data.template_return_window_vip || segmentTemplates.returnWindowVip,
       template_inactive_recovery:
         data.template_inactive_recovery || segmentTemplates.inactiveRecoveryCasual,
+      template_inactive_recovery_promo:
+        data.template_inactive_recovery_promo || segmentTemplates.inactiveRecoveryPromo,
       template_birthday:
         data.template_birthday || segmentTemplates.birthdayCasual,
+      template_birthday_gift:
+        data.template_birthday_gift || segmentTemplates.birthdayGift,
+      template_subscription_invoice:
+        data.template_subscription_invoice || segmentTemplates.subscriptionInvoice,
+      template_subscription_receipt:
+        data.template_subscription_receipt || segmentTemplates.subscriptionReceipt,
       include_pix_default: data.include_pix_default ?? true,
     };
   } catch {
@@ -75,9 +93,15 @@ export async function saveMessageSettings(input: {
   template_default?: string | null;
   template_firm?: string | null;
   template_sale_credit_receipt?: string | null;
+  template_sale_receipt_friendly?: string | null;
   template_return_window?: string | null;
+  template_return_window_vip?: string | null;
   template_inactive_recovery?: string | null;
+  template_inactive_recovery_promo?: string | null;
   template_birthday?: string | null;
+  template_birthday_gift?: string | null;
+  template_subscription_invoice?: string | null;
+  template_subscription_receipt?: string | null;
   include_pix_default?: boolean;
 }): Promise<BusinessMessageSettings> {
   const supabase = await createClient();
@@ -98,12 +122,24 @@ export async function saveMessageSettings(input: {
     template_firm: input.template_firm || segmentTemplates.firm,
     template_sale_credit_receipt:
       input.template_sale_credit_receipt || segmentTemplates.creditReceipt,
+    template_sale_receipt_friendly:
+      input.template_sale_receipt_friendly || segmentTemplates.receiptFriendly,
     template_return_window:
       input.template_return_window || segmentTemplates.returnWindowCasual,
+    template_return_window_vip:
+      input.template_return_window_vip || segmentTemplates.returnWindowVip,
     template_inactive_recovery:
       input.template_inactive_recovery || segmentTemplates.inactiveRecoveryCasual,
+    template_inactive_recovery_promo:
+      input.template_inactive_recovery_promo || segmentTemplates.inactiveRecoveryPromo,
     template_birthday:
       input.template_birthday || segmentTemplates.birthdayCasual,
+    template_birthday_gift:
+      input.template_birthday_gift || segmentTemplates.birthdayGift,
+    template_subscription_invoice:
+      input.template_subscription_invoice || segmentTemplates.subscriptionInvoice,
+    template_subscription_receipt:
+      input.template_subscription_receipt || segmentTemplates.subscriptionReceipt,
     include_pix_default: input.include_pix_default ?? true,
     updated_at: new Date().toISOString(),
   };
@@ -152,9 +188,15 @@ export async function resetMessageSettingsToSegment(
     template_default: segmentTemplates.default,
     template_firm: segmentTemplates.firm,
     template_sale_credit_receipt: segmentTemplates.creditReceipt,
+    template_sale_receipt_friendly: segmentTemplates.receiptFriendly,
     template_return_window: segmentTemplates.returnWindowCasual,
+    template_return_window_vip: segmentTemplates.returnWindowVip,
     template_inactive_recovery: segmentTemplates.inactiveRecoveryCasual,
+    template_inactive_recovery_promo: segmentTemplates.inactiveRecoveryPromo,
     template_birthday: segmentTemplates.birthdayCasual,
+    template_birthday_gift: segmentTemplates.birthdayGift,
+    template_subscription_invoice: segmentTemplates.subscriptionInvoice,
+    template_subscription_receipt: segmentTemplates.subscriptionReceipt,
     include_pix_default: current.include_pix_default ?? true,
   };
 
