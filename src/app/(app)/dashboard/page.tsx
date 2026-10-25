@@ -55,7 +55,7 @@ export default async function DashboardPage() {
     getCategories(),
     getBusinessDashboardData(currentYear, currentMonth),
     getGeneralDashboardData(currentYear, currentMonth),
-    getUpcomingAndOverdueBills(3),
+    getUpcomingAndOverdueBills(0),
     getPendingIncomeReceipts(),
     getTransactions(currentMonth, currentYear),
     syncCurrentPromise,

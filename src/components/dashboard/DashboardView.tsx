@@ -33,6 +33,7 @@ import { GeneralDashboardMobile } from './mobile/GeneralDashboardMobile';
 import { LegacyWelcomeBanner } from './LegacyWelcomeBanner';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
+import { UnifiedDailyPendingHub } from './UnifiedDailyPendingHub';
 import { BusinessSettingsModal } from '@/components/settings/BusinessSettingsModal';
 
 // Abas secundárias do mobile carregadas sob demanda (evita sobrecarga de JS inicial)
@@ -186,7 +187,7 @@ export function DashboardView({
         getBusinessDashboardData(year, month),
         getGeneralDashboardData(year, month),
         getAccounts(),
-        getUpcomingAndOverdueBills(3),
+        getUpcomingAndOverdueBills(0),
         getPendingIncomeReceipts(),
       ]);
 
@@ -389,7 +390,7 @@ export function DashboardView({
       getBusinessDashboardData(year, month),
       getGeneralDashboardData(year, month),
       getAccounts(),
-      getUpcomingAndOverdueBills(3),
+      getUpcomingAndOverdueBills(0),
       getPendingIncomeReceipts(),
     ])
       .then(([txs, bData, gData, accs, bills, receipts]) => {
@@ -491,6 +492,24 @@ export function DashboardView({
         {/* Banner de Boas-Vindas para usuários legados no mobile */}
         {activeTab === 'home' && <LegacyWelcomeBanner />}
 
+        {/* Hub Unificado de Confirmações & Pendências do Dia (Topo Absoluto Mobile) */}
+        {activeTab === 'home' && (
+          <UnifiedDailyPendingHub
+            pendingReceipts={pendingReceipts}
+            upcomingBills={upcomingBills}
+            cards={initialCards}
+            onReceiptConfirmed={(id) => {
+              setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
+              refreshData();
+            }}
+            onBillPaid={(id) => {
+              setUpcomingBills((prev) => prev.filter((b) => b.id !== id));
+              refreshData();
+            }}
+            scopeFilter={hasBusiness && contextMode === 'business' ? 'business' : 'all'}
+          />
+        )}
+
         {/* Conteúdo da Aba Selecionada */}
         {activeTab === 'home' && (
           (hasBusiness && contextMode === 'business') ? (
@@ -499,11 +518,6 @@ export function DashboardView({
               accounts={accounts}
               formattedMonth={formattedMonth}
               loading={loading}
-              pendingReceipts={pendingReceipts}
-              onReceiptConfirmed={(id) => {
-                setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
-                refreshData();
-              }}
               onEditBalance={(acc) => {
                 setAccountToAdjustBalance(acc);
                 setBalanceModalOpen(true);
@@ -704,6 +718,22 @@ export function DashboardView({
         </div>
       </div>
 
+      {/* Hub Unificado de Confirmações & Pendências do Dia (Topo Absoluto Desktop) */}
+      <UnifiedDailyPendingHub
+        pendingReceipts={pendingReceipts}
+        upcomingBills={upcomingBills}
+        cards={initialCards}
+        onReceiptConfirmed={(id) => {
+          setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
+          refreshData();
+        }}
+        onBillPaid={(id) => {
+          setUpcomingBills((prev) => prev.filter((b) => b.id !== id));
+          refreshData();
+        }}
+        scopeFilter={effectiveViewMode === 'business' ? 'business' : 'all'}
+      />
+
       {/* Renderização Condicional baseada no modo escolhido */}
       {effectiveViewMode === 'business' ? (
         <BusinessDashboardView
@@ -711,11 +741,6 @@ export function DashboardView({
           accounts={accounts}
           formattedMonth={formattedMonth}
           loading={loading}
-          pendingReceipts={pendingReceipts}
-          onReceiptConfirmed={(id) => {
-            setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
-            refreshData();
-          }}
           onEditBalance={(acc) => {
             setAccountToAdjustBalance(acc);
             setBalanceModalOpen(true);

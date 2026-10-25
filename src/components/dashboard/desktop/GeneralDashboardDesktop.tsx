@@ -31,8 +31,6 @@ import {
 } from '../ChartPeriodToolbar';
 import { MonthlyBarChart } from '../MonthlyBarChart';
 import { CategoryDonutChart } from '../CategoryDonutChart';
-import { UpcomingBillsAlert } from '../UpcomingBillsAlert';
-import { PendingReceiptsAlert } from '../PendingReceiptsAlert';
 import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -63,10 +61,6 @@ export interface GeneralDashboardDesktopProps {
 export function GeneralDashboardDesktop({
   generalData,
   yearlyStats = [],
-  upcomingBills = [],
-  onBillPaid,
-  pendingReceipts = [],
-  onReceiptConfirmed,
   transactions,
   accounts,
   cards,
@@ -181,12 +175,6 @@ export function GeneralDashboardDesktop({
 
   return (
     <div className="space-y-6">
-      {/* Alerta de Contas a Vencer e Pendências */}
-      <UpcomingBillsAlert bills={upcomingBills} onBillPaid={onBillPaid} />
-
-      {/* Alerta de Recebimentos Previstos Pendentes de Confirmação */}
-      <PendingReceiptsAlert receipts={pendingReceipts} onReceiptConfirmed={onReceiptConfirmed} />
-
       {/* 1. Topo: Cards de Resumo Principal */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card Saldo em Contas */}

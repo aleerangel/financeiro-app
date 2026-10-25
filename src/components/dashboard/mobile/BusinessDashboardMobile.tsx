@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 import {
   TrendingUp,
@@ -15,23 +15,18 @@ import {
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { BusinessDashboardData } from '@/lib/actions/dashboard';
-import { Transaction } from '@/types/database';
-import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { formatSalesUnit, formatSplitCount } from '@/lib/business-presets';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
-import { MobilePendingReceiptsAlert } from './MobilePendingReceiptsAlert';
 
 export interface BusinessDashboardMobileProps {
   data: BusinessDashboardData;
   accounts: AccountWithBalance[];
   formattedMonth?: string;
   loading?: boolean;
-  pendingReceipts?: Transaction[];
-  onReceiptConfirmed?: (receiptId: string) => void;
   onEditBalance?: (account: AccountWithBalance) => void;
   onAddBusinessExpense?: () => void;
 }
@@ -40,8 +35,6 @@ export function BusinessDashboardMobile({
   data,
   formattedMonth,
   loading = false,
-  pendingReceipts = [],
-  onReceiptConfirmed,
 }: BusinessDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
   const { profile, salesLabel } = useBusinessProfile();
@@ -77,19 +70,8 @@ export function BusinessDashboardMobile({
     productCount: 0,
   };
 
-  const businessReceipts = useMemo(() => {
-    return (pendingReceipts || []).filter(isBusinessTransaction);
-  }, [pendingReceipts]);
-
   return (
     <div className="space-y-4 pb-8">
-      {/* Alerta Retrátil de Entradas Previstas do Negócio */}
-      <MobilePendingReceiptsAlert
-        receipts={businessReceipts}
-        onReceiptConfirmed={onReceiptConfirmed}
-        title="Confirmar Entradas do Negócio"
-      />
-
       {/* 1. KPIs Principais: Faturamento, Clientes e Lucro Líquido */}
       <div className="space-y-2.5">
         {/* Card 1: Faturamento */}

@@ -11,7 +11,6 @@ import {
   Landmark,
   ArrowLeftRight,
   Sparkles,
-  AlertCircle,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -20,7 +19,6 @@ import { GeneralDashboardData } from '@/lib/actions/dashboard';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { getCardInvoiceStatus } from '@/lib/credit-card-utils';
-import { MobilePendingReceiptsAlert } from './MobilePendingReceiptsAlert';
 
 export interface GeneralDashboardMobileProps {
   generalData?: GeneralDashboardData;
@@ -41,9 +39,6 @@ export function GeneralDashboardMobile({
   accounts,
   cards,
   formattedMonth,
-  upcomingBills = [],
-  pendingReceipts = [],
-  onReceiptConfirmed,
 }: GeneralDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
 
@@ -158,35 +153,6 @@ export function GeneralDashboardMobile({
           </Link>
         </div>
       </div>
-
-      {/* Alerta Retrátil de Recebimentos Previstos Pendentes de Confirmação */}
-      <MobilePendingReceiptsAlert
-        receipts={pendingReceipts}
-        onReceiptConfirmed={onReceiptConfirmed}
-      />
-
-      {/* Alerta de Contas a Vencer (se houver) */}
-      {upcomingBills.length > 0 && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/25 rounded-2xl flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-amber-300 block">
-                {upcomingBills.length} conta(s) a pagar
-              </span>
-              <span className="text-[11px] text-zinc-400 block truncate">
-                Próxima: {upcomingBills[0]?.description} ({formatCurrency(Number(upcomingBills[0]?.amount || 0))})
-              </span>
-            </div>
-          </div>
-          <Link
-            href="/transacoes?filter=pending"
-            className="px-2.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold rounded-lg shrink-0"
-          >
-            Pagar
-          </Link>
-        </div>
-      )}
 
       {/* 2. Bloco Estilo Nubank: Cartão de Crédito */}
       <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
