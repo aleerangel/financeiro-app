@@ -16,7 +16,6 @@ import {
   Search,
   CalendarDays,
   List,
-  TrendingUp,
   TrendingDown,
   X,
   ChevronLeft,
@@ -628,103 +627,10 @@ export function TransactionsView({
 
   return (
     <div className="space-y-6">
-      {/* Cards de Resumo do Mês */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-              Receitas Recebidas
-            </span>
-            <span className="text-lg sm:text-xl font-bold text-emerald-400 block">
-              {formatCurrency(receivedIncome)}
-            </span>
-          </div>
-          <div className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
-            <span className="text-[10px] text-zinc-400">
-              {pendingIncome > 0
-                ? `+ ${formatCurrency(pendingIncome)} a receber`
-                : 'Tudo recebido'}
-            </span>
-            <button
-              type="button"
-              onClick={() => setEvolutionModalType('income')}
-              className="text-[10px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5"
-            >
-              <TrendingUp className="w-3 h-3" />
-              Evolução
-            </button>
-          </div>
-        </div>
-
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-              Despesas Pagas
-            </span>
-            <span className="text-lg sm:text-xl font-bold text-rose-400 block">
-              {formatCurrency(paidExpense)}
-            </span>
-          </div>
-          <div className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
-            <span className="text-[10px] text-zinc-400">
-              {pendingExpense > 0
-                ? `+ ${formatCurrency(pendingExpense)} a pagar`
-                : 'Tudo pago'}
-            </span>
-            <button
-              type="button"
-              onClick={() => setEvolutionModalType('expense')}
-              className="text-[10px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-0.5"
-            >
-              <TrendingDown className="w-3 h-3" />
-              Evolução
-            </button>
-          </div>
-        </div>
-
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-              Balanço Realizado
-            </span>
-            <span
-              className={`text-lg sm:text-xl font-bold block ${
-                realizedBalance >= 0 ? 'text-zinc-100' : 'text-rose-400'
-              }`}
-            >
-              {formatCurrency(realizedBalance)}
-            </span>
-          </div>
-          <div className="mt-2 pt-2 border-t border-zinc-800/80 space-y-0.5">
-            <span className="text-[10px] text-zinc-400 block">
-              Previsão final: <strong className="font-semibold text-zinc-200">{formatCurrency(projectedBalance)}</strong>
-            </span>
-            {projectedYieldPending > 0 && (
-              <span className="text-[9.5px] text-emerald-400 font-medium block">
-                + {formatCurrency(projectedYieldPending)} de rendimentos estimados
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-400 block mb-1">
-              A Pagar / Pendente
-            </span>
-            <span className="text-lg sm:text-xl font-bold text-amber-300 block">
-              {formatCurrency(pendingExpense)}
-            </span>
-          </div>
-          <span className="text-[10px] text-emerald-400/80 mt-2 pt-2 border-t border-zinc-800/80 block">
-            A receber: {formatCurrency(pendingIncome)}
-          </span>
-        </div>
-      </div>
-
-      {/* Barra de Busca, Filtros e Ações (Mobile) */}
+      {/* 1. TOPO DA PÁGINA: Mês, Categorias e Ações */}
+      {/* Mobile Topo */}
       <div className="md:hidden p-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-        {/* Linha 1: Mês/Ano + Filtros Gaveta + Nova Transação */}
+        {/* Linha 1: Mês + Categoria + Filtros + Novo */}
         <div className="flex items-center justify-between gap-2">
           {/* Seletor de Mês Compacto */}
           <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 px-2 py-1.5 rounded-xl text-xs shrink-0">
@@ -749,27 +655,53 @@ export function TransactionsView({
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Botão de Filtros Avançados & Exportar */}
+          {/* Dropdown de Categorias Simplificado (Mobile) */}
+          <div className="flex-1 min-w-0">
+            <select
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-200 focus:outline-none focus:border-emerald-500 transition truncate cursor-pointer"
+            >
+              <option value="all">🏷️ Categorias: Todas</option>
+              <optgroup label="Receitas">
+                {initialCategories
+                  .filter((c) => c.type === 'income')
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      🟢 {c.name}
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label="Despesas">
+                {initialCategories
+                  .filter((c) => c.type === 'expense')
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      🔴 {c.name}
+                    </option>
+                  ))}
+              </optgroup>
+              <option value="none">⚪ Sem Categoria</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => setMobileFilterDrawerOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+              className={`p-2 rounded-xl text-xs font-semibold border transition relative ${
                 activeAdvancedFiltersCount > 0
                   ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
                   : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:text-zinc-100'
               }`}
+              title="Mais Filtros & Exportar"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Filtros</span>
               {activeAdvancedFiltersCount > 0 && (
-                <span className="w-4 h-4 rounded-full bg-emerald-500 text-zinc-950 text-[10px] font-bold flex items-center justify-center">
-                  {activeAdvancedFiltersCount}
-                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 absolute -top-0.5 -right-0.5" />
               )}
             </button>
 
-            {/* Botão Adicionar */}
             <button
               type="button"
               onClick={() => {
@@ -777,10 +709,10 @@ export function TransactionsView({
                 setModalDefaultScope('personal');
                 setModalOpen(true);
               }}
-              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs rounded-xl shadow-md shadow-emerald-500/10 transition"
+              className="p-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-xl shadow-md shadow-emerald-500/10 transition"
+              title="Novo Lançamento"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Novo</span>
             </button>
           </div>
         </div>
@@ -805,93 +737,42 @@ export function TransactionsView({
             </button>
           )}
         </div>
-
-        {/* Linha 3: Pílulas Rápidas Horizontais Deslizantes */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1">
-          {[
-            { id: 'all' as FilterType, label: 'Todos' },
-            ...(hasBusiness
-              ? [{ id: 'business' as FilterType, label: `💼 ${businessName}` }]
-              : []),
-            { id: 'personal' as FilterType, label: '👤 Pessoal' },
-            { id: 'income' as FilterType, label: 'Receitas' },
-            { id: 'expense' as FilterType, label: 'Despesas' },
-            { id: 'credit' as FilterType, label: 'Cartão' },
-            { id: 'pending' as FilterType, label: 'Pendentes' },
-          ].map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap shrink-0 ${
-                filter === f.id
-                  ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                  : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-
-          {hasActiveFilter && (
-            <button
-              type="button"
-              onClick={() => {
-                setFilter('all');
-                setSelectedCategoryId('all');
-                setSelectedSourceId('all');
-                setSearchTerm('');
-              }}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition shrink-0 whitespace-nowrap"
-            >
-              <X className="w-3.5 h-3.5" />
-              Limpar
-            </button>
-          )}
-        </div>
-
-        {/* Resumo do Filtro Ativo no Mobile */}
-        {hasActiveFilter && (
-          <div className="p-2.5 bg-zinc-950/90 border border-zinc-800 rounded-xl flex items-center justify-between gap-2 text-[11px]">
-            <span className="text-zinc-400">
-              <strong className="text-zinc-100">{filteredSummary.count}</strong> itens
-            </span>
-            <div className="flex items-center gap-2">
-              <span
-                className={`font-bold ${
-                  filteredSummary.net >= 0 ? 'text-zinc-100' : 'text-rose-400'
-                }`}
-              >
-                Saldo: {formatCurrency(filteredSummary.net)}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Barra de Busca, Filtros Avançados e Ações (Desktop) */}
-      <div className="hidden md:block p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* Busca + Dropdowns de Categoria e Conta/Cartão */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 flex-1">
-            {/* Busca por texto */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar descrição ou nota..."
-                className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
-              />
-            </div>
+      {/* Desktop Topo */}
+      <div className="hidden md:flex items-center justify-between gap-3 p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {/* Seletor de Mês */}
+          <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 px-2.5 py-1.5 rounded-xl text-xs shrink-0">
+            <button
+              type="button"
+              onClick={prevMonth}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Mês anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="font-bold text-zinc-100 px-2 capitalize text-sm">
+              {formattedMonth}
+            </span>
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+              title="Próximo mês"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
 
-            {/* Filtro por Categoria */}
+          {/* Dropdown de Categorias Simplificado (Desktop) */}
+          <div className="w-56 shrink-0">
             <select
               value={selectedCategoryId}
               onChange={(e) => setSelectedCategoryId(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer"
             >
-              <option value="all">Todas as Categorias</option>
+              <option value="all">🏷️ Todas as Categorias</option>
               <optgroup label="Receitas">
                 {initialCategories
                   .filter((c) => c.type === 'income')
@@ -910,16 +791,18 @@ export function TransactionsView({
                     </option>
                   ))}
               </optgroup>
-              <option value="none">Sem Categoria</option>
+              <option value="none">⚪ Sem Categoria</option>
             </select>
+          </div>
 
-            {/* Filtro por Conta ou Cartão */}
+          {/* Filtro por Conta / Cartão */}
+          <div className="w-52 shrink-0">
             <select
               value={selectedSourceId}
               onChange={(e) => setSelectedSourceId(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer"
             >
-              <option value="all">Todas as Contas &amp; Cartões</option>
+              <option value="all">🏦 Todas as Contas / Meios</option>
               {initialAccounts.length > 0 && (
                 <optgroup label="Contas Bancárias / Carteira">
                   {initialAccounts.map((acc) => (
@@ -941,174 +824,233 @@ export function TransactionsView({
             </select>
           </div>
 
-          {/* Botões de Nova Transação e Exportação */}
-          <div className="flex items-center gap-2 shrink-0">
-            <ExportDropdown
-              onExport={handleExport}
-              buttonLabel="Exportar"
-              title="Exportar Extrato"
-              disabled={filteredTransactions.length === 0}
+          {/* Busca por texto */}
+          <div className="relative flex-1 min-w-[160px]">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar descrição ou nota..."
+              className="w-full pl-9 pr-8 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
             />
-
-            {hasBusiness && (
+            {searchTerm && (
               <button
-                onClick={() => {
-                  setTransactionToEdit(null);
-                  setModalDefaultScope('business');
-                  setModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs rounded-xl transition truncate max-w-[200px]"
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
               >
-                <Store className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">+ Gasto {businessName}</span>
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
+          </div>
+        </div>
 
+        {/* Ações Desktop: Exportar + Modo Agrupado + Nova Transação */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs">
+            <button
+              type="button"
+              onClick={() => setGroupByDay(true)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
+                groupByDay
+                  ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Agrupar por Dia"
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Por Dia</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setGroupByDay(false)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
+                !groupByDay
+                  ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Lista Corrida"
+            >
+              <List className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Corrida</span>
+            </button>
+          </div>
+
+          <ExportDropdown
+            onExport={handleExport}
+            buttonLabel="Exportar"
+            title="Exportar Extrato"
+            disabled={filteredTransactions.length === 0}
+          />
+
+          {hasBusiness && (
             <button
               onClick={() => {
                 setTransactionToEdit(null);
-                setModalDefaultScope('personal');
+                setModalDefaultScope('business');
                 setModalOpen(true);
               }}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs rounded-xl transition shadow-lg shadow-emerald-500/10"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs rounded-xl transition truncate"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              Nova Transação
+              <Store className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">+ Gasto {businessName}</span>
             </button>
-          </div>
+          )}
+
+          <button
+            onClick={() => {
+              setTransactionToEdit(null);
+              setModalDefaultScope('personal');
+              setModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs rounded-xl transition shadow-lg shadow-emerald-500/10"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            Nova Transação
+          </button>
         </div>
+      </div>
 
-        {/* Linha 2: Pílulas de Tipo/Escopo + Alternador Agrupado por Dia vs Lista Corrida */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-zinc-800/80">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            <Filter className="w-3.5 h-3.5 text-zinc-500 mr-1 hidden sm:inline shrink-0" />
-            {[
-              { id: 'all' as FilterType, label: 'Todos' },
-              ...(hasBusiness
-                ? [{ id: 'business' as FilterType, label: `💼 ${businessName}` }]
-                : []),
-              { id: 'personal' as FilterType, label: '👤 Pessoal' },
-              { id: 'income' as FilterType, label: 'Receitas' },
-              { id: 'expense' as FilterType, label: 'Despesas' },
-              { id: 'credit' as FilterType, label: 'Cartão' },
-              { id: 'pending' as FilterType, label: 'Pendentes' },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${
-                  filter === f.id
-                    ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                    : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-
-            {hasActiveFilter && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFilter('all');
-                  setSelectedCategoryId('all');
-                  setSelectedSourceId('all');
-                  setSearchTerm('');
-                }}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition shrink-0"
-              >
-                <X className="w-3.5 h-3.5" />
-                Limpar filtros
-              </button>
+      {/* 2. BARRA DE TOTAIS COMPACTA EM 1 LINHA (Mobile & Desktop) */}
+      <div className="p-3 sm:px-4 sm:py-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-wrap items-center justify-between gap-2.5 text-xs">
+        <div className="flex items-center gap-3 sm:gap-6 flex-wrap">
+          {/* Entradas */}
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            <span className="text-zinc-400 text-[11px] font-medium">Entradas:</span>
+            <span className="font-bold text-emerald-400 text-xs sm:text-sm">
+              +{formatCurrency(receivedIncome)}
+            </span>
+            {pendingIncome > 0 && (
+              <span className="text-[10px] text-zinc-500 hidden sm:inline">
+                (+{formatCurrency(pendingIncome)} a receber)
+              </span>
             )}
           </div>
 
-          {/* Seletor de Mês + Alternador Agrupar por Dia vs Lista Simples */}
-          <div className="flex flex-wrap items-center gap-2 self-end sm:self-center shrink-0">
-            <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 px-2 py-1 rounded-xl text-xs">
-              <button
-                type="button"
-                onClick={prevMonth}
-                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-                title="Mês anterior"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <span className="font-semibold text-zinc-200 px-1.5 capitalize">
-                {formattedMonth}
+          {/* Saídas */}
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
+            <span className="text-zinc-400 text-[11px] font-medium">Saídas:</span>
+            <span className="font-bold text-rose-400 text-xs sm:text-sm">
+              -{formatCurrency(paidExpense)}
+            </span>
+            {pendingExpense > 0 && (
+              <span className="text-[10px] text-zinc-500 hidden sm:inline">
+                (+{formatCurrency(pendingExpense)} a pagar)
               </span>
-              <button
-                type="button"
-                onClick={nextMonth}
-                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-                title="Próximo mês"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs">
-              <button
-                type="button"
-                onClick={() => setGroupByDay(true)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
-                  groupByDay
-                    ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <CalendarDays className="w-3.5 h-3.5" />
-                <span>Por Dia</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setGroupByDay(false)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
-                  !groupByDay
-                    ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <List className="w-3.5 h-3.5" />
-                <span>Lista Corrida</span>
-              </button>
-            </div>
+            )}
           </div>
+
+          {/* Saldo Realizado */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-zinc-400 text-[11px] font-medium">Saldo:</span>
+            <span
+              className={`font-bold text-xs sm:text-sm ${
+                realizedBalance >= 0 ? 'text-zinc-100' : 'text-rose-400'
+              }`}
+            >
+              {realizedBalance >= 0 ? '+' : '-'} {formatCurrency(Math.abs(realizedBalance))}
+            </span>
+          </div>
+
+          {/* Previsão Final no Desktop */}
+          <div className="hidden lg:flex items-center gap-1.5 text-zinc-400 text-[11px]">
+            <span>Previsão:</span>
+            <span className="font-semibold text-zinc-200">
+              {formatCurrency(projectedBalance)}
+            </span>
+          </div>
+
+          {/* Pendências rápidas */}
+          {(pendingExpense > 0 || pendingIncome > 0) && (
+            <div className="flex items-center gap-1 text-[10px] text-amber-400/90 font-medium">
+              <Clock className="w-3 h-3 shrink-0" />
+              <span>
+                {pendingExpense > 0
+                  ? `Pendente: ${formatCurrency(pendingExpense)}`
+                  : `A receber: ${formatCurrency(pendingIncome)}`}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Resumo do Filtro Ativo */}
+        {/* Evolução por Categoria */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setEvolutionModalType('expense')}
+            className="text-[11px] font-semibold text-zinc-400 hover:text-zinc-200 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-zinc-800 transition"
+            title="Ver evolução anual"
+          >
+            <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+            <span className="hidden sm:inline">Evolução Anual</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. PÍLULAS DE ESCOPO / STATUS */}
+      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-0.5">
+        <Filter className="w-3.5 h-3.5 text-zinc-500 mr-1 hidden sm:inline shrink-0" />
+        {[
+          { id: 'all' as FilterType, label: 'Todos' },
+          ...(hasBusiness
+            ? [{ id: 'business' as FilterType, label: `💼 ${businessName}` }]
+            : []),
+          { id: 'personal' as FilterType, label: '👤 Pessoal' },
+          { id: 'income' as FilterType, label: 'Receitas' },
+          { id: 'expense' as FilterType, label: 'Despesas' },
+          { id: 'credit' as FilterType, label: 'Cartão' },
+          { id: 'pending' as FilterType, label: 'Pendentes' },
+        ].map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap shrink-0 ${
+              filter === f.id
+                ? 'bg-zinc-100 text-zinc-900 font-semibold'
+                : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+
         {hasActiveFilter && (
-          <div className="p-3 bg-zinc-950/90 border border-zinc-800 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span className="text-zinc-400">
-              Exibindo{' '}
-              <strong className="text-zinc-100">{filteredSummary.count}</strong>{' '}
-              {filteredSummary.count === 1 ? 'lançamento' : 'lançamentos'} no
-              filtro atual:
-            </span>
-            <div className="flex items-center gap-4">
-              {filteredSummary.income > 0 && (
-                <span className="text-emerald-400 font-semibold">
-                  Entradas: +{formatCurrency(filteredSummary.income)}
-                </span>
-              )}
-              {filteredSummary.expense > 0 && (
-                <span className="text-rose-400 font-semibold">
-                  Saídas: -{formatCurrency(filteredSummary.expense)}
-                </span>
-              )}
-              <span
-                className={`font-bold ${
-                  filteredSummary.net >= 0
-                    ? 'text-zinc-100'
-                    : 'text-rose-400'
-                }`}
-              >
-                Saldo: {formatCurrency(filteredSummary.net)}
-              </span>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setFilter('all');
+              setSelectedCategoryId('all');
+              setSelectedSourceId('all');
+              setSearchTerm('');
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition shrink-0 whitespace-nowrap"
+          >
+            <X className="w-3.5 h-3.5" />
+            Limpar
+          </button>
         )}
       </div>
+
+      {/* Resumo de filtro ativo se houver */}
+      {hasActiveFilter && (
+        <div className="p-2.5 bg-zinc-950/90 border border-zinc-800 rounded-xl flex items-center justify-between gap-2 text-[11px]">
+          <span className="text-zinc-400">
+            Exibindo <strong className="text-zinc-100">{filteredSummary.count}</strong> {filteredSummary.count === 1 ? 'lançamento' : 'lançamentos'}
+          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`font-bold ${
+                filteredSummary.net >= 0 ? 'text-zinc-100' : 'text-rose-400'
+              }`}
+            >
+              Saldo: {formatCurrency(filteredSummary.net)}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Lista de Transações (Agrupada por Dia ou Lista Corrida) */}
       {loading ? (
