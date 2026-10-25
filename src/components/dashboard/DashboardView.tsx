@@ -288,7 +288,6 @@ export function DashboardView({
                   revenue: prevSum.revenue + tx.amount,
                   netProfit: prevSum.netProfit + tx.amount,
                   projectedProfit: prevSum.projectedProfit + tx.amount,
-                  salesCount: prevSum.salesCount + 1,
                 },
               };
             } else if (isExpense) {

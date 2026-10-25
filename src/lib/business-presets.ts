@@ -181,3 +181,66 @@ export function resolveBusinessProfile(
   };
 }
 
+/**
+ * Retorna o rótulo da unidade de atendimento/venda no singular ou plural.
+ * Respeita a nomenclatura configurada para cada segmento de negócio.
+ * Ex.: 'Atendimentos' -> 'atendimento' / 'atendimentos'
+ * Ex.: 'Vendas & Pedidos' -> 'venda' / 'vendas'
+ * Ex.: 'Ordens de Serviço' -> 'ordem de serviço' / 'ordens de serviço'
+ * Ex.: 'Consultas' -> 'consulta' / 'consultas'
+ * Ex.: 'Aulas & Sessões' -> 'sessão' / 'sessões'
+ */
+export function formatSalesUnit(count: number, salesLabel: string = 'Atendimentos'): string {
+  const normalized = salesLabel.trim().toLowerCase();
+  const isSingular = count === 1;
+
+  if (normalized.includes('atendimento')) {
+    return isSingular ? 'atendimento' : 'atendimentos';
+  }
+  if (normalized.includes('venda')) {
+    return isSingular ? 'venda' : 'vendas';
+  }
+  if (normalized.includes('ordem') || normalized.includes('ordens') || normalized.includes('o.s')) {
+    return isSingular ? 'ordem de serviço' : 'ordens de serviço';
+  }
+  if (normalized.includes('consulta')) {
+    return isSingular ? 'consulta' : 'consultas';
+  }
+  if (normalized.includes('aula') || normalized.includes('sess')) {
+    return isSingular ? 'sessão' : 'sessões';
+  }
+
+  // Fallback genérico
+  if (isSingular) {
+    return normalized.endsWith('s') ? normalized.slice(0, -1) : normalized;
+  }
+  return normalized.endsWith('s') ? normalized : `${normalized}s`;
+}
+
+/**
+ * Retorna o texto formatado para a contagem de serviços/produtos em relação ao total de atendimentos.
+ * Ex.: '17 serviços em 11 atendimentos' ou '17 produtos em 11 vendas'
+ */
+export function formatSplitCount(
+  itemCount: number,
+  type: 'service' | 'product',
+  totalSales: number,
+  salesLabel: string = 'Atendimentos'
+): string {
+  const unitLabel = formatSalesUnit(totalSales, salesLabel);
+  const itemTypeLabel = type === 'service'
+    ? (itemCount === 1 ? 'serviço' : 'serviços')
+    : (itemCount === 1 ? 'produto' : 'produtos');
+
+  if (itemCount === 0) {
+    return `0 ${itemTypeLabel} ${type === 'service' ? 'realizados' : 'vendidos'}`;
+  }
+
+  if (totalSales > 0) {
+    return `${itemCount} ${itemTypeLabel} em ${totalSales} ${unitLabel}`;
+  }
+
+  return `${itemCount} ${itemTypeLabel}`;
+}
+
+

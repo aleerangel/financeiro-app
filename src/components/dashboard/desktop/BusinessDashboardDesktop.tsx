@@ -32,6 +32,7 @@ import {
   useIndependentChartPeriod,
 } from '../ChartPeriodToolbar';
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
+import { formatSalesUnit, formatSplitCount } from '@/lib/business-presets';
 import { useState } from 'react';
 import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
@@ -161,7 +162,7 @@ export function BusinessDashboardDesktop({
           </div>
           <div className="mt-2">
             <span className="text-lg sm:text-2xl font-extrabold text-blue-400 block">
-              {summary.salesCount} {summary.salesCount === 1 ? salesLabel.toLowerCase().replace(/s$/, '') : salesLabel.toLowerCase()}
+              {summary.salesCount} {formatSalesUnit(summary.salesCount, salesLabel)}
             </span>
             <span className="text-[11px] text-zinc-400 mt-1 block">
               {summary.uniqueClientsCount} {summary.uniqueClientsCount === 1 ? 'cliente único' : 'clientes únicos'}
@@ -644,7 +645,7 @@ export function BusinessDashboardDesktop({
                     {formatCurrency(data.revenueSplit?.serviceRevenue || 0)}
                   </span>
                   <span className="text-[10px] text-zinc-400 block mt-0.5">
-                    {data.revenueSplit?.serviceCount || 0} cortes / atendimentos
+                    {formatSplitCount(data.revenueSplit?.serviceCount || 0, 'service', summary.salesCount, salesLabel)}
                   </span>
                 </div>
 
@@ -657,7 +658,7 @@ export function BusinessDashboardDesktop({
                     {formatCurrency(data.revenueSplit?.productRevenue || 0)}
                   </span>
                   <span className="text-[10px] text-zinc-400 block mt-0.5">
-                    {data.revenueSplit?.productCount || 0} produtos vendidos
+                    {formatSplitCount(data.revenueSplit?.productCount || 0, 'product', summary.salesCount, salesLabel)}
                   </span>
                 </div>
               </div>

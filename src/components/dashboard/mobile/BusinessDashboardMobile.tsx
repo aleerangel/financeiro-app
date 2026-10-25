@@ -18,6 +18,8 @@ import { AccountWithBalance } from '@/lib/actions/accounts';
 import { BusinessDashboardData } from '@/lib/actions/dashboard';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { formatSalesUnit, formatSplitCount } from '@/lib/business-presets';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
 
 export interface BusinessDashboardMobileProps {
@@ -35,6 +37,7 @@ export function BusinessDashboardMobile({
   loading = false,
 }: BusinessDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
+  const { salesLabel } = useBusinessProfile();
   const [engagementClient, setEngagementClient] = useState<{
     id: string;
     name: string;
@@ -103,7 +106,7 @@ export function BusinessDashboardMobile({
           </div>
           <div className="mt-2">
             <span className="text-2xl font-extrabold text-blue-400 block tracking-tight">
-              {summary.salesCount} {summary.salesCount === 1 ? 'atendimento' : 'atendimentos'}
+              {summary.salesCount} {formatSalesUnit(summary.salesCount, salesLabel)}
             </span>
             <span className="text-xs text-zinc-400 mt-1 block">
               {summary.uniqueClientsCount} clientes únicos
@@ -210,7 +213,7 @@ export function BusinessDashboardMobile({
               {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
             </span>
             <span className="text-[10px] text-zinc-400 block mt-0.5">
-              {revenueSplit.serviceCount} atendimentos
+              {formatSplitCount(revenueSplit.serviceCount, 'service', summary.salesCount, salesLabel)}
             </span>
           </div>
 
@@ -222,7 +225,7 @@ export function BusinessDashboardMobile({
               {formatHidden(formatCurrency(revenueSplit.productRevenue))}
             </span>
             <span className="text-[10px] text-zinc-400 block mt-0.5">
-              {revenueSplit.productCount} vendidos
+              {formatSplitCount(revenueSplit.productCount, 'product', summary.salesCount, salesLabel)}
             </span>
           </div>
         </div>
