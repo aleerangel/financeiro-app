@@ -3,24 +3,22 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
-  Plus,
   ArrowDownRight,
   ArrowUpRight,
   CreditCard as CardIcon,
   CheckCircle2,
   Clock,
   Trash2,
-  Filter,
   Pencil,
   Store,
   Search,
   CalendarDays,
   List,
+  TrendingUp,
   TrendingDown,
   X,
   ChevronLeft,
   ChevronRight,
-  SlidersHorizontal,
 } from 'lucide-react';
 import {
   Transaction,
@@ -67,14 +65,6 @@ const CategoryEvolutionModal = dynamic(
   { ssr: false }
 );
 
-const MobileTransactionFiltersDrawer = dynamic(
-  () =>
-    import('./MobileTransactionFiltersDrawer').then(
-      (m) => m.MobileTransactionFiltersDrawer
-    ),
-  { ssr: false }
-);
-
 interface TransactionsViewProps {
   initialAccounts: (Account | AccountWithBalance)[];
   initialCards: CreditCard[];
@@ -112,19 +102,17 @@ export function TransactionsView({
   );
 
   // Filtros e visualização
-  const [filter, setFilter] = useState<FilterType>('all');
+  const filter: FilterType = 'all';
+  const selectedSourceId = 'all';
+  const modalDefaultScope: FinancialScope = 'personal';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
-  const [selectedSourceId, setSelectedSourceId] = useState<string>('all');
   const [groupByDay, setGroupByDay] = useState<boolean>(true);
   const [evolutionModalType, setEvolutionModalType] = useState<
     'income' | 'expense' | null
   >(null);
-  const [mobileFilterDrawerOpen, setMobileFilterDrawerOpen] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalDefaultScope, setModalDefaultScope] =
-    useState<FinancialScope>('personal');
   const [transactionToEdit, setTransactionToEdit] =
     useState<Transaction | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -271,8 +259,6 @@ export function TransactionsView({
     .filter((t) => t.type === 'expense' && !t.is_paid)
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
 
-  const realizedBalance = receivedIncome - paidExpense;
-
   // Rendimentos estimados pendentes das contas para o mês selecionado
   const { month: currentMonth, year: currentYear } = useMemo(() => getZonedParts(), []);
   const projectedYieldPending = useMemo(
@@ -287,12 +273,6 @@ export function TransactionsView({
     [initialAccounts, month, year, currentMonth, currentYear]
   );
 
-  const projectedBalance =
-    receivedIncome +
-    pendingIncome -
-    (paidExpense + pendingExpense) +
-    projectedYieldPending;
-
   // Aplicação combinada dos filtros
   const filteredTransactions = useMemo(
     () =>
@@ -305,32 +285,34 @@ export function TransactionsView({
     [transactions, filter, selectedCategoryId, selectedSourceId, searchTerm]
   );
 
-  const hasActiveFilter =
-    filter !== 'all' ||
-    selectedCategoryId !== 'all' ||
-    selectedSourceId !== 'all' ||
-    searchTerm.trim().length > 0;
+  // Categorias ativas com movimentações no mês selecionado e suas respectivas contagens
+  const activeCategoriesWithCount = useMemo(() => {
+    const countMap = new Map<string, number>();
+    let uncategorizedCount = 0;
 
-  const activeAdvancedFiltersCount =
-    (selectedCategoryId !== 'all' ? 1 : 0) +
-    (selectedSourceId !== 'all' ? 1 : 0) +
-    (!groupByDay ? 1 : 0);
-
-  const filteredSummary = useMemo(() => {
-    let inc = 0;
-    let exp = 0;
-    for (const t of filteredTransactions) {
-      const amt = Number(t.amount) || 0;
-      if (t.type === 'income') inc += amt;
-      else exp += amt;
+    for (const t of transactions) {
+      if (!t.category_id) {
+        uncategorizedCount++;
+      } else {
+        countMap.set(t.category_id, (countMap.get(t.category_id) || 0) + 1);
+      }
     }
+
+    const incomeCategories = initialCategories
+      .filter((c) => c.type === 'income' && (countMap.get(c.id) || 0) > 0)
+      .map((c) => ({ ...c, count: countMap.get(c.id)! }));
+
+    const expenseCategories = initialCategories
+      .filter((c) => c.type === 'expense' && (countMap.get(c.id) || 0) > 0)
+      .map((c) => ({ ...c, count: countMap.get(c.id)! }));
+
     return {
-      income: inc,
-      expense: exp,
-      net: inc - exp,
-      count: filteredTransactions.length,
+      incomeCategories,
+      expenseCategories,
+      uncategorizedCount,
+      totalCount: transactions.length,
     };
-  }, [filteredTransactions]);
+  }, [transactions, initialCategories]);
 
   // Agrupamento por Dia (ordenado da data mais recente para a mais antiga)
   const dayGroups = useMemo(
@@ -338,14 +320,15 @@ export function TransactionsView({
     [filteredTransactions]
   );
 
+  const hasActiveFilter = selectedCategoryId !== 'all' || searchTerm.trim().length > 0;
+
   const handleExport = (format: ExportFormat) => {
     let filterLabel = 'Todas as movimentações';
-    if (filter === 'income') filterLabel = 'Apenas Receitas';
-    else if (filter === 'expense') filterLabel = 'Apenas Despesas';
-    else if (filter === 'business') filterLabel = `Apenas ${hasBusiness ? businessName : 'Negócio'}`;
-    else if (filter === 'personal') filterLabel = 'Apenas Pessoal';
-    else if (filter === 'credit') filterLabel = 'Cartão de Crédito';
-    else if (filter === 'pending') filterLabel = 'Apenas Pendentes';
+    if (selectedCategoryId !== 'all') {
+      const cat = initialCategories.find((c) => c.id === selectedCategoryId);
+      if (cat) filterLabel = `Categoria: ${cat.name}`;
+      else if (selectedCategoryId === 'none') filterLabel = 'Sem Categoria';
+    }
 
     if (searchTerm.trim()) {
       filterLabel += ` • Busca: "${searchTerm.trim()}"`;
@@ -626,431 +609,210 @@ export function TransactionsView({
   );
 
   return (
-    <div className="space-y-6">
-      {/* 1. TOPO DA PÁGINA: Mês, Categorias e Ações */}
-      {/* Mobile Topo */}
-      <div className="md:hidden p-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-        {/* Linha 1: Mês + Categoria + Filtros + Novo */}
-        <div className="flex items-center justify-between gap-2">
-          {/* Seletor de Mês Compacto */}
-          <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 px-2 py-1.5 rounded-xl text-xs shrink-0">
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-              title="Mês anterior"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <span className="font-semibold text-zinc-200 px-1 capitalize text-xs">
-              {formattedMonth}
-            </span>
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-              title="Próximo mês"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Dropdown de Categorias Simplificado (Mobile) */}
-          <div className="flex-1 min-w-0">
-            <select
-              value={selectedCategoryId}
-              onChange={(e) => setSelectedCategoryId(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-200 focus:outline-none focus:border-emerald-500 transition truncate cursor-pointer"
-            >
-              <option value="all">🏷️ Categorias: Todas</option>
-              <optgroup label="Receitas">
-                {initialCategories
-                  .filter((c) => c.type === 'income')
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      🟢 {c.name}
-                    </option>
-                  ))}
-              </optgroup>
-              <optgroup label="Despesas">
-                {initialCategories
-                  .filter((c) => c.type === 'expense')
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      🔴 {c.name}
-                    </option>
-                  ))}
-              </optgroup>
-              <option value="none">⚪ Sem Categoria</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => setMobileFilterDrawerOpen(true)}
-              className={`p-2 rounded-xl text-xs font-semibold border transition relative ${
-                activeAdvancedFiltersCount > 0
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                  : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:text-zinc-100'
-              }`}
-              title="Mais Filtros & Exportar"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              {activeAdvancedFiltersCount > 0 && (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 absolute -top-0.5 -right-0.5" />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setTransactionToEdit(null);
-                setModalDefaultScope('personal');
-                setModalOpen(true);
-              }}
-              className="p-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-xl shadow-md shadow-emerald-500/10 transition"
-              title="Novo Lançamento"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            </button>
-          </div>
-        </div>
-
-        {/* Linha 2: Busca por Texto */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar lançamentos..."
-            className="w-full pl-8 pr-8 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => setSearchTerm('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+    <div className="space-y-4">
+      {/* 1. LINHA 1: Busca por Texto */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar descrição ou nota..."
+          className="w-full pl-10 pr-9 py-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition shadow-sm"
+        />
+        {searchTerm && (
+          <button
+            type="button"
+            onClick={() => setSearchTerm('')}
+            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-200 absolute right-3 top-1/2 -translate-y-1/2 transition"
+            title="Limpar busca"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      {/* Desktop Topo */}
-      <div className="hidden md:flex items-center justify-between gap-3 p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          {/* Seletor de Mês */}
-          <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 px-2.5 py-1.5 rounded-xl text-xs shrink-0">
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-              title="Mês anterior"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="font-bold text-zinc-100 px-2 capitalize text-sm">
-              {formattedMonth}
-            </span>
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
-              title="Próximo mês"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Dropdown de Categorias Simplificado (Desktop) */}
-          <div className="w-56 shrink-0">
-            <select
-              value={selectedCategoryId}
-              onChange={(e) => setSelectedCategoryId(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer"
-            >
-              <option value="all">🏷️ Todas as Categorias</option>
-              <optgroup label="Receitas">
-                {initialCategories
-                  .filter((c) => c.type === 'income')
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      🟢 {c.name}
-                    </option>
-                  ))}
-              </optgroup>
-              <optgroup label="Despesas">
-                {initialCategories
-                  .filter((c) => c.type === 'expense')
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      🔴 {c.name}
-                    </option>
-                  ))}
-              </optgroup>
-              <option value="none">⚪ Sem Categoria</option>
-            </select>
-          </div>
-
-          {/* Filtro por Conta / Cartão */}
-          <div className="w-52 shrink-0">
-            <select
-              value={selectedSourceId}
-              onChange={(e) => setSelectedSourceId(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer"
-            >
-              <option value="all">🏦 Todas as Contas / Meios</option>
-              {initialAccounts.length > 0 && (
-                <optgroup label="Contas Bancárias / Carteira">
-                  {initialAccounts.map((acc) => (
-                    <option key={acc.id} value={`acc:${acc.id}`}>
-                      🏦 {acc.name}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {initialCards.length > 0 && (
-                <optgroup label="Cartões de Crédito">
-                  {initialCards.map((card) => (
-                    <option key={card.id} value={`card:${card.id}`}>
-                      💳 {card.name}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-          </div>
-
-          {/* Busca por texto */}
-          <div className="relative flex-1 min-w-[160px]">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar descrição ou nota..."
-              className="w-full pl-9 pr-8 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+      {/* 2. LINHA 2: Seletor de Mês em Linha Inteira com Botão de Exportar à Direita */}
+      <div className="flex items-center justify-between gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs">
+          <button
+            type="button"
+            onClick={prevMonth}
+            className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+            title="Mês anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="font-bold text-zinc-100 px-2 capitalize text-xs sm:text-sm">
+            {formattedMonth}
+          </span>
+          <button
+            type="button"
+            onClick={nextMonth}
+            className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+            title="Próximo mês"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Ações Desktop: Exportar + Modo Agrupado + Nova Transação */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs">
-            <button
-              type="button"
-              onClick={() => setGroupByDay(true)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
-                groupByDay
-                  ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="Agrupar por Dia"
-            >
-              <CalendarDays className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Por Dia</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setGroupByDay(false)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
-                !groupByDay
-                  ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="Lista Corrida"
-            >
-              <List className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Corrida</span>
-            </button>
-          </div>
-
+        {/* Botão de Exportar */}
+        <div className="shrink-0">
           <ExportDropdown
             onExport={handleExport}
             buttonLabel="Exportar"
             title="Exportar Extrato"
             disabled={filteredTransactions.length === 0}
           />
-
-          {hasBusiness && (
-            <button
-              onClick={() => {
-                setTransactionToEdit(null);
-                setModalDefaultScope('business');
-                setModalOpen(true);
-              }}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs rounded-xl transition truncate"
-            >
-              <Store className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">+ Gasto {businessName}</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => {
-              setTransactionToEdit(null);
-              setModalDefaultScope('personal');
-              setModalOpen(true);
-            }}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs rounded-xl transition shadow-lg shadow-emerald-500/10"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            Nova Transação
-          </button>
         </div>
       </div>
 
-      {/* 2. BARRA DE TOTAIS COMPACTA EM 1 LINHA (Mobile & Desktop) */}
-      <div className="p-3 sm:px-4 sm:py-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-wrap items-center justify-between gap-2.5 text-xs">
-        <div className="flex items-center gap-3 sm:gap-6 flex-wrap">
-          {/* Entradas */}
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span className="text-zinc-400 text-[11px] font-medium">Entradas:</span>
-            <span className="font-bold text-emerald-400 text-xs sm:text-sm">
+      {/* 3. LINHA 3: Cards de Destaque Lado a Lado (Entradas e Saídas com Evolução) */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        {/* Card Receitas */}
+        <div className="p-3.5 sm:p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-[11px] uppercase tracking-wider font-semibold text-emerald-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+                Receitas
+              </span>
+              <button
+                type="button"
+                onClick={() => setEvolutionModalType('income')}
+                className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline transition"
+                title="Ver evolução anual de receitas"
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Evolução</span>
+              </button>
+            </div>
+            <span className="text-base sm:text-2xl font-bold text-emerald-400 block tracking-tight">
               +{formatCurrency(receivedIncome)}
             </span>
-            {pendingIncome > 0 && (
-              <span className="text-[10px] text-zinc-500 hidden sm:inline">
-                (+{formatCurrency(pendingIncome)} a receber)
-              </span>
-            )}
           </div>
+          <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
+            {pendingIncome > 0
+              ? `+ ${formatCurrency(pendingIncome)} a receber`
+              : 'Tudo recebido'}
+          </div>
+        </div>
 
-          {/* Saídas */}
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
-            <span className="text-zinc-400 text-[11px] font-medium">Saídas:</span>
-            <span className="font-bold text-rose-400 text-xs sm:text-sm">
+        {/* Card Despesas */}
+        <div className="p-3.5 sm:p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
+                Despesas
+              </span>
+              <button
+                type="button"
+                onClick={() => setEvolutionModalType('expense')}
+                className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 hover:underline transition"
+                title="Ver evolução anual de despesas"
+              >
+                <TrendingDown className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Evolução</span>
+              </button>
+            </div>
+            <span className="text-base sm:text-2xl font-bold text-rose-400 block tracking-tight">
               -{formatCurrency(paidExpense)}
             </span>
-            {pendingExpense > 0 && (
-              <span className="text-[10px] text-zinc-500 hidden sm:inline">
-                (+{formatCurrency(pendingExpense)} a pagar)
-              </span>
-            )}
           </div>
+          <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
+            {pendingExpense > 0
+              ? `+ ${formatCurrency(pendingExpense)} a pagar`
+              : 'Tudo pago'}
+          </div>
+        </div>
+      </div>
 
-          {/* Saldo Realizado */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-zinc-400 text-[11px] font-medium">Saldo:</span>
-            <span
-              className={`font-bold text-xs sm:text-sm ${
-                realizedBalance >= 0 ? 'text-zinc-100' : 'text-rose-400'
-              }`}
+      {/* 4. LINHA 4: Categorias Ativas do Mês, Contador & Alternador de Modo */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {/* Dropdown Inteligente de Categorias */}
+          <div className="flex-1 sm:max-w-xs min-w-0">
+            <select
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer truncate"
             >
-              {realizedBalance >= 0 ? '+' : '-'} {formatCurrency(Math.abs(realizedBalance))}
-            </span>
+              <option value="all">
+                🏷️ Todas as Categorias ({activeCategoriesWithCount.totalCount})
+              </option>
+              {activeCategoriesWithCount.incomeCategories.length > 0 && (
+                <optgroup label="Receitas do Mês">
+                  {activeCategoriesWithCount.incomeCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      🟢 {c.name} ({c.count})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {activeCategoriesWithCount.expenseCategories.length > 0 && (
+                <optgroup label="Despesas do Mês">
+                  {activeCategoriesWithCount.expenseCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      🔴 {c.name} ({c.count})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {activeCategoriesWithCount.uncategorizedCount > 0 && (
+                <option value="none">
+                  ⚪ Sem Categoria ({activeCategoriesWithCount.uncategorizedCount})
+                </option>
+              )}
+            </select>
           </div>
 
-          {/* Previsão Final no Desktop */}
-          <div className="hidden lg:flex items-center gap-1.5 text-zinc-400 text-[11px]">
-            <span>Previsão:</span>
-            <span className="font-semibold text-zinc-200">
-              {formatCurrency(projectedBalance)}
-            </span>
-          </div>
+          {/* Contador de Lançamentos */}
+          <span className="text-[11px] text-zinc-400 px-2.5 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg shrink-0">
+            <strong className="text-zinc-100 font-bold">{filteredTransactions.length}</strong>{' '}
+            {filteredTransactions.length === 1 ? 'lançamento' : 'lançamentos'}
+          </span>
 
-          {/* Pendências rápidas */}
-          {(pendingExpense > 0 || pendingIncome > 0) && (
-            <div className="flex items-center gap-1 text-[10px] text-amber-400/90 font-medium">
-              <Clock className="w-3 h-3 shrink-0" />
-              <span>
-                {pendingExpense > 0
-                  ? `Pendente: ${formatCurrency(pendingExpense)}`
-                  : `A receber: ${formatCurrency(pendingIncome)}`}
-              </span>
-            </div>
+          {selectedCategoryId !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setSelectedCategoryId('all')}
+              className="p-1.5 text-zinc-400 hover:text-rose-400 rounded-lg hover:bg-zinc-800 transition shrink-0"
+              title="Limpar filtro de categoria"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           )}
         </div>
 
-        {/* Evolução por Categoria */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Alternador de Visualização: Por Dia vs Lista Corrida */}
+        <div className="flex items-center self-end sm:self-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs shrink-0">
           <button
             type="button"
-            onClick={() => setEvolutionModalType('expense')}
-            className="text-[11px] font-semibold text-zinc-400 hover:text-zinc-200 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-zinc-800 transition"
-            title="Ver evolução anual"
-          >
-            <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
-            <span className="hidden sm:inline">Evolução Anual</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 3. PÍLULAS DE ESCOPO / STATUS */}
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-0.5">
-        <Filter className="w-3.5 h-3.5 text-zinc-500 mr-1 hidden sm:inline shrink-0" />
-        {[
-          { id: 'all' as FilterType, label: 'Todos' },
-          ...(hasBusiness
-            ? [{ id: 'business' as FilterType, label: `💼 ${businessName}` }]
-            : []),
-          { id: 'personal' as FilterType, label: '👤 Pessoal' },
-          { id: 'income' as FilterType, label: 'Receitas' },
-          { id: 'expense' as FilterType, label: 'Despesas' },
-          { id: 'credit' as FilterType, label: 'Cartão' },
-          { id: 'pending' as FilterType, label: 'Pendentes' },
-        ].map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap shrink-0 ${
-              filter === f.id
-                ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+            onClick={() => setGroupByDay(true)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
+              groupByDay
+                ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            {f.label}
+            <CalendarDays className="w-3.5 h-3.5" />
+            <span>Por Dia</span>
           </button>
-        ))}
-
-        {hasActiveFilter && (
           <button
             type="button"
-            onClick={() => {
-              setFilter('all');
-              setSelectedCategoryId('all');
-              setSelectedSourceId('all');
-              setSearchTerm('');
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition shrink-0 whitespace-nowrap"
+            onClick={() => setGroupByDay(false)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
+              !groupByDay
+                ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
           >
-            <X className="w-3.5 h-3.5" />
-            Limpar
+            <List className="w-3.5 h-3.5" />
+            <span>Lista Corrida</span>
           </button>
-        )}
-      </div>
-
-      {/* Resumo de filtro ativo se houver */}
-      {hasActiveFilter && (
-        <div className="p-2.5 bg-zinc-950/90 border border-zinc-800 rounded-xl flex items-center justify-between gap-2 text-[11px]">
-          <span className="text-zinc-400">
-            Exibindo <strong className="text-zinc-100">{filteredSummary.count}</strong> {filteredSummary.count === 1 ? 'lançamento' : 'lançamentos'}
-          </span>
-          <div className="flex items-center gap-2">
-            <span
-              className={`font-bold ${
-                filteredSummary.net >= 0 ? 'text-zinc-100' : 'text-rose-400'
-              }`}
-            >
-              Saldo: {formatCurrency(filteredSummary.net)}
-            </span>
-          </div>
         </div>
-      )}
+      </div>
 
       {/* Lista de Transações (Agrupada por Dia ou Lista Corrida) */}
       {loading ? (
@@ -1121,27 +883,6 @@ export function TransactionsView({
           {filteredTransactions.map((t) => renderTransactionRow(t))}
         </div>
       )}
-
-      <MobileTransactionFiltersDrawer
-        isOpen={mobileFilterDrawerOpen}
-        onClose={() => setMobileFilterDrawerOpen(false)}
-        categories={initialCategories}
-        accounts={initialAccounts}
-        cards={initialCards}
-        selectedCategoryId={selectedCategoryId}
-        onSelectCategory={setSelectedCategoryId}
-        selectedSourceId={selectedSourceId}
-        onSelectSource={setSelectedSourceId}
-        groupByDay={groupByDay}
-        onToggleGroupByDay={setGroupByDay}
-        onExport={handleExport}
-        hasActiveFilters={activeAdvancedFiltersCount > 0}
-        onClearFilters={() => {
-          setSelectedCategoryId('all');
-          setSelectedSourceId('all');
-          setGroupByDay(true);
-        }}
-      />
 
       <TransactionModal
         isOpen={modalOpen}
