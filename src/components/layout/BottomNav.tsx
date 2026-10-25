@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -34,13 +35,6 @@ export function BottomNav() {
   }, [router]);
 
   const handleTabClick = (tab: MobileTab) => {
-    if (tab === 'statement') {
-      setActiveTab('statement');
-      if (pathname !== '/transacoes') {
-        router.push('/transacoes');
-      }
-      return;
-    }
     setActiveTab(tab);
     if (pathname !== '/dashboard') {
       router.push('/dashboard');
@@ -95,17 +89,17 @@ export function BottomNav() {
           const Icon = item.icon;
           const isActive = effectiveTab === item.tab;
           return (
-            <button
+            <Link
               key={item.tab}
-              type="button"
-              onClick={() => handleTabClick(item.tab)}
+              href="/transacoes"
+              prefetch={true}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition active:scale-95 ${
                 isActive ? 'text-emerald-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
               <span className="text-[10px]">{item.label}</span>
-            </button>
+            </Link>
           );
         })()}
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Plus,
@@ -37,16 +38,6 @@ import { UnifiedDailyPendingHub } from './UnifiedDailyPendingHub';
 import { BusinessSettingsModal } from '@/components/settings/BusinessSettingsModal';
 
 // Abas secundárias do mobile carregadas sob demanda (evita sobrecarga de JS inicial)
-const MobileStatementView = dynamic(
-  () => import('./mobile/MobileStatementView').then((m) => m.MobileStatementView),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="py-16 text-center text-zinc-500 text-xs animate-pulse">Carregando extrato...</div>
-    ),
-  }
-);
-
 const MobileSummaryView = dynamic(
   () => import('./mobile/MobileSummaryView').then((m) => m.MobileSummaryView),
   {
@@ -130,6 +121,13 @@ export function DashboardView({
   const { month, year, formattedMonth } = useDateContext();
   const { isMobile } = { isMobile: useIsMobile(768, initialIsMobile) };
   const { activeTab, contextMode } = useMobileNavigation();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (activeTab === 'statement') {
+      router.replace('/transacoes');
+    }
+  }, [activeTab, router]);
   const { profile, businessName, hasBusiness, salesLabel } = useBusinessProfile();
 
   const [businessSettingsOpen, setBusinessSettingsOpen] = useState(false);
@@ -553,13 +551,9 @@ export function DashboardView({
         )}
 
         {activeTab === 'statement' && (
-          <MobileStatementView
-            transactions={transactions}
-            accounts={accounts}
-            cards={initialCards}
-            categories={categories}
-            onRefresh={refreshData}
-          />
+          <div className="py-16 text-center text-zinc-500 text-xs animate-pulse">
+            Carregando extrato...
+          </div>
         )}
 
         {activeTab === 'summary' && (
