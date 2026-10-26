@@ -1,8 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { X, Plus, Minus, Trash2, CheckCircle2, UserPlus, CalendarClock, Crown } from 'lucide-react';
-import { Product, Account, PaymentMethod, SalePaymentMethod, Client } from '@/types/database';
+import { Product, Account, PaymentMethod, SalePaymentMethod, Client, Sale } from '@/types/database';
+
+const SaleReceiptModal = dynamic(
+  () => import('./SaleReceiptModal').then((m) => m.SaleReceiptModal),
+  { ssr: false }
+);
 import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { saveClientSubscription } from '@/lib/actions/subscriptions';
 import { formatCurrency } from '@/lib/utils';
@@ -61,8 +67,9 @@ export function NewSaleModal({
     dueDate?: string | null;
     items: CreateSaleItemInput[];
   } | null>(null);
+  const [receiptSale, setReceiptSale] = useState<Sale | null>(null);
 
-  if (!isOpen && !creditReceiptData) return null;
+  if (!isOpen && !creditReceiptData && !receiptSale) return null;
 
   const handleAddItem = (product: Product) => {
     setSelectedItems((prev) => {
@@ -159,7 +166,7 @@ export function NewSaleModal({
         return;
       }
 
-      await createSale({
+      const createdSale = await createSale({
         client_id: finalClientId,
         client_name: finalClientName,
         payment_method: paymentMethod,
@@ -188,6 +195,35 @@ export function NewSaleModal({
         toast.success(`Assinatura recorrente vinculada a ${finalClientName}!`);
       }
 
+      // Cria objeto representativo da venda para emissão imediata de nota se desejado
+      const saleForReceipt: Sale = {
+        id: createdSale?.id || `sale-${Date.now()}`,
+        user_id: '',
+        client_id: finalClientId,
+        client_name: finalClientName,
+        total_amount: totalAmount,
+        paid_amount: paymentMethod === 'on_credit' ? initPayNum : totalAmount,
+        remaining_amount: paymentMethod === 'on_credit' ? totalAmount - initPayNum : 0,
+        payment_method: paymentMethod as SalePaymentMethod,
+        due_date: dueDate || null,
+        account_id: accountId,
+        transaction_id: null,
+        sale_date: saleDate,
+        notes: notes.trim() || null,
+        created_at: new Date().toISOString(),
+        items: selectedItems.map((item, idx) => ({
+          id: String(idx),
+          sale_id: createdSale?.id || '',
+          product_id: item.product_id || null,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.quantity * item.unit_price,
+          created_at: saleDate,
+        })),
+        client: clientsList.find((c) => c.id === finalClientId) || null,
+      };
+
       // Reset
       setClientName('');
       setSelectedClientId(null);
@@ -196,7 +232,15 @@ export function NewSaleModal({
       setInitialPayment('');
       setNotes('');
       setSaleDate(getTodayYMD());
-      toast.success(`${salesLabel} de "${finalClientName}" registrado com sucesso!`);
+
+      toast.success(`${salesLabel} de "${finalClientName}" registrado com sucesso!`, {
+        action: {
+          label: 'Emitir Nota',
+          onClick: () => {
+            setReceiptSale(saleForReceipt);
+          },
+        },
+      });
 
       if (paymentMethod === 'on_credit') {
         const targetClient = clientsList.find((c) => c.id === finalClientId);
@@ -652,6 +696,18 @@ export function NewSaleModal({
           totalAmount={creditReceiptData.totalAmount}
           dueDate={creditReceiptData.dueDate}
           items={creditReceiptData.items}
+        />
+      )}
+
+      {receiptSale && (
+        <SaleReceiptModal
+          isOpen={Boolean(receiptSale)}
+          onClose={() => {
+            setReceiptSale(null);
+            onClose();
+            if (onSuccess) onSuccess();
+          }}
+          sale={receiptSale}
         />
       )}
     </div>

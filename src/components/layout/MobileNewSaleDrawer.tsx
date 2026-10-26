@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import {
   X,
   Plus,
@@ -15,7 +16,12 @@ import {
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
-import { Product, Account, PaymentMethod, SalePaymentMethod, Client } from '@/types/database';
+import { Product, Account, PaymentMethod, SalePaymentMethod, Client, Sale } from '@/types/database';
+
+const SaleReceiptModal = dynamic(
+  () => import('@/components/sales/SaleReceiptModal').then((m) => m.SaleReceiptModal),
+  { ssr: false }
+);
 import { createProduct } from '@/lib/actions/products';
 import { SimpleClient } from '@/lib/actions/clients';
 import {
@@ -84,6 +90,7 @@ function MobileNewSaleDrawerDialog() {
     dueDate?: string | null;
     items: CreateSaleItemInput[];
   } | null>(null);
+  const [receiptSale, setReceiptSale] = useState<Sale | null>(null);
 
   // Carrega produtos, contas e clientes com cache imediato em memória (0ms de latência)
   useEffect(() => {
@@ -253,7 +260,7 @@ function MobileNewSaleDrawerDialog() {
         return;
       }
 
-      await createSale({
+      const createdSale = await createSale({
         client_id: finalClientId,
         client_name: finalClientName,
         payment_method: paymentMethod,
@@ -266,6 +273,44 @@ function MobileNewSaleDrawerDialog() {
         initial_payment_method:
           paymentMethod === 'on_credit' && initPayNum > 0 ? initialPaymentMethod : undefined,
       });
+
+      const targetClient = clients.find((c) => c.id === finalClientId);
+      const saleForReceipt: Sale = {
+        id: createdSale?.id || `sale-${Date.now()}`,
+        user_id: '',
+        client_id: finalClientId,
+        client_name: finalClientName,
+        total_amount: totalAmount,
+        paid_amount: paymentMethod === 'on_credit' ? initPayNum : totalAmount,
+        remaining_amount: paymentMethod === 'on_credit' ? totalAmount - initPayNum : 0,
+        payment_method: paymentMethod as SalePaymentMethod,
+        due_date: dueDate || null,
+        account_id: accountId || null,
+        transaction_id: null,
+        sale_date: getTodayYMD(),
+        notes: notes.trim() || null,
+        created_at: new Date().toISOString(),
+        items: selectedItems.map((item, idx) => ({
+          id: String(idx),
+          sale_id: createdSale?.id || '',
+          product_id: item.product_id || null,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.quantity * item.unit_price,
+          created_at: getTodayYMD(),
+        })),
+        client: targetClient
+          ? {
+              id: targetClient.id,
+              user_id: '',
+              name: targetClient.name,
+              phone: targetClient.phone || null,
+              created_at: '',
+              updated_at: '',
+            }
+          : null,
+      };
 
       // Se marcou como mensalidade recorrente, salva também a assinatura
       if (isRecurring && finalClientId) {
@@ -297,7 +342,14 @@ function MobileNewSaleDrawerDialog() {
 
       invalidateClientCache(['accounts', 'clients']);
 
-      toast.success('Atendimento concluído com sucesso! 💈✂️');
+      toast.success('Atendimento concluído com sucesso! 💈✂️', {
+        action: {
+          label: 'Emitir Nota',
+          onClick: () => {
+            setReceiptSale(saleForReceipt);
+          },
+        },
+      });
 
       if (paymentMethod === 'on_credit') {
         const targetClient = clients.find((c) => c.id === finalClientId);
@@ -960,6 +1012,17 @@ function MobileNewSaleDrawerDialog() {
           totalAmount={creditReceiptData.totalAmount}
           dueDate={creditReceiptData.dueDate}
           items={creditReceiptData.items}
+        />
+      )}
+
+      {receiptSale && (
+        <SaleReceiptModal
+          isOpen={Boolean(receiptSale)}
+          onClose={() => {
+            setReceiptSale(null);
+            handleClose();
+          }}
+          sale={receiptSale}
         />
       )}
     </>

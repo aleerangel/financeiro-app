@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   X,
@@ -23,7 +25,13 @@ import {
   RawClientSale,
   RawClientSaleAmortization,
 } from '@/lib/client-analytics';
+import { Sale, SalePaymentMethod, PaymentMethod } from '@/types/database';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
+
+const SaleReceiptModal = dynamic(
+  () => import('@/components/sales/SaleReceiptModal').then((m) => m.SaleReceiptModal),
+  { ssr: false }
+);
 
 interface ClientHistoryModalProps {
   client: ClientWithStats | null;
@@ -97,6 +105,7 @@ export function ClientHistoryModal({
   onAmortizeSale,
 }: ClientHistoryModalProps) {
   const { profile, salesLabel } = useBusinessProfile();
+  const [receiptSaleTarget, setReceiptSaleTarget] = useState<Sale | null>(null);
   if (!client) return null;
 
   const { analytics, salesHistory } = client;
@@ -395,16 +404,78 @@ export function ClientHistoryModal({
                           <span className="text-sm font-extrabold text-zinc-100 block">
                             {formatCurrency(Number(sale.total_amount))}
                           </span>
-                          {isOnCredit && isPending && onAmortizeSale && (
+                          <div className="flex items-center gap-1.5 justify-end mt-1">
                             <button
                               type="button"
-                              onClick={() => onAmortizeSale(sale)}
-                              className="mt-1 px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold text-[10px] rounded-lg transition inline-flex items-center gap-1 active:scale-95"
+                              onClick={() => {
+                                const saleObj: Sale = {
+                                  id: sale.id,
+                                  user_id: '',
+                                  client_id: client.id,
+                                  client_name: client.name,
+                                  total_amount: sale.total_amount,
+                                  paid_amount: sale.paid_amount,
+                                  remaining_amount: sale.remaining_amount,
+                                  status: sale.status,
+                                  payment_method: (sale.payment_method || 'money') as SalePaymentMethod,
+                                  due_date: sale.due_date,
+                                  account_id: null,
+                                  transaction_id: null,
+                                  sale_date: sale.sale_date,
+                                  notes: sale.notes || null,
+                                  created_at: sale.sale_date,
+                                  items: sale.items?.map((item, idx) => ({
+                                    id: String(idx),
+                                    sale_id: sale.id,
+                                    product_id: null,
+                                    product_name: item.product_name,
+                                    quantity: item.quantity,
+                                    unit_price: item.unit_price,
+                                    total_price: item.total_price,
+                                    created_at: sale.sale_date,
+                                  })),
+                                  client: {
+                                    id: client.id,
+                                    user_id: '',
+                                    name: client.name,
+                                    phone: client.phone || null,
+                                    cpf: client.cpf || null,
+                                    created_at: client.created_at || '',
+                                    updated_at: client.created_at || '',
+                                  },
+                                  amortizations: sale.amortizations?.map((a) => ({
+                                    id: a.id,
+                                    sale_id: sale.id,
+                                    user_id: '',
+                                    account_id: '',
+                                    transaction_id: null,
+                                    amount: a.amount,
+                                    payment_method: (a.payment_method || 'money') as PaymentMethod,
+                                    amortized_at: a.amortized_at,
+                                    created_at: a.amortized_at,
+                                    account: null,
+                                  })),
+                                };
+                                setReceiptSaleTarget(saleObj);
+                              }}
+                              className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-amber-300 font-semibold text-[10px] rounded-lg transition inline-flex items-center gap-1 border border-zinc-700"
+                              title="Gerar Nota de Serviço / Venda"
                             >
-                              <HandCoins className="w-3 h-3" />
-                              Amortizar
+                              <FileText className="w-3 h-3" />
+                              Nota
                             </button>
-                          )}
+
+                            {isOnCredit && isPending && onAmortizeSale && (
+                              <button
+                                type="button"
+                                onClick={() => onAmortizeSale(sale)}
+                                className="px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold text-[10px] rounded-lg transition inline-flex items-center gap-1 active:scale-95"
+                              >
+                                <HandCoins className="w-3 h-3" />
+                                Amortizar
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -440,6 +511,14 @@ export function ClientHistoryModal({
           </div>
         </div>
       </div>
+
+      {receiptSaleTarget && (
+        <SaleReceiptModal
+          isOpen={Boolean(receiptSaleTarget)}
+          onClose={() => setReceiptSaleTarget(null)}
+          sale={receiptSaleTarget}
+        />
+      )}
     </div>
   );
 }

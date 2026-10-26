@@ -11,6 +11,7 @@ import {
   AlertCircle,
   HandCoins,
   CheckCircle2,
+  FileText,
 } from 'lucide-react';
 import { Sale, Product, Account, Client } from '@/types/database';
 import { deleteSale } from '@/lib/actions/sales';
@@ -26,6 +27,11 @@ import { AmortizeModal } from './AmortizeModal';
 
 const NewSaleModal = dynamic(
   () => import('./NewSaleModal').then((m) => m.NewSaleModal),
+  { ssr: false }
+);
+
+const SaleReceiptModal = dynamic(
+  () => import('./SaleReceiptModal').then((m) => m.SaleReceiptModal),
   { ssr: false }
 );
 
@@ -58,6 +64,7 @@ export function SalesView({
   const [sales, setSales] = useState<Sale[]>(initialSales);
   const [modalOpen, setModalOpen] = useState(Boolean(initialClientId));
   const [amortizeSaleTarget, setAmortizeSaleTarget] = useState<Sale | null>(null);
+  const [receiptSaleTarget, setReceiptSaleTarget] = useState<Sale | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filterMode, setFilterMode] = useState<'today' | 'pending' | 'all'>('today');
 
@@ -416,6 +423,15 @@ export function SalesView({
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setReceiptSaleTarget(sale)}
+                    className="p-2 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded-xl transition opacity-80 group-hover:opacity-100"
+                    title="Gerar Nota de Serviço / Venda"
+                    aria-label="Gerar Nota de Serviço"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+
                   {isPending && (
                     <button
                       onClick={() => setAmortizeSaleTarget(sale)}
@@ -477,6 +493,14 @@ export function SalesView({
           accounts={accounts}
           sale={amortizeSaleTarget}
           onSuccess={() => window.location.reload()}
+        />
+      )}
+
+      {receiptSaleTarget && (
+        <SaleReceiptModal
+          isOpen={Boolean(receiptSaleTarget)}
+          onClose={() => setReceiptSaleTarget(null)}
+          sale={receiptSaleTarget}
         />
       )}
     </div>
