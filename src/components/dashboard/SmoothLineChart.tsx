@@ -138,9 +138,10 @@ export function SmoothLineChart({
   }, [series, dynamicYScale]);
 
   // Dimensões SVG internas
-  const svgWidth = compactLayout ? 360 : 650;
+  const is12PointsCompact = compactLayout && effectiveLabels.length >= 10;
+  const svgWidth = compactLayout ? (is12PointsCompact ? 420 : 360) : 650;
   const svgHeight = height;
-  const padLeft = compactLayout ? 50 : 85;
+  const padLeft = compactLayout ? (is12PointsCompact ? 48 : 50) : 85;
   const padRight = compactLayout ? 12 : 25;
   const padTop = compactLayout ? 18 : 25;
   const padBottom = compactLayout ? 30 : 35;
@@ -286,7 +287,7 @@ export function SmoothLineChart({
                 y={svgHeight - (compactLayout ? 6 : 10)}
                 textAnchor="middle"
                 fill={isHovered ? '#f4f4f5' : '#a1a1aa'}
-                fontSize={compactLayout ? '11' : '11'}
+                fontSize={compactLayout ? (is12PointsCompact ? '10' : '11') : '11'}
                 fontWeight={isHovered ? '700' : '600'}
                 className="transition-colors"
               >

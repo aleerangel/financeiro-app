@@ -362,7 +362,8 @@ export function CategoryEvolutionMobileView({
               series={displayedSeries}
               labels={MONTH_SHORT_LABELS}
               tooltipLabels={MONTH_FULL_LABELS.map((m) => `${m} de ${refYear}`)}
-              height={300}
+              height={230}
+              dynamicYScale={true}
               compactLayout={true}
             />
           </div>
