@@ -30,8 +30,10 @@ import { formatCurrency } from '@/lib/utils';
 interface CategoryEvolutionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'income' | 'expense';
-  categories: CategoryMonthlyEvolutionItem[];
+  type?: 'income' | 'expense';
+  categories?: CategoryMonthlyEvolutionItem[];
+  incomeCategories?: CategoryMonthlyEvolutionItem[];
+  expenseCategories?: CategoryMonthlyEvolutionItem[];
   transactions?: Transaction[];
   currentMonth: number; // 0 a 11
   year: number;
@@ -51,17 +53,34 @@ const MONTH_FULL_LABELS = [
 export function CategoryEvolutionModal({
   isOpen,
   onClose,
-  type,
-  categories,
+  type = 'income',
+  categories = [],
+  incomeCategories,
+  expenseCategories,
   transactions = [],
   currentMonth,
   year,
 }: CategoryEvolutionModalProps) {
+  const [selectedType, setSelectedType] = useState<'income' | 'expense' | null>(null);
+  const activeType = selectedType ?? type;
   const [accountingMode, setAccountingMode] = useState<'realized' | 'total'>('realized');
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('all');
   const [txSearch, setTxSearch] = useState('');
 
-  const parentKey = `${type}-${year}-${currentMonth}`;
+  const handleClose = () => {
+    setSelectedType(null);
+    onClose();
+  };
+
+  // Se incomeCategories / expenseCategories forem fornecidas, usa conforme activeType
+  const baseCategories = useMemo(() => {
+    if (activeType === 'income') {
+      return incomeCategories || (type === 'income' ? categories : []) || [];
+    }
+    return expenseCategories || (type === 'expense' ? categories : []) || [];
+  }, [activeType, incomeCategories, expenseCategories, type, categories]);
+
+  const parentKey = `${activeType}-${year}-${currentMonth}`;
   const [overrideState, setOverrideState] = useState<{
     parentKey: string;
     month: number;
@@ -80,14 +99,14 @@ export function CategoryEvolutionModal({
   const activeCategories =
     activeOverride && activeOverride.categories !== null
       ? activeOverride.categories
-      : categories;
+      : baseCategories;
   const activeTransactions =
     activeOverride && activeOverride.transactions !== null
       ? activeOverride.transactions
       : transactions;
   const activeFormattedMonth = `${MONTH_FULL_LABELS[refMonth]} de ${refYear}`;
 
-  const isIncome = type === 'income';
+  const isIncome = activeType === 'income';
 
   const selectReferencePeriod = (nextMonth: number, nextYear: number) => {
     if (nextMonth === currentMonth && nextYear === year) {
@@ -120,7 +139,7 @@ export function CategoryEvolutionModal({
             expenseCategories: CategoryMonthlyEvolutionItem[];
           };
           nextCats =
-            type === 'income' ? evo.incomeCategories : evo.expenseCategories;
+            activeType === 'income' ? evo.incomeCategories : evo.expenseCategories;
         }
 
         setOverrideState((prev) => {
@@ -228,13 +247,13 @@ export function CategoryEvolutionModal({
 
     return activeTransactions
       .filter((t) => {
-        if (t.type !== type) return false;
+        if (t.type !== activeType) return false;
         if (accountingMode === 'realized' && !t.is_paid) return false;
 
         if (activeCategoryKey !== 'all') {
           const catInfo = resolveTransactionCategoryInfo({
             amount: Number(t.amount),
-            type,
+            type: activeType,
             is_paid: t.is_paid,
             due_date: t.due_date,
             description: t.description,
@@ -254,7 +273,7 @@ export function CategoryEvolutionModal({
         return true;
       })
       .sort((a, b) => b.due_date.localeCompare(a.due_date));
-  }, [activeTransactions, type, accountingMode, activeCategoryKey, txSearch]);
+  }, [activeTransactions, activeType, accountingMode, activeCategoryKey, txSearch]);
 
   const filteredModalTransactionsSum = useMemo(
     () =>
@@ -302,7 +321,43 @@ export function CategoryEvolutionModal({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 self-end sm:self-center">
+            <div className="flex items-center gap-2.5 flex-wrap self-end sm:self-center">
+              {/* Seletor entre Entradas e Saídas */}
+              <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedType('income');
+                    setSelectedCategoryKey('all');
+                    setTxSearch('');
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
+                    activeType === 'income'
+                      ? 'bg-emerald-500 text-zinc-950 shadow-sm font-bold'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <span>Entradas</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedType('expense');
+                    setSelectedCategoryKey('all');
+                    setTxSearch('');
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
+                    activeType === 'expense'
+                      ? 'bg-rose-500 text-zinc-950 shadow-sm font-bold'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <ArrowDownRight className="w-3.5 h-3.5" />
+                  <span>Saídas</span>
+                </button>
+              </div>
+
               {/* Alternador: Realizado vs Total com Pendentes */}
               <div className="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs">
                 <button
@@ -335,7 +390,7 @@ export function CategoryEvolutionModal({
 
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
                 title="Fechar"
               >
@@ -733,7 +788,7 @@ export function CategoryEvolutionModal({
 
           {/* Lista Completa de Transações (Receitas ou Despesas) do Mês de Referência */}
           <CategoryTransactionsTable
-            type={type}
+            type={activeType}
             formattedMonth={activeFormattedMonth}
             activeCategoryName={
               activeCategoryKey !== 'all'

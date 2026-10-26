@@ -15,7 +15,6 @@ import {
   CalendarDays,
   List,
   TrendingUp,
-  TrendingDown,
   X,
   ChevronLeft,
   ChevronRight,
@@ -110,9 +109,7 @@ export function TransactionsView({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [groupByDay, setGroupByDay] = useState<boolean>(true);
-  const [evolutionModalType, setEvolutionModalType] = useState<
-    'income' | 'expense' | null
-  >(null);
+  const [evolutionModalOpen, setEvolutionModalOpen] = useState<boolean>(false);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [transactionToEdit, setTransactionToEdit] =
@@ -165,7 +162,7 @@ export function TransactionsView({
 
   // Carrega a evolução anual de categorias sob demanda SOMENTE quando o usuário abre o modal
   useEffect(() => {
-    if (!evolutionModalType) return;
+    if (!evolutionModalOpen) return;
     let active = true;
     getYearlyCategoryEvolution(year)
       .then((evo) => {
@@ -181,7 +178,7 @@ export function TransactionsView({
     return () => {
       active = false;
     };
-  }, [evolutionModalType, year]);
+  }, [evolutionModalOpen, year]);
 
   const handleTogglePaid = async (t: Transaction) => {
     try {
@@ -669,63 +666,63 @@ export function TransactionsView({
         </div>
       </div>
 
-      {/* 3. LINHA 3: Cards de Destaque Lado a Lado (Entradas e Saídas com Evolução) */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        {/* Card Receitas */}
-        <div className="p-3.5 sm:p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-emerald-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-                Receitas
-              </span>
-              <button
-                type="button"
-                onClick={() => setEvolutionModalType('income')}
-                className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline transition"
-                title="Ver evolução anual de receitas"
-              >
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Evolução</span>
-              </button>
-            </div>
-            <span className="text-base sm:text-2xl font-bold text-emerald-400 block tracking-tight">
-              +{formatCurrency(receivedIncome)}
-            </span>
-          </div>
-          <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
-            {pendingIncome > 0
-              ? `+ ${formatCurrency(pendingIncome)} a receber`
-              : 'Tudo recebido'}
-          </div>
+      {/* 3. LINHA 3: Resumo de Receitas e Despesas com Botão Único de Evolução */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            Fluxo do Mês
+          </span>
+          <button
+            type="button"
+            onClick={() => setEvolutionModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition shadow-sm active:scale-95 group"
+            title="Ver evolução de entradas e saídas"
+          >
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span>Ver Evolução</span>
+            <span className="text-[11px] text-zinc-500 font-normal">›</span>
+          </button>
         </div>
 
-        {/* Card Despesas */}
-        <div className="p-3.5 sm:p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
-                Despesas
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          {/* Card Receitas */}
+          <div className="p-3.5 sm:p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-emerald-400">
+                  Receitas
+                </span>
+              </div>
+              <span className="text-base sm:text-2xl font-bold text-emerald-400 block tracking-tight">
+                +{formatCurrency(receivedIncome)}
               </span>
-              <button
-                type="button"
-                onClick={() => setEvolutionModalType('expense')}
-                className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 hover:underline transition"
-                title="Ver evolução anual de despesas"
-              >
-                <TrendingDown className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Evolução</span>
-              </button>
             </div>
-            <span className="text-base sm:text-2xl font-bold text-rose-400 block tracking-tight">
-              -{formatCurrency(paidExpense)}
-            </span>
+            <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
+              {pendingIncome > 0
+                ? `+ ${formatCurrency(pendingIncome)} a receber`
+                : 'Tudo recebido'}
+            </div>
           </div>
-          <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
-            {pendingExpense > 0
-              ? `+ ${formatCurrency(pendingExpense)} a pagar`
-              : 'Tudo pago'}
+
+          {/* Card Despesas */}
+          <div className="p-3.5 sm:p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400">
+                  Despesas
+                </span>
+              </div>
+              <span className="text-base sm:text-2xl font-bold text-rose-400 block tracking-tight">
+                -{formatCurrency(paidExpense)}
+              </span>
+            </div>
+            <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
+              {pendingExpense > 0
+                ? `+ ${formatCurrency(pendingExpense)} a pagar`
+                : 'Tudo pago'}
+            </div>
           </div>
         </div>
       </div>
@@ -857,12 +854,12 @@ export function TransactionsView({
 
       {/* Modal de Evolução Anual por Categoria (Receitas ou Despesas) */}
       <CategoryEvolutionModal
-        isOpen={evolutionModalType !== null}
-        onClose={() => setEvolutionModalType(null)}
-        type={evolutionModalType || 'expense'}
-        categories={
-          evolutionModalType === 'income' ? incomeEvolution : expenseEvolution
-        }
+        isOpen={evolutionModalOpen}
+        onClose={() => setEvolutionModalOpen(false)}
+        type="income"
+        incomeCategories={incomeEvolution}
+        expenseCategories={expenseEvolution}
+        categories={incomeEvolution}
         transactions={transactions}
         currentMonth={month}
         year={year}
