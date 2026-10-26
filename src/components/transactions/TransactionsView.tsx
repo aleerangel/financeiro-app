@@ -795,28 +795,33 @@ export function TransactionsView({
                 className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"
               >
                 {/* Cabeçalho do Dia com Subtotal Diário */}
-                <div className="px-4 py-2.5 bg-zinc-950/70 border-b border-zinc-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-bold text-zinc-200 flex items-center gap-2">
-                    <CalendarDays className="w-3.5 h-3.5 text-emerald-400" />
-                    {formatDayGroupLabel(group.date)}
+                <div className="px-3.5 sm:px-4 py-2.5 bg-zinc-950/70 border-b border-zinc-800/80 flex items-center justify-between gap-2 text-xs">
+                  <span className="font-bold text-zinc-200 flex items-center gap-1.5 sm:gap-2 truncate min-w-0">
+                    <CalendarDays className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">{formatDayGroupLabel(group.date)}</span>
                   </span>
 
-                  <div className="flex items-center gap-3 text-[11px]">
-                    {group.incomeTotal > 0 && (
-                      <span className="text-emerald-400 font-semibold">
-                        +{formatCurrency(group.incomeTotal)}
-                      </span>
-                    )}
-                    {group.expenseTotal > 0 && (
-                      <span className="text-rose-400 font-semibold">
-                        -{formatCurrency(group.expenseTotal)}
-                      </span>
-                    )}
+                  <div className="flex items-center gap-2 sm:gap-3 text-[11px] shrink-0">
+                    {/* Entradas e Saídas do dia exibidas apenas no Desktop */}
+                    <div className="hidden md:flex items-center gap-2.5">
+                      {group.incomeTotal > 0 && (
+                        <span className="text-emerald-400 font-semibold">
+                          +{formatCurrency(group.incomeTotal)}
+                        </span>
+                      )}
+                      {group.expenseTotal > 0 && (
+                        <span className="text-rose-400 font-semibold">
+                          -{formatCurrency(group.expenseTotal)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Balanço do dia exibido em todas as versões (Desktop e Mobile) */}
                     <span
-                      className={`font-bold px-2 py-0.5 rounded-md border ${
+                      className={`font-bold px-2 py-0.5 rounded-md border text-[10px] sm:text-[11px] ${
                         dayNet >= 0
-                          ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-300 border-rose-500/20'
+                          ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                          : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
                       }`}
                     >
                       Dia: {dayNet >= 0 ? '+' : '-'}
