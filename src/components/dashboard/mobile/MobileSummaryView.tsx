@@ -872,48 +872,56 @@ export function MobileSummaryView({
             </span>
           </div>
 
-          {/* Divisão Serviços vs Produtos */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs text-zinc-400">
-              <span>Divisão de Receitas • {activePeriodLabel}</span>
-              <span className="font-semibold text-zinc-300">
-                {revenueSplit.servicePercentage}% Serviços • {revenueSplit.productPercentage}% Produtos
-              </span>
-            </div>
-            <div className="w-full h-3 bg-zinc-800 rounded-full flex overflow-hidden">
-              <div
-                style={{ width: `${revenueSplit.servicePercentage}%` }}
-                className="bg-emerald-500 h-full transition-all duration-300"
-              />
-              <div
-                style={{ width: `${revenueSplit.productPercentage}%` }}
-                className="bg-blue-500 h-full transition-all duration-300"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-emerald-400 block">Serviços</span>
-                  <span className="text-xs font-extrabold text-zinc-200">
-                    {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
-                  </span>
-                </div>
-                <SegmentIcon segment={profile.segment} className="w-4 h-4 text-emerald-500/50" />
+          {/* Divisão Serviços vs Produtos (somente se houver faturamento misto no período) */}
+          {revenueSplit.serviceRevenue > 0 && revenueSplit.productRevenue > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span>Divisão de Receitas • {activePeriodLabel}</span>
+                <span className="font-semibold text-zinc-300">
+                  {revenueSplit.servicePercentage}% Serviços • {revenueSplit.productPercentage}% Produtos
+                </span>
               </div>
-              <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-blue-400 block">Produtos</span>
-                  <span className="text-xs font-extrabold text-zinc-200">
-                    {formatHidden(formatCurrency(revenueSplit.productRevenue))}
-                  </span>
+              <div className="w-full h-3 bg-zinc-800 rounded-full flex overflow-hidden">
+                <div
+                  style={{ width: `${revenueSplit.servicePercentage}%` }}
+                  className="bg-emerald-500 h-full transition-all duration-300"
+                />
+                <div
+                  style={{ width: `${revenueSplit.productPercentage}%` }}
+                  className="bg-blue-500 h-full transition-all duration-300"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-400 block">Serviços</span>
+                    <span className="text-xs font-extrabold text-zinc-200">
+                      {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
+                    </span>
+                  </div>
+                  <SegmentIcon segment={profile.segment} className="w-4 h-4 text-emerald-500/50" />
                 </div>
-                <ShoppingBag className="w-4 h-4 text-blue-500/50" />
+                <div className="p-2.5 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-blue-400 block">Produtos</span>
+                    <span className="text-xs font-extrabold text-zinc-200">
+                      {formatHidden(formatCurrency(revenueSplit.productRevenue))}
+                    </span>
+                  </div>
+                  <ShoppingBag className="w-4 h-4 text-blue-500/50" />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Dias Mais Fortes */}
-          <div className="pt-2 border-t border-zinc-800/80 space-y-2">
+          <div
+            className={`space-y-2 ${
+              revenueSplit.serviceRevenue > 0 && revenueSplit.productRevenue > 0
+                ? 'pt-2 border-t border-zinc-800/80'
+                : ''
+            }`}
+          >
             <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
               <span className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-zinc-400" />

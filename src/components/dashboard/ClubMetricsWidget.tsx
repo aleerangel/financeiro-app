@@ -7,11 +7,16 @@ import { ClubMonthlyOverview } from '@/lib/actions/subscriptions';
 
 interface ClubMetricsWidgetProps {
   overview: ClubMonthlyOverview;
+  hideIfEmpty?: boolean;
 }
 
-export function ClubMetricsWidget({ overview }: ClubMetricsWidgetProps) {
-  // Se não houver nenhum assinante e nenhuma fatura, mostra card convidativo
+export function ClubMetricsWidget({ overview, hideIfEmpty = false }: ClubMetricsWidgetProps) {
+  // Se não houver nenhum assinante e nenhuma fatura
   if (overview.activeSubscribersCount === 0 && overview.totalExpected === 0) {
+    if (hideIfEmpty) {
+      return null;
+    }
+
     return (
       <div className="p-5 rounded-3xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700/80 transition relative overflow-hidden group">
         <div className="flex items-center justify-between mb-3">

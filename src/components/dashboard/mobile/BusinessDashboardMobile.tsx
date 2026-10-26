@@ -34,7 +34,6 @@ export interface BusinessDashboardMobileProps {
 export function BusinessDashboardMobile({
   data,
   formattedMonth,
-  loading = false,
 }: BusinessDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
   const { profile, salesLabel } = useBusinessProfile();
@@ -150,206 +149,202 @@ export function BusinessDashboardMobile({
         </div>
 
         {/* Card 4: A Receber (Fiados) */}
-        <Link
-          href="/fiados"
-          className="block p-4 bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 rounded-2xl transition-all active:scale-[0.99]"
-        >
-          <div className="flex items-center justify-between text-zinc-400">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
-              A Receber • Fiados em Aberto
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <ArrowUpRight className="w-4 h-4" />
+        {(summary.totalReceivables || 0) > 0 && (
+          <Link
+            href="/fiados"
+            className="block p-4 bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 rounded-2xl transition-all active:scale-[0.99]"
+          >
+            <div className="flex items-center justify-between text-zinc-400">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
+                A Receber • Fiados em Aberto
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                <ArrowUpRight className="w-4 h-4" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold text-amber-400 block tracking-tight">
-              {formatHidden(formatCurrency(summary.totalReceivables || 0))}
-            </span>
-            <span className="text-xs text-amber-400/80 font-medium">
-              Abrir central &rarr;
-            </span>
-          </div>
-        </Link>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-2xl font-extrabold text-amber-400 block tracking-tight">
+                {formatHidden(formatCurrency(summary.totalReceivables || 0))}
+              </span>
+              <span className="text-xs text-amber-400/80 font-medium">
+                Abrir central &rarr;
+              </span>
+            </div>
+          </Link>
+        )}
 
         {/* Widget do Clube da Barbearia (Mobile) */}
         {data.clubOverview && (
-          <ClubMetricsWidget overview={data.clubOverview} />
+          <ClubMetricsWidget overview={data.clubOverview} hideIfEmpty={true} />
         )}
       </div>
 
       {/* 2. Divisão de Faturamento: Serviços vs Produtos */}
-      <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-zinc-100 text-sm">
-              Divisão: Serviços vs Produtos
-            </h3>
-            <p className="text-[11px] text-zinc-400">
-              Mão de obra vs itens de balcão
-            </p>
-          </div>
-          <ShoppingBag className="w-4 h-4 text-indigo-400" />
-        </div>
-
-        {/* Barra Proporcional */}
-        <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden flex">
-          <div
-            className="bg-emerald-500 h-full transition-all"
-            style={{ width: `${revenueSplit.servicePercentage}%` }}
-          />
-          <div
-            className="bg-amber-400 h-full transition-all"
-            style={{ width: `${revenueSplit.productPercentage}%` }}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2.5 pt-1">
-          <div className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl">
-            <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 mb-0.5">
-              <SegmentIcon segment={profile.segment} className="w-3 h-3" /> Serviços ({revenueSplit.servicePercentage}%)
-            </span>
-            <span className="text-sm font-extrabold text-zinc-100 block">
-              {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
-            </span>
-            <span className="text-[10px] text-zinc-400 block mt-0.5">
-              {formatSplitCount(revenueSplit.serviceCount, 'service', summary.salesCount, salesLabel)}
-            </span>
+      {revenueSplit.serviceRevenue > 0 && revenueSplit.productRevenue > 0 && (
+        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-zinc-100 text-sm">
+                Divisão: Serviços vs Produtos
+              </h3>
+              <p className="text-[11px] text-zinc-400">
+                Mão de obra vs itens de balcão
+              </p>
+            </div>
+            <ShoppingBag className="w-4 h-4 text-indigo-400" />
           </div>
 
-          <div className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl">
-            <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1 mb-0.5">
-              <ShoppingBag className="w-3 h-3" /> Produtos ({revenueSplit.productPercentage}%)
-            </span>
-            <span className="text-sm font-extrabold text-zinc-100 block">
-              {formatHidden(formatCurrency(revenueSplit.productRevenue))}
-            </span>
-            <span className="text-[10px] text-zinc-400 block mt-0.5">
-              {formatSplitCount(revenueSplit.productCount, 'product', summary.salesCount, salesLabel)}
-            </span>
+          {/* Barra Proporcional */}
+          <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden flex">
+            <div
+              className="bg-emerald-500 h-full transition-all"
+              style={{ width: `${revenueSplit.servicePercentage}%` }}
+            />
+            <div
+              className="bg-amber-400 h-full transition-all"
+              style={{ width: `${revenueSplit.productPercentage}%` }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
+            <div className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl">
+              <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 mb-0.5">
+                <SegmentIcon segment={profile.segment} className="w-3 h-3" /> Serviços ({revenueSplit.servicePercentage}%)
+              </span>
+              <span className="text-sm font-extrabold text-zinc-100 block">
+                {formatHidden(formatCurrency(revenueSplit.serviceRevenue))}
+              </span>
+              <span className="text-[10px] text-zinc-400 block mt-0.5">
+                {formatSplitCount(revenueSplit.serviceCount, 'service', summary.salesCount, salesLabel)}
+              </span>
+            </div>
+
+            <div className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl">
+              <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1 mb-0.5">
+                <ShoppingBag className="w-3 h-3" /> Produtos ({revenueSplit.productPercentage}%)
+              </span>
+              <span className="text-sm font-extrabold text-zinc-100 block">
+                {formatHidden(formatCurrency(revenueSplit.productRevenue))}
+              </span>
+              <span className="text-[10px] text-zinc-400 block mt-0.5">
+                {formatSplitCount(revenueSplit.productCount, 'product', summary.salesCount, salesLabel)}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 3. Top Clientes do Mês */}
-      <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-zinc-100 text-sm">
-              Top Clientes do Mês
-            </h3>
-            <p className="text-[11px] text-zinc-400">
-              Mais frequentes em {formattedMonth || 'mês atual'}
-            </p>
-          </div>
-          <Link
-            href="/clientes"
-            className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
-          >
-            Ver CRM <Eye className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="space-y-2">
-          {data.topClients && data.topClients.slice(0, 5).map((client, idx) => (
-            <div
-              key={`${client.name}-${idx}`}
-              className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+      {Boolean(data.topClients && data.topClients.length > 0) && (
+        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-zinc-100 text-sm">
+                Top Clientes do Mês
+              </h3>
+              <p className="text-[11px] text-zinc-400">
+                Mais frequentes em {formattedMonth || 'mês atual'}
+              </p>
+            </div>
+            <Link
+              href="/clientes"
+              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-5 h-5 rounded-md bg-zinc-800 text-zinc-300 font-extrabold text-[10px] flex items-center justify-center shrink-0">
-                  {idx + 1}º
-                </span>
-                <div className="min-w-0">
-                  <span className="font-bold text-zinc-100 text-xs block truncate">
-                    {client.name}
+              Ver CRM <Eye className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="space-y-2">
+            {data.topClients.slice(0, 5).map((client, idx) => (
+              <div
+                key={`${client.name}-${idx}`}
+                className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-5 h-5 rounded-md bg-zinc-800 text-zinc-300 font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                    {idx + 1}º
                   </span>
-                  <span className="text-[10px] text-zinc-400 block">
-                    Última: {formatDate(client.lastVisitDate)}
+                  <div className="min-w-0">
+                    <span className="font-bold text-zinc-100 text-xs block truncate">
+                      {client.name}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 block">
+                      Última: {formatDate(client.lastVisitDate)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="font-extrabold text-emerald-400 text-xs block">
+                    {formatCurrency(client.totalSpent)}
+                  </span>
+                  <span className="text-[10px] text-blue-400 font-semibold block">
+                    {client.visitsCount} {client.visitsCount === 1 ? 'visita' : 'visitas'}
                   </span>
                 </div>
               </div>
-
-              <div className="text-right shrink-0">
-                <span className="font-extrabold text-emerald-400 text-xs block">
-                  {formatCurrency(client.totalSpent)}
-                </span>
-                <span className="text-[10px] text-blue-400 font-semibold block">
-                  {client.visitsCount} {client.visitsCount === 1 ? 'visita' : 'visitas'}
-                </span>
-              </div>
-            </div>
-          ))}
-
-          {(!data.topClients || data.topClients.length === 0) && (
-            <p className="py-4 text-center text-xs text-zinc-500">
-              Nenhum atendimento registrado neste mês.
-            </p>
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 4. Produtos e Serviços Mais Vendidos */}
-      <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-zinc-100 text-sm">
-            Mais Vendidos
-          </h3>
-          <Link
-            href="/produtos"
-            className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
-          >
-            Catálogo <Eye className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="space-y-2">
-          {data.topProducts.slice(0, 5).map((p, idx) => (
-            <div
-              key={`${p.name}-${idx}`}
-              className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+      {Boolean(data.topProducts && data.topProducts.length > 0) && (
+        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-zinc-100 text-sm">
+              Mais Vendidos
+            </h3>
+            <Link
+              href="/produtos"
+              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                <div className="min-w-0">
-                  <span className="font-bold text-zinc-100 text-xs block truncate">
-                    {p.name}
+              Catálogo <Eye className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="space-y-2">
+            {data.topProducts.slice(0, 5).map((p, idx) => (
+              <div
+                key={`${p.name}-${idx}`}
+                className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-zinc-100 text-xs block truncate">
+                      {p.name}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 block">
+                      {p.salesCount} {p.salesCount === 1 ? 'saída' : 'saídas'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="font-extrabold text-zinc-100 text-xs block">
+                    {formatCurrency(p.revenue)}
                   </span>
-                  <span className="text-[10px] text-zinc-400 block">
-                    {p.salesCount} {p.salesCount === 1 ? 'saída' : 'saídas'}
-                  </span>
+                  {p.growth !== 0 && (
+                    <span
+                      className={`text-[10px] font-bold inline-flex items-center gap-0.5 ${
+                        p.growth > 0 ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {p.growth > 0 ? (
+                        <ArrowUpRight className="w-2.5 h-2.5" />
+                      ) : (
+                        <ArrowDownRight className="w-2.5 h-2.5" />
+                      )}
+                      {Math.abs(p.growth)}%
+                    </span>
+                  )}
                 </div>
               </div>
-
-              <div className="text-right shrink-0">
-                <span className="font-extrabold text-zinc-100 text-xs block">
-                  {formatCurrency(p.revenue)}
-                </span>
-                {p.growth !== 0 && (
-                  <span
-                    className={`text-[10px] font-bold inline-flex items-center gap-0.5 ${
-                      p.growth > 0 ? 'text-emerald-400' : 'text-rose-400'
-                    }`}
-                  >
-                    {p.growth > 0 ? (
-                      <ArrowUpRight className="w-2.5 h-2.5" />
-                    ) : (
-                      <ArrowDownRight className="w-2.5 h-2.5" />
-                    )}
-                    {Math.abs(p.growth)}%
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {data.topProducts.length === 0 && !loading && (
-            <p className="py-4 text-center text-xs text-zinc-500">
-              Nenhuma venda registrada ainda.
-            </p>
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 5. Alerta de Retenção: Clientes para Retorno (+30 dias) */}
       {data.inactiveClientsAlerts && data.inactiveClientsAlerts.length > 0 && (
