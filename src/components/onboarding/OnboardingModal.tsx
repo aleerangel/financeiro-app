@@ -13,6 +13,7 @@ import {
 import { BusinessSegment } from '@/types/database';
 import { SEGMENTS_CONFIG } from '@/lib/business-presets';
 import { completeOnboarding } from '@/lib/actions/business-profile';
+import { formatCNPJ, isValidCNPJ } from '@/lib/cnpj-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useRouter } from 'next/navigation';
@@ -49,12 +50,17 @@ function OnboardingModalDialog() {
   const [step, setStep] = useState<'mode' | 'business_setup'>('mode');
 
   const [businessName, setBusinessName] = useState<string>('');
+  const [cnpj, setCnpj] = useState<string>('');
   const [segment, setSegment] = useState<BusinessSegment>('barbearia');
   const [salesLabel, setSalesLabel] = useState<string>('Atendimentos');
   const [defaultCycleDays, setDefaultCycleDays] = useState<number>(21);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCnpj(formatCNPJ(e.target.value));
+  };
 
   const handleSelectMode = (mode: 'business' | 'personal') => {
     if (mode === 'personal') {
@@ -109,11 +115,17 @@ function OnboardingModalDialog() {
       return;
     }
 
+    if (cnpj.trim() && !isValidCNPJ(cnpj)) {
+      setError('O CNPJ informado é inválido. Verifique os números digitados.');
+      return;
+    }
+
     try {
       setSaving(true);
       const updated = await completeOnboarding({
         has_business: true,
         business_name: businessName.trim(),
+        cnpj: cnpj.trim() || null,
         segment,
         sales_label: salesLabel.trim() || 'Atendimentos',
         default_cycle_days: Number(defaultCycleDays) || 21,
@@ -271,6 +283,24 @@ function OnboardingModalDialog() {
                 autoFocus
                 required
                 className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-100 focus:outline-none focus:border-amber-500 transition placeholder:text-zinc-600"
+              />
+            </div>
+
+            {/* CNPJ (Opcional) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                  CNPJ da Empresa
+                </label>
+                <span className="text-[10px] text-zinc-500 font-medium">Opcional</span>
+              </div>
+              <input
+                type="text"
+                value={cnpj}
+                onChange={handleCnpjChange}
+                placeholder="00.000.000/0000-00"
+                maxLength={18}
+                className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-100 focus:outline-none focus:border-amber-500 transition placeholder:text-zinc-600 font-mono"
               />
             </div>
 

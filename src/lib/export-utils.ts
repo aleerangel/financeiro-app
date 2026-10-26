@@ -87,6 +87,8 @@ export interface ExportTransactionsOptions {
   transactions: Transaction[];
   filterLabel?: string;
   projectedYield?: number;
+  businessName?: string | null;
+  cnpj?: string | null;
 }
 
 export function exportTransactionsReport({
@@ -95,6 +97,8 @@ export function exportTransactionsReport({
   transactions,
   filterLabel,
   projectedYield = 0,
+  businessName,
+  cnpj,
 }: ExportTransactionsOptions) {
   const now = new Date();
   const dateSuffix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
@@ -168,6 +172,7 @@ export function exportTransactionsReport({
   if (format === 'xlsx') {
     const summaryRows: (string | number)[][] = [
       ['RESUMO DO PERÍODO', ''],
+      ...(businessName ? [['Empresa', `${businessName}${cnpj ? ` • CNPJ: ${cnpj}` : ''}`]] : []),
       ['Receitas Realizadas (Pagas)', totalIncomePaid],
       ['Despesas Realizadas (Pagas)', totalExpensePaid],
       ['Saldo Realizado', realizedBalance],
@@ -190,9 +195,12 @@ export function exportTransactionsReport({
   doc.rect(0, 0, pageWidth, 28, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.setTextColor(255, 255, 255);
-  doc.text('FINANCEIRO APP • EXTRATO CONSOLIDADO', 14, 13);
+  const companyTitle = businessName
+    ? `${businessName.toUpperCase()}${cnpj ? ` • CNPJ: ${cnpj}` : ''} • EXTRATO`
+    : 'FINANCEIRO APP • EXTRATO CONSOLIDADO';
+  doc.text(companyTitle, 14, 13);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
@@ -333,12 +341,16 @@ export interface ExportSalesReportOptions {
   format: ExportFormat;
   periodLabel: string;
   sales: Sale[];
+  businessName?: string | null;
+  cnpj?: string | null;
 }
 
 export function exportSalesReport({
   format,
   periodLabel,
   sales,
+  businessName,
+  cnpj,
 }: ExportSalesReportOptions) {
   const now = new Date();
   const dateSuffix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
@@ -400,6 +412,7 @@ export function exportSalesReport({
   if (format === 'xlsx') {
     const summaryRows: (string | number)[][] = [
       ['RESUMO DO PERÍODO', ''],
+      ...(businessName ? [['Empresa', `${businessName}${cnpj ? ` • CNPJ: ${cnpj}` : ''}`]] : []),
       ['Faturamento Total', totalRevenue],
       ['Atendimentos Realizados', totalSalesCount],
       ['Ticket Médio', averageTicket],
@@ -417,9 +430,12 @@ export function exportSalesReport({
   doc.rect(0, 0, pageWidth, 28, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.setTextColor(255, 255, 255);
-  doc.text('BARBEARIA • RELATÓRIO DE ATENDIMENTOS & VENDAS', 14, 13);
+  const companySalesTitle = businessName
+    ? `${businessName.toUpperCase()}${cnpj ? ` • CNPJ: ${cnpj}` : ''} • RELATÓRIO DE VENDAS`
+    : 'CANÁRIO • RELATÓRIO DE ATENDIMENTOS & VENDAS';
+  doc.text(companySalesTitle, 14, 13);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);

@@ -9,9 +9,11 @@ import {
   resolveBusinessProfile,
   DEFAULT_BUSINESS_PROFILE,
 } from '@/lib/business-presets';
+import { isValidCNPJ, formatCNPJ, cleanCNPJ } from '@/lib/cnpj-utils';
 
 export interface SaveBusinessProfileInput {
   business_name?: string | null;
+  cnpj?: string | null;
   segment: BusinessSegment;
   has_business?: boolean;
   sales_label?: string;
@@ -21,6 +23,7 @@ export interface SaveBusinessProfileInput {
 export interface CompleteOnboardingInput {
   has_business: boolean;
   business_name?: string | null;
+  cnpj?: string | null;
   segment?: BusinessSegment;
   sales_label?: string;
   default_cycle_days?: number;
@@ -96,9 +99,21 @@ export async function saveBusinessProfile(input: SaveBusinessProfileInput): Prom
       ? input.default_cycle_days
       : segmentCfg.defaultCycleDays;
 
+  let formattedCnpj: string | null = null;
+  if (input.cnpj && input.cnpj.trim()) {
+    const cleaned = cleanCNPJ(input.cnpj);
+    if (cleaned.length > 0) {
+      if (!isValidCNPJ(cleaned)) {
+        throw new Error('CNPJ inválido. Verifique os dígitos digitados.');
+      }
+      formattedCnpj = formatCNPJ(cleaned);
+    }
+  }
+
   const payload = {
     user_id: user.id,
     business_name: input.business_name?.trim() || null,
+    cnpj: formattedCnpj,
     segment: input.segment,
     has_business: input.has_business !== undefined ? input.has_business : true,
     sales_label: salesLabel,
@@ -138,10 +153,22 @@ export async function completeOnboarding(input: CompleteOnboardingInput): Promis
   const segmentCfg = getSegmentConfig(segment);
   const salesLabel = input.sales_label?.trim() || segmentCfg.defaultSalesLabel;
 
+  let formattedCnpj: string | null = null;
+  if (input.cnpj && input.cnpj.trim()) {
+    const cleaned = cleanCNPJ(input.cnpj);
+    if (cleaned.length > 0) {
+      if (!isValidCNPJ(cleaned)) {
+        throw new Error('CNPJ inválido. Verifique os dígitos digitados.');
+      }
+      formattedCnpj = formatCNPJ(cleaned);
+    }
+  }
+
   // 1. Salva o perfil com onboarding_completed = true
   const profilePayload = {
     user_id: user.id,
     business_name: input.business_name?.trim() || (input.has_business ? 'Meu Negócio' : null),
+    cnpj: formattedCnpj,
     segment,
     has_business: input.has_business,
     sales_label: salesLabel,

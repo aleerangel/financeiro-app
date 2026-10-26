@@ -466,6 +466,8 @@ export function DashboardView({
         periodLabel: `${formattedMonth} • ${businessName}`,
         transactions: bizTxs,
         filterLabel: `Movimentações de ${businessName}`,
+        businessName,
+        cnpj: profile.cnpj,
       });
     } else {
       const { month: curM, year: curY } = getZonedParts();
@@ -476,6 +478,8 @@ export function DashboardView({
         transactions,
         filterLabel: 'Visão Geral Consolidada',
         projectedYield: pendingYield,
+        businessName: profile.has_business ? businessName : undefined,
+        cnpj: profile.has_business ? profile.cnpj : undefined,
       });
     }
   };

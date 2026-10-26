@@ -86,6 +86,19 @@ describe('business-presets', () => {
     expect(profile.default_cycle_days).toBe(14);
   });
 
+  it('deve preservar cnpj quando fornecido ou retornar null quando ausente', () => {
+    const withCnpj = resolveBusinessProfile({
+      business_name: 'Minha Empresa LTDA',
+      cnpj: '18.236.120/0001-58',
+    });
+    expect(withCnpj.cnpj).toBe('18.236.120/0001-58');
+
+    const withoutCnpj = resolveBusinessProfile({
+      business_name: 'Minha Empresa LTDA',
+    });
+    expect(withoutCnpj.cnpj).toBeNull();
+  });
+
   describe('formatSalesUnit & formatSplitCount', () => {
     it('deve formatar unidade de vendas/atendimentos singular e plural por segmento', () => {
       // Barbearia / Beleza

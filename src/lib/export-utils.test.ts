@@ -100,6 +100,8 @@ describe('export-utils', () => {
       format: 'csv',
       periodLabel: 'Outubro de 2026',
       transactions: mockTransactions,
+      businessName: 'Barbearia Canário',
+      cnpj: '18.236.120/0001-58',
     });
 
     expect(mockLink.download).toContain('extrato-transacoes');

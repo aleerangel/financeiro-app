@@ -87,7 +87,7 @@ export function TransactionsView({
 }: TransactionsViewProps) {
   const { confirm } = useConfirm();
   const { month, year, formattedMonth, prevMonth, nextMonth } = useDateContext();
-  const { hasBusiness, businessName } = useBusinessProfile();
+  const { hasBusiness, businessName, profile } = useBusinessProfile();
   const isInitialMount = useRef(true);
   const [transactions, setTransactions] = useState<Transaction[]>(
     initialTransactions || []
@@ -339,6 +339,8 @@ export function TransactionsView({
       transactions: filteredTransactions,
       filterLabel: hasActiveFilter ? filterLabel : undefined,
       projectedYield: projectedYieldPending,
+      businessName: hasBusiness ? businessName : undefined,
+      cnpj: hasBusiness ? profile.cnpj : undefined,
     });
   };
 

@@ -128,6 +128,7 @@ export const ALL_SEGMENTS: SegmentConfig[] = Object.values(SEGMENTS_CONFIG);
 export const DEFAULT_BUSINESS_PROFILE: BusinessProfile = {
   user_id: '',
   business_name: 'Meu Negócio',
+  cnpj: null,
   segment: 'barbearia',
   has_business: true,
   sales_label: 'Atendimentos',
@@ -170,6 +171,7 @@ export function resolveBusinessProfile(
   return {
     user_id: raw.user_id || '',
     business_name: raw.business_name?.trim() || 'Meu Negócio',
+    cnpj: raw.cnpj?.trim() || null,
     segment,
     has_business: raw.has_business !== undefined ? Boolean(raw.has_business) : true,
     sales_label: raw.sales_label?.trim() || segmentCfg.defaultSalesLabel,

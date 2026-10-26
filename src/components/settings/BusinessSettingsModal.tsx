@@ -16,6 +16,7 @@ import { BusinessSegment } from '@/types/database';
 import { SEGMENTS_CONFIG } from '@/lib/business-presets';
 import { saveBusinessProfile } from '@/lib/actions/business-profile';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { formatCNPJ, isValidCNPJ } from '@/lib/cnpj-utils';
 import { PixKeyType, PIX_KEY_LABELS, BusinessMessageSettings } from '@/lib/whatsapp-templates';
 import {
   getMessageSettings,
@@ -50,6 +51,7 @@ export function BusinessSettingsModal({
 
   const [hasBusiness, setHasBusiness] = useState<boolean>(profile.has_business);
   const [businessName, setBusinessName] = useState<string>(profile.business_name || '');
+  const [cnpj, setCnpj] = useState<string>(profile.cnpj || '');
   const [segment, setSegment] = useState<BusinessSegment>(profile.segment || 'barbearia');
   const [salesLabel, setSalesLabel] = useState<string>(profile.sales_label || 'Atendimentos');
   const [defaultCycleDays, setDefaultCycleDays] = useState<number>(profile.default_cycle_days || 21);
@@ -80,6 +82,10 @@ export function BusinessSettingsModal({
 
   if (!isOpen) return null;
 
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCnpj(formatCNPJ(e.target.value));
+  };
+
   const handleSegmentChange = (newSegment: BusinessSegment) => {
     setSegment(newSegment);
     const config = SEGMENTS_CONFIG[newSegment];
@@ -103,10 +109,18 @@ export function BusinessSettingsModal({
       return;
     }
 
+    if (hasBusiness && cnpj.trim()) {
+      if (!isValidCNPJ(cnpj)) {
+        setError('O CNPJ informado é inválido. Verifique os números digitados.');
+        return;
+      }
+    }
+
     try {
       setSaving(true);
       const updated = await saveBusinessProfile({
         business_name: businessName.trim() || 'Meu Negócio',
+        cnpj: cnpj.trim() || null,
         segment,
         sales_label: salesLabel.trim() || 'Atendimentos',
         default_cycle_days: Number(defaultCycleDays) || 21,
@@ -217,6 +231,27 @@ export function BusinessSettingsModal({
                   required
                   className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-100 focus:outline-none focus:border-amber-500 transition placeholder:text-zinc-600"
                 />
+              </div>
+
+              {/* 2.1 CNPJ da Empresa (Opcional) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    CNPJ da Empresa
+                  </label>
+                  <span className="text-[10px] text-zinc-500 font-medium">Opcional</span>
+                </div>
+                <input
+                  type="text"
+                  value={cnpj}
+                  onChange={handleCnpjChange}
+                  placeholder="00.000.000/0000-00"
+                  maxLength={18}
+                  className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-100 focus:outline-none focus:border-amber-500 transition placeholder:text-zinc-600 font-mono"
+                />
+                <p className="text-[10px] text-zinc-500 mt-1">
+                  Exibido em relatórios consolidados e extratos da sua empresa.
+                </p>
               </div>
 
               {/* 3. Seleção do Macro-Segmento */}

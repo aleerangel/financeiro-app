@@ -249,6 +249,7 @@ export type BusinessSegment =
 export interface BusinessProfile {
   user_id: string;
   business_name: string | null;
+  cnpj?: string | null;
   segment: BusinessSegment;
   has_business: boolean;
   sales_label: string;
