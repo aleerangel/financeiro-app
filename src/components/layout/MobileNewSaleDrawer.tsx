@@ -342,31 +342,16 @@ function MobileNewSaleDrawerDialog() {
 
       invalidateClientCache(['accounts', 'clients']);
 
-      toast.success('Atendimento concluído com sucesso! 💈✂️', {
-        action: {
-          label: 'Emitir Nota',
-          onClick: () => {
-            setReceiptSale(saleForReceipt);
-          },
-        },
-      });
+      toast.success('Atendimento concluído com sucesso! 💈✂️');
 
-      if (paymentMethod === 'on_credit') {
-        const targetClient = clients.find((c) => c.id === finalClientId);
-        setCreditReceiptData({
-          clientName: finalClientName,
-          clientPhone: targetClient?.phone || null,
-          totalAmount: totalAmount - initPayNum,
-          dueDate: dueDate || null,
-          items: selectedItems,
-        });
-      } else if (customItems.length > 0) {
+      if (customItems.length > 0) {
         setPromptSaveItem({
           name: customItems[0].product_name,
           price: customItems[0].unit_price,
         });
       } else {
-        handleClose();
+        // Abre imediatamente a Nota de Serviço / Venda completa para compartilhamento do PDF ou visualização
+        setReceiptSale(saleForReceipt);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao registrar atendimento';

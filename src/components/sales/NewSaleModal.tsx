@@ -243,14 +243,7 @@ export function NewSaleModal({
       });
 
       if (paymentMethod === 'on_credit') {
-        const targetClient = clientsList.find((c) => c.id === finalClientId);
-        setCreditReceiptData({
-          clientName: finalClientName,
-          clientPhone: targetClient?.phone || null,
-          totalAmount: totalAmount - initPayNum,
-          dueDate: dueDate || null,
-          items: selectedItems,
-        });
+        setReceiptSale(saleForReceipt);
       } else {
         onClose();
         if (onSuccess) onSuccess();

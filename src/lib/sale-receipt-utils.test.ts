@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   formatReceiptNumber,
   getSalePaymentMethodLabel,
   generateSaleReceiptWhatsAppText,
+  generateSaleReceiptPdf,
+  shareSaleReceiptPdfViaWhatsApp,
 } from './sale-receipt-utils';
 import { Sale, BusinessProfile, Account } from '@/types/database';
 import { BusinessMessageSettings } from '@/lib/whatsapp-templates';
@@ -157,5 +159,43 @@ describe('sale-receipt-utils', () => {
     expect(text).toContain('Saldo em Aberto:');
     expect(text).toContain('50,00');
     expect(text).toContain('PAGAMENTOS / AMORTIZAÇÕES:');
+  });
+
+  it('generates PDF with blob, file and filename correctly', async () => {
+    const res = await generateSaleReceiptPdf({
+      sale: mockSale,
+      businessProfile: mockProfile,
+    });
+
+    expect(res.filename).toContain('Nota_NF-2026-SALEAB_Lucas_Ferreira.pdf');
+    expect(typeof res.download).toBe('function');
+    const blob = res.getBlob();
+    expect(blob).toBeDefined();
+    expect(blob.type).toBe('application/pdf');
+    const file = res.getFile();
+    expect(file).toBeDefined();
+    expect(file.name).toContain('.pdf');
+    expect(file.type).toBe('application/pdf');
+  });
+
+  it('handles sharing via Web Share API when supported', async () => {
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    const canShareMock = vi.fn().mockReturnValue(true);
+
+    // Mock navigator.share and canShare
+    vi.stubGlobal('navigator', {
+      canShare: canShareMock,
+      share: shareMock,
+    });
+
+    const result = await shareSaleReceiptPdfViaWhatsApp({
+      sale: mockSale,
+      businessProfile: mockProfile,
+    });
+
+    expect(result.sharedViaNative).toBe(true);
+    expect(shareMock).toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
   });
 });

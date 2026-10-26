@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import {
   X,
+  ArrowLeft,
   Download,
   Printer,
   Share2,
@@ -20,7 +21,7 @@ import {
   formatReceiptNumber,
   getSalePaymentMethodLabel,
   generateSaleReceiptPdf,
-  generateSaleReceiptWhatsAppText,
+  shareSaleReceiptPdfViaWhatsApp,
 } from '@/lib/sale-receipt-utils';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { formatCNPJ } from '@/lib/cnpj-utils';
@@ -39,6 +40,7 @@ export function SaleReceiptModal({
 }: SaleReceiptModalProps) {
   const { profile } = useBusinessProfile();
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [sharingPdf, setSharingPdf] = useState(false);
 
   if (!isOpen || !sale) return null;
 
@@ -71,20 +73,24 @@ export function SaleReceiptModal({
     window.print();
   };
 
-  const handleWhatsAppShare = () => {
-    const text = generateSaleReceiptWhatsAppText({
-      sale,
-      businessProfile: profile,
-    });
-
-    const phone = sale.client?.phone ? sale.client.phone.replace(/\D/g, '') : '';
-    const phoneWithCountry = phone ? (phone.startsWith('55') ? phone : `55${phone}`) : '';
-
-    const url = phoneWithCountry
-      ? `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
-
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const handleSharePdfWhatsApp = async () => {
+    try {
+      setSharingPdf(true);
+      const res = await shareSaleReceiptPdfViaWhatsApp({
+        sale,
+        businessProfile: profile,
+      });
+      if (res.sharedViaNative) {
+        toast.success('Envie o PDF gerado diretamente no WhatsApp!');
+      } else {
+        toast.success('Nota em PDF baixada! Abrindo o WhatsApp...');
+      }
+    } catch (err) {
+      console.error('Erro ao compartilhar PDF:', err);
+      toast.error('Não foi possível gerar e compartilhar o PDF.');
+    } finally {
+      setSharingPdf(false);
+    }
   };
 
   const items = sale.items && sale.items.length > 0
@@ -103,12 +109,43 @@ export function SaleReceiptModal({
       ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-zinc-950 sm:p-4 sm:bg-black/80 sm:backdrop-blur-sm sm:items-center sm:justify-center overflow-hidden animate-in fade-in duration-200">
       {/* Container Principal */}
-      <div className="relative w-full max-w-3xl bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full h-full sm:h-auto sm:max-w-3xl bg-zinc-950 sm:border sm:border-zinc-800 sm:rounded-3xl shadow-2xl flex flex-col sm:max-h-[92vh] overflow-hidden">
         
-        {/* Barra de Ações Superior (Não sai na impressão) */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md shrink-0 print:hidden">
+        {/* Barra Superior Mobile: Botão Voltar Proeminente + Título + Fechar */}
+        <div className="flex sm:hidden items-center justify-between px-3.5 py-3 border-b border-zinc-800 bg-zinc-900/90 backdrop-blur-md shrink-0 print:hidden">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-zinc-100 hover:text-white bg-zinc-800/90 active:bg-zinc-700 active:scale-95 transition"
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="w-4 h-4 text-zinc-200 stroke-[2.5]" />
+            <span className="text-xs font-bold">Voltar</span>
+          </button>
+
+          <div className="text-center">
+            <h2 className="text-xs font-bold text-zinc-100">
+              Nota de Serviço / Venda
+            </h2>
+            <span className="text-[10px] font-mono text-amber-400 font-semibold">
+              {receiptNum}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+            aria-label="Fechar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Barra Superior Desktop */}
+        <div className="hidden sm:flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md shrink-0 print:hidden">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
               <FileText className="w-4 h-4" />
@@ -121,7 +158,7 @@ export function SaleReceiptModal({
                 </span>
               </h2>
               <p className="text-[11px] text-zinc-400">
-                Visualização A4 formal pronta para impressão ou envio
+                Visualização A4 formal pronta para impressão ou envio de PDF
               </p>
             </div>
           </div>
@@ -129,12 +166,17 @@ export function SaleReceiptModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleWhatsAppShare}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-semibold transition active:scale-95"
-              title="Compartilhar comprovante no WhatsApp do cliente"
+              onClick={handleSharePdfWhatsApp}
+              disabled={sharingPdf || downloadingPdf}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-semibold transition active:scale-95 disabled:opacity-50"
+              title="Compartilhar arquivo PDF no WhatsApp do cliente"
             >
-              <Share2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">WhatsApp</span>
+              {sharingPdf ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Share2 className="w-3.5 h-3.5" />
+              )}
+              <span>WhatsApp (PDF)</span>
             </button>
 
             <button
@@ -144,13 +186,13 @@ export function SaleReceiptModal({
               title="Imprimir folha A4"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Imprimir</span>
+              <span>Imprimir</span>
             </button>
 
             <button
               type="button"
               onClick={handleDownloadPdf}
-              disabled={downloadingPdf}
+              disabled={downloadingPdf || sharingPdf}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs shadow-md shadow-amber-500/10 transition active:scale-95 disabled:opacity-50"
               title="Baixar arquivo PDF formal"
             >
@@ -176,10 +218,10 @@ export function SaleReceiptModal({
         </div>
 
         {/* Área de Visualização do Documento A4 */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-zinc-900/50 flex justify-center">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-8 bg-zinc-900/50 flex justify-center">
           <div
             id="printable-sale-receipt"
-            className="w-full max-w-[700px] bg-white text-zinc-900 rounded-2xl p-6 sm:p-8 shadow-xl border border-zinc-200 space-y-6 print:m-0 print:p-0 print:border-none print:shadow-none print:rounded-none"
+            className="w-full max-w-[700px] bg-white text-zinc-900 rounded-2xl p-4 sm:p-8 shadow-xl border border-zinc-200 space-y-6 print:m-0 print:p-0 print:border-none print:shadow-none print:rounded-none h-fit"
           >
             {/* 1. Cabeçalho Timbrado */}
             <div className="border-b-2 border-slate-900 pb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -388,6 +430,38 @@ export function SaleReceiptModal({
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Barra Fixa Inferior no Mobile (Ações Primárias) */}
+        <div className="flex sm:hidden items-center gap-2.5 p-3.5 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md shrink-0 print:hidden safe-area-bottom">
+          <button
+            type="button"
+            onClick={handleSharePdfWhatsApp}
+            disabled={sharingPdf || downloadingPdf}
+            className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl text-xs shadow-lg shadow-emerald-950/50 transition active:scale-95 disabled:opacity-50"
+          >
+            {sharingPdf ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4 stroke-[2.5]" />
+            )}
+            <span>Enviar PDF no WhatsApp</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf || sharingPdf}
+            className="flex items-center justify-center gap-1.5 py-3 px-3.5 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-100 font-semibold rounded-2xl text-xs border border-zinc-700 transition active:scale-95 disabled:opacity-50"
+            title="Baixar arquivo PDF"
+          >
+            {downloadingPdf ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            <span>PDF</span>
+          </button>
         </div>
 
       </div>

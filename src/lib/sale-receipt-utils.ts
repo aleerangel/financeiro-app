@@ -122,6 +122,13 @@ async function loadPdfLibs() {
   return { jsPDF, autoTable };
 }
 
+export interface GeneratedSaleReceiptPdf {
+  filename: string;
+  download: () => void;
+  getBlob: () => Blob;
+  getFile: () => File;
+}
+
 /**
  * Gera o documento PDF A4 Formal da Nota de Serviço / Venda
  */
@@ -129,7 +136,7 @@ export async function generateSaleReceiptPdf({
   sale,
   businessProfile,
   messageSettings,
-}: SaleReceiptOptions): Promise<{ filename: string; download: () => void }> {
+}: SaleReceiptOptions): Promise<GeneratedSaleReceiptPdf> {
   const { jsPDF, autoTable } = await loadPdfLibs();
 
   const doc = new jsPDF({
@@ -448,5 +455,71 @@ export async function generateSaleReceiptPdf({
     download: () => {
       doc.save(filename);
     },
+    getBlob: (): Blob => {
+      return doc.output('blob');
+    },
+    getFile: (): File => {
+      const blob = doc.output('blob');
+      return new File([blob], filename, { type: 'application/pdf' });
+    },
   };
+}
+
+/**
+ * Compartilha o arquivo PDF gerado diretamente via WhatsApp usando Web Share API de arquivos
+ * no mobile, com fallback inteligente para download + wa.me no desktop.
+ */
+export async function shareSaleReceiptPdfViaWhatsApp({
+  sale,
+  businessProfile,
+}: SaleReceiptOptions): Promise<{ sharedViaNative: boolean }> {
+  const { filename, getFile, download } = await generateSaleReceiptPdf({
+    sale,
+    businessProfile,
+  });
+
+  const file = getFile();
+  const clientName = sale.client?.name || sale.client_name || 'Cliente';
+  const receiptNum = formatReceiptNumber(sale.id, sale.sale_date);
+  const shareText = `Olá ${clientName}, segue em anexo a sua Nota de Serviço / Venda #${receiptNum}.`;
+
+  // 1. Compartilhamento nativo de arquivo (Dispositivos móveis Android / iOS Safari)
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.canShare === 'function' &&
+    typeof navigator.share === 'function' &&
+    navigator.canShare({ files: [file] })
+  ) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: `Nota de Serviço - ${receiptNum}`,
+        text: shareText,
+      });
+      return { sharedViaNative: true };
+    } catch (err: unknown) {
+      if ((err as Error)?.name === 'AbortError') {
+        // Usuário apenas fechou o menu de compartilhamento
+        return { sharedViaNative: true };
+      }
+      console.warn('Falha no Web Share de arquivos, usando fallback:', err);
+    }
+  }
+
+  // 2. Fallback para Desktop: baixa o arquivo PDF no navegador e abre o chat no WhatsApp
+  download();
+
+  const phone = sale.client?.phone ? sale.client.phone.replace(/\D/g, '') : '';
+  const phoneWithCountry = phone ? (phone.startsWith('55') ? phone : `55${phone}`) : '';
+  const desktopMsg = `${shareText}\n\n(O documento PDF da sua nota foi gerado e baixado no seu dispositivo para anexo)`;
+
+  const url = phoneWithCountry
+    ? `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(desktopMsg)}`
+    : `https://wa.me/?text=${encodeURIComponent(desktopMsg)}`;
+
+  if (typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  return { sharedViaNative: false };
 }
