@@ -292,7 +292,21 @@ export function CategoryEvolutionMobileView({
 
         {/* Gráfico de Evolução Financeira Expandido Estilo Resumo Mobile */}
         {chartSeries.length > 0 && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 sm:p-5 space-y-3">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm">
+            {/* Cabeçalho Único do Bloco */}
+            <div>
+              <h3 className="font-bold text-zinc-100 text-sm sm:text-base">
+                Evolução Anual ({refYear})
+              </h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {selectedChartKey === 'all'
+                  ? `Curva mensal das principais categorias de ${
+                      isIncome ? 'receitas' : 'despesas'
+                    }`
+                  : `Curva mensal de "${displayedSeries[0]?.name}" em ${refYear}`}
+              </p>
+            </div>
+
             {/* Pílulas de filtro para isolar a curva das categorias no gráfico */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
               <button
@@ -351,20 +365,13 @@ export function CategoryEvolutionMobileView({
 
             {/* Gráfico Amplo e Nítido com a Métrica Selecionada */}
             <SmoothLineChart
-              title={`Evolução Anual (${refYear})`}
-              subtitle={
-                selectedChartKey === 'all'
-                  ? `Curva mensal das principais categorias de ${
-                      isIncome ? 'receitas' : 'despesas'
-                    }`
-                  : `Curva mensal de "${displayedSeries[0]?.name}" em ${refYear}`
-              }
               series={displayedSeries}
               labels={MONTH_SHORT_LABELS}
               tooltipLabels={MONTH_FULL_LABELS.map((m) => `${m} de ${refYear}`)}
-              height={230}
-              dynamicYScale={true}
+              height={310}
               compactLayout={true}
+              hideContainer={true}
+              hideLegend={true}
             />
           </div>
         )}

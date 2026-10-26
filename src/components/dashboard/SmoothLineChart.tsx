@@ -12,7 +12,7 @@ export interface ChartSeries {
 }
 
 export interface SmoothLineChartProps {
-  title: string;
+  title?: string;
   subtitle?: string;
   series: ChartSeries[];
   labels?: string[];
@@ -22,6 +22,8 @@ export interface SmoothLineChartProps {
   rightAction?: React.ReactNode;
   dynamicYScale?: boolean;
   compactLayout?: boolean;
+  hideLegend?: boolean;
+  hideContainer?: boolean;
 }
 
 const DEFAULT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -37,6 +39,8 @@ export function SmoothLineChart({
   rightAction,
   dynamicYScale = false,
   compactLayout = false,
+  hideLegend = false,
+  hideContainer = false,
 }: SmoothLineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -138,13 +142,12 @@ export function SmoothLineChart({
   }, [series, dynamicYScale]);
 
   // Dimensões SVG internas
-  const is12PointsCompact = compactLayout && effectiveLabels.length >= 10;
-  const svgWidth = compactLayout ? (is12PointsCompact ? 420 : 360) : 650;
+  const svgWidth = compactLayout ? 360 : 650;
   const svgHeight = height;
-  const padLeft = compactLayout ? (is12PointsCompact ? 48 : 50) : 85;
+  const padLeft = compactLayout ? 42 : 85;
   const padRight = compactLayout ? 12 : 25;
-  const padTop = compactLayout ? 18 : 25;
-  const padBottom = compactLayout ? 30 : 35;
+  const padTop = compactLayout ? 16 : 25;
+  const padBottom = compactLayout ? 26 : 35;
 
   const formatTickLabel = (tick: number) => {
     if (Math.abs(tick) < 0.001) {
@@ -209,19 +212,19 @@ export function SmoothLineChart({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [series, minVal, maxVal, chartW, chartH, totalPoints]);
 
-  return (
-    <div
-      className={`${
-        compactLayout ? 'p-3 sm:p-5' : 'p-5'
-      } bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between relative`}
-    >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-        <div>
-          <h3 className="font-bold text-zinc-100 text-base">{title}</h3>
-          {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
+  const hasHeader = Boolean(title || subtitle || rightAction);
+
+  const chartBody = (
+    <>
+      {hasHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+          <div>
+            {title && <h3 className="font-bold text-zinc-100 text-base">{title}</h3>}
+            {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
+          </div>
+          {rightAction && <div className="shrink-0">{rightAction}</div>}
         </div>
-        {rightAction && <div className="shrink-0">{rightAction}</div>}
-      </div>
+      )}
 
       {/* SVG do Gráfico */}
       <div className="w-full overflow-hidden relative">
@@ -287,7 +290,7 @@ export function SmoothLineChart({
                 y={svgHeight - (compactLayout ? 6 : 10)}
                 textAnchor="middle"
                 fill={isHovered ? '#f4f4f5' : '#a1a1aa'}
-                fontSize={compactLayout ? (is12PointsCompact ? '10' : '11') : '11'}
+                fontSize={compactLayout ? '10' : '11'}
                 fontWeight={isHovered ? '700' : '600'}
                 className="transition-colors"
               >
@@ -428,17 +431,33 @@ export function SmoothLineChart({
       </div>
 
       {/* Legenda inferior */}
-      <div className="flex flex-wrap items-center justify-center gap-5 mt-3 pt-3 border-t border-zinc-800/80">
-        {series.map((s) => (
-          <div key={`legend-${s.id}`} className="flex items-center gap-2 text-xs">
-            <span
-              className="w-2.5 h-2.5 rounded-full shadow-sm"
-              style={{ backgroundColor: s.color }}
-            />
-            <span className="text-zinc-300 font-medium">{s.name}</span>
-          </div>
-        ))}
-      </div>
+      {!hideLegend && series.length > 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-5 mt-3 pt-3 border-t border-zinc-800/80">
+          {series.map((s) => (
+            <div key={`legend-${s.id}`} className="flex items-center gap-2 text-xs">
+              <span
+                className="w-2.5 h-2.5 rounded-full shadow-sm"
+                style={{ backgroundColor: s.color }}
+              />
+              <span className="text-zinc-300 font-medium">{s.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  if (hideContainer) {
+    return <div className="w-full relative">{chartBody}</div>;
+  }
+
+  return (
+    <div
+      className={`${
+        compactLayout ? 'p-3 sm:p-5' : 'p-5'
+      } bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between relative`}
+    >
+      {chartBody}
     </div>
   );
 }
