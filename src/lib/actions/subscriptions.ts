@@ -26,7 +26,7 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
 
   const { data, error } = await supabase
     .from('subscription_plans')
-    .select('*')
+    .select('id, user_id, name, description, price, interval, active, created_at, updated_at')
     .eq('user_id', user.id)
     .eq('active', true)
     .order('price', { ascending: true });
@@ -677,22 +677,23 @@ async function ensureCurrentMonthInvoicesInternal(
 
     if (error || !activeSubs || activeSubs.length === 0) return;
 
-    for (const sub of activeSubs) {
-      const dueDate = calculateDueDateForMonth(year, month, sub.due_day);
-      await supabase.from('subscription_invoices').upsert(
-        {
-          user_id: userId,
-          subscription_id: sub.id,
-          client_id: sub.client_id,
-          amount: sub.price,
-          due_date: dueDate,
-          period_start: periodStart,
-          period_end: periodEnd,
-          status: 'pending',
-        },
-        { onConflict: 'subscription_id,period_start', ignoreDuplicates: true }
-      );
-    }
+    // Constrói todas as faturas do mês e executa um único batch upsert
+    // eliminando N requisições de rede sequenciais (N+1 query problem)
+    const invoicesToUpsert = activeSubs.map((sub) => ({
+      user_id: userId,
+      subscription_id: sub.id,
+      client_id: sub.client_id,
+      amount: sub.price,
+      due_date: calculateDueDateForMonth(year, month, sub.due_day),
+      period_start: periodStart,
+      period_end: periodEnd,
+      status: 'pending' as const,
+    }));
+
+    await supabase.from('subscription_invoices').upsert(
+      invoicesToUpsert,
+      { onConflict: 'subscription_id,period_start', ignoreDuplicates: true }
+    );
   } catch (err) {
     console.error('Erro ao gerar faturas do mês corrente:', err);
   }

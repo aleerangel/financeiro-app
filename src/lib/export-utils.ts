@@ -1,11 +1,25 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { Transaction, Sale } from '../types/database';
 import { formatCurrency, formatDate, formatDateTime } from './utils';
 import { isBusinessTransaction } from './business-scope-utils';
 
 export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
+
+/**
+ * Carregamento sob demanda (lazy-loading) das bibliotecas pesadas de exportação.
+ * Evita inflar o bundle inicial das páginas principais (Dashboard, Extrato, Vendas)
+ * com centenas de kilobytes de jsPDF e SheetJS que só são necessários sob clique.
+ */
+async function loadExcelLib() {
+  return await import('xlsx');
+}
+
+async function loadPdfLibs() {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
+  return { jsPDF, autoTable };
+}
 
 /**
  * Faz o download de um Blob no navegador
@@ -63,13 +77,14 @@ export function exportToCsv(filename: string, headers: string[], rows: (string |
 /**
  * Gera arquivo Excel (.xlsx) nativo com SheetJS
  */
-export function exportToExcel(
+export async function exportToExcel(
   filename: string,
   sheetName: string,
   headers: string[],
   rows: (string | number)[][],
   summaryRows?: (string | number)[][]
 ) {
+  const XLSX = await loadExcelLib();
   const wb = XLSX.utils.book_new();
   const sanitizedRows = rows.map((row) => row.map(sanitizeSpreadsheetCell));
   const data: (string | number)[][] = [headers, ...sanitizedRows];
@@ -111,7 +126,7 @@ export interface ExportTransactionsOptions {
   cnpj?: string | null;
 }
 
-export function exportTransactionsReport({
+export async function exportTransactionsReport({
   format,
   periodLabel,
   transactions,
@@ -202,11 +217,12 @@ export function exportTransactionsReport({
       ['Saldo Previsto', projectedBalance],
       ['Total de Lançamentos', transactions.length],
     ];
-    exportToExcel(baseFilename, 'Extrato', headers, rows, summaryRows);
+    await exportToExcel(baseFilename, 'Extrato', headers, rows, summaryRows);
     return;
   }
 
   // GERAÇÃO DE PDF
+  const { jsPDF, autoTable } = await loadPdfLibs();
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -365,7 +381,7 @@ export interface ExportSalesReportOptions {
   cnpj?: string | null;
 }
 
-export function exportSalesReport({
+export async function exportSalesReport({
   format,
   periodLabel,
   sales,
@@ -437,11 +453,12 @@ export function exportSalesReport({
       ['Atendimentos Realizados', totalSalesCount],
       ['Ticket Médio', averageTicket],
     ];
-    exportToExcel(baseFilename, 'Atendimentos', headers, rows, summaryRows);
+    await exportToExcel(baseFilename, 'Atendimentos', headers, rows, summaryRows);
     return;
   }
 
   // GERAÇÃO DE PDF
+  const { jsPDF, autoTable } = await loadPdfLibs();
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -576,7 +593,7 @@ export interface ExportDebtsReportOptions {
   totalOverdueDebt: number;
 }
 
-export function exportDebtsReport({
+export async function exportDebtsReport({
   format,
   clients,
   totalPendingDebt,
@@ -627,11 +644,12 @@ export function exportDebtsReport({
       ['Total Vencido em Atraso', totalOverdueDebt],
       ['Clientes com Pendências', clients.length],
     ];
-    exportToExcel(baseFilename, 'Fiados a Receber', headers, rows, summaryRows);
+    await exportToExcel(baseFilename, 'Fiados a Receber', headers, rows, summaryRows);
     return;
   }
 
   // GERAÇÃO DE PDF
+  const { jsPDF, autoTable } = await loadPdfLibs();
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
 

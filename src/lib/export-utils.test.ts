@@ -57,7 +57,7 @@ describe('export-utils', () => {
     expect(sanitizeSpreadsheetCell('Texto Normal')).toBe('Texto Normal');
   });
 
-  it('exportTransactionsReport gera CSV com o padrão correto', () => {
+  it('exportTransactionsReport gera CSV com o padrão correto', async () => {
     const mockTransactions = [
       {
         id: '1',
@@ -115,7 +115,7 @@ describe('export-utils', () => {
       },
     ] as unknown as Transaction[];
 
-    exportTransactionsReport({
+    await exportTransactionsReport({
       format: 'csv',
       periodLabel: 'Outubro de 2026',
       transactions: mockTransactions,
@@ -128,7 +128,7 @@ describe('export-utils', () => {
     expect(mockLink.click).toHaveBeenCalled();
   });
 
-  it('exportSalesReport gera CSV de atendimentos corretamente', () => {
+  it('exportSalesReport gera CSV de atendimentos corretamente', async () => {
     const mockSales = [
       {
         id: 's1',
@@ -163,7 +163,7 @@ describe('export-utils', () => {
       },
     ] as unknown as Sale[];
 
-    exportSalesReport({
+    await exportSalesReport({
       format: 'csv',
       periodLabel: 'Hoje',
       sales: mockSales,
@@ -174,7 +174,7 @@ describe('export-utils', () => {
     expect(mockLink.click).toHaveBeenCalled();
   });
 
-  it('exportDebtsReport gera CSV de fiados a receber com sucesso', () => {
+  it('exportDebtsReport gera CSV de fiados a receber com sucesso', async () => {
     const mockClients = [
       {
         clientName: 'João da Silva',
@@ -196,7 +196,7 @@ describe('export-utils', () => {
       },
     ];
 
-    exportDebtsReport({
+    await exportDebtsReport({
       format: 'csv',
       clients: mockClients,
       totalPendingDebt: 170,
