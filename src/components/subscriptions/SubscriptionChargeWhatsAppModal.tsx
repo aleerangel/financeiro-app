@@ -93,7 +93,7 @@ export function SubscriptionChargeWhatsAppModal({
       return;
     }
     const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
     onClose();
   };
 

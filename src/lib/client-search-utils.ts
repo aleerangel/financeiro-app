@@ -74,3 +74,17 @@ export function findExactClientMatch(
 
   return clients.find((c) => normalizeSearchTerm(c.name) === norm);
 }
+
+/**
+ * Sanitiza texto livre para uso seguro em filtros PostgREST (.or() / .ilike())
+ * Remove caracteres de controle da sintaxe PostgREST (vírgulas, parênteses, aspas, barras e pontos)
+ * evitando quebras de consulta ou injeções de filtros lógicos na API do banco.
+ */
+export function sanitizePostgrestFilterTerm(input: string | null | undefined): string {
+  if (!input) return '';
+  return input
+    .replace(/[(),."'\\]/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+

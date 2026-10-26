@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSafeRedirectPath } from '@/lib/safe-redirect';
+
+const SAFE_HOST_REGEX = /^[a-zA-Z0-9.-]+(?::\d+)?$/;
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const safeNext = getSafeRedirectPath(searchParams.get('next'), '/dashboard');
 
   if (code) {
     const supabase = await createClient();
@@ -12,10 +15,11 @@ export async function GET(request: Request) {
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host');
       const isLocalEnv = process.env.NODE_ENV === 'development';
-      let redirectUrl = `${origin}${next}`;
-      if (!isLocalEnv && forwardedHost) {
-        redirectUrl = `https://${forwardedHost}${next}`;
+      let baseOrigin = origin;
+      if (!isLocalEnv && forwardedHost && SAFE_HOST_REGEX.test(forwardedHost)) {
+        baseOrigin = `https://${forwardedHost}`;
       }
+      const redirectUrl = new URL(safeNext, baseOrigin).toString();
       const response = NextResponse.redirect(redirectUrl);
       response.headers.set(
         'Cache-Control',

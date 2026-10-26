@@ -175,23 +175,7 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
     }
   }
 
-  // 3. Se falhar por e-mail não confirmado, tenta confirmar via RPC
-  if (signInError && signInError.message.toLowerCase().includes('email not confirmed')) {
-    try {
-      await supabase.rpc('confirm_dev_user', { p_email: email });
-      const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-        email,
-        password: DEV_PASSWORD,
-      });
-      if (!retryError && retryData?.user) {
-        return retryData.user.id;
-      }
-    } catch (e) {
-      console.warn('Aviso ao tentar confirmar email:', e);
-    }
-  }
-
-  // 4. Criação padrão via signUp (apenas se adminClient não estiver disponível)
+  // 3. Criação padrão via signUp (apenas se adminClient não estiver disponível)
   if (!adminClient) {
     const { error: signUpError } = await supabase.auth.signUp({
       email,
@@ -202,13 +186,13 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
       if (signUpError.message.toLowerCase().includes('rate limit')) {
         throw new Error(
           'O Supabase bloqueou novos e-mails (email rate limit exceeded). ' +
-          'Para liberar instantaneamente no ambiente local, vá em Supabase > Authentication > Providers > Email e desmarque a opção "Confirm email", ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
+          'Para liberar instantaneamente no ambiente local, adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local, ou vá em Supabase > Authentication > Providers > Email e desmarque a opção "Confirm email".'
         );
       }
       if (signUpError.message.toLowerCase().includes('signups are disabled')) {
         throw new Error(
           'Os cadastros por e-mail estão desativados no Supabase (Email signups are disabled). ' +
-          'No painel do Supabase > Authentication > Providers > Email, mantenha "Enable Email provider" e "Allow new users to sign up" ATIVADOS (e desative apenas "Confirm email"), ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
+          'No painel do Supabase > Authentication > Providers > Email, mantenha "Enable Email provider" e "Allow new users to sign up" ATIVADOS, ou adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local.'
         );
       }
       if (!signUpError.message.toLowerCase().includes('already registered')) {
@@ -217,14 +201,7 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
     }
   }
 
-  // 5. Confirma o e-mail via RPC caso o projeto exija confirmação
-  try {
-    await supabase.rpc('confirm_dev_user', { p_email: email });
-  } catch {
-    // Ignora se não existir
-  }
-
-  // 6. Login final
+  // 4. Login final
   const { data: finalSignIn, error: finalSignInError } = await supabase.auth.signInWithPassword({
     email,
     password: DEV_PASSWORD,
@@ -232,6 +209,13 @@ async function ensureDevUser(supabase: any, email: string): Promise<string> {
 
   if (!finalSignInError && finalSignIn?.user) {
     return finalSignIn.user.id;
+  }
+
+  if (finalSignInError?.message.toLowerCase().includes('email not confirmed')) {
+    throw new Error(
+      'A conta de desenvolvimento requer confirmação de e-mail. ' +
+      'Adicione SUPABASE_SERVICE_ROLE_KEY no seu .env.local para auto-confirmação segura via Admin API, ou desmarque "Confirm email" em Supabase > Authentication > Providers > Email.'
+    );
   }
 
   if (finalSignInError?.message.toLowerCase().includes('database error querying schema')) {

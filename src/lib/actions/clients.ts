@@ -10,6 +10,7 @@ import {
   RawClientSale,
 } from '@/lib/client-analytics';
 import { getBusinessProfile } from '@/lib/actions/business-profile';
+import { sanitizePostgrestFilterTerm } from '@/lib/client-search-utils';
 
 export interface CreateClientInput {
   name: string;
@@ -71,8 +72,11 @@ export async function getClients(searchTerm?: string): Promise<ClientWithStats[]
     .order('name', { ascending: true });
 
   if (searchTerm && searchTerm.trim()) {
-    const term = `%${searchTerm.trim()}%`;
-    query = query.or(`name.ilike.${term},phone.ilike.${term},cpf.ilike.${term}`);
+    const cleanTerm = sanitizePostgrestFilterTerm(searchTerm);
+    if (cleanTerm) {
+      const term = `%${cleanTerm}%`;
+      query = query.or(`name.ilike.${term},phone.ilike.${term},cpf.ilike.${term}`);
+    }
   }
 
   const [profile, { data, error }] = await Promise.all([

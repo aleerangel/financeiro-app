@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exportToCsv, exportTransactionsReport, exportSalesReport, exportDebtsReport } from './export-utils';
+import {
+  exportToCsv,
+  exportTransactionsReport,
+  exportSalesReport,
+  exportDebtsReport,
+  sanitizeSpreadsheetCell,
+} from './export-utils';
 import { Transaction, Sale } from '../types/database';
 
 describe('export-utils', () => {
@@ -36,6 +42,19 @@ describe('export-utils', () => {
 
     expect(mockLink.download).toBe('teste.csv');
     expect(mockLink.click).toHaveBeenCalled();
+  });
+
+  it('sanitizeSpreadsheetCell neutraliza tentativas de Formula Injection (=, +, -, @)', () => {
+    expect(sanitizeSpreadsheetCell('=1+1')).toBe("'=1+1");
+    expect(sanitizeSpreadsheetCell('@SUM(A1:A10)')).toBe("'@SUM(A1:A10)");
+    expect(sanitizeSpreadsheetCell('+cmd|/c calc')).toBe("'+cmd|/c calc");
+    expect(sanitizeSpreadsheetCell('-cmd|/c calc')).toBe("'-cmd|/c calc");
+
+    // Números puros não devem ser prefixados com apóstrofo
+    expect(sanitizeSpreadsheetCell(-50)).toBe(-50);
+    expect(sanitizeSpreadsheetCell('-50')).toBe('-50');
+    expect(sanitizeSpreadsheetCell('-50.25')).toBe('-50.25');
+    expect(sanitizeSpreadsheetCell('Texto Normal')).toBe('Texto Normal');
   });
 
   it('exportTransactionsReport gera CSV com o padrão correto', () => {

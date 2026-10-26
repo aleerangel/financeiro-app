@@ -3,6 +3,7 @@ import {
   normalizeSearchTerm,
   filterClientsBySearch,
   findExactClientMatch,
+  sanitizePostgrestFilterTerm,
 } from './client-search-utils';
 import { SimpleClient } from './actions/clients';
 
@@ -71,6 +72,22 @@ describe('client-search-utils', () => {
 
     const noMatch = findExactClientMatch(mockClients, 'Jose Silva');
     expect(noMatch).toBeUndefined();
+  });
+
+  describe('sanitizePostgrestFilterTerm', () => {
+    it('removes PostgREST syntax characters that break .or() queries', () => {
+      expect(sanitizePostgrestFilterTerm('Silva, João')).toBe('Silva João');
+      expect(sanitizePostgrestFilterTerm('teste (barbearia)')).toBe('teste barbearia');
+      expect(sanitizePostgrestFilterTerm('empresa "X" LTDA.')).toBe('empresa X LTDA');
+      expect(sanitizePostgrestFilterTerm('injection\\payload')).toBe('injection payload');
+    });
+
+    it('returns empty string when input is null, undefined or blank', () => {
+      expect(sanitizePostgrestFilterTerm(null)).toBe('');
+      expect(sanitizePostgrestFilterTerm(undefined)).toBe('');
+      expect(sanitizePostgrestFilterTerm('')).toBe('');
+      expect(sanitizePostgrestFilterTerm('   ')).toBe('');
+    });
   });
 });
 

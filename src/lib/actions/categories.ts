@@ -3,6 +3,7 @@
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { Category, CategoryType, FinancialScope, BusinessSegment } from '@/types/database';
 import { SEGMENTS_CONFIG } from '@/lib/business-presets';
+import { sanitizePostgrestFilterTerm } from '@/lib/client-search-utils';
 import { revalidatePath } from 'next/cache';
 
 export interface CreateCategoryInput {
@@ -248,12 +249,14 @@ export async function getOrCreateBusinessIncomeCategory(
   const targetColor = suggestedIncome?.color || '#10b981';
 
   // 1. Procura categoria de receita existente para este negócio ou segmento
+  const safeSearchName = sanitizePostgrestFilterTerm(targetCategoryName);
+  const nameFilter = safeSearchName ? `name.ilike.%${safeSearchName}%,` : '';
   const { data: existing } = await supabase
     .from('categories')
     .select('id')
     .eq('user_id', userId)
     .eq('type', 'income')
-    .or(`name.ilike.${targetCategoryName},name.ilike.Barbearia,scope.eq.business`)
+    .or(`${nameFilter}name.ilike.%Barbearia%,scope.eq.business`)
     .limit(1)
     .maybeSingle();
 

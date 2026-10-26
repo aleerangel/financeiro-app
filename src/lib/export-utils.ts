@@ -22,11 +22,30 @@ function downloadFile(blob: Blob, filename: string) {
 }
 
 /**
+ * Sanitiza valores de células contra Formula Injection (CSV / Excel Injection).
+ * Células iniciadas por =, +, -, @, \t, \r podem disparar execução de fórmulas arbitrárias
+ * ao serem abertas no Microsoft Excel ou LibreOffice Calc.
+ */
+export function sanitizeSpreadsheetCell(val: string | number): string | number {
+  if (typeof val !== 'string') return val;
+  const trimmed = val.trim();
+  if (/^[=+\-@\t\r]/.test(trimmed)) {
+    // Se for um número formatado com sinal negativo puro (ex: -10, -50.25, -1.250,50), não precisa escapar
+    if (/^-?\d+(?:[.,]\d+)?$/.test(trimmed)) {
+      return val;
+    }
+    return `'${val}`;
+  }
+  return val;
+}
+
+/**
  * Converte matriz de dados em CSV com BOM UTF-8 (compatível com Excel PT-BR)
  */
 export function exportToCsv(filename: string, headers: string[], rows: (string | number)[][]) {
   const sanitize = (val: string | number) => {
-    const str = String(val ?? '').replace(/"/g, '""');
+    const safeVal = sanitizeSpreadsheetCell(val);
+    const str = String(safeVal ?? '').replace(/"/g, '""');
     return `"${str}"`;
   };
 
@@ -52,11 +71,12 @@ export function exportToExcel(
   summaryRows?: (string | number)[][]
 ) {
   const wb = XLSX.utils.book_new();
-  const data: (string | number)[][] = [headers, ...rows];
+  const sanitizedRows = rows.map((row) => row.map(sanitizeSpreadsheetCell));
+  const data: (string | number)[][] = [headers, ...sanitizedRows];
 
   if (summaryRows && summaryRows.length > 0) {
     data.push([]); // Linha em branco
-    data.push(...summaryRows);
+    data.push(...summaryRows.map((row) => row.map(sanitizeSpreadsheetCell)));
   }
 
   const ws = XLSX.utils.aoa_to_sheet(data);

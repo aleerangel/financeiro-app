@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { loginOrCreateSandboxUser } from '@/lib/actions/dev-sandbox';
+import { getSafeRedirectPath } from '@/lib/safe-redirect';
 
 export async function GET(request: Request) {
   if (process.env.NODE_ENV !== 'development') {
@@ -11,11 +12,11 @@ export async function GET(request: Request) {
 
   const { searchParams, origin } = new URL(request.url);
   const mode = (searchParams.get('mode') === 'clean' ? 'clean' : 'demo') as 'clean' | 'demo';
-  const returnTo = searchParams.get('returnTo') || '/dashboard';
+  const returnTo = getSafeRedirectPath(searchParams.get('returnTo'), '/dashboard');
 
   try {
     await loginOrCreateSandboxUser(mode);
-    const redirectUrl = `${origin}${returnTo.startsWith('/') ? returnTo : `/${returnTo}`}`;
+    const redirectUrl = new URL(returnTo, origin).toString();
     const response = NextResponse.redirect(redirectUrl);
     response.headers.set(
       'Cache-Control',
