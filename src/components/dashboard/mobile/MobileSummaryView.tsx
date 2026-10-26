@@ -34,6 +34,11 @@ const MONTH_FULL_NAMES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
+const MONTH_SHORT_NAMES = [
+  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+];
+
 interface MobileSummaryViewProps {
   businessData: BusinessDashboardData;
   generalData: GeneralDashboardData;
@@ -489,30 +494,153 @@ export function MobileSummaryView({
           </button>
         </div>
 
-        {/* Linha 2: Navegação Touch do Período (< Período Ativo >) */}
-        <div className="flex items-center justify-between bg-zinc-950/80 border border-zinc-800/80 px-2 py-1 rounded-xl">
-          <button
-            type="button"
-            onClick={handlePrevPeriod}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
-            aria-label="Período anterior"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+        {/* Linha 2: Navegação Touch do Período */}
+        {flowChart.period === 'weekly' ? (
+          /* Modo Semanal: Seleção de Mês e de Semana (como no Desktop) */
+          <div className="grid grid-cols-2 gap-2">
+            {/* Seletor de Mês e Ano */}
+            <div className="flex items-center justify-between bg-zinc-950/80 border border-zinc-800/80 px-1.5 py-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  const newMonth = flowChart.month === 0 ? 11 : flowChart.month - 1;
+                  const newYear = flowChart.month === 0 ? flowChart.year - 1 : flowChart.year;
+                  flowChart.handleMonthChange(newMonth, newYear);
+                }}
+                className="p-1 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition shrink-0"
+                aria-label="Mês anterior"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
 
-          <span className="text-xs font-extrabold uppercase tracking-wider text-zinc-200 text-center truncate px-2">
-            {activePeriodLabel}
-          </span>
+              <select
+                value={flowChart.month}
+                onChange={(e) =>
+                  flowChart.handleMonthChange(Number(e.target.value), flowChart.year)
+                }
+                className="bg-transparent text-zinc-200 font-bold text-xs focus:outline-none cursor-pointer text-center truncate min-w-0 flex-1 px-1 py-0.5"
+                aria-label="Selecionar mês"
+              >
+                {MONTH_SHORT_NAMES.map((mName, idx) => (
+                  <option
+                    key={mName}
+                    value={idx}
+                    className="bg-zinc-900 text-zinc-100"
+                  >
+                    {mName}/{flowChart.year}
+                  </option>
+                ))}
+              </select>
 
-          <button
-            type="button"
-            onClick={handleNextPeriod}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
-            aria-label="Próximo período"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const newMonth = flowChart.month === 11 ? 0 : flowChart.month + 1;
+                  const newYear = flowChart.month === 11 ? flowChart.year + 1 : flowChart.year;
+                  flowChart.handleMonthChange(newMonth, newYear);
+                }}
+                className="p-1 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition shrink-0"
+                aria-label="Próximo mês"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Seletor de Semana do Mês */}
+            <div className="flex items-center justify-between bg-zinc-950/80 border border-zinc-800/80 px-1.5 py-1 rounded-xl">
+              <button
+                type="button"
+                disabled={flowChart.selectedWeekIndex <= 0}
+                onClick={() =>
+                  flowChart.handleWeekChange(Math.max(0, flowChart.selectedWeekIndex - 1))
+                }
+                className="p-1 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition disabled:opacity-30 disabled:pointer-events-none shrink-0"
+                aria-label="Semana anterior"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <select
+                value={flowChart.selectedWeekIndex}
+                onChange={(e) => flowChart.handleWeekChange(Number(e.target.value))}
+                className="bg-transparent text-zinc-200 font-bold text-xs focus:outline-none cursor-pointer text-center truncate min-w-0 flex-1 px-1 py-0.5"
+                aria-label="Selecionar semana"
+              >
+                {flowChart.weeksMeta.map((wm, idx) => (
+                  <option
+                    key={wm.shortLabel}
+                    value={idx}
+                    className="bg-zinc-900 text-zinc-100"
+                  >
+                    Sem {idx + 1} ({wm.shortLabel})
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                disabled={
+                  flowChart.selectedWeekIndex >= flowChart.weeksMeta.length - 1
+                }
+                onClick={() =>
+                  flowChart.handleWeekChange(
+                    Math.min(flowChart.weeksMeta.length - 1, flowChart.selectedWeekIndex + 1)
+                  )
+                }
+                className="p-1 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition disabled:opacity-30 disabled:pointer-events-none shrink-0"
+                aria-label="Próxima semana"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Modo Mensal ou Anual: Navegação Touch (< Período Ativo >) */
+          <div className="flex items-center justify-between bg-zinc-950/80 border border-zinc-800/80 px-2 py-1 rounded-xl">
+            <button
+              type="button"
+              onClick={handlePrevPeriod}
+              className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
+              aria-label="Período anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {flowChart.period === 'monthly' ? (
+              <select
+                value={flowChart.month}
+                onChange={(e) =>
+                  flowChart.handleMonthChange(Number(e.target.value), flowChart.year)
+                }
+                className="bg-transparent text-xs font-extrabold uppercase tracking-wider text-zinc-200 text-center truncate px-2 focus:outline-none cursor-pointer"
+                aria-label="Selecionar mês"
+              >
+                {MONTH_FULL_NAMES.map((mName, idx) => (
+                  <option
+                    key={mName}
+                    value={idx}
+                    className="bg-zinc-900 text-zinc-100"
+                  >
+                    {mName} de {flowChart.year}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs font-extrabold uppercase tracking-wider text-zinc-200 text-center truncate px-2">
+                {activePeriodLabel}
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={handleNextPeriod}
+              className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 active:scale-90 transition"
+              aria-label="Próximo período"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ============================================================== */}
