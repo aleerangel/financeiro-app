@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
-  Plus,
   Layers,
   Store,
 } from 'lucide-react';
@@ -36,6 +34,7 @@ import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { UnifiedDailyPendingHub } from './UnifiedDailyPendingHub';
 import { BusinessSettingsModal } from '@/components/settings/BusinessSettingsModal';
+import { QuickActionDropdown } from '@/components/layout/QuickActionDropdown';
 
 // Abas secundárias do mobile carregadas sob demanda (evita sobrecarga de JS inicial)
 const MobileSummaryView = dynamic(
@@ -128,7 +127,7 @@ export function DashboardView({
       router.replace('/transacoes');
     }
   }, [activeTab, router]);
-  const { profile, businessName, hasBusiness, salesLabel } = useBusinessProfile();
+  const { profile, businessName, hasBusiness } = useBusinessProfile();
 
   const [businessSettingsOpen, setBusinessSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'business' | 'general'>(hasBusiness ? 'business' : 'general');
@@ -669,50 +668,10 @@ export function DashboardView({
           {/* Exportação */}
           <ExportDropdown onExport={handleExport} />
 
-          {/* Botões de Ação Rápida */}
-          {effectiveViewMode === 'business' ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setModalDefaultScope('business');
-                  setModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold text-xs sm:text-sm rounded-xl transition shadow-sm"
-              >
-                <Plus className="w-4 h-4 text-emerald-400" />
-                Despesa Negócio
-              </button>
-              <Link
-                href="/vendas"
-                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
-              >
-                <SegmentIcon segment={profile.segment} className="w-4 h-4 stroke-[2.5]" />
-                Novo(a) {salesLabel}
-              </Link>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {hasBusiness && (
-                <Link
-                  href="/vendas"
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold text-xs sm:text-sm rounded-xl transition shadow-sm"
-                >
-                  <SegmentIcon segment={profile.segment} className="w-4 h-4 text-emerald-400" />
-                  Balcão Negócio
-                </Link>
-              )}
-              <button
-                onClick={() => {
-                  setModalDefaultScope('personal');
-                  setModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                Nova Transação
-              </button>
-            </div>
-          )}
+          {/* Menu Unificado de Ações Rápidas */}
+          <QuickActionDropdown
+            defaultScope={effectiveViewMode === 'business' ? 'business' : 'personal'}
+          />
         </div>
       </div>
 

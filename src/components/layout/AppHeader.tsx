@@ -11,6 +11,7 @@ import {
 import { useSidebar } from '@/context/SidebarContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { QuickActionDropdown } from './QuickActionDropdown';
 import { createClient } from '@/lib/supabase/client';
 import { signOutServerAction } from '@/lib/actions/auth';
 import { clearAppClientStorage } from '@/lib/auth-storage';
@@ -112,6 +113,8 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
 
       {/* Lado Direito: Notificações, Perfil e Ações Rápidas */}
       <div className="flex items-center gap-3">
+        <QuickActionDropdown size="sm" />
+
         <NotificationBell userEmail={userEmail} />
 
         {userEmail && (
