@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Layers,
-  Store,
 } from 'lucide-react';
 import { AccountWithBalance, getAccounts } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -33,7 +32,6 @@ import { LegacyWelcomeBanner } from './LegacyWelcomeBanner';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { UnifiedDailyPendingHub } from './UnifiedDailyPendingHub';
-import { BusinessSettingsModal } from '@/components/settings/BusinessSettingsModal';
 import { QuickActionDropdown } from '@/components/layout/QuickActionDropdown';
 
 // Abas secundárias do mobile carregadas sob demanda (evita sobrecarga de JS inicial)
@@ -129,7 +127,6 @@ export function DashboardView({
   }, [activeTab, router]);
   const { profile, businessName, hasBusiness } = useBusinessProfile();
 
-  const [businessSettingsOpen, setBusinessSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'business' | 'general'>(hasBusiness ? 'business' : 'general');
 
   // Deriva o modo efetivo: se o usuário não tem negócio ativo, é sempre 'general' (pessoal)
@@ -654,17 +651,6 @@ export function DashboardView({
             </div>
           )}
 
-          {/* Atalho para Configurações do Negócio */}
-          <button
-            type="button"
-            onClick={() => setBusinessSettingsOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-300 hover:text-zinc-100 transition"
-            title={hasBusiness ? 'Configurações do Meu Negócio' : 'Ativar gestão de negócio ou autônomo'}
-          >
-            <Store className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">{hasBusiness ? businessName : 'Ativar Negócio'}</span>
-          </button>
-
           {/* Exportação */}
           <ExportDropdown onExport={handleExport} />
 
@@ -754,13 +740,6 @@ export function DashboardView({
         account={accountToAdjustBalance}
         defaultMode="adjust"
         onSuccess={refreshData}
-      />
-
-      {/* Modal de Configurações do Meu Negócio */}
-      <BusinessSettingsModal
-        isOpen={businessSettingsOpen}
-        onClose={() => setBusinessSettingsOpen(false)}
-        onSaved={refreshData}
       />
     </div>
   );

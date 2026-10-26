@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -15,10 +16,16 @@ import {
   Crown,
   Package,
   Store,
+  Settings,
 } from 'lucide-react';
 import { useSidebar } from '@/context/SidebarContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { getSegmentIcon } from '@/components/ui/SegmentIcon';
+
+const BusinessSettingsModal = dynamic(
+  () => import('@/components/settings/BusinessSettingsModal').then((m) => m.BusinessSettingsModal),
+  { ssr: false }
+);
 
 interface NavItem {
   href: string;
@@ -36,7 +43,8 @@ interface NavGroup {
 export function AppSidebar() {
   const pathname = usePathname();
   const { collapsed } = useSidebar();
-  const { profile, businessName, salesLabel, hasBusiness } = useBusinessProfile();
+  const { profile, businessName, salesLabel, hasBusiness, refreshProfile } = useBusinessProfile();
+  const [businessSettingsOpen, setBusinessSettingsOpen] = useState(false);
 
   const SalesIcon = getSegmentIcon(profile.segment);
 
@@ -159,22 +167,61 @@ export function AppSidebar() {
             </div>
           </div>
         ))}
-
-        {/* Modo Apenas Finanças Pessoais: Atalho para ativar Meu Negócio */}
-        {!hasBusiness && !collapsed && (
-          <div className="pt-2 px-1">
-            <div className="p-3 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl space-y-2">
-              <div className="flex items-center gap-2 text-amber-400 text-xs font-bold">
-                <Store className="w-4 h-4" />
-                <span>Modo Negócio</span>
-              </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed">
-                Ative o controle de clientes, vendas e fiados quando desejar gerenciar seu negócio.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* 3. Rodapé: Configurar Meu Negócio */}
+      <div className="p-3 border-t border-zinc-800/80 shrink-0 bg-zinc-950">
+        <button
+          type="button"
+          onClick={() => setBusinessSettingsOpen(true)}
+          className={`group relative flex items-center gap-3 w-full p-2.5 rounded-xl text-sm font-medium transition-all ${
+            hasBusiness
+              ? 'text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800/60 hover:border-zinc-700 bg-zinc-900/40'
+              : 'text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20'
+          } ${collapsed ? 'justify-center px-0' : ''}`}
+          title={collapsed ? (hasBusiness ? `Configurações: ${businessName}` : 'Configurar Meu Negócio') : undefined}
+          aria-label={hasBusiness ? `Configurações do negócio: ${businessName}` : 'Configurar Meu Negócio'}
+        >
+          <div
+            className={`p-1.5 rounded-lg shrink-0 transition-colors ${
+              hasBusiness
+                ? 'bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20'
+                : 'bg-amber-500/20 text-amber-300 group-hover:bg-amber-500/30'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+          </div>
+
+          {!collapsed && (
+            <>
+              <div className="flex flex-col text-left min-w-0 flex-1">
+                <span className="text-xs font-semibold truncate text-zinc-200">
+                  {hasBusiness ? businessName : 'Configurar Meu Negócio'}
+                </span>
+                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 truncate">
+                  {hasBusiness ? 'Configurações do negócio' : 'Ativar modo negócio'}
+                </span>
+              </div>
+              <Settings className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-300 shrink-0 transition-colors" />
+            </>
+          )}
+
+          {/* Tooltip flutuante no modo colapsado */}
+          {collapsed && (
+            <div className="absolute left-full ml-3.5 px-2.5 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs font-semibold rounded-lg shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+              {hasBusiness ? `Configurações: ${businessName}` : 'Configurar Meu Negócio'}
+            </div>
+          )}
+        </button>
+      </div>
+
+      {businessSettingsOpen && (
+        <BusinessSettingsModal
+          isOpen={businessSettingsOpen}
+          onClose={() => setBusinessSettingsOpen(false)}
+          onSaved={refreshProfile}
+        />
+      )}
     </aside>
   );
 }
