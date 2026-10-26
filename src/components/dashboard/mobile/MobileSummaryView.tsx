@@ -7,6 +7,9 @@ import {
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import {
   BusinessDashboardData,
@@ -206,6 +209,35 @@ export function MobileSummaryView({
     if (selectedMetric === 'all') return flowSeries;
     return flowSeries.filter((s) => s.id === selectedMetric);
   }, [flowSeries, selectedMetric]);
+
+  // Série Dedicada: Evolução do Saldo em Contas (1 curva roxa)
+  const balanceSeries: ChartSeries[] = useMemo(
+    () => [
+      {
+        id: 'accountBalance',
+        name: 'Saldo em Contas',
+        color: '#a855f7', // Roxo Neon / Purple-500
+        values: flowChart.activeStats.map((s) => s.accountBalance || 0),
+        formatValue: (v) => (showValues ? formatCurrency(v) : '••••••'),
+      },
+    ],
+    [flowChart.activeStats, showValues]
+  );
+
+  // Indicadores de Saldo do Período Ativo (Saldo Final e Variação)
+  const { finalBalance, balanceDelta } = useMemo(() => {
+    const values = flowChart.activeStats.map((s) => s.accountBalance || 0);
+    if (values.length === 0) {
+      const currentTotal = accounts.reduce((sum, a) => sum + Number(a.current_balance || 0), 0);
+      return { finalBalance: currentTotal, balanceDelta: 0 };
+    }
+    const first = values[0];
+    const last = values[values.length - 1];
+    return {
+      finalBalance: last,
+      balanceDelta: last - first,
+    };
+  }, [flowChart.activeStats, accounts]);
 
   // 2. RECEITAS E DESPESAS CORRESPONDENTES AO PERÍODO ATIVO
   const {
@@ -609,6 +641,63 @@ export function MobileSummaryView({
           labels={flowLabels}
           tooltipLabels={flowTooltipLabels}
           height={320}
+          compactLayout={true}
+        />
+      </div>
+
+      {/* ============================================================== */}
+      {/* 2. EVOLUÇÃO DO SALDO EM CONTAS (DEDICADO MOBILE)               */}
+      {/* ============================================================== */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 sm:p-5 space-y-3">
+        {/* Header com Saldo do Período e Variação */}
+        <div className="flex items-center justify-between p-3 bg-zinc-950/80 rounded-xl border border-zinc-800/70">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] text-zinc-400 block font-bold uppercase tracking-wider">
+                Saldo no Período
+              </span>
+              <span className="text-sm sm:text-base font-black text-purple-300">
+                {formatHidden(formatCurrency(finalBalance))}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-right">
+            <span className="text-[10px] text-zinc-400 block font-medium">
+              {accounts.length} {accounts.length === 1 ? 'conta ativa' : 'contas ativas'}
+            </span>
+            <div className="inline-flex items-center gap-1 mt-0.5">
+              {balanceDelta > 0 ? (
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  <TrendingUp className="w-3 h-3" />
+                  +{formatHidden(formatCurrency(balanceDelta))}
+                </span>
+              ) : balanceDelta < 0 ? (
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                  <TrendingDown className="w-3 h-3" />
+                  -{formatHidden(formatCurrency(Math.abs(balanceDelta)))}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-400 border border-zinc-700">
+                  Estável
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Gráfico Amplo e Nítido com Escala Dinâmica */}
+        <SmoothLineChart
+          title="Evolução do Saldo em Contas"
+          subtitle={flowChart.subtitle}
+          series={balanceSeries}
+          labels={flowLabels}
+          tooltipLabels={flowTooltipLabels}
+          height={260}
+          dynamicYScale={true}
           compactLayout={true}
         />
       </div>
