@@ -6,8 +6,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
-  TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
   CheckCircle2,
@@ -33,7 +31,7 @@ interface CategoryEvolutionMobileViewProps {
   onTypeChange: (type: 'income' | 'expense') => void;
   accountingMode: 'realized' | 'total';
   onAccountingModeChange: (mode: 'realized' | 'total') => void;
-  refMonth: number;
+  refMonth?: number;
   refYear: number;
   activeFormattedMonth: string;
   onPrevMonth: () => void;
@@ -45,6 +43,16 @@ interface CategoryEvolutionMobileViewProps {
   activeTransactions: Transaction[];
   loadingMonthData: boolean;
 }
+
+const MONTH_SHORT_LABELS = [
+  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+];
+
+const MONTH_FULL_LABELS = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
 
 export function CategoryEvolutionMobileView({
   isOpen,
@@ -68,8 +76,17 @@ export function CategoryEvolutionMobileView({
   const [selectedDrawerCategory, setSelectedDrawerCategory] =
     useState<CategoryEvolutionMetrics | null>(null);
   const [drawerSearch, setDrawerSearch] = useState('');
+  const [selectedChartKey, setSelectedChartKey] = useState<string>('all');
 
   const isIncome = activeType === 'income';
+
+  const displayedSeries = useMemo(() => {
+    if (selectedChartKey === 'all') {
+      return chartSeries;
+    }
+    const filtered = chartSeries.filter((s) => s.id === selectedChartKey);
+    return filtered.length > 0 ? filtered : chartSeries;
+  }, [chartSeries, selectedChartKey]);
 
   // Lançamentos filtrados da categoria selecionada para o Drawer
   const drawerTransactions = useMemo(() => {
@@ -184,7 +201,10 @@ export function CategoryEvolutionMobileView({
           <div className="flex items-center bg-zinc-950 border border-zinc-800 p-0.5 rounded-xl">
             <button
               type="button"
-              onClick={() => onTypeChange('income')}
+              onClick={() => {
+                onTypeChange('income');
+                setSelectedChartKey('all');
+              }}
               className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg font-bold text-xs transition ${
                 isIncome
                   ? 'bg-emerald-500 text-zinc-950 shadow-sm'
@@ -196,7 +216,10 @@ export function CategoryEvolutionMobileView({
             </button>
             <button
               type="button"
-              onClick={() => onTypeChange('expense')}
+              onClick={() => {
+                onTypeChange('expense');
+                setSelectedChartKey('all');
+              }}
               className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg font-bold text-xs transition ${
                 !isIncome
                   ? 'bg-rose-500 text-zinc-950 shadow-sm'
@@ -267,28 +290,81 @@ export function CategoryEvolutionMobileView({
           </div>
         </div>
 
-        {/* Gráfico Compacto Suave de Tendência */}
+        {/* Gráfico de Evolução Financeira Expandido Estilo Resumo Mobile */}
         {chartSeries.length > 0 && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 pt-2">
-            <div className="flex items-center justify-between mb-1 px-1">
-              <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                {isIncome ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
-                )}
-                <span>Evolução Anual ({refYear})</span>
-              </span>
-              <span className="text-[10px] text-zinc-500">Top categorias</span>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 sm:p-5 space-y-3">
+            {/* Pílulas de filtro para isolar a curva das categorias no gráfico */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              <button
+                type="button"
+                onClick={() => setSelectedChartKey('all')}
+                className={`px-2.5 py-1 rounded-xl font-bold text-[11px] whitespace-nowrap transition-all ${
+                  selectedChartKey === 'all'
+                    ? isIncome
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
+                    : 'bg-zinc-950/80 text-zinc-400 border border-zinc-800/80 hover:text-zinc-200'
+                }`}
+              >
+                Todas ({chartSeries.length})
+              </button>
+              {chartSeries.map((s) => {
+                const isSelected = selectedChartKey === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedChartKey((prev) =>
+                        prev === s.id ? 'all' : s.id
+                      )
+                    }
+                    className={`px-2.5 py-1 rounded-xl font-semibold text-[11px] whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                      isSelected
+                        ? 'bg-zinc-800 text-zinc-100 border border-zinc-600 shadow-sm ring-1 ring-white/20'
+                        : 'bg-zinc-950/80 text-zinc-400 border border-zinc-800/80 hover:text-zinc-200'
+                    }`}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                      style={{ backgroundColor: s.color }}
+                    />
+                    <span className="truncate max-w-[120px]">{s.name}</span>
+                  </button>
+                );
+              })}
             </div>
-            <div className="h-44">
-              <SmoothLineChart
-                title=""
-                series={chartSeries}
-                height={160}
-                compactLayout={true}
+
+            {/* Dica interativa para o usuário tocar e alternar as curvas */}
+            <p className="text-[10px] text-zinc-400 text-center flex items-center justify-center gap-1.5 py-0.5">
+              <span
+                className={`inline-block w-1.5 h-1.5 rounded-full animate-pulse ${
+                  isIncome ? 'bg-emerald-400' : 'bg-rose-400'
+                }`}
               />
-            </div>
+              <span>
+                {selectedChartKey === 'all'
+                  ? 'Toque nas categorias acima para isolar a curva no gráfico'
+                  : `Exibindo "${displayedSeries[0]?.name}" (toque para voltar a todas)`}
+              </span>
+            </p>
+
+            {/* Gráfico Amplo e Nítido com a Métrica Selecionada */}
+            <SmoothLineChart
+              title={`Evolução Anual (${refYear})`}
+              subtitle={
+                selectedChartKey === 'all'
+                  ? `Curva mensal das principais categorias de ${
+                      isIncome ? 'receitas' : 'despesas'
+                    }`
+                  : `Curva mensal de "${displayedSeries[0]?.name}" em ${refYear}`
+              }
+              series={displayedSeries}
+              labels={MONTH_SHORT_LABELS}
+              tooltipLabels={MONTH_FULL_LABELS.map((m) => `${m} de ${refYear}`)}
+              height={300}
+              compactLayout={true}
+            />
           </div>
         )}
 
