@@ -123,3 +123,47 @@ export function stripScopeTagFromNotes(notes: string | null | undefined): string
   if (!notes) return '';
   return notes.replace(/\[Barbearia\]\s*/gi, '').trim();
 }
+
+export interface ServiceVsProductSplit {
+  serviceRevenue: number;
+  productRevenue: number;
+  servicePercentage: number;
+  productPercentage: number;
+  serviceCount: number;
+  productCount: number;
+}
+
+/**
+ * Calcula a divisão percentual e volumétrica entre Serviços e Produtos de forma unificada.
+ */
+export function computeRevenueSplit(
+  serviceRevenue: number,
+  productRevenue: number,
+  serviceCount = 0,
+  productCount = 0
+): ServiceVsProductSplit {
+  const total = serviceRevenue + productRevenue;
+  const servicePercentage = total > 0 ? Math.round((serviceRevenue / total) * 100) : 0;
+  const productPercentage = total > 0 ? 100 - servicePercentage : 0;
+
+  return {
+    serviceRevenue,
+    productRevenue,
+    servicePercentage,
+    productPercentage,
+    serviceCount,
+    productCount,
+  };
+}
+
+/**
+ * Verifica se o faturamento é misto (possui tanto serviços quanto produtos com valor > 0).
+ * Usado para controle dinâmico e consistente nos dashboards e resumos.
+ */
+export function isMixedRevenueSplit(
+  split?: Partial<ServiceVsProductSplit> | null
+): boolean {
+  if (!split) return false;
+  return (split.serviceRevenue || 0) > 0 && (split.productRevenue || 0) > 0;
+}
+

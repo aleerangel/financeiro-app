@@ -19,7 +19,11 @@ import {
 } from '@/lib/actions/dashboard';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { Transaction } from '@/types/database';
-import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
+import {
+  isBarbeariaServiceIncome,
+  computeRevenueSplit,
+  isMixedRevenueSplit,
+} from '@/lib/business-scope-utils';
 import { formatCurrency } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
@@ -423,7 +427,6 @@ export function MobileSummaryView({
   // Divisão Serviços vs Produtos no período ativo
   const revenueSplit = useMemo(() => {
     let sRev = 0;
-    let pRev = 0;
 
     for (const t of periodTransactions) {
       if (t.is_paid && isBarbeariaServiceIncome(t)) {
@@ -432,23 +435,11 @@ export function MobileSummaryView({
     }
 
     if (sRev === 0 && flowChart.period === 'monthly') {
-      return businessData.revenueSplit || {
-        serviceRevenue: 0,
-        productRevenue: 0,
-        servicePercentage: 100,
-        productPercentage: 0,
-      };
+      return businessData.revenueSplit || computeRevenueSplit(0, 0);
     }
 
-    pRev = businessData.revenueSplit?.productRevenue || 0;
-    const total = sRev + pRev || 1;
-
-    return {
-      serviceRevenue: sRev,
-      productRevenue: pRev,
-      servicePercentage: Math.round((sRev / total) * 100),
-      productPercentage: 100 - Math.round((sRev / total) * 100),
-    };
+    const pRev = businessData.revenueSplit?.productRevenue || 0;
+    return computeRevenueSplit(sRev, pRev);
   }, [periodTransactions, flowChart.period, businessData.revenueSplit]);
 
   return (
@@ -873,7 +864,7 @@ export function MobileSummaryView({
           </div>
 
           {/* Divisão Serviços vs Produtos (somente se houver faturamento misto no período) */}
-          {revenueSplit.serviceRevenue > 0 && revenueSplit.productRevenue > 0 && (
+          {isMixedRevenueSplit(revenueSplit) && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs text-zinc-400">
                 <span>Divisão de Receitas • {activePeriodLabel}</span>
@@ -917,7 +908,7 @@ export function MobileSummaryView({
           {/* Dias Mais Fortes */}
           <div
             className={`space-y-2 ${
-              revenueSplit.serviceRevenue > 0 && revenueSplit.productRevenue > 0
+              isMixedRevenueSplit(revenueSplit)
                 ? 'pt-2 border-t border-zinc-800/80'
                 : ''
             }`}

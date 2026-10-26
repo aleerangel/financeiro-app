@@ -26,6 +26,7 @@ import { getYearlyCategoryEvolution } from '@/lib/actions/dashboard';
 import { SmoothLineChart, ChartSeries } from './SmoothLineChart';
 import { CategoryTransactionsTable } from './CategoryTransactionsTable';
 import { CategoryEvolutionMobileView } from './mobile/CategoryEvolutionMobileView';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { formatCurrency } from '@/lib/utils';
 
 interface CategoryEvolutionModalProps {
@@ -285,42 +286,44 @@ export function CategoryEvolutionModal({
     [filteredModalTransactions]
   );
 
+  const isMobile = useIsMobile(768);
+
   if (!isOpen) return null;
+
+  if (isMobile) {
+    return (
+      <CategoryEvolutionMobileView
+        isOpen={isOpen}
+        onClose={handleClose}
+        activeType={activeType}
+        onTypeChange={(t) => {
+          setSelectedType(t);
+          setSelectedCategoryKey('all');
+          setTxSearch('');
+        }}
+        accountingMode={accountingMode}
+        onAccountingModeChange={setAccountingMode}
+        refMonth={refMonth}
+        refYear={refYear}
+        activeFormattedMonth={activeFormattedMonth}
+        onPrevMonth={handlePrevMonth}
+        onNextMonth={handleNextMonth}
+        chartSeries={chartSeries}
+        metricsList={metricsList}
+        totalCurrentMonth={totalCurrentMonth}
+        totalYearly={totalYearly}
+        activeTransactions={activeTransactions}
+        loadingMonthData={loadingMonthData}
+      />
+    );
+  }
 
   const prevMonthName = refMonth > 0 ? MONTH_SHORT_LABELS[refMonth - 1] : null;
 
+  // Visualização Desktop Ampla (>= 768px)
   return (
-    <>
-      {/* Visualização Mobile Própria (< 768px) */}
-      <div className="md:hidden">
-        <CategoryEvolutionMobileView
-          isOpen={isOpen}
-          onClose={handleClose}
-          activeType={activeType}
-          onTypeChange={(t) => {
-            setSelectedType(t);
-            setSelectedCategoryKey('all');
-            setTxSearch('');
-          }}
-          accountingMode={accountingMode}
-          onAccountingModeChange={setAccountingMode}
-          refMonth={refMonth}
-          refYear={refYear}
-          activeFormattedMonth={activeFormattedMonth}
-          onPrevMonth={handlePrevMonth}
-          onNextMonth={handleNextMonth}
-          chartSeries={chartSeries}
-          metricsList={metricsList}
-          totalCurrentMonth={totalCurrentMonth}
-          totalYearly={totalYearly}
-          activeTransactions={activeTransactions}
-          loadingMonthData={loadingMonthData}
-        />
-      </div>
-
-      {/* Visualização Desktop Ampla (>= 768px) */}
-      <div className="hidden md:flex fixed inset-0 z-50 items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
-        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Cabeçalho */}
         <div className="p-4 sm:p-6 border-b border-zinc-800 flex flex-col gap-4 bg-zinc-900/60 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -834,6 +837,5 @@ export function CategoryEvolutionModal({
         </div>
       </div>
     </div>
-  </>
   );
 }

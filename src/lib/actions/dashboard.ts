@@ -2,7 +2,11 @@
 
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { buildCalendarWeeks, findDefaultWeekIndex } from '@/lib/week-utils';
-import { isBusinessTransaction } from '@/lib/business-scope-utils';
+import {
+  isBusinessTransaction,
+  computeRevenueSplit,
+  type ServiceVsProductSplit,
+} from '@/lib/business-scope-utils';
 import {
   getZonedParts,
   getZonedRangeBoundsIso,
@@ -92,14 +96,7 @@ export interface TopMonthClient {
   lastVisitDate: string;
 }
 
-export interface ServiceVsProductSplit {
-  serviceRevenue: number;
-  productRevenue: number;
-  servicePercentage: number;
-  productPercentage: number;
-  serviceCount: number;
-  productCount: number;
-}
+export type { ServiceVsProductSplit } from '@/lib/business-scope-utils';
 
 export interface InactiveClientAlert {
   id: string;
@@ -652,22 +649,12 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     .sort((a, b) => b.totalSpent - a.totalSpent || b.visitsCount - a.visitsCount)
     .slice(0, 5);
 
-  const totalSplitRevenue = serviceRevenue + productRevenue;
-  const servicePercentage =
-    totalSplitRevenue > 0
-      ? Math.round((serviceRevenue / totalSplitRevenue) * 100)
-      : 0;
-  const productPercentage =
-    totalSplitRevenue > 0 ? 100 - servicePercentage : 0;
-
-  const revenueSplit: ServiceVsProductSplit = {
+  const revenueSplit = computeRevenueSplit(
     serviceRevenue,
     productRevenue,
-    servicePercentage,
-    productPercentage,
     serviceCount,
-    productCount,
-  };
+    productCount
+  );
 
   // 7. CLIENTES PARA RETORNO (INATIVOS HÁ 30 DIAS OU MAIS)
   const todayYmd = getTodayYMD();

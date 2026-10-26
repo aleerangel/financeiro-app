@@ -19,6 +19,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { formatSalesUnit, formatSplitCount } from '@/lib/business-presets';
+import { isMixedRevenueSplit } from '@/lib/business-scope-utils';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
 
@@ -180,7 +181,7 @@ export function BusinessDashboardMobile({
       </div>
 
       {/* 2. Divisão de Faturamento: Serviços vs Produtos */}
-      {revenueSplit.serviceRevenue > 0 && revenueSplit.productRevenue > 0 && (
+      {isMixedRevenueSplit(revenueSplit) && (
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
             <div>
