@@ -74,7 +74,7 @@ export function AppSidebar() {
         { href: '/vendas', label: salesLabel, icon: SalesIcon },
         { href: '/fiados', label: 'Fiados & Cobrança', icon: Receipt },
         { href: '/clientes', label: 'Clientes & CRM', icon: Users },
-        { href: '/mensalidades', label: 'Planos & Mensalidades', icon: Crown },
+        { href: '/mensalidades', label: 'Clube & Mensalidades', icon: Crown },
         { href: '/produtos', label: 'Serviços & Catálogo', icon: Package },
       ],
     });

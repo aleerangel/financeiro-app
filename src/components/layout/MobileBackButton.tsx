@@ -7,6 +7,7 @@ import { useMobileNavigation } from '@/context/MobileNavigationContext';
 
 export const MORE_ROUTES = [
   '/clientes',
+  '/mensalidades',
   '/produtos',
   '/contas',
   '/cartoes',

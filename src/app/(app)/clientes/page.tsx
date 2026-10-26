@@ -3,11 +3,9 @@ import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getClients } from '@/lib/actions/clients';
 import { getAccounts } from '@/lib/actions/accounts';
-import { getSubscriptionPlans, getClientSubscriptions } from '@/lib/actions/subscriptions';
-import { getMessageSettings } from '@/lib/actions/message-settings';
 import { getBusinessProfile } from '@/lib/actions/business-profile';
-import { ClientsPageTabs } from '@/components/clients/ClientsPageTabs';
 import { BusinessRequiredView } from '@/components/layout/BusinessRequiredView';
+import { ClientsList } from '@/components/clients/ClientsList';
 
 export default async function ClientesPage({
   searchParams,
@@ -31,31 +29,23 @@ export default async function ClientesPage({
   }
 
   const resolvedParams = searchParams ? await searchParams : undefined;
-  const defaultTab = resolvedParams?.tab === 'subscriptions' ? 'subscriptions' : 'clients';
+  if (resolvedParams?.tab === 'subscriptions') {
+    redirect('/mensalidades');
+  }
 
-  const [clients, accounts, plans, subscriptions, messageSettings] = await Promise.all([
+  const [clients, accounts] = await Promise.all([
     getClients(),
     getAccounts(),
-    getSubscriptionPlans(),
-    getClientSubscriptions(),
-    getMessageSettings(),
   ]);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Clientes & Clube"
-        description="Gerencie sua carteira de clientes, fidelização, recorrência mensal e histórico de atendimentos."
+        title="Carteira de Clientes & CRM"
+        description="Acompanhe sua base de clientes, histórico de atendimentos, radar de fidelização e contatos."
       />
 
-      <ClientsPageTabs
-        initialClients={clients}
-        initialSubscriptions={subscriptions}
-        plans={plans}
-        accounts={accounts}
-        messageSettings={messageSettings}
-        defaultTab={defaultTab}
-      />
+      <ClientsList initialClients={clients} accounts={accounts} />
     </div>
   );
 }

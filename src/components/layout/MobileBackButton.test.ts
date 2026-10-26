@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { isMoreModuleRoute, MORE_ROUTES } from './MobileBackButton';
 
 describe('MobileBackButton - route recognition', () => {
-  it('correctly defines the 6 secondary routes of the More menu', () => {
+  it('correctly defines the secondary routes of the More menu', () => {
     expect(MORE_ROUTES).toEqual([
       '/clientes',
+      '/mensalidades',
       '/produtos',
       '/contas',
       '/cartoes',
@@ -16,6 +17,7 @@ describe('MobileBackButton - route recognition', () => {
   it('returns true for all more module routes and subroutes', () => {
     expect(isMoreModuleRoute('/clientes')).toBe(true);
     expect(isMoreModuleRoute('/clientes/novo')).toBe(true);
+    expect(isMoreModuleRoute('/mensalidades')).toBe(true);
     expect(isMoreModuleRoute('/produtos')).toBe(true);
     expect(isMoreModuleRoute('/produtos/editar')).toBe(true);
     expect(isMoreModuleRoute('/contas')).toBe(true);

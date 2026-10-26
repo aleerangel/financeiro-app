@@ -128,6 +128,7 @@ export function MobileMoreView({
     router.prefetch('/transacoes');
     router.prefetch('/fiados');
     router.prefetch('/clientes');
+    router.prefetch('/mensalidades');
     router.prefetch('/produtos');
     router.prefetch('/contas');
     router.prefetch('/cartoes');
@@ -192,7 +193,7 @@ export function MobileMoreView({
               badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
             },
             {
-              title: 'Mensalidades & Planos',
+              title: 'Clube & Mensalidades',
               description: 'Assinaturas recorrentes, cobrança WhatsApp e recebimento',
               href: '/mensalidades',
               icon: Crown,

@@ -27,7 +27,7 @@ function getBreadcrumb(pathname: string, businessName: string, salesLabel: strin
     '/vendas': { section: businessName, label: `${salesLabel} & Vendas` },
     '/fiados': { section: businessName, label: 'Fiados & Contas a Receber' },
     '/clientes': { section: businessName, label: 'Clientes & CRM' },
-    '/mensalidades': { section: businessName, label: 'Planos & Mensalidades' },
+    '/mensalidades': { section: businessName, label: 'Clube & Mensalidades' },
     '/produtos': { section: businessName, label: 'Serviços & Catálogo' },
     '/transacoes': { section: 'Finanças', label: 'Transações & Extrato' },
     '/contas': { section: 'Finanças', label: 'Contas Bancárias' },
