@@ -300,11 +300,6 @@ export async function getOrCreateBusinessIncomeCategory(
   throw new Error(error?.message || 'Não foi possível encontrar ou criar a categoria de receita do negócio.');
 }
 
-// Compatibilidade retroativa
-export async function getOrCreateBarbeariaCategory(userId: string): Promise<string> {
-  return getOrCreateBusinessIncomeCategory(userId, 'barbearia');
-}
-
 export async function getOrCreateInvestimentosCategory(userId: string): Promise<string> {
   const supabase = await createClient();
 

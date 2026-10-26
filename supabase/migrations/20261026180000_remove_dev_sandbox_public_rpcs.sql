@@ -13,3 +13,4 @@ REVOKE ALL ON FUNCTION public.confirm_dev_user(text) FROM PUBLIC, anon, authenti
 
 DROP FUNCTION IF EXISTS public.provision_dev_user(text, text);
 DROP FUNCTION IF EXISTS public.confirm_dev_user(text);
+

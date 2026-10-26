@@ -42,3 +42,4 @@ export function getSafeRedirectPath(
     return defaultPath;
   }
 }
+

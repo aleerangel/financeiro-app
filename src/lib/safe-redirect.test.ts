@@ -38,3 +38,4 @@ describe('getSafeRedirectPath', () => {
     expect(getSafeRedirectPath('/dashboard@evil.com')).toBe('/dashboard');
   });
 });
+

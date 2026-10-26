@@ -31,15 +31,6 @@ export interface CreateSaleInput {
   initial_payment_method?: PaymentMethod;
 }
 
-export interface TodaySalesSummary {
-  todayTotal: number;
-  todayOnCreditTotal: number;
-  totalPendingReceivables: number;
-  todayClientsCount: number;
-  averageTicket: number;
-  todaySales: Sale[];
-}
-
 export interface AmortizeSaleInput {
   saleId: string;
   amount: number;
@@ -96,94 +87,6 @@ export async function getSales(month?: number, year?: number): Promise<Sale[]> {
   }
 
   return (data as unknown as Sale[]) || [];
-}
-
-export async function getTodaySalesSummary(): Promise<TodaySalesSummary> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Não autenticado');
-
-  const todayYmd = getTodayYMD();
-  const { startIso: startOfDay, endIso: endOfDay } = getZonedRangeBoundsIso(todayYmd);
-
-  const [
-    { data: sales, error: salesError },
-    { data: todayAmortizations },
-    { data: pendingSales },
-  ] = await Promise.all([
-    supabase
-      .from('sales')
-      .select(`
-        *,
-        items:sale_items(*),
-        account:accounts(*),
-        client:clients(*),
-        amortizations:sale_amortizations(
-          *,
-          account:accounts(id, name)
-        )
-      `)
-      .eq('user_id', user.id)
-      .gte('sale_date', startOfDay)
-      .lte('sale_date', endOfDay)
-      .order('sale_date', { ascending: false }),
-    supabase
-      .from('sale_amortizations')
-      .select('amount')
-      .eq('user_id', user.id)
-      .gte('amortized_at', startOfDay)
-      .lte('amortized_at', endOfDay),
-    supabase
-      .from('sales')
-      .select('remaining_amount')
-      .eq('user_id', user.id)
-      .in('status', ['pending', 'partially_paid']),
-  ]);
-
-  if (salesError || !sales) {
-    return {
-      todayTotal: 0,
-      todayOnCreditTotal: 0,
-      totalPendingReceivables: 0,
-      todayClientsCount: 0,
-      averageTicket: 0,
-      todaySales: [],
-    };
-  }
-
-  const todaySalesList = sales as unknown as Sale[];
-  const cashSalesToday = todaySalesList
-    .filter((s) => s.payment_method !== 'on_credit')
-    .reduce((acc, curr) => acc + Number(curr.total_amount), 0);
-
-  const amortizationsToday = (todayAmortizations || []).reduce(
-    (acc, curr) => acc + Number(curr.amount || 0),
-    0
-  );
-
-  const todayTotal = cashSalesToday + amortizationsToday;
-
-  const todayOnCreditTotal = todaySalesList
-    .filter((s) => s.payment_method === 'on_credit')
-    .reduce((acc, curr) => acc + Number(curr.remaining_amount ?? curr.total_amount), 0);
-
-  const totalPendingReceivables = (pendingSales || []).reduce(
-    (acc, curr) => acc + Number(curr.remaining_amount || 0),
-    0
-  );
-
-  const count = todaySalesList.length;
-  const avg = count > 0 ? todayTotal / count : 0;
-
-  return {
-    todayTotal,
-    todayOnCreditTotal,
-    totalPendingReceivables,
-    todayClientsCount: count,
-    averageTicket: avg,
-    todaySales: todaySalesList,
-  };
 }
 
 export async function createSale(input: CreateSaleInput) {
