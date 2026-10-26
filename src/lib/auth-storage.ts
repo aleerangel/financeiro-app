@@ -20,6 +20,9 @@ export function clearAppClientStorage(): void {
     }
     keysToRemove.forEach((k) => window.localStorage.removeItem(k));
     window.sessionStorage.clear();
+    if (typeof document !== 'undefined') {
+      document.cookie = 'financeiro_context_mode=; path=/; max-age=0; SameSite=Lax';
+    }
   } catch {
     // Ignora erros em ambientes com storage restrito ou modo anônimo
   }

@@ -3,7 +3,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { DateProvider } from '@/context/DateContext';
-import { MobileNavigationProvider, useMobileNavigation } from '@/context/MobileNavigationContext';
+import { MobileNavigationProvider, useMobileNavigation, MobileContextMode } from '@/context/MobileNavigationContext';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { BusinessProfile } from '@/types/database';
 import { BusinessProfileProvider } from '@/context/BusinessProfileContext';
@@ -37,6 +37,7 @@ const OnboardingModal = dynamic(
 interface AppShellProps {
   userEmail?: string;
   initialProfile: BusinessProfile;
+  initialContextMode?: MobileContextMode;
   children: React.ReactNode;
 }
 
@@ -53,11 +54,11 @@ function AppShellDrawers() {
   );
 }
 
-export function AppShell({ userEmail, initialProfile, children }: AppShellProps) {
+export function AppShell({ userEmail, initialProfile, initialContextMode, children }: AppShellProps) {
   return (
     <BusinessProfileProvider initialProfile={initialProfile}>
       <DateProvider key={userEmail || 'anonymous'}>
-        <MobileNavigationProvider>
+        <MobileNavigationProvider initialContextMode={initialContextMode}>
           <SidebarProvider>
             <div className="min-h-screen flex bg-zinc-950 text-zinc-100">
               {/* 1. Sidebar Fixa Desktop */}

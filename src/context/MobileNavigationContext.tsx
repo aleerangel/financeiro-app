@@ -79,19 +79,27 @@ const MobileNavigationContext = createContext<MobileNavigationContextType | unde
 const STORAGE_KEY_CONTEXT_MODE = 'financeiro_mobile_context_mode';
 const STORAGE_KEY_SHOW_VALUES = 'financeiro_mobile_show_values';
 
-export function MobileNavigationProvider({ children }: { children: React.ReactNode }) {
+export function MobileNavigationProvider({
+  initialContextMode = 'business',
+  children,
+}: {
+  initialContextMode?: MobileContextMode;
+  children: React.ReactNode;
+}) {
   const [activeTab, setActiveTab] = useState<MobileTab>('home');
   const [contextMode, setContextModeState] = useState<MobileContextMode>(() => {
-    if (typeof window === 'undefined') return 'business';
+    if (typeof window === 'undefined') return initialContextMode;
     try {
-      const savedMode = localStorage.getItem(STORAGE_KEY_CONTEXT_MODE);
-      if (savedMode === 'business' || savedMode === 'personal') {
-        return savedMode;
+      const match = document.cookie.match(/(?:^|; )financeiro_context_mode=([^;]*)/);
+      if (match && (match[1] === 'business' || match[1] === 'personal')) {
+        return match[1] as MobileContextMode;
       }
+      // Se não há cookie explícito, prioriza initialContextMode do servidor e sincroniza storage
+      localStorage.setItem(STORAGE_KEY_CONTEXT_MODE, initialContextMode);
     } catch {
       // Ignora erro de storage restrito
     }
-    return 'business';
+    return initialContextMode;
   });
 
   const [showValues, setShowValuesState] = useState<boolean>(() => {
@@ -135,6 +143,7 @@ export function MobileNavigationProvider({ children }: { children: React.ReactNo
     setContextModeState(mode);
     try {
       localStorage.setItem(STORAGE_KEY_CONTEXT_MODE, mode);
+      document.cookie = `financeiro_context_mode=${mode}; path=/; max-age=31536000; SameSite=Lax`;
     } catch {
       // Ignora
     }

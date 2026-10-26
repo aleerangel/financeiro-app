@@ -51,6 +51,22 @@ describe('auth-storage - clearAppClientStorage', () => {
     expect(window.sessionStorage.getItem('temp_session_key')).toBeNull();
   });
 
+  it('clears context mode cookie when document is available', () => {
+    let cookieValue = 'financeiro_context_mode=personal; path=/';
+    (global as unknown as { document: unknown }).document = {
+      get cookie() {
+        return cookieValue;
+      },
+      set cookie(val: string) {
+        cookieValue = val;
+      },
+    };
+
+    clearAppClientStorage();
+    expect(cookieValue).toContain('financeiro_context_mode=;');
+    expect(cookieValue).toContain('max-age=0');
+  });
+
   it('handles server-side environments where window is undefined gracefully', () => {
     (global as unknown as { window: unknown }).window = undefined;
     expect(() => clearAppClientStorage()).not.toThrow();
