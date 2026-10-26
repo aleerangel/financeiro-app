@@ -11,6 +11,7 @@ import {
   Landmark,
   ArrowLeftRight,
   Sparkles,
+  Clock,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -80,6 +81,16 @@ export function GeneralDashboardMobile({
   const receivedIncome = transactions
     .filter((t) => t.type === 'income' && t.is_paid)
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+  const pendingIncomeTransactions = useMemo(() => {
+    return transactions.filter((t) => t.type === 'income' && !t.is_paid);
+  }, [transactions]);
+
+  const pendingIncome = useMemo(() => {
+    return pendingIncomeTransactions.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  }, [pendingIncomeTransactions]);
+
+  const pendingIncomeCount = pendingIncomeTransactions.length;
 
   const paidExpense = transactions
     .filter((t) => t.type === 'expense' && t.is_paid)
@@ -275,6 +286,42 @@ export function GeneralDashboardMobile({
           />
         </div>
       </div>
+
+      {/* 2.1. Bloco Estilo Nubank: A Receber no Mês (Pessoal) */}
+      {pendingIncome > 0 && (
+        <Link
+          href="/transacoes"
+          className="block p-5 bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 rounded-2xl space-y-3 transition-all active:scale-[0.99] group shadow-sm"
+        >
+          <div className="flex items-center justify-between text-zinc-400">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                A Receber
+              </span>
+            </div>
+            <span className="text-xs text-emerald-400 group-hover:text-emerald-300 font-semibold flex items-center gap-0.5 transition-colors">
+              Ver receitas <ChevronRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+
+          <div>
+            <span className="text-xs text-zinc-400 block font-medium">
+              Previsto para {formattedMonth}
+            </span>
+            <div className="flex items-baseline justify-between gap-2 mt-1">
+              <h3 className="text-2xl font-extrabold text-emerald-400 tracking-tight">
+                {formatHidden(formatCurrency(pendingIncome))}
+              </h3>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                {pendingIncomeCount} {pendingIncomeCount === 1 ? 'receita agendada' : 'receitas agendadas'}
+              </span>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* 3. Bloco Estilo Nubank: Entradas e Saídas do Mês */}
       <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
