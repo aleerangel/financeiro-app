@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Download,
@@ -16,8 +16,6 @@ import {
 } from 'lucide-react';
 import { Sale } from '@/types/database';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
-import { BusinessMessageSettings } from '@/lib/whatsapp-templates';
-import { getMessageSettings } from '@/lib/actions/message-settings';
 import {
   formatReceiptNumber,
   getSalePaymentMethodLabel,
@@ -32,28 +30,15 @@ interface SaleReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   sale: Sale | null;
-  initialMessageSettings?: BusinessMessageSettings | null;
 }
 
 export function SaleReceiptModal({
   isOpen,
   onClose,
   sale,
-  initialMessageSettings,
 }: SaleReceiptModalProps) {
   const { profile } = useBusinessProfile();
-  const [messageSettings, setMessageSettings] = useState<BusinessMessageSettings | null>(
-    initialMessageSettings || null
-  );
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && !messageSettings) {
-      getMessageSettings()
-        .then((settings) => setMessageSettings(settings))
-        .catch((err) => console.error('Erro ao buscar configurações de mensagem:', err));
-    }
-  }, [isOpen, messageSettings]);
 
   if (!isOpen || !sale) return null;
 
@@ -71,7 +56,6 @@ export function SaleReceiptModal({
       const { download } = await generateSaleReceiptPdf({
         sale,
         businessProfile: profile,
-        messageSettings,
       });
       download();
       toast.success('Nota de serviço gerada e baixada com sucesso!');
@@ -91,7 +75,6 @@ export function SaleReceiptModal({
     const text = generateSaleReceiptWhatsAppText({
       sale,
       businessProfile: profile,
-      messageSettings,
     });
 
     const phone = sale.client?.phone ? sale.client.phone.replace(/\D/g, '') : '';
@@ -305,32 +288,31 @@ export function SaleReceiptModal({
               </div>
             </div>
 
-            {/* 4. Resumo Financeiro & Chave PIX */}
+            {/* 4. Resumo Financeiro & Condições */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-              {/* Box Esquerda: Dados Bancários PIX */}
-              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-1.5">
-                <span className="font-bold text-slate-800 uppercase tracking-wide text-[10px] flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-slate-600" /> Dados para Pagamento PIX
-                </span>
-                {messageSettings?.pix_key ? (
-                  <div className="space-y-0.5">
-                    <p className="text-slate-600">
-                      Chave ({messageSettings.pix_key_type || 'Geral'}):{' '}
-                      <span className="font-bold text-slate-900 select-all font-mono">
-                        {messageSettings.pix_key}
-                      </span>
-                    </p>
-                    {messageSettings.pix_holder_name && (
-                      <p className="text-slate-500 text-[11px]">
-                        Favorecido: {messageSettings.pix_holder_name}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-slate-400 text-[11px] italic">
-                    Chave PIX não cadastrada nas configurações do negócio.
+              {/* Box Esquerda: Condições e Informações de Pagamento */}
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-1.5 flex flex-col justify-between">
+                <div className="space-y-1">
+                  <span className="font-bold text-slate-800 uppercase tracking-wide text-[10px] flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-slate-600" /> Condição de Pagamento
+                  </span>
+                  <p className="text-slate-700 font-medium">
+                    Forma:{' '}
+                    <span className="font-bold text-slate-900">
+                      {getSalePaymentMethodLabel(sale.payment_method)}
+                    </span>
                   </p>
-                )}
+                  {sale.notes && (
+                    <p className="text-slate-600 text-[11px] italic mt-1 bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="font-semibold text-slate-700 not-italic">Obs:</span> {sale.notes}
+                    </p>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-500 pt-1">
+                  {isFullyPaid
+                    ? 'Transação quitada e finalizada.'
+                    : 'Pagamento a prazo registrado com vencimento.'}
+                </div>
               </div>
 
               {/* Box Direita: Totais Financeiros */}

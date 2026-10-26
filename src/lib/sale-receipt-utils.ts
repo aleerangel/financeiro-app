@@ -102,13 +102,8 @@ export function generateSaleReceiptWhatsAppText({
     });
   }
 
-  // Chave PIX se disponível
-  if (messageSettings?.pix_key) {
-    text += `\n🔑 *CHAVE PIX PARA PAGAMENTO:*\n`;
-    text += `Chave: ${messageSettings.pix_key}\n`;
-    if (messageSettings.pix_holder_name) {
-      text += `Titular: ${messageSettings.pix_holder_name}\n`;
-    }
+  if (sale.notes) {
+    text += `\n📌 *Observações:* ${sale.notes}\n`;
   }
 
   text += `\n✨ *Agradecemos a preferência e a confiança!*`;
@@ -344,39 +339,37 @@ export async function generateSaleReceiptPdf({
     }
   }
 
-  // 5. Box de Dados Bancários / PIX ao lado esquerdo do Resumo
-  const pixBoxWidth = contentWidth - summaryBoxWidth - 6;
+  // 5. Box de Condições de Pagamento e Observações ao lado esquerdo do Resumo
+  const infoBoxWidth = contentWidth - summaryBoxWidth - 6;
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(margin, y, pixBoxWidth, isCredit ? 36 : 22, 2, 2, 'FD');
+  doc.roundedRect(margin, y, infoBoxWidth, isCredit ? 36 : 22, 2, 2, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(30, 41, 59);
-  doc.text('DADOS PARA PAGAMENTO VIA PIX:', margin + 4, y + 6);
+  doc.text('CONDIÇÃO DE PAGAMENTO:', margin + 4, y + 6);
 
-  if (messageSettings?.pix_key) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105);
-    doc.text(`Chave PIX (${messageSettings.pix_key_type || 'Geral'}):`, margin + 4, y + 11);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Forma: ${getSalePaymentMethodLabel(sale.payment_method)}`, margin + 4, y + 11);
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(15, 23, 42);
-    doc.text(messageSettings.pix_key, margin + 4, y + 16);
-
-    if (messageSettings.pix_holder_name) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Titular: ${messageSettings.pix_holder_name}`, margin + 4, y + 21);
-    }
+  if (sale.notes) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    const splitNotes = doc.splitTextToSize(`Obs: ${sale.notes}`, infoBoxWidth - 8);
+    doc.text(splitNotes.slice(0, isCredit ? 3 : 2), margin + 4, y + 16);
   } else {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text('Chave PIX não informada nas configurações do negócio.', margin + 4, y + 12);
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      isFullyPaid ? 'Transação finalizada e quitada.' : 'Pagamento a prazo registrado com vencimento.',
+      margin + 4,
+      y + 16
+    );
   }
 
   y += (isCredit ? 36 : 22) + 8;

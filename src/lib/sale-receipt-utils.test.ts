@@ -106,7 +106,6 @@ describe('sale-receipt-utils', () => {
     const text = generateSaleReceiptWhatsAppText({
       sale: mockSale,
       businessProfile: mockProfile,
-      messageSettings: mockSettings,
     });
 
     expect(text).toContain('COMPROVANTE DE SERVIÇO / VENDA');
@@ -120,8 +119,10 @@ describe('sale-receipt-utils', () => {
     expect(text).toContain('Forma de Pagamento:');
     expect(text).toContain('PIX');
     expect(text).toContain('Quitado integralmente');
-    expect(text).toContain('(11) 99999-8888');
-    expect(text).toContain('Alexandre Rangel');
+    // Não deve conter dados de cobrança / chave PIX na nota de venda emitida
+    expect(text).not.toContain('CHAVE PIX PARA PAGAMENTO');
+    expect(text).not.toContain('(11) 99999-8888');
+    expect(text).toContain('*Observações:* Corte e barba alinhados');
   });
 
   it('generates WhatsApp text for on-credit / fiado sale with remaining amount', () => {
