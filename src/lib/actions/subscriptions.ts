@@ -385,25 +385,40 @@ export async function paySubscriptionInvoice(input: {
     profile.business_name
   );
 
-  // 2. Criar transação de receita no extrato
-  const { data: tx, error: txErr } = await supabase
+  // 2. Criar transação de receita no extrato (com scope = 'business')
+  const txBasePayload = {
+    user_id: user.id,
+    description,
+    amount: invoice.amount,
+    type: 'income' as const,
+    payment_method: paymentMethod,
+    transaction_date: paidDate,
+    due_date: paidDate,
+    category_id: businessCategoryId,
+    account_id: input.accountId,
+    is_paid: true,
+    paid_at: `${paidDate}T12:00:00Z`,
+    notes: `Pagamento de mensalidade referente ao período ${invoice.period_start} a ${invoice.period_end}`,
+  };
+
+  let { data: tx, error: txErr } = await supabase
     .from('transactions')
     .insert({
-      user_id: user.id,
-      description,
-      amount: invoice.amount,
-      type: 'income',
-      payment_method: paymentMethod,
-      transaction_date: paidDate,
-      due_date: paidDate,
-      category_id: businessCategoryId,
-      account_id: input.accountId,
-      is_paid: true,
-      paid_at: `${paidDate}T12:00:00Z`,
-      notes: `Pagamento de mensalidade referente ao período ${invoice.period_start} a ${invoice.period_end}`,
+      ...txBasePayload,
+      scope: 'business',
     })
     .select('id')
     .single();
+
+  if (txErr && (txErr.message?.includes('scope') || txErr.code === '42703')) {
+    const fallback = await supabase
+      .from('transactions')
+      .insert(txBasePayload)
+      .select('id')
+      .single();
+    tx = fallback.data;
+    txErr = fallback.error;
+  }
 
   if (txErr || !tx) {
     throw new Error(txErr?.message || 'Erro ao registrar receita da mensalidade');

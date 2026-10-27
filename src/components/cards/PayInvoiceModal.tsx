@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   CheckCircle2,
   Lock,
   Sparkles,
   Receipt,
+  Landmark,
 } from 'lucide-react';
 import { CreditCardWithUsage, payCreditCardInvoiceAmount } from '@/lib/actions/credit-cards';
+import { getAccounts, AccountWithBalance } from '@/lib/actions/accounts';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -81,7 +83,28 @@ function PayInvoiceModalDialog({
 }: DialogProps) {
   const [payMode, setPayMode] = useState<'full' | 'partial'>('full');
   const [partialAmountStr, setPartialAmountStr] = useState('');
+  const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getAccounts()
+      .then((list) => {
+        if (active) {
+          setAccounts(list);
+          if (list.length > 0) {
+            setSelectedAccountId(list[0].id);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar contas bancárias:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const numericPartial = parseFloat(partialAmountStr.replace(',', '.')) || 0;
   const effectivePayAmount = payMode === 'full' || !isInvoiceOpen ? pendingAmount : numericPartial;
@@ -103,7 +126,13 @@ function PayInvoiceModalDialog({
 
     try {
       setSubmitting(true);
-      const res = await payCreditCardInvoiceAmount(card.id, month, year, effectivePayAmount);
+      const res = await payCreditCardInvoiceAmount(
+        card.id,
+        month,
+        year,
+        effectivePayAmount,
+        selectedAccountId || null
+      );
 
       if (res.isFullyPaid) {
         toast.success(`Fatura de ${monthName} quitada integralmente!`);
@@ -351,6 +380,29 @@ function PayInvoiceModalDialog({
               </div>
             </div>
           )}
+
+          {/* Seleção da Conta Bancária Pagadora (INC-03) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <Landmark className="w-3.5 h-3.5 text-emerald-400" />
+              Debitar de qual conta bancária?
+            </label>
+            <select
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+            >
+              {accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} ({formatCurrency(acc.current_balance)})
+                </option>
+              ))}
+              <option value="">Não debitar de nenhuma conta (pagamento externo)</option>
+            </select>
+            <p className="text-[11px] text-zinc-500">
+              O valor pago abaterá o saldo da conta selecionada sem duplicar os gastos por categoria.
+            </p>
+          </div>
 
           {/* Rodapé com Botão de Confirmação */}
           <div className="pt-2">

@@ -74,14 +74,21 @@ export async function getAccounts(): Promise<AccountWithBalance[]> {
 
     const { data: transactions } = await supabase
       .from('transactions')
-      .select('account_id, type, amount, is_paid, description, notes, due_date, transaction_date')
+      .select('account_id, type, amount, is_paid, paid_at, description, notes, due_date, transaction_date')
       .eq('user_id', user.id)
       .eq('is_paid', true)
       .not('account_id', 'is', null);
 
+    const todayStr = getTodayYMD();
+
     if (transactions) {
       for (const t of transactions) {
         if (!t.account_id) continue;
+        const effectiveDate = t.paid_at
+          ? t.paid_at.slice(0, 10)
+          : t.due_date || t.transaction_date || '';
+        if (effectiveDate && effectiveDate > todayStr) continue;
+
         const current = balanceByAccount.get(t.account_id) || 0;
         const amount = Number(t.amount);
         if (t.type === 'income') {
@@ -92,8 +99,7 @@ export async function getAccounts(): Promise<AccountWithBalance[]> {
               t.account_id,
               (yieldAllTimeByAccount.get(t.account_id) || 0) + amount
             );
-            const dateRef = t.due_date || t.transaction_date || '';
-            if (dateRef.startsWith(curMonthPrefix)) {
+            if (effectiveDate.startsWith(curMonthPrefix)) {
               yieldMonthByAccount.set(
                 t.account_id,
                 (yieldMonthByAccount.get(t.account_id) || 0) + amount
@@ -195,33 +201,12 @@ export async function updateAccount(
 
   if (!user) throw new Error('Não autenticado');
 
-  let initialBalanceToSave = formData.initial_balance;
-
-  // Se o usuário informou o saldo atual diretamente, calcula o initial_balance proporcional
-  if (formData.current_balance !== undefined) {
-    const { data: transactions } = await supabase
-      .from('transactions')
-      .select('type, amount, is_paid')
-      .eq('user_id', user.id)
-      .eq('account_id', id)
-      .eq('is_paid', true);
-
-    let transactionSum = 0;
-    if (transactions) {
-      for (const t of transactions) {
-        const amt = Number(t.amount);
-        if (t.type === 'income') transactionSum += amt;
-        else if (t.type === 'expense') transactionSum -= amt;
-      }
-    }
-
-    initialBalanceToSave = formData.current_balance - transactionSum;
-  }
-
   const baseUpdates: Record<string, unknown> = {
     name: formData.name.trim(),
     type: formData.type,
-    ...(initialBalanceToSave !== undefined ? { initial_balance: initialBalanceToSave } : {}),
+    ...(formData.initial_balance !== undefined && formData.current_balance === undefined
+      ? { initial_balance: formData.initial_balance }
+      : {}),
     color: formData.color,
   };
 
@@ -250,8 +235,14 @@ export async function updateAccount(
     throw new Error(error.message);
   }
 
-  revalidatePath('/contas');
-  revalidatePath('/dashboard');
+  // Se o usuário informou um novo saldo atual, registra transação de ajuste na data atual
+  // para preservar os saldos históricos dos meses anteriores (RN-06 / INC-06)
+  if (formData.current_balance !== undefined) {
+    await updateAccountBalance(id, formData.current_balance);
+  } else {
+    revalidatePath('/contas');
+    revalidatePath('/dashboard');
+  }
 }
 
 /**
@@ -335,9 +326,22 @@ export async function updateAccountBalance(id: string, newBalance: number) {
 
   if (!user) throw new Error('Não autenticado');
 
+  const { data: account, error: accError } = await supabase
+    .from('accounts')
+    .select('id, name, initial_balance')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (accError || !account) {
+    throw new Error('Conta não encontrada.');
+  }
+
+  const todayStr = getTodayYMD();
+
   const { data: transactions } = await supabase
     .from('transactions')
-    .select('type, amount, is_paid')
+    .select('type, amount, is_paid, paid_at, due_date, transaction_date')
     .eq('user_id', user.id)
     .eq('account_id', id)
     .eq('is_paid', true);
@@ -345,27 +349,57 @@ export async function updateAccountBalance(id: string, newBalance: number) {
   let transactionSum = 0;
   if (transactions) {
     for (const t of transactions) {
+      const effectiveDate = t.paid_at
+        ? t.paid_at.slice(0, 10)
+        : t.due_date || t.transaction_date || '';
+      if (effectiveDate && effectiveDate > todayStr) continue;
+
       const amt = Number(t.amount);
       if (t.type === 'income') transactionSum += amt;
       else if (t.type === 'expense') transactionSum -= amt;
     }
   }
 
-  const newInitialBalance = newBalance - transactionSum;
+  const currentBalance = Math.round(((Number(account.initial_balance) || 0) + transactionSum) * 100) / 100;
+  const targetBalance = Math.round(Number(newBalance) * 100) / 100;
+  const delta = Math.round((targetBalance - currentBalance) * 100) / 100;
 
-  const { error } = await supabase
-    .from('accounts')
-    .update({
-      initial_balance: newInitialBalance,
-    })
-    .eq('id', id)
-    .eq('user_id', user.id);
+  if (Math.abs(delta) >= 0.01) {
+    const baseTx = {
+      user_id: user.id,
+      description: `Ajuste de Saldo: ${account.name}`,
+      amount: Math.abs(delta),
+      type: delta > 0 ? 'income' : 'expense',
+      payment_method: 'transfer',
+      transaction_date: todayStr,
+      due_date: todayStr,
+      category_id: null,
+      account_id: id,
+      credit_card_id: null,
+      installment_group_id: null,
+      current_installment: 1,
+      total_installments: 1,
+      is_paid: true,
+      paid_at: new Date().toISOString(),
+      notes: '[Ajuste de Saldo] Reajuste manual de saldo na data atual',
+    };
 
-  if (error) {
-    throw new Error(error.message);
+    let { error: txError } = await supabase
+      .from('transactions')
+      .insert({ ...baseTx, scope: 'personal' });
+
+    if (txError && txError.message?.includes('scope')) {
+      const retry = await supabase.from('transactions').insert(baseTx);
+      txError = retry.error;
+    }
+
+    if (txError) {
+      throw new Error(txError.message);
+    }
   }
 
   revalidatePath('/contas');
+  revalidatePath('/transacoes');
   revalidatePath('/dashboard');
 }
 

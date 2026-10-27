@@ -102,17 +102,31 @@ export interface Transaction {
 
 export type ProductType = 'service' | 'product';
 
+export interface ServiceProduct {
+  id: string;
+  user_id: string;
+  service_id: string;
+  product_id: string;
+  quantity: number;
+  created_at: string;
+  product?: Product | null;
+}
+
 export interface Product {
   id: string;
   user_id: string;
   name: string;
   type: ProductType;
   default_price: number;
+  cost_price?: number;
+  stock_quantity?: number;
+  min_stock?: number;
   icon: string;
   color: string;
   active: boolean;
   created_at: string;
   updated_at: string;
+  service_products?: ServiceProduct[];
 }
 
 export interface SaleItem {
@@ -123,6 +137,9 @@ export interface SaleItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  unit_cost?: number;
+  is_service_component?: boolean;
+  parent_service_id?: string | null;
   created_at: string;
 }
 

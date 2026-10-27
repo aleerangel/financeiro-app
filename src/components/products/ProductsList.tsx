@@ -162,11 +162,52 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                 </div>
               </div>
 
-              <div className="border-t border-zinc-800/80 pt-3 flex items-baseline justify-between">
-                <span className="text-xs text-zinc-400">Preço Padrão</span>
-                <span className="text-lg font-bold text-emerald-400">
-                  {formatCurrency(Number(prod.default_price))}
-                </span>
+              <div className="space-y-2 border-t border-zinc-800/80 pt-3">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xs text-zinc-400">Preço Padrão</span>
+                  <span className="text-lg font-bold text-emerald-400">
+                    {formatCurrency(Number(prod.default_price))}
+                  </span>
+                </div>
+
+                {!isService && (
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-zinc-400">
+                    {Number(prod.cost_price || 0) > 0 && (
+                      <span>Custo: {formatCurrency(Number(prod.cost_price))}</span>
+                    )}
+                    {prod.stock_quantity !== null && prod.stock_quantity !== undefined && (
+                      <span
+                        className={`px-2 py-0.5 rounded-full font-semibold ${
+                          prod.min_stock !== null &&
+                          prod.min_stock !== undefined &&
+                          Number(prod.stock_quantity) <= Number(prod.min_stock)
+                            ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                            : 'bg-zinc-800 text-zinc-300'
+                        }`}
+                      >
+                        Estoque: {prod.stock_quantity}
+                        {prod.min_stock !== null &&
+                        prod.min_stock !== undefined &&
+                        Number(prod.stock_quantity) <= Number(prod.min_stock)
+                          ? ' (Baixo)'
+                          : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {isService && prod.service_products && prod.service_products.length > 0 && (
+                  <div className="text-[11px] text-zinc-400 flex flex-wrap gap-1">
+                    {prod.service_products.map((sp) => (
+                      <span
+                        key={sp.id || sp.product_id}
+                        className="px-2 py-0.5 rounded-md bg-zinc-800/80 text-zinc-300 border border-zinc-700/60"
+                      >
+                        {sp.quantity}x {sp.product?.name || 'Peça inclusa'}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -177,6 +218,7 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         productToEdit={productToEdit}
+        availableProducts={products}
         onSuccess={() => window.location.reload()}
       />
     </div>

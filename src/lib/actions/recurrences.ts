@@ -317,6 +317,7 @@ export async function updateRecurrence(id: string, input: UpdateRecurrenceInput)
   if (input.category_id !== undefined) txUpdates.category_id = input.category_id;
   if (input.account_id !== undefined) txUpdates.account_id = input.account_id;
   if (input.credit_card_id !== undefined) txUpdates.credit_card_id = input.credit_card_id;
+  if (input.scope !== undefined) txUpdates.scope = input.scope;
 
   if (input.credit_card_id) {
     txUpdates.payment_method = 'credit';
@@ -329,7 +330,8 @@ export async function updateRecurrence(id: string, input: UpdateRecurrenceInput)
       .from('transactions')
       .update(txUpdates)
       .eq('recurrence_id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('is_paid', false);
   }
 
   invalidateRecurrenceSync(user.id);

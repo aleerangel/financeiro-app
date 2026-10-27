@@ -1015,6 +1015,68 @@ export function MobileSummaryView({
             />
           </div>
 
+          {/* Ponto de Equilíbrio (Break-Even) no Resumo Mobile */}
+          {businessData.breakEven &&
+            (businessData.breakEven.totalExpenses > 0 || businessData.breakEven.revenue > 0) && (
+              <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-200">
+                    Ponto de Equilíbrio (Mês)
+                  </span>
+                  <span
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                      businessData.breakEven.isReached
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                        : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                    }`}
+                  >
+                    {businessData.breakEven.isReached
+                      ? 'Custos Cobertos'
+                      : `${businessData.breakEven.progressPercent}% atingido`}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      businessData.breakEven.isReached ? 'bg-emerald-500' : 'bg-amber-400'
+                    }`}
+                    style={{
+                      width: `${Math.min(100, Math.max(0, businessData.breakEven.progressPercent))}%`,
+                    }}
+                  />
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  {businessData.breakEven.isReached
+                    ? `Superávit operacional de ${formatHidden(formatCurrency(businessData.breakEven.surplusAmount))} além das despesas do mês.`
+                    : `Faltam ${formatHidden(formatCurrency(businessData.breakEven.remainingAmount))} para cobrir as despesas de ${formatHidden(formatCurrency(businessData.breakEven.totalExpenses))}.`}
+                </p>
+              </div>
+            )}
+
+          {/* Alerta de Estoque Baixo no Resumo Mobile */}
+          {businessData.lowStockProducts && businessData.lowStockProducts.length > 0 && (
+            <div className="p-4 bg-zinc-900 border border-rose-500/30 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-rose-400">
+                  Estoque Baixo ({businessData.lowStockProducts.length})
+                </span>
+                <Link href="/produtos" className="text-xs text-rose-300 font-semibold">
+                  Repor &rarr;
+                </Link>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {businessData.lowStockProducts.map((prod) => (
+                  <span
+                    key={prod.id}
+                    className="px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-[11px] text-rose-300 font-medium"
+                  >
+                    {prod.name}: {prod.stock_quantity} (mín. {prod.min_stock})
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Divisão Serviços vs Produtos (Apenas se houver divisão mista) */}
           {isMixedRevenueSplit(revenueSplit) && (
             <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5">

@@ -105,7 +105,11 @@ export async function createTransaction(input: CreateTransactionInput) {
     );
 
     const installmentGroupId = totalInstallments > 1 ? crypto.randomUUID() : null;
-    const installmentAmount = Math.round((input.amount / totalInstallments) * 100) / 100;
+    const baseInstallmentAmount = Math.round((input.amount / totalInstallments) * 100) / 100;
+    const firstInstallmentAmount =
+      totalInstallments > 1
+        ? Math.round((input.amount - baseInstallmentAmount * (totalInstallments - 1)) * 100) / 100
+        : Math.round(input.amount * 100) / 100;
     const scope: FinancialScope = input.scope || 'personal';
     const taggedNotes = applyScopeToNotes(input.notes, scope);
 
@@ -118,7 +122,7 @@ export async function createTransaction(input: CreateTransactionInput) {
       return {
         user_id: user.id,
         description: desc,
-        amount: installmentAmount,
+        amount: index === 0 ? firstInstallmentAmount : baseInstallmentAmount,
         type: 'expense',
         payment_method: 'credit',
         transaction_date: input.transaction_date,
@@ -153,7 +157,9 @@ export async function createTransaction(input: CreateTransactionInput) {
   } else {
     // Transação comum (Receita, Pix, Débito, Dinheiro)
     const dueDate = input.due_date || input.transaction_date;
-    const isPaid = input.is_paid ?? true;
+    const todayStr = getTodayYMD();
+    // Lançamentos com data futura nascem como Pendente (is_paid = false) por padrão (RN-06 / INC-06)
+    const isPaid = input.is_paid !== undefined ? input.is_paid : dueDate <= todayStr;
     const scope: FinancialScope = input.scope || 'personal';
     const taggedNotes = applyScopeToNotes(input.notes, scope);
 

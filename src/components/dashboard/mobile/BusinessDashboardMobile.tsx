@@ -178,6 +178,69 @@ export function BusinessDashboardMobile({
         {data.clubOverview && (
           <ClubMetricsWidget overview={data.clubOverview} hideIfEmpty={true} />
         )}
+
+        {/* Ponto de Equilíbrio (Break-Even) */}
+        {data.breakEven && (data.breakEven.totalExpenses > 0 || data.breakEven.revenue > 0) && (
+          <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
+                Ponto de Equilíbrio
+              </span>
+              <span
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                  data.breakEven.isReached
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                }`}
+              >
+                {data.breakEven.isReached
+                  ? 'Custos Cobertos'
+                  : `${data.breakEven.progressPercent}% atingido`}
+              </span>
+            </div>
+            <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  data.breakEven.isReached ? 'bg-emerald-500' : 'bg-amber-400'
+                }`}
+                style={{ width: `${Math.min(100, Math.max(0, data.breakEven.progressPercent))}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-zinc-400">
+              {data.breakEven.isReached
+                ? `Superávit de ${formatHidden(formatCurrency(data.breakEven.surplusAmount))} além das despesas do mês.`
+                : `Faltam ${formatHidden(formatCurrency(data.breakEven.remainingAmount))} (${
+                    data.breakEven.salesNeeded > 0
+                      ? `~${data.breakEven.salesNeeded} ${formatSalesUnit(data.breakEven.salesNeeded, salesLabel)}`
+                      : 'em vendas'
+                  }) para cobrir ${formatHidden(formatCurrency(data.breakEven.totalExpenses))}.`}
+            </p>
+          </div>
+        )}
+
+        {/* Alerta de Estoque Baixo */}
+        {data.lowStockProducts && data.lowStockProducts.length > 0 && (
+          <div className="p-4 bg-zinc-900 border border-rose-500/30 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-rose-400">
+                Estoque Baixo ({data.lowStockProducts.length})
+              </span>
+              <Link href="/produtos" className="text-xs text-rose-300 font-semibold">
+                Ver catálogo &rarr;
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {data.lowStockProducts.map((prod) => (
+                <span
+                  key={prod.id}
+                  className="px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-[11px] text-rose-300 font-medium"
+                >
+                  {prod.name}: {prod.stock_quantity} un.
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Divisão de Faturamento: Serviços vs Produtos */}

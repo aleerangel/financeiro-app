@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 import { revalidatePath } from 'next/cache';
 import { Sale, PaymentMethod, SalePaymentMethod } from '@/types/database';
 import { getOrCreateBusinessIncomeCategory } from '@/lib/actions/categories';
@@ -16,6 +17,9 @@ export interface CreateSaleItemInput {
   product_name: string;
   quantity: number;
   unit_price: number;
+  unit_cost?: number;
+  is_service_component?: boolean;
+  parent_service_id?: string | null;
 }
 
 export interface CreateSaleInput {
@@ -55,38 +59,44 @@ export async function getSales(month?: number, year?: number): Promise<Sale[]> {
 
   if (!user) throw new Error('Não autenticado');
 
-  let query = supabase
-    .from('sales')
-    .select(`
-      *,
-      items:sale_items(*),
-      account:accounts(*),
-      client:clients(*),
-      amortizations:sale_amortizations(
-        *,
-        account:accounts(id, name)
-      )
-    `)
-    .eq('user_id', user.id)
-    .order('sale_date', { ascending: false });
-
+  let rangeBounds: { startIso: string; endIso: string } | null = null;
   if (month !== undefined && year !== undefined) {
     const startYmd = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month + 1, 0).getDate();
     const endYmd = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    const { startIso, endIso } = getZonedRangeBoundsIso(startYmd, endYmd);
-
-    query = query.gte('sale_date', startIso).lte('sale_date', endIso);
+    rangeBounds = getZonedRangeBoundsIso(startYmd, endYmd);
   }
 
-  const { data, error } = await query;
+  const { data, error } = await fetchAllPages<Sale>((from, to) => {
+    let query = supabase
+      .from('sales')
+      .select(`
+        *,
+        items:sale_items(*),
+        account:accounts(*),
+        client:clients(*),
+        amortizations:sale_amortizations(
+          *,
+          account:accounts(id, name)
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('sale_date', { ascending: false })
+      .range(from, to);
+
+    if (rangeBounds) {
+      query = query.gte('sale_date', rangeBounds.startIso).lte('sale_date', rangeBounds.endIso);
+    }
+
+    return query as unknown as PromiseLike<{ data: Sale[] | null; error: { message: string } | null }>;
+  });
 
   if (error) {
     console.error('Erro ao buscar vendas:', error);
     return [];
   }
 
-  return (data as unknown as Sale[]) || [];
+  return data || [];
 }
 
 export async function createSale(input: CreateSaleInput) {
@@ -107,13 +117,15 @@ export async function createSale(input: CreateSaleInput) {
     throw new Error('Adicione ao menos um serviço ou produto ao atendimento.');
   }
 
-  // 1. Calcula o valor total somando todos os itens
+  // 1. Calcula o valor total somando todos os itens cobrados (peças inclusas no serviço têm unit_price = 0)
   const totalAmount = input.items.reduce((acc, item) => {
+    if (item.is_service_component) return acc;
     return acc + Number(item.quantity) * Number(item.unit_price);
   }, 0);
 
-  // 2. Cria o resumo dos itens para a descrição da receita
-  const itemsSummary = input.items
+  // 2. Cria o resumo dos itens principais para a descrição da receita
+  const mainItems = input.items.filter((item) => !item.is_service_component);
+  const itemsSummary = (mainItems.length > 0 ? mainItems : input.items)
     .map((item) => `${item.quantity > 1 ? `${item.quantity}x ` : ''}${item.product_name}`)
     .join(', ');
 
@@ -151,7 +163,10 @@ export async function createSale(input: CreateSaleInput) {
       product_id: item.product_id || null,
       product_name: item.product_name,
       quantity: item.quantity,
-      unit_price: item.unit_price,
+      unit_price: item.is_service_component ? 0 : item.unit_price,
+      unit_cost: item.unit_cost ?? 0,
+      is_service_component: Boolean(item.is_service_component),
+      parent_service_id: item.parent_service_id || null,
     })),
     p_due_date: input.due_date || null,
     p_initial_payment: initialPayment,
@@ -332,14 +347,20 @@ async function createSaleLegacy(params: {
   }
 
   const { error: itemsError } = await supabase.from('sale_items').insert(
-    input.items.map((item) => ({
-      sale_id: sale.id,
-      product_id: item.product_id || null,
-      product_name: item.product_name,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total_price: item.quantity * item.unit_price,
-    }))
+    input.items.map((item) => {
+      const unitPrice = item.is_service_component ? 0 : item.unit_price;
+      return {
+        sale_id: sale.id,
+        product_id: item.product_id || null,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: unitPrice,
+        total_price: item.quantity * unitPrice,
+        unit_cost: item.unit_cost ?? 0,
+        is_service_component: Boolean(item.is_service_component),
+        parent_service_id: item.parent_service_id || null,
+      };
+    })
   );
 
   if (itemsError) {
@@ -348,6 +369,24 @@ async function createSaleLegacy(params: {
       await supabase.from('transactions').delete().eq('id', transactionId).eq('user_id', userId);
     }
     throw new Error(itemsError.message || 'Erro ao salvar itens do atendimento.');
+  }
+
+  // Baixa de estoque no modo fallback
+  for (const item of input.items) {
+    if (!item.product_id) continue;
+    const { data: prod } = await supabase
+      .from('products')
+      .select('id, type, stock_quantity')
+      .eq('id', item.product_id)
+      .eq('user_id', userId)
+      .single();
+    if (prod && prod.type === 'product') {
+      await supabase
+        .from('products')
+        .update({ stock_quantity: (Number(prod.stock_quantity) || 0) - Math.max(1, Number(item.quantity) || 1) })
+        .eq('id', prod.id)
+        .eq('user_id', userId);
+    }
   }
 
   return sale;
@@ -608,11 +647,12 @@ export async function deleteSale(saleId: string) {
 
   if (!user) throw new Error('Não autenticado');
 
-  // Busca a venda e suas amortizações para coletar os IDs das receitas
+  // Busca a venda, suas amortizações e seus itens para estornar receita e estoque (INC-16)
   const { data: sale } = await supabase
     .from('sales')
     .select(`
       transaction_id,
+      items:sale_items(product_id, quantity),
       amortizations:sale_amortizations(transaction_id)
     `)
     .eq('id', saleId)
@@ -627,6 +667,27 @@ export async function deleteSale(saleId: string) {
   if (sale?.amortizations && Array.isArray(sale.amortizations)) {
     for (const a of sale.amortizations as { transaction_id?: string | null }[]) {
       if (a.transaction_id) txIdsToDelete.push(a.transaction_id);
+    }
+  }
+
+  // Estorna o estoque dos produtos desta venda
+  if (sale?.items && Array.isArray(sale.items)) {
+    for (const item of sale.items as { product_id?: string | null; quantity?: number }[]) {
+      if (!item.product_id) continue;
+      const qty = Math.max(1, Number(item.quantity) || 1);
+      const { data: prod } = await supabase
+        .from('products')
+        .select('id, type, stock_quantity')
+        .eq('id', item.product_id)
+        .eq('user_id', user.id)
+        .single();
+      if (prod && prod.type === 'product') {
+        await supabase
+          .from('products')
+          .update({ stock_quantity: (Number(prod.stock_quantity) || 0) + qty })
+          .eq('id', prod.id)
+          .eq('user_id', user.id);
+      }
     }
   }
 
@@ -752,12 +813,14 @@ export async function getPendingDebtsSummary(): Promise<DebtsOverviewSummary> {
     const totalOriginal = group.sales.reduce((acc, s) => acc + Number(s.total_amount || 0), 0);
     const totalPaid = group.sales.reduce((acc, s) => acc + Number(s.paid_amount || 0), 0);
 
-    // Encontra a data de vencimento mais urgente / antiga
+    // Encontra a data de vencimento mais urgente / antiga e soma apenas vendas vencidas (INC-08)
     let mostUrgentDueDate: string | null = null;
     let mostUrgentDaysDiff: number | null = null;
     let isClientOverdue = false;
+    let clientOverdueDebt = 0;
 
     for (const s of group.sales) {
+      const saleRemaining = Number(s.remaining_amount ?? s.total_amount ?? 0);
       if (s.due_date) {
         // diff em dias: hoje - due_date
         const diffMs = new Date(todayStr).getTime() - new Date(s.due_date).getTime();
@@ -765,6 +828,7 @@ export async function getPendingDebtsSummary(): Promise<DebtsOverviewSummary> {
 
         if (diffDays > 0) {
           isClientOverdue = true;
+          clientOverdueDebt += saleRemaining;
         }
 
         if (mostUrgentDaysDiff === null || diffDays > mostUrgentDaysDiff) {
@@ -774,9 +838,7 @@ export async function getPendingDebtsSummary(): Promise<DebtsOverviewSummary> {
       }
     }
 
-    if (isClientOverdue) {
-      totalOverdueDebt += totalDebt;
-    }
+    totalOverdueDebt += clientOverdueDebt;
     totalPendingDebt += totalDebt;
 
     clientsList.push({

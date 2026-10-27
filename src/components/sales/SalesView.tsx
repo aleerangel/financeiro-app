@@ -107,8 +107,14 @@ export function SalesView({
     0
   );
 
+  // Total bruto vendido hoje (Regime de Competência para Ticket Médio — INC-05 / RN-03)
+  const todayGrossSalesTotal = todaySales.reduce(
+    (acc, curr) => acc + Number(curr.total_amount || 0),
+    0
+  );
+
   const todayClientsCount = todaySales.length;
-  const todayAverageTicket = todayClientsCount > 0 ? todayReceivedTotal / todayClientsCount : 0;
+  const todayAverageTicket = todayClientsCount > 0 ? todayGrossSalesTotal / todayClientsCount : 0;
 
   const displayedSales =
     filterMode === 'today'

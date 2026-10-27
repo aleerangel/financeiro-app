@@ -69,35 +69,125 @@ export function NewSaleModal({
   } | null>(null);
   const [receiptSale, setReceiptSale] = useState<Sale | null>(null);
 
+  const [addingPartForServiceId, setAddingPartForServiceId] = useState<string | null>(null);
+  const [selectedServicePartId, setSelectedServicePartId] = useState<string>('');
+
   if (!isOpen && !creditReceiptData && !receiptSale) return null;
+
+  const physicalProducts = products.filter((p) => p.type === 'product');
 
   const handleAddItem = (product: Product) => {
     setSelectedItems((prev) => {
-      const existing = prev.find((item) => item.product_id === product.id);
+      const existing = prev.find(
+        (item) => item.product_id === product.id && !item.is_service_component
+      );
+      let nextItems: CreateSaleItemInput[];
+
       if (existing) {
-        return prev.map((item) =>
-          item.product_id === product.id
+        nextItems = prev.map((item) =>
+          item.product_id === product.id && !item.is_service_component
             ? { ...item, quantity: item.quantity + 1 }
             : item
+        );
+      } else {
+        nextItems = [
+          ...prev,
+          {
+            product_id: product.id,
+            product_name: product.name,
+            quantity: 1,
+            unit_price: Number(product.default_price),
+            unit_cost: product.type === 'product' ? Number(product.cost_price || 0) : 0,
+            is_service_component: false,
+            parent_service_id: null,
+          },
+        ];
+      }
+
+      // Se for um serviço com peças/insumos padrão vinculados, adiciona/incrementa como componente incluso (sem cobrar do cliente)
+      if (product.type === 'service' && product.service_products && product.service_products.length > 0) {
+        for (const sp of product.service_products) {
+          const catalogProd = products.find((p) => p.id === sp.product_id);
+          const partName = sp.product?.name || catalogProd?.name || 'Peça inclusa';
+          const partCost = Number(sp.product?.cost_price ?? catalogProd?.cost_price ?? 0);
+          const partQty = Number(sp.quantity || 1);
+
+          const existingPartIdx = nextItems.findIndex(
+            (i) =>
+              i.is_service_component &&
+              i.parent_service_id === product.id &&
+              i.product_id === sp.product_id
+          );
+
+          if (existingPartIdx >= 0) {
+            nextItems = nextItems.map((it, idx) =>
+              idx === existingPartIdx ? { ...it, quantity: it.quantity + partQty } : it
+            );
+          } else {
+            nextItems.push({
+              product_id: sp.product_id,
+              product_name: partName,
+              quantity: partQty,
+              unit_price: 0,
+              unit_cost: partCost,
+              is_service_component: true,
+              parent_service_id: product.id,
+            });
+          }
+        }
+      }
+
+      return nextItems;
+    });
+  };
+
+  const handleAddServiceComponent = (serviceId: string, partProductId: string) => {
+    const partProd = products.find((p) => p.id === partProductId);
+    if (!partProd) return;
+
+    setSelectedItems((prev) => {
+      const existingIdx = prev.findIndex(
+        (i) =>
+          i.is_service_component &&
+          i.parent_service_id === serviceId &&
+          i.product_id === partProd.id
+      );
+      if (existingIdx >= 0) {
+        return prev.map((it, idx) =>
+          idx === existingIdx ? { ...it, quantity: it.quantity + 1 } : it
         );
       }
       return [
         ...prev,
         {
-          product_id: product.id,
-          product_name: product.name,
+          product_id: partProd.id,
+          product_name: partProd.name,
           quantity: 1,
-          unit_price: Number(product.default_price),
+          unit_price: 0,
+          unit_cost: Number(partProd.cost_price || 0),
+          is_service_component: true,
+          parent_service_id: serviceId,
         },
       ];
     });
+    setSelectedServicePartId('');
+    setAddingPartForServiceId(null);
   };
 
-  const handleUpdateQuantity = (productId: string | null | undefined, delta: number) => {
+  const handleUpdateQuantity = (
+    productId: string | null | undefined,
+    delta: number,
+    isServiceComponent: boolean = false,
+    parentServiceId: string | null = null
+  ) => {
     setSelectedItems((prev) =>
       prev
         .map((item) => {
-          if (item.product_id === productId) {
+          if (
+            item.product_id === productId &&
+            Boolean(item.is_service_component) === isServiceComponent &&
+            (item.parent_service_id || null) === parentServiceId
+          ) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -111,16 +201,38 @@ export function NewSaleModal({
     const val = parseFloat(newPriceStr.replace(',', '.')) || 0;
     setSelectedItems((prev) =>
       prev.map((item) =>
-        item.product_id === productId ? { ...item, unit_price: val } : item
+        item.product_id === productId && !item.is_service_component
+          ? { ...item, unit_price: val }
+          : item
       )
     );
   };
 
-  const handleRemoveItem = (productId: string | null | undefined) => {
-    setSelectedItems((prev) => prev.filter((item) => item.product_id !== productId));
+  const handleRemoveItem = (
+    productId: string | null | undefined,
+    isServiceComponent: boolean = false,
+    parentServiceId: string | null = null
+  ) => {
+    setSelectedItems((prev) =>
+      prev.filter((item) => {
+        if (isServiceComponent) {
+          return !(
+            item.is_service_component &&
+            item.product_id === productId &&
+            (item.parent_service_id || null) === parentServiceId
+          );
+        }
+        // Ao remover um serviço principal, remove também as peças vinculadas a ele
+        if (item.is_service_component && item.parent_service_id === productId) {
+          return false;
+        }
+        return !(item.product_id === productId && !item.is_service_component);
+      })
+    );
   };
 
   const totalAmount = selectedItems.reduce((acc, item) => {
+    if (item.is_service_component) return acc;
     return acc + Number(item.quantity) * Number(item.unit_price);
   }, 0);
 
@@ -211,16 +323,18 @@ export function NewSaleModal({
         sale_date: saleDate,
         notes: notes.trim() || null,
         created_at: new Date().toISOString(),
-        items: selectedItems.map((item, idx) => ({
-          id: String(idx),
-          sale_id: createdSale?.id || '',
-          product_id: item.product_id || null,
-          product_name: item.product_name,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.quantity * item.unit_price,
-          created_at: saleDate,
-        })),
+        items: selectedItems
+          .filter((item) => !item.is_service_component)
+          .map((item, idx) => ({
+            id: String(idx),
+            sale_id: createdSale?.id || '',
+            product_id: item.product_id || null,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.quantity * item.unit_price,
+            created_at: saleDate,
+          })),
         client: clientsList.find((c) => c.id === finalClientId) || null,
       };
 
@@ -372,58 +486,197 @@ export function NewSaleModal({
               </span>
 
               <div className="divide-y divide-zinc-800/60">
-                {selectedItems.map((item) => (
-                  <div key={item.product_id} className="py-2.5 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-sm font-semibold text-zinc-100 block truncate">
-                        {item.product_name}
-                      </span>
-                      <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-0.5">
-                        <span>Valor un: R$</span>
-                        <input
-                          type="text"
-                          value={item.unit_price}
-                          onChange={(e) => handleUpdatePrice(item.product_id, e.target.value)}
-                          className="w-16 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 text-center font-bold focus:outline-none focus:border-emerald-500"
-                        />
+                {selectedItems
+                  .filter((item) => !item.is_service_component)
+                  .map((item) => {
+                    const catalogProduct = products.find((p) => p.id === item.product_id);
+                    const isServiceItem = catalogProduct?.type === 'service';
+                    const serviceComponents = isServiceItem
+                      ? selectedItems.filter(
+                          (sub) =>
+                            sub.is_service_component && sub.parent_service_id === item.product_id
+                        )
+                      : [];
+
+                    return (
+                      <div key={item.product_id} className="py-2.5 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="text-sm font-semibold text-zinc-100 block truncate">
+                              {item.product_name}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-0.5">
+                              <span>Valor un: R$</span>
+                              <input
+                                type="text"
+                                value={item.unit_price}
+                                onChange={(e) => handleUpdatePrice(item.product_id, e.target.value)}
+                                className="w-16 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 text-center font-bold focus:outline-none focus:border-emerald-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-2 py-1">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateQuantity(item.product_id, -1, false, null)}
+                                className="p-1 hover:text-zinc-100 text-zinc-400"
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="text-xs font-extrabold text-zinc-100 px-1">
+                                {item.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateQuantity(item.product_id, 1, false, null)}
+                                className="p-1 hover:text-zinc-100 text-zinc-400"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+
+                            <span className="text-sm font-bold text-emerald-400 min-w-[70px] text-right">
+                              {formatCurrency(item.quantity * item.unit_price)}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(item.product_id, false, null)}
+                              className="p-1 text-zinc-500 hover:text-red-400 transition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Peças / Produtos Inclusos no Serviço (sem cobrar valor extra do cliente) */}
+                        {isServiceItem && physicalProducts.length > 0 && (
+                          <div className="pl-3 border-l-2 border-zinc-800 space-y-1.5">
+                            {serviceComponents.map((comp) => (
+                              <div
+                                key={`${comp.parent_service_id}-${comp.product_id}`}
+                                className="flex items-center justify-between gap-2 bg-zinc-900/60 px-2.5 py-1.5 rounded-xl border border-zinc-800/70"
+                              >
+                                <div className="min-w-0">
+                                  <span className="text-xs font-medium text-zinc-300 truncate block">
+                                    🔩 {comp.product_name}
+                                  </span>
+                                  <span className="text-[10px] text-zinc-500 block">
+                                    Incluso no serviço (baixa de estoque • R$ 0 ao cliente)
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-lg px-1.5 py-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleUpdateQuantity(
+                                          comp.product_id,
+                                          -1,
+                                          true,
+                                          comp.parent_service_id || null
+                                        )
+                                      }
+                                      className="p-0.5 text-zinc-400 hover:text-zinc-200"
+                                    >
+                                      <Minus className="w-3 h-3" />
+                                    </button>
+                                    <span className="text-[11px] font-bold text-zinc-200 px-1">
+                                      {comp.quantity}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleUpdateQuantity(
+                                          comp.product_id,
+                                          1,
+                                          true,
+                                          comp.parent_service_id || null
+                                        )
+                                      }
+                                      className="p-0.5 text-zinc-400 hover:text-zinc-200"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemoveItem(
+                                        comp.product_id,
+                                        true,
+                                        comp.parent_service_id || null
+                                      )
+                                    }
+                                    className="p-1 text-zinc-500 hover:text-red-400 transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+
+                            {addingPartForServiceId === item.product_id ? (
+                              <div className="flex items-center gap-1.5 pt-0.5">
+                                <select
+                                  value={selectedServicePartId}
+                                  onChange={(e) => setSelectedServicePartId(e.target.value)}
+                                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
+                                >
+                                  <option value="">Selecionar peça/produto usado...</option>
+                                  {physicalProducts.map((pp) => (
+                                    <option key={pp.id} value={pp.id}>
+                                      {pp.name}
+                                      {pp.stock_quantity !== null && pp.stock_quantity !== undefined
+                                        ? ` (Est: ${pp.stock_quantity})`
+                                        : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  disabled={!selectedServicePartId}
+                                  onClick={() =>
+                                    item.product_id &&
+                                    handleAddServiceComponent(item.product_id, selectedServicePartId)
+                                  }
+                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold disabled:opacity-40"
+                                >
+                                  Incluir
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAddingPartForServiceId(null);
+                                    setSelectedServicePartId('');
+                                  }}
+                                  className="px-2 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAddingPartForServiceId(item.product_id || null);
+                                  setSelectedServicePartId('');
+                                }}
+                                className="text-[11px] text-emerald-400/90 hover:text-emerald-300 font-semibold flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Incluir peça/insumo usado neste serviço (sem cobrar extra)
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-2 py-1">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQuantity(item.product_id, -1)}
-                          className="p-1 hover:text-zinc-100 text-zinc-400"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="text-xs font-extrabold text-zinc-100 px-1">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQuantity(item.product_id, 1)}
-                          className="p-1 hover:text-zinc-100 text-zinc-400"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      <span className="text-sm font-bold text-emerald-400 min-w-[70px] text-right">
-                        {formatCurrency(item.quantity * item.unit_price)}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(item.product_id)}
-                        className="p-1 text-zinc-500 hover:text-red-400 transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
               </div>
             </div>
           )}

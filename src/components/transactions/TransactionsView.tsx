@@ -102,10 +102,10 @@ export function TransactionsView({
     initialTransactions && initialMonth === month && initialYear === year ? false : true
   );
 
-  // Filtros e visualização
-  const filter: FilterType = 'all';
-  const selectedSourceId = 'all';
-  const modalDefaultScope: FinancialScope = 'personal';
+  // Filtros e visualização (INC-14)
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [selectedSourceId, setSelectedSourceId] = useState<string>('all');
+  const modalDefaultScope: FinancialScope = filter === 'business' ? 'business' : 'personal';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [groupByDay, setGroupByDay] = useState<boolean>(true);
@@ -319,7 +319,11 @@ export function TransactionsView({
     [filteredTransactions]
   );
 
-  const hasActiveFilter = selectedCategoryId !== 'all' || searchTerm.trim().length > 0;
+  const hasActiveFilter =
+    filter !== 'all' ||
+    selectedSourceId !== 'all' ||
+    selectedCategoryId !== 'all' ||
+    searchTerm.trim().length > 0;
 
   const handleExport = (format: ExportFormat) => {
     let filterLabel = 'Todas as movimentações';
@@ -729,44 +733,103 @@ export function TransactionsView({
         </div>
       </div>
 
-      {/* 4. LINHA 4: Categorias Ativas do Mês & Alternador de Modo */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* Dropdown Inteligente de Categorias */}
-          <CategorySelectDropdown
-            categories={initialCategories}
-            selectedCategoryId={selectedCategoryId}
-            onSelectCategory={setSelectedCategoryId}
-            activeCategories={activeCategoriesWithCount}
-          />
+      {/* 4. LINHA 4: Filtros de Tipo/Escopo, Conta/Cartão, Categoria & Alternador de Modo */}
+      <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5 text-xs">
+        {/* Pílulas de Filtro Rápido (Todos, Pessoal, Negócio, Receitas, Despesas, Cartão, Pendentes) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {[
+            { id: 'all' as FilterType, label: 'Todos' },
+            ...(hasBusiness
+              ? [
+                  { id: 'personal' as FilterType, label: 'Pessoal' },
+                  { id: 'business' as FilterType, label: businessName || 'Negócio' },
+                ]
+              : []),
+            { id: 'income' as FilterType, label: 'Receitas' },
+            { id: 'expense' as FilterType, label: 'Despesas' },
+            { id: 'credit' as FilterType, label: 'Cartão' },
+            { id: 'pending' as FilterType, label: 'Pendentes' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter(item.id)}
+              className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition shrink-0 ${
+                filter === item.id
+                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                  : 'bg-zinc-950 border border-zinc-800 text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
 
-        {/* Alternador de Visualização: Por Dia vs Lista Corrida */}
-        <div className="flex items-center self-end sm:self-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs shrink-0">
-          <button
-            type="button"
-            onClick={() => setGroupByDay(true)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
-              groupByDay
-                ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <CalendarDays className="w-3.5 h-3.5" />
-            <span>Por Dia</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setGroupByDay(false)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
-              !groupByDay
-                ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <List className="w-3.5 h-3.5" />
-            <span>Lista Corrida</span>
-          </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 min-w-0">
+            {/* Dropdown Inteligente de Categorias */}
+            <CategorySelectDropdown
+              categories={initialCategories}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={setSelectedCategoryId}
+              activeCategories={activeCategoriesWithCount}
+            />
+
+            {/* Seletor de Conta Bancária ou Cartão */}
+            <select
+              value={selectedSourceId}
+              onChange={(e) => setSelectedSourceId(e.target.value)}
+              className="px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition"
+            >
+              <option value="all">Todas as Contas e Cartões</option>
+              {initialAccounts.length > 0 && (
+                <optgroup label="Contas Bancárias">
+                  {initialAccounts.map((acc) => (
+                    <option key={`acc:${acc.id}`} value={`acc:${acc.id}`}>
+                      Conta: {acc.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {initialCards.length > 0 && (
+                <optgroup label="Cartões de Crédito">
+                  {initialCards.map((card) => (
+                    <option key={`card:${card.id}`} value={`card:${card.id}`}>
+                      Cartão: {card.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </div>
+
+          {/* Alternador de Visualização: Por Dia vs Lista Corrida */}
+          <div className="flex items-center self-end sm:self-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl text-xs shrink-0">
+            <button
+              type="button"
+              onClick={() => setGroupByDay(true)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
+                groupByDay
+                  ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              <span>Por Dia</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setGroupByDay(false)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition ${
+                !groupByDay
+                  ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
+              <span>Lista Corrida</span>
+            </button>
+          </div>
         </div>
       </div>
 

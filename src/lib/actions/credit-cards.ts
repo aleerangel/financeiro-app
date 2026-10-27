@@ -255,7 +255,8 @@ export async function setCreditCardInvoicePaid(
   cardId: string,
   month: number,
   year: number,
-  isPaid: boolean
+  isPaid: boolean,
+  accountId?: string | null
 ): Promise<void> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -266,12 +267,20 @@ export async function setCreditCardInvoicePaid(
   const lastDay = new Date(year, month + 1, 0).getDate();
   const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
+  const updatePayload: Record<string, unknown> = {
+    is_paid: isPaid,
+    paid_at: isPaid ? new Date().toISOString() : null,
+  };
+
+  if (!isPaid) {
+    updatePayload.account_id = null;
+  } else if (accountId !== undefined) {
+    updatePayload.account_id = accountId || null;
+  }
+
   const { error } = await supabase
     .from('transactions')
-    .update({
-      is_paid: isPaid,
-      paid_at: isPaid ? new Date().toISOString() : null,
-    })
+    .update(updatePayload)
     .eq('user_id', user.id)
     .eq('credit_card_id', cardId)
     .gte('due_date', startDate)
@@ -282,6 +291,7 @@ export async function setCreditCardInvoicePaid(
   }
 
   revalidatePath('/cartoes');
+  revalidatePath('/contas');
   revalidatePath('/transacoes');
   revalidatePath('/dashboard');
 }
@@ -296,7 +306,8 @@ export async function payCreditCardInvoiceAmount(
   cardId: string,
   month: number,
   year: number,
-  amountToPay: number
+  amountToPay: number,
+  accountId?: string | null
 ): Promise<PayInvoiceResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -328,44 +339,46 @@ export async function payCreditCardInvoiceAmount(
   }
 
   const items = (pendingTxs as unknown as Transaction[]) || [];
-  const totalPending = items.reduce((sum, item) => sum + Number(item.amount), 0);
+  const totalPending = Math.round(items.reduce((sum, item) => sum + Number(item.amount), 0) * 100) / 100;
 
   if (items.length === 0 || totalPending <= 0) {
     return { paidAmount: 0, remainingPending: 0, isFullyPaid: true };
   }
 
   const nowIso = new Date().toISOString();
+  const resolvedAccountId = accountId || null;
 
   // Caso 1: Pagamento total ou valor maior/igual ao total pendente
   if (amountToPay >= totalPending - 0.009) {
-    await setCreditCardInvoicePaid(cardId, month, year, true);
+    await setCreditCardInvoicePaid(cardId, month, year, true, resolvedAccountId);
     return { paidAmount: totalPending, remainingPending: 0, isFullyPaid: true };
   }
 
   // Caso 2: Pagamento parcial
-  let remaining = amountToPay;
+  let remaining = Math.round(amountToPay * 100) / 100;
 
   for (const item of items) {
     if (remaining <= 0.001) break;
 
-    const itemAmt = Number(item.amount);
+    const itemAmt = Math.round(Number(item.amount) * 100) / 100;
 
     if (itemAmt <= remaining + 0.009) {
-      // Quita o item inteiro
+      // Quita o item inteiro e vincula à conta bancária pagadora (se informada)
       await supabase
         .from('transactions')
         .update({
           is_paid: true,
           paid_at: nowIso,
+          account_id: resolvedAccountId,
         })
         .eq('id', item.id)
         .eq('user_id', user.id);
 
-      remaining -= itemAmt;
+      remaining = Math.round((remaining - itemAmt) * 100) / 100;
     } else {
       // Abate parcialmente este item: divide em parcela paga e saldo pendente
       const paidPart = Math.round(remaining * 100) / 100;
-      const unpaidPart = Math.round((itemAmt - remaining) * 100) / 100;
+      const unpaidPart = Math.round((itemAmt - paidPart) * 100) / 100;
 
       // 1. Atualiza o item original para o valor restante não pago
       await supabase
@@ -376,7 +389,7 @@ export async function payCreditCardInvoiceAmount(
         .eq('id', item.id)
         .eq('user_id', user.id);
 
-      // 2. Insere a parte quitada
+      // 2. Insere a parte quitada vinculada à conta pagadora
       await supabase
         .from('transactions')
         .insert({
@@ -388,11 +401,13 @@ export async function payCreditCardInvoiceAmount(
           transaction_date: item.transaction_date,
           due_date: item.due_date,
           category_id: item.category_id,
+          account_id: resolvedAccountId,
           credit_card_id: item.credit_card_id,
           installment_group_id: item.installment_group_id,
           current_installment: item.current_installment,
           total_installments: item.total_installments,
           notes: item.notes,
+          scope: item.scope || 'personal',
           is_paid: true,
           paid_at: nowIso,
         });
@@ -403,12 +418,13 @@ export async function payCreditCardInvoiceAmount(
   }
 
   revalidatePath('/cartoes');
+  revalidatePath('/contas');
   revalidatePath('/transacoes');
   revalidatePath('/dashboard');
 
   return {
-    paidAmount: amountToPay,
-    remainingPending: Math.max(0, totalPending - amountToPay),
+    paidAmount: Math.round(amountToPay * 100) / 100,
+    remainingPending: Math.round(Math.max(0, totalPending - amountToPay) * 100) / 100,
     isFullyPaid: false,
   };
 }
