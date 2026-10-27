@@ -7,8 +7,11 @@ import {
   PanelLeftOpen,
   ChevronRight,
   LogOut,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useSidebar } from '@/context/SidebarContext';
+import { useMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { QuickActionDropdown } from './QuickActionDropdown';
@@ -52,6 +55,7 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
   const pathname = usePathname();
   const { collapsed, toggleSidebar } = useSidebar();
   const { businessName, salesLabel } = useBusinessProfile();
+  const { showValues, setShowValues } = useMobileNavigation();
   const [loggingOut, setLoggingOut] = React.useState(false);
 
   const breadcrumb = getBreadcrumb(pathname, businessName, salesLabel);
@@ -113,6 +117,21 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
 
       {/* Lado Direito: Notificações, Perfil e Ações Rápidas */}
       <div className="flex items-center gap-3">
+        {/* Botão de Privacidade / Ocultar Valores */}
+        <button
+          type="button"
+          onClick={() => setShowValues(!showValues)}
+          className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 rounded-xl transition border border-transparent hover:border-zinc-800"
+          title={showValues ? 'Ocultar valores sensíveis' : 'Mostrar valores sensíveis'}
+          aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+        >
+          {showValues ? (
+            <Eye className="w-4 h-4 text-zinc-400" />
+          ) : (
+            <EyeOff className="w-4 h-4 text-amber-400" />
+          )}
+        </button>
+
         <QuickActionDropdown size="sm" />
 
         <NotificationBell userEmail={userEmail} />

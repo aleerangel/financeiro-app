@@ -37,6 +37,7 @@ import { useState } from 'react';
 import { ClientEngagementWhatsAppModal } from '@/components/clients/ClientEngagementWhatsAppModal';
 import { ClubMetricsWidget } from '@/components/dashboard/ClubMetricsWidget';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { useMobileNavigation } from '@/context/MobileNavigationContext';
 
 export type ChartPeriod = ChartViewPeriod;
 
@@ -74,6 +75,8 @@ export function BusinessDashboardDesktop({
   } | null>(null);
 
   const { profile, businessName, salesLabel } = useBusinessProfile();
+  const { showValues } = useMobileNavigation();
+  const formatHidden = (val: string) => (showValues ? val : '••••••');
   const { month, year } = useDateContext();
   const businessChart = useIndependentChartPeriod<
     BusinessDashboardData,
@@ -87,14 +90,14 @@ export function BusinessDashboardDesktop({
       name: 'Faturamento',
       color: '#22c55e', // Verde
       values: businessChart.activeStats.map((s) => s.revenue),
-      formatValue: (v) => formatCurrency(v),
+      formatValue: (v) => formatHidden(formatCurrency(v)),
     },
     {
       id: 'expenses',
       name: `Gastos ${businessName}`,
       color: '#f43f5e', // Rosa/Vermelho
       values: businessChart.activeStats.map((s) => s.expenses || 0),
-      formatValue: (v) => formatCurrency(v),
+      formatValue: (v) => formatHidden(formatCurrency(v)),
     },
     {
       id: 'netProfit',
@@ -103,7 +106,7 @@ export function BusinessDashboardDesktop({
       values: businessChart.activeStats.map(
         (s) => s.netProfit ?? s.revenue - (s.expenses || 0)
       ),
-      formatValue: (v) => formatCurrency(v),
+      formatValue: (v) => formatHidden(formatCurrency(v)),
     },
   ];
 
@@ -142,10 +145,10 @@ export function BusinessDashboardDesktop({
           </div>
           <div className="mt-2">
             <span className="text-lg sm:text-2xl font-extrabold text-emerald-400 block">
-              {formatCurrency(summary.revenue)}
+              {formatHidden(formatCurrency(summary.revenue))}
             </span>
             <span className="text-[11px] text-zinc-400 mt-1 block">
-              Ticket médio: {formatCurrency(summary.averageTicket)}
+              Ticket médio: {formatHidden(formatCurrency(summary.averageTicket))}
             </span>
           </div>
         </div>
@@ -183,11 +186,11 @@ export function BusinessDashboardDesktop({
           </div>
           <div className="mt-2">
             <span className="text-lg sm:text-2xl font-extrabold text-rose-400 block">
-              {formatCurrency(summary.paidExpenses)}
+              {formatHidden(formatCurrency(summary.paidExpenses))}
             </span>
             <span className="text-[11px] text-zinc-400 mt-1 block">
               {summary.pendingExpenses > 0
-                ? `+ ${formatCurrency(summary.pendingExpenses)} em aberto/fatura`
+                ? `+ ${formatHidden(formatCurrency(summary.pendingExpenses))} em aberto/fatura`
                 : 'Nenhum custo pendente'}
             </span>
           </div>
@@ -209,10 +212,10 @@ export function BusinessDashboardDesktop({
                 summary.netProfit >= 0 ? 'text-zinc-100' : 'text-rose-400'
               }`}
             >
-              {formatCurrency(summary.netProfit)}
+              {formatHidden(formatCurrency(summary.netProfit))}
             </span>
             <span className="text-[11px] text-zinc-400 mt-1 block">
-              Após faturas: {formatCurrency(summary.projectedProfit)}
+              Após faturas: {formatHidden(formatCurrency(summary.projectedProfit))}
             </span>
           </div>
         </div>
@@ -239,7 +242,7 @@ export function BusinessDashboardDesktop({
                   : 'text-zinc-400'
               }`}
             >
-              {summary.revenue > 0 ? `${summary.profitMargin}%` : '—'}
+              {summary.revenue > 0 ? (showValues ? `${summary.profitMargin}%` : '••••') : '—'}
             </span>
             <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-2">
               <div
@@ -273,7 +276,7 @@ export function BusinessDashboardDesktop({
           </div>
           <div className="mt-2">
             <span className="text-lg sm:text-2xl font-extrabold text-amber-400 block tracking-tight">
-              {formatCurrency(summary.totalReceivables || 0)}
+              {formatHidden(formatCurrency(summary.totalReceivables || 0))}
             </span>
             <span className="text-[11px] text-zinc-400 group-hover:text-zinc-300 mt-1 flex items-center gap-1 transition-colors">
               Ver cobranças &rarr;

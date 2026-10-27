@@ -35,6 +35,7 @@ import { isBarbeariaServiceIncome } from '@/lib/business-scope-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Store } from 'lucide-react';
+import { useMobileNavigation } from '@/context/MobileNavigationContext';
 
 const CategoryEvolutionModal = dynamic(
   () => import('../CategoryEvolutionModal').then((m) => m.CategoryEvolutionModal),
@@ -70,6 +71,8 @@ export function GeneralDashboardDesktop({
 }: GeneralDashboardDesktopProps) {
   const { month, year } = useDateContext();
   const { hasBusiness, businessName } = useBusinessProfile();
+  const { showValues } = useMobileNavigation();
+  const formatHidden = (val: string) => (showValues ? val : '••••••');
   const [evolutionModalState, setEvolutionModalState] = useState<{
     type: 'income' | 'expense';
     refMonth: number;
@@ -101,21 +104,21 @@ export function GeneralDashboardDesktop({
       name: 'Saldo de Serviços',
       color: '#22c55e', // Verde esmeralda
       values: flowChart.activeStats.map((s) => s.serviceRevenue),
-      formatValue: (v) => formatCurrency(v),
+      formatValue: (v) => formatHidden(formatCurrency(v)),
     },
     {
       id: 'generalIncome',
       name: 'Saldo Geral (Entradas)',
       color: '#3b82f6', // Azul
       values: flowChart.activeStats.map((s) => s.generalIncome),
-      formatValue: (v) => formatCurrency(v),
+      formatValue: (v) => formatHidden(formatCurrency(v)),
     },
     {
       id: 'netBalance',
       name: 'Balanço Geral (Entrada - Saída)',
       color: '#f59e0b', // Âmbar
       values: flowChart.activeStats.map((s) => s.netBalance),
-      formatValue: (v) => formatCurrency(v),
+      formatValue: (v) => formatHidden(formatCurrency(v)),
     },
   ];
 
@@ -126,7 +129,7 @@ export function GeneralDashboardDesktop({
       name: 'Saldo em Contas',
       color: '#a855f7', // Roxo
       values: balanceChart.activeStats.map((s) => s.accountBalance),
-      formatValue: (v) => formatCurrency(v),
+      formatValue: (v) => formatHidden(formatCurrency(v)),
     },
   ];
 
@@ -188,7 +191,7 @@ export function GeneralDashboardDesktop({
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-zinc-100">{formatCurrency(totalBalance)}</h2>
+            <h2 className="text-2xl font-bold text-zinc-100">{formatHidden(formatCurrency(totalBalance))}</h2>
             <span className="text-[11px] text-zinc-500 mt-1 block">
               {accounts.length} {accounts.length === 1 ? 'conta cadastrada' : 'contas cadastradas'}
             </span>
@@ -207,7 +210,7 @@ export function GeneralDashboardDesktop({
           </div>
           <div>
             <div className="flex items-baseline justify-between gap-2">
-              <h2 className="text-2xl font-bold text-purple-300">{formatCurrency(totalCurrentInvoice)}</h2>
+              <h2 className="text-2xl font-bold text-purple-300">{formatHidden(formatCurrency(totalCurrentInvoice))}</h2>
               {cards[0] && (
                 (() => {
                   const primaryStatus = cards[0].invoice_status || getCardInvoiceStatus(cards[0]);
@@ -228,8 +231,8 @@ export function GeneralDashboardDesktop({
               )}
             </div>
             <div className="flex items-center justify-between text-[11px] text-zinc-400 mt-1">
-              <span>Usado: <strong className="text-zinc-200">{formatCurrency(totalCardUsed)}</strong></span>
-              <span>Disp: <strong className="text-emerald-400">{formatCurrency(totalCardAvailable)}</strong></span>
+              <span>Usado: <strong className="text-zinc-200">{formatHidden(formatCurrency(totalCardUsed))}</strong></span>
+              <span>Disp: <strong className="text-emerald-400">{formatHidden(formatCurrency(totalCardAvailable))}</strong></span>
             </div>
           </div>
         </div>
@@ -246,21 +249,21 @@ export function GeneralDashboardDesktop({
           </div>
           <div>
             <div className="flex items-baseline justify-between gap-1">
-              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(receivedIncome)}</h2>
+              <h2 className="text-2xl font-bold text-emerald-400">{formatHidden(formatCurrency(receivedIncome))}</h2>
               {pendingIncome > 0 && (
                 <span className="text-xs font-semibold text-zinc-400">
-                  Total: {formatCurrency(totalIncome)}
+                  Total: {formatHidden(formatCurrency(totalIncome))}
                 </span>
               )}
             </div>
             {hasBusiness && (
               <div className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px]">
                 <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                  <Store className="w-3 h-3" /> {businessName}: {formatCurrency(barberShopIncome)}
+                  <Store className="w-3 h-3" /> {businessName}: {formatHidden(formatCurrency(barberShopIncome))}
                 </span>
                 {otherIncome > 0 && (
                   <span className="text-zinc-400 font-medium">
-                    Outras: {formatCurrency(otherIncome)}
+                    Outras: {formatHidden(formatCurrency(otherIncome))}
                   </span>
                 )}
               </div>
@@ -279,12 +282,12 @@ export function GeneralDashboardDesktop({
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-rose-400">{formatCurrency(paidExpense)}</h2>
+            <h2 className="text-2xl font-bold text-rose-400">{formatHidden(formatCurrency(paidExpense))}</h2>
             <span className="text-[11px] text-zinc-400 mt-1 block">
               {loading
                 ? 'Calculando...'
                 : pendingExpense > 0
-                ? `+ ${formatCurrency(pendingExpense)} a pagar`
+                ? `+ ${formatHidden(formatCurrency(pendingExpense))} a pagar`
                 : 'Todas as contas pagas'}
             </span>
           </div>
