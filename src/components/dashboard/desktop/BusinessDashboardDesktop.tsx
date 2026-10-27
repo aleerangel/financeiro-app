@@ -285,89 +285,38 @@ export function BusinessDashboardDesktop({
         </Link>
       </div>
 
-      {/* Ponto de Equilíbrio (Break-Even) e Alerta de Estoque Baixo */}
-      {(Boolean(data.breakEven && (data.breakEven.totalExpenses > 0 || data.breakEven.revenue > 0)) ||
-        Boolean(data.lowStockProducts && data.lowStockProducts.length > 0)) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {data.breakEven && (data.breakEven.totalExpenses > 0 || data.breakEven.revenue > 0) && (
-            <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <h3 className="font-bold text-zinc-100 text-sm flex items-center gap-2">
-                    Ponto de Equilíbrio (Break-Even)
-                    <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                        data.breakEven.isReached
-                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                          : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                      }`}
-                    >
-                      {data.breakEven.isReached
-                        ? 'Custos Cobertos'
-                        : `${data.breakEven.progressPercent}% atingido`}
-                    </span>
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {data.breakEven.isReached
-                      ? `Superávit operacional de ${formatHidden(formatCurrency(data.breakEven.surplusAmount))} além de todas as despesas do mês.`
-                      : `Faltam ${formatHidden(formatCurrency(data.breakEven.remainingAmount))} (${
-                          data.breakEven.salesNeeded > 0
-                            ? `aprox. ${data.breakEven.salesNeeded} ${formatSalesUnit(data.breakEven.salesNeeded, salesLabel)}`
-                            : 'em vendas'
-                        }) para cobrir os custos totais do mês.`}
-                  </p>
-                </div>
-                <span className="text-sm font-extrabold text-zinc-200 shrink-0">
-                  {formatHidden(formatCurrency(data.breakEven.revenue))} /{' '}
-                  {formatHidden(formatCurrency(data.breakEven.totalExpenses))}
-                </span>
-              </div>
-              <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    data.breakEven.isReached ? 'bg-emerald-500' : 'bg-amber-400'
-                  }`}
-                  style={{ width: `${Math.min(100, Math.max(0, data.breakEven.progressPercent))}%` }}
-                />
-              </div>
+      {/* Alerta de Reposição de Estoque (Largura total quando houver itens em estoque baixo) */}
+      {data.lowStockProducts && data.lowStockProducts.length > 0 && (
+        <div className="p-4 sm:p-5 bg-zinc-900 border border-rose-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+              <ShoppingBag className="w-4 h-4" />
             </div>
-          )}
-
-          {data.lowStockProducts && data.lowStockProducts.length > 0 && (
-            <div className="p-4 sm:p-5 bg-zinc-900 border border-rose-500/30 rounded-2xl flex flex-col justify-between gap-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-zinc-100 text-sm">
-                      Alerta de Reposição de Estoque ({data.lowStockProducts.length})
-                    </h3>
-                    <p className="text-xs text-zinc-400">
-                      Produtos ou peças atingiram o estoque mínimo configurado
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  href="/produtos"
-                  className="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1 shrink-0"
-                >
-                  Repor <Eye className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {data.lowStockProducts.map((prod) => (
-                  <span
-                    key={prod.id}
-                    className="px-2.5 py-1 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 font-semibold"
-                  >
-                    {prod.name}: <strong>{prod.stock_quantity}</strong> (mín. {prod.min_stock})
-                  </span>
-                ))}
-              </div>
+            <div>
+              <h3 className="font-bold text-zinc-100 text-sm">
+                Alerta de Reposição de Estoque ({data.lowStockProducts.length})
+              </h3>
+              <p className="text-xs text-zinc-400">
+                Produtos ou peças atingiram o estoque mínimo configurado
+              </p>
             </div>
-          )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {data.lowStockProducts.map((prod) => (
+              <span
+                key={prod.id}
+                className="px-2.5 py-1 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 font-semibold"
+              >
+                {prod.name}: <strong>{prod.stock_quantity}</strong> (mín. {prod.min_stock})
+              </span>
+            ))}
+            <Link
+              href="/produtos"
+              className="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1 ml-2 shrink-0"
+            >
+              Repor <Eye className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       )}
 
@@ -555,6 +504,63 @@ export function BusinessDashboardDesktop({
           </div>
         </div>
       </div>
+
+      {/* Ponto de Equilíbrio (Break-Even) — Barra Horizontal de Largura Total */}
+      {data.breakEven && (data.breakEven.totalExpenses > 0 || data.breakEven.revenue > 0) && (
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="font-bold text-zinc-100 text-base flex items-center gap-2.5 flex-wrap">
+                Ponto de Equilíbrio (Break-Even)
+                <span
+                  className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                    data.breakEven.isReached
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                      : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                  }`}
+                >
+                  {data.breakEven.isReached
+                    ? 'Custos Cobertos'
+                    : `${data.breakEven.progressPercent}% atingido`}
+                </span>
+              </h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {data.breakEven.isReached
+                  ? `Superávit operacional de ${formatHidden(formatCurrency(data.breakEven.surplusAmount))} além de todos os custos do mês.`
+                  : `Faltam ${formatHidden(formatCurrency(data.breakEven.remainingAmount))} (${
+                      data.breakEven.salesNeeded > 0
+                        ? `aprox. ${data.breakEven.salesNeeded} ${formatSalesUnit(data.breakEven.salesNeeded, salesLabel)}`
+                        : 'em vendas'
+                    }) para cobrir os custos totais do mês.`}
+              </p>
+            </div>
+
+            <div className="text-left sm:text-right shrink-0">
+              <span className="text-base font-extrabold text-zinc-100 block">
+                {formatHidden(formatCurrency(data.breakEven.revenue))}{' '}
+                <span className="text-zinc-500 font-normal">/</span>{' '}
+                <span className="text-zinc-300">
+                  {formatHidden(formatCurrency(data.breakEven.totalExpenses))}
+                </span>
+              </span>
+              {data.breakEven.partsAndProductsCost > 0 && (
+                <span className="text-[11px] text-zinc-400 block mt-0.5">
+                  Fixos/Oper.: {formatHidden(formatCurrency(data.breakEven.fixedAndOperationalExpenses))} • Peças/Prod.: {formatHidden(formatCurrency(data.breakEven.partsAndProductsCost))}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                data.breakEven.isReached ? 'bg-emerald-500' : 'bg-amber-400'
+              }`}
+              style={{ width: `${Math.min(100, Math.max(0, data.breakEven.progressPercent))}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Controle de Gastos da Barbearia: Consumo por Cartão/Conta + Últimos Gastos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
