@@ -14,6 +14,8 @@ Documentação técnica da auditoria contábil, diagnóstico de confiabilidade d
    * Documento focado exclusivamente nos 16 bugs, divergências de cálculo, falhas de lógica, erros de migration/segurança e plano técnico de correção item a item (`INC-01` a `INC-16`).
 3. **[03. Engenharia de Requisitos & Plano Técnico — Saneamento Contábil e Evolução Analítica](./inteligencia-financeira/03-engenharia-requisitos-correcoes-inteligencia.md)**
    * Especificação consolidada das 10 Regras de Negócio (`RN-01` a `RN-10`) definidas na entrevista de requisitos para resolver todos os itens (`INC-01` a `INC-16`), incluindo unificação do faturamento em caixa, baixa bancária em fatura de cartão, data efetiva de pagamento no fluxo de caixa, estoque/custo de produtos, peças inclusas em serviços e Ponto de Equilíbrio.
+4. **[04. Pontos de Melhoria e Catálogo de Perguntas & Respostas Analíticas (Sem IA)](./inteligencia-financeira/04-pontos-de-melhoria-e-catalogo-de-respostas.md)**
+   * Mapeamento completo dos próximos pontos de melhoria funcionais, analíticos e técnicos extraídos da auditoria (sem Inteligência Artificial), divididos entre perguntas respondíveis com os dados atuais (`Bloco A`), melhorias que expandem o modelo de dados (`Bloco B`), melhorias técnicas (`Bloco C`) e matriz de decisões com possíveis respostas sugeridas.
 
 ---
 
