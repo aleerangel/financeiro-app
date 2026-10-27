@@ -43,4 +43,6 @@ Registros de engenharia de requisitos de funcionalidades anteriores implementada
 | [`requisitos_assinaturas_mensalidades_barbearia.md`](./historico-requisitos/requisitos_assinaturas_mensalidades_barbearia.md) | Clube de assinaturas e mensalidades recorrentes |
 | [`requisitos_gestao_avancada_mensalidades.md`](./historico-requisitos/requisitos_gestao_avancada_mensalidades.md) | Gestão avançada de faturas, MRR e inadimplência |
 | [`requisitos_refatoracao_visual_desktop.md`](./historico-requisitos/requisitos_refatoracao_visual_desktop.md) | Refatoração visual desktop (Sidebar recolhível e AppHeader) |
+| [`requisitos_notas_servico_venda_completas.md`](./historico-requisitos/requisitos_notas_servico_venda_completas.md) | Geração de notas de serviço e venda A4 com PDF e WhatsApp |
+| [`requisitos_padronizacao_desktop_mobile.md`](./historico-requisitos/requisitos_padronizacao_desktop_mobile.md) | Padronização desktop vs mobile, modo de privacidade e resumo analítico |
 

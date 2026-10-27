@@ -2,7 +2,7 @@
 
 🌐 **Acesse a aplicação online:** **[https://financeiro-app-rust.vercel.app/](https://financeiro-app-rust.vercel.app/)**
 
-Uma plataforma web e mobile moderna, ágil e completa para **controle financeiro pessoal e gestão operacional de profissionais autônomos e pequenos negócios**. Desenvolvida com **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, **Vitest** (111 testes unitários) e **Supabase (PostgreSQL)** com isolamento multi-tenant rigoroso via **Row Level Security (RLS)** e transações atômicas.
+Uma plataforma web e mobile moderna, ágil e completa para **controle financeiro pessoal e gestão operacional de profissionais autônomos e pequenos negócios**. Desenvolvida com **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, **Vitest** (143 testes unitários) e **Supabase (PostgreSQL)** com isolamento multi-tenant rigoroso via **Row Level Security (RLS)** e transações atômicas.
 
 ---
 
@@ -32,11 +32,15 @@ O projeto nasceu originalmente focado em barbearias (*BarberFin*) e evoluiu para
   * Nomenclatura dinâmica adaptada ao segmento (`sales_label`): *Atendimentos*, *Vendas*, *Consultas* ou *Ordens de Serviço*.
   * Formas de pagamento: Pix, Dinheiro, Débito, Crédito e **Venda a Prazo (Fiado)**.
   * Cadastro instantâneo de novos clientes sem sair do fluxo de venda.
+* **Notas de Serviço & Comprovantes de Venda A4**:
+  * Documento formal timbrado com identificação do emissor (CNPJ validado, nome fantasia e contatos), dados do cliente, itens com valores unitários e subtotais, resumo financeiro, histórico de amortizações de fiado e termos de garantia/observações.
+  * Download e impressão direta em PDF (gerado via `jsPDF` e `jspdf-autotable`).
+  * **Envio nativo do arquivo PDF diretamente no WhatsApp** via Web Share API nos smartphones e navegadores compatíveis (com fallback inteligente).
 * **Central de Fiados & Contas a Receber (`/fiados`)**:
   * Gestão de pendências com amortização proporcional e quitação automática via algoritmo FIFO.
   * Cobrança amigável via WhatsApp com dados Pix formatados e geração de recibos detalhados.
 * **Clube & Assinaturas Recorrentes (`/mensalidades`)**:
-  * Gestão de mensalistas com controle de status (Em Dia, A Vencer, Atrasado).
+  * Gestão independente de mensalistas com controle de status (Em Dia, A Vencer, Atrasado), MRR e adimplência.
   * Lembrete de vencimento e recibo de quitação em 1 clique via WhatsApp.
 * **Catálogo de Serviços & Estoque (`/produtos`)**:
   * Controle de preço de venda, custo de reposição e alertas de estoque baixo ($\le 2$).
@@ -58,6 +62,8 @@ O projeto nasceu originalmente focado em barbearias (*BarberFin*) e evoluiu para
 * **Alternador Direto [ Meu Negócio ] [ Visão Geral / Pessoal ]**:
   * **Visão Negócio**: Faturamento bruto, custos operacionais (fixos e variáveis), **Lucro Líquido Real**, **Ponto de Equilíbrio (*Break-even*)** e ticket médio.
   * **Visão Geral**: Saldo consolidado de todas as contas, faturas de cartão de crédito e patrimônio líquido.
+* **Modo de Privacidade Unificado**:
+  * Alternador de discrição com ícone de olho (`Eye`/`EyeOff`) integrado no cabeçalho do Desktop (`AppHeader`) e Mobile, sincronizado em tempo real e com persistência local para ocultar valores sensíveis (`••••••`) em locais públicos e gravações.
 * **Banner de Boas-Vindas & Painel "Meu Negócio"**:
   * Personalização do Nome Fantasia, segmento de atuação, ciclo padrão de retorno, dados Pix e opção de pausar/ativar o módulo de negócio.
 
@@ -87,12 +93,12 @@ O projeto nasceu originalmente focado em barbearias (*BarberFin*) e evoluiu para
 
 ### 7. 📱 Experiência Mobile Dedicada & Rápida
 * **Barra de Navegação Inferior Touch**:
-  1. **Início**: Saldos imediatos, métricas operacionais e alternador de contexto touch.
-  2. **Extrato**: Linha do tempo cronológica com confirmação de pagamento/recebimento com 1 toque.
+  1. **Início**: Saldos imediatos, métricas operacionais e alternador de contexto touch (sem flash de carregamento).
+  2. **Extrato**: Linha do tempo cronológica com confirmação de pagamento/recebimento com 1 toque e exportação PDF/Excel.
   3. **Botão Central Elevado (+)**: Gaveta touch com ações rápidas de balcão e despesas.
-  4. **Resumo**: Gráficos analíticos e divisão de faturamento.
-  5. **Mais**: Hub de módulos, CRM, estoque, WhatsApp e configurações do negócio.
-* **Modo Privacidade**: Ocultação rápida de saldos (`••••••`) para uso em ambientes públicos.
+  4. **Resumo**: Análise 100% de leitura com 2 abas estruturadas (Visão Geral e Negócio), desempenho comercial com gráfico de linhas, consumo por meio de pagamento, últimos gastos e ocultação inteligente de blocos vazios.
+  5. **Mais**: Hub de módulos, CRM de clientes, clube de assinaturas independente, estoque, WhatsApp e configurações do negócio.
+* **Modo Privacidade**: Ocultação rápida de saldos (`••••••`) sincronizada com o Desktop.
 
 ---
 
@@ -104,7 +110,7 @@ O projeto nasceu originalmente focado em barbearias (*BarberFin*) e evoluiu para
 | **React 19** | Biblioteca para interfaces reativas de alto desempenho |
 | **Tailwind CSS v4** | Estilização utility-first moderna com tema escuro e suporte PWA |
 | **Supabase (PostgreSQL)** | Banco de dados relacional com Row Level Security (RLS) e Stored Procedures atômicas |
-| **Vitest** | Suíte de testes automatizados com **111 testes unitários** passando |
+| **Vitest** | Suíte de testes automatizados com **143 testes unitários** passando (21 suítes) |
 | **Lucide React** | Conjunto de ícones vetoriais modernos |
 | **TypeScript** | Tipagem estática estrita de ponta a ponta |
 
