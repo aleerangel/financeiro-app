@@ -6,7 +6,7 @@
 ALTER TABLE public.products
     ADD COLUMN IF NOT EXISTS cost_price NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (cost_price >= 0),
     ADD COLUMN IF NOT EXISTS stock_quantity INTEGER NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS min_stock INTEGER NOT NULL DEFAULT 2 CHECK (min_stock >= 0);
+    ADD COLUMN IF NOT EXISTS min_stock INTEGER NOT NULL DEFAULT 0 CHECK (min_stock >= 0);
 
 -- 2. Tabela associativa de Peças/Produtos utilizados por Serviço (service_products)
 CREATE TABLE IF NOT EXISTS public.service_products (

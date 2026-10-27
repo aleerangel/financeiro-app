@@ -175,20 +175,18 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                     {Number(prod.cost_price || 0) > 0 && (
                       <span>Custo: {formatCurrency(Number(prod.cost_price))}</span>
                     )}
-                    {prod.stock_quantity !== null && prod.stock_quantity !== undefined && (
+                    {(Number(prod.stock_quantity || 0) > 0 || Number(prod.min_stock || 0) > 0) && (
                       <span
                         className={`px-2 py-0.5 rounded-full font-semibold ${
-                          prod.min_stock !== null &&
-                          prod.min_stock !== undefined &&
-                          Number(prod.stock_quantity) <= Number(prod.min_stock)
+                          Number(prod.min_stock || 0) > 0 &&
+                          Number(prod.stock_quantity || 0) <= Number(prod.min_stock)
                             ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
                             : 'bg-zinc-800 text-zinc-300'
                         }`}
                       >
-                        Estoque: {prod.stock_quantity}
-                        {prod.min_stock !== null &&
-                        prod.min_stock !== undefined &&
-                        Number(prod.stock_quantity) <= Number(prod.min_stock)
+                        Estoque: {prod.stock_quantity ?? 0}
+                        {Number(prod.min_stock || 0) > 0 &&
+                        Number(prod.stock_quantity || 0) <= Number(prod.min_stock)
                           ? ' (Baixo)'
                           : ''}
                       </span>

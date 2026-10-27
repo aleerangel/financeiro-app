@@ -93,7 +93,7 @@ export async function createProduct(input: CreateProductInput) {
     user_id: user.id,
     name: input.name.trim(),
     type: input.type || 'service',
-    default_price: input.default_price,
+    default_price: Number(input.default_price) || 0,
     icon: input.icon || 'scissors',
     color: input.color || '#3b82f6',
     active: true,
@@ -101,9 +101,15 @@ export async function createProduct(input: CreateProductInput) {
 
   const extendedPayload = {
     ...basePayload,
-    cost_price: isPhysicalProduct ? Number(input.cost_price || 0) : 0,
-    stock_quantity: isPhysicalProduct && input.stock_quantity !== undefined ? input.stock_quantity : null,
-    min_stock: isPhysicalProduct && input.min_stock !== undefined ? input.min_stock : null,
+    cost_price: isPhysicalProduct ? Math.max(0, Number(input.cost_price || 0)) : 0,
+    stock_quantity:
+      isPhysicalProduct && input.stock_quantity !== null && input.stock_quantity !== undefined
+        ? Math.round(Number(input.stock_quantity) || 0)
+        : 0,
+    min_stock:
+      isPhysicalProduct && input.min_stock !== null && input.min_stock !== undefined
+        ? Math.max(0, Math.round(Number(input.min_stock) || 0))
+        : 0,
   };
 
   let { data, error } = await supabase
@@ -112,7 +118,7 @@ export async function createProduct(input: CreateProductInput) {
     .select()
     .single();
 
-  if (error && (error.message?.includes('cost_price') || error.code === '42703')) {
+  if (error) {
     const fallback = await supabase
       .from('products')
       .insert(basePayload)
@@ -169,16 +175,22 @@ export async function updateProduct(
   const basePayload = {
     name: input.name.trim(),
     type: input.type,
-    default_price: input.default_price,
+    default_price: Number(input.default_price) || 0,
     icon: input.icon,
     color: input.color,
   };
 
   const extendedPayload = {
     ...basePayload,
-    cost_price: isPhysicalProduct ? Number(input.cost_price || 0) : 0,
-    stock_quantity: isPhysicalProduct && input.stock_quantity !== undefined ? input.stock_quantity : null,
-    min_stock: isPhysicalProduct && input.min_stock !== undefined ? input.min_stock : null,
+    cost_price: isPhysicalProduct ? Math.max(0, Number(input.cost_price || 0)) : 0,
+    stock_quantity:
+      isPhysicalProduct && input.stock_quantity !== null && input.stock_quantity !== undefined
+        ? Math.round(Number(input.stock_quantity) || 0)
+        : 0,
+    min_stock:
+      isPhysicalProduct && input.min_stock !== null && input.min_stock !== undefined
+        ? Math.max(0, Math.round(Number(input.min_stock) || 0))
+        : 0,
   };
 
   let { error } = await supabase
@@ -187,7 +199,7 @@ export async function updateProduct(
     .eq('id', id)
     .eq('user_id', user.id);
 
-  if (error && (error.message?.includes('cost_price') || error.code === '42703')) {
+  if (error) {
     const fallback = await supabase
       .from('products')
       .update(basePayload)

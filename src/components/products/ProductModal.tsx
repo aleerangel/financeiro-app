@@ -66,14 +66,16 @@ function ProductModalDialog({
       ? String(productToEdit.cost_price)
       : ''
   );
+  const hasExistingStock =
+    Number(productToEdit?.stock_quantity || 0) > 0 || Number(productToEdit?.min_stock || 0) > 0;
   const [stockQuantity, setStockQuantity] = useState(
-    productToEdit?.stock_quantity !== null && productToEdit?.stock_quantity !== undefined
+    hasExistingStock && productToEdit?.stock_quantity !== undefined
       ? String(productToEdit.stock_quantity)
       : ''
   );
   const [minStock, setMinStock] = useState(
-    productToEdit?.min_stock !== null && productToEdit?.min_stock !== undefined
-      ? String(productToEdit.min_stock)
+    hasExistingStock && Number(productToEdit?.min_stock || 0) > 0
+      ? String(productToEdit?.min_stock)
       : ''
   );
   const [serviceProducts, setServiceProducts] = useState<ServiceProductInput[]>(
