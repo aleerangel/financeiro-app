@@ -52,7 +52,7 @@ const MONTH_SHORT_NAMES = [
 
 const EMPTY_BUSINESS_STATS: BusinessPeriodStat[] = [];
 
-type SummarySubTab = 'overview' | 'business' | 'expenses';
+type SummarySubTab = 'overview' | 'business';
 
 interface MobileSummaryViewProps {
   businessData: BusinessDashboardData;
@@ -520,23 +520,23 @@ export function MobileSummaryView({
   return (
     <div className="space-y-4 pb-20 select-none">
       {/* ============================================================== */}
-      {/* 1. ABAS SECUNDÁRIAS DO RESUMO                                  */}
+      {/* 1. ABAS SECUNDÁRIAS DO RESUMO (SE HOUVER NEGÓCIO CADASTRADO)  */}
       {/* ============================================================== */}
-      <div className="flex items-center gap-1 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 shrink-0">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('overview')}
-          className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-            activeSubTab === 'overview'
-              ? 'bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <BarChart2 className="w-3.5 h-3.5 text-blue-400" />
-          <span>Visão Geral</span>
-        </button>
+      {hasBusiness && (
+        <div className="flex items-center gap-1 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('overview')}
+            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+              activeSubTab === 'overview'
+                ? 'bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <BarChart2 className="w-3.5 h-3.5 text-blue-400" />
+            <span>Visão Geral</span>
+          </button>
 
-        {hasBusiness && (
           <button
             type="button"
             onClick={() => setActiveSubTab('business')}
@@ -549,21 +549,8 @@ export function MobileSummaryView({
             <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 text-emerald-400" />
             <span className="truncate">{businessName}</span>
           </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('expenses')}
-          className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-            activeSubTab === 'expenses'
-              ? 'bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <CreditCard className="w-3.5 h-3.5 text-amber-400" />
-          <span>Gastos & Meios</span>
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* 2. SELETOR DE PERÍODO (COMPARTILHADO)                          */}
@@ -895,64 +882,66 @@ export function MobileSummaryView({
             />
           </div>
 
-          {/* Saldo das Contas Bancárias (Lista Analítica) */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <Wallet className="w-4 h-4" />
+          {/* Saldo das Contas Bancárias (Lista Analítica - Apenas se houver contas) */}
+          {accounts && accounts.length > 0 && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-xs font-bold text-zinc-100 uppercase tracking-wider">
+                    Minhas Contas Bancárias
+                  </h3>
                 </div>
-                <h3 className="text-xs font-bold text-zinc-100 uppercase tracking-wider">
-                  Minhas Contas Bancárias
-                </h3>
+                <span className="text-xs font-extrabold text-emerald-400">
+                  Total: {formatHidden(formatCurrency(totalAccountsBalance))}
+                </span>
               </div>
-              <span className="text-xs font-extrabold text-emerald-400">
-                Total: {formatHidden(formatCurrency(totalAccountsBalance))}
-              </span>
-            </div>
 
-            <div className="space-y-2">
-              {accounts.map((acc) => (
-                <div
-                  key={acc.id}
-                  className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0"
-                      style={{ backgroundColor: acc.color || '#10b981' }}
-                    >
-                      {acc.name.charAt(0).toUpperCase()}
+              <div className="space-y-2">
+                {accounts.map((acc) => (
+                  <div
+                    key={acc.id}
+                    className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0"
+                        style={{ backgroundColor: acc.color || '#10b981' }}
+                      >
+                        {acc.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold text-zinc-100 text-xs block truncate">
+                          {acc.name}
+                        </span>
+                        <span className="text-[10px] text-zinc-400 block">
+                          {acc.type === 'checking'
+                            ? 'Conta Corrente'
+                            : acc.type === 'savings'
+                            ? 'Poupança'
+                            : acc.type === 'investment'
+                            ? 'Investimento'
+                            : 'Carteira / Dinheiro'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <span className="font-bold text-zinc-100 text-xs block truncate">
-                        {acc.name}
-                      </span>
-                      <span className="text-[10px] text-zinc-400 block">
-                        {acc.type === 'checking'
-                          ? 'Conta Corrente'
-                          : acc.type === 'savings'
-                          ? 'Poupança'
-                          : acc.type === 'investment'
-                          ? 'Investimento'
-                          : 'Carteira / Dinheiro'}
+
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`text-xs font-extrabold block ${
+                          Number(acc.current_balance) >= 0 ? 'text-zinc-100' : 'text-rose-400'
+                        }`}
+                      >
+                        {formatHidden(formatCurrency(acc.current_balance))}
                       </span>
                     </div>
                   </div>
-
-                  <div className="text-right shrink-0">
-                    <span
-                      className={`text-xs font-extrabold block ${
-                        Number(acc.current_balance) >= 0 ? 'text-zinc-100' : 'text-rose-400'
-                      }`}
-                    >
-                      {formatHidden(formatCurrency(acc.current_balance))}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Comparativo de Receitas e Balanço Geral */}
           <MonthlyBarChart
@@ -964,6 +953,18 @@ export function MobileSummaryView({
             hideMonthSelector={true}
             periodLabel={activePeriodLabel}
           />
+
+          {/* Gastos por Categoria (Gráfico de Rosca - Oculta se não houver gastos) */}
+          {totalExpense > 0 && (
+            <CategoryDonutChart
+              transactions={periodTransactions}
+              expenseEvolution={generalData?.expenseCategoryEvolution || []}
+              currentMonth={flowChart.month}
+              year={flowChart.year}
+              hideMonthSelector={true}
+              periodLabel={activePeriodLabel}
+            />
+          )}
         </div>
       )}
 
@@ -1014,7 +1015,7 @@ export function MobileSummaryView({
             />
           </div>
 
-          {/* Divisão Serviços vs Produtos */}
+          {/* Divisão Serviços vs Produtos (Apenas se houver divisão mista) */}
           {isMixedRevenueSplit(revenueSplit) && (
             <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5">
               <div className="flex items-center justify-between text-xs text-zinc-400">
@@ -1056,42 +1057,44 @@ export function MobileSummaryView({
             </div>
           )}
 
-          {/* Dias Mais Fortes */}
-          <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-            <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                {flowChart.period === 'weekly' ? 'Receita por Dia da Semana' : 'Dias Mais Fortes no Período'}
-              </span>
-              <span className="text-[10px] text-zinc-400 uppercase">Receita no dia</span>
-            </div>
+          {/* Dias Mais Fortes (Apenas se houver faturamento no período) */}
+          {strongDaysStats.some((d) => d.revenue > 0) && (
+            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                  {flowChart.period === 'weekly' ? 'Receita por Dia da Semana' : 'Dias Mais Fortes no Período'}
+                </span>
+                <span className="text-[10px] text-zinc-400 uppercase">Receita no dia</span>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              {strongDaysStats.slice(0, 4).map((day, idx) => (
-                <div
-                  key={day.code}
-                  className="p-2 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between"
-                >
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black text-zinc-200">{day.fullName}</span>
-                      <span className="text-[10px] font-bold text-emerald-400">
-                        {day.percentage}%
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {strongDaysStats.slice(0, 4).map((day, idx) => (
+                  <div
+                    key={day.code}
+                    className="p-2 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-zinc-200">{day.fullName}</span>
+                        <span className="text-[10px] font-bold text-emerald-400">
+                          {day.percentage}%
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-bold text-zinc-400">
+                        {formatHidden(formatCurrency(day.revenue))}
                       </span>
                     </div>
-                    <span className="text-[11px] font-bold text-zinc-400">
-                      {formatHidden(formatCurrency(day.revenue))}
-                    </span>
+                    <div className="w-7 h-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[10px] font-black text-zinc-400">
+                      #{idx + 1}
+                    </div>
                   </div>
-                  <div className="w-7 h-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[10px] font-black text-zinc-400">
-                    #{idx + 1}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Top Clientes Mais Assíduos */}
+          {/* Top Clientes Mais Assíduos (Apenas se houver clientes) */}
           {businessData.topClients && businessData.topClients.length > 0 && (
             <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
@@ -1140,26 +1143,127 @@ export function MobileSummaryView({
             </div>
           )}
 
-          {/* Lançamentos Recentes do Negócio */}
-          <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-            <div className="flex items-center justify-between">
+          {/* Consumo por Meio de Pagamento (Contas & Cartões - Apenas se houver registros) */}
+          {businessData.expensesBySource && businessData.expensesBySource.length > 0 && (
+            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
               <div>
                 <h3 className="font-bold text-zinc-100 text-sm">
-                  Lançamentos Recentes
+                  Consumo por Meio de Pagamento
                 </h3>
                 <p className="text-[11px] text-zinc-400">
-                  Últimos atendimentos e vendas concluídos
+                  Quanto os gastos de {businessName} utilizaram de cada meio no período
                 </p>
               </div>
-              <Link
-                href="/vendas"
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 shrink-0"
-              >
-                Vendas <Eye className="w-3.5 h-3.5" />
-              </Link>
-            </div>
 
-            {businessData.recentSales && businessData.recentSales.length > 0 ? (
+              <div className="space-y-2.5">
+                {businessData.expensesBySource.map((src) => (
+                  <div
+                    key={src.id}
+                    className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between gap-2.5"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
+                        style={{ backgroundColor: src.color || '#f59e0b' }}
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-zinc-100 truncate">
+                            {src.name}
+                          </span>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300">
+                            {src.type === 'card' ? 'Cartão' : 'Conta'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-zinc-400 block mt-0.5">
+                          Pago: {formatHidden(formatCurrency(src.paidAmount))}
+                          {src.pendingAmount > 0
+                            ? ` • Fatura: ${formatHidden(formatCurrency(src.pendingAmount))}`
+                            : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="text-xs font-extrabold text-rose-400 shrink-0">
+                      - {formatHidden(formatCurrency(src.totalAmount))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Últimos Gastos do Negócio (Apenas se houver registros) */}
+          {businessData.recentExpenses && businessData.recentExpenses.length > 0 && (
+            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-zinc-100 text-sm">
+                    Últimos Gastos do Negócio
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Insumos, materiais e custos comerciais recentes
+                  </p>
+                </div>
+                <Link
+                  href="/transacoes"
+                  className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 shrink-0"
+                >
+                  Extrato <Eye className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                {businessData.recentExpenses.slice(0, 5).map((exp) => (
+                  <div
+                    key={exp.id}
+                    className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <span className="font-bold text-zinc-100 text-xs block truncate">
+                        {exp.description}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 block">
+                        {formatDate(exp.due_date)} • {exp.category_name} • {exp.source_name}
+                      </span>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-extrabold text-rose-400 block">
+                        - {formatHidden(formatCurrency(exp.amount))}
+                      </span>
+                      <span className={`text-[9px] font-semibold ${exp.is_paid ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {exp.is_paid ? 'Pago' : 'Pendente'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Lançamentos Recentes do Negócio (Apenas se houver registros) */}
+          {businessData.recentSales && businessData.recentSales.length > 0 && (
+            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-zinc-100 text-sm">
+                    Lançamentos Recentes
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Últimos atendimentos e vendas concluídos
+                  </p>
+                </div>
+                <Link
+                  href="/vendas"
+                  className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 shrink-0"
+                >
+                  Vendas <Eye className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
               <div className="space-y-2">
                 {businessData.recentSales.slice(0, 5).map((sale) => (
                   <div
@@ -1181,142 +1285,8 @@ export function MobileSummaryView({
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="py-6 text-center text-xs text-zinc-500">
-                Nenhum lançamento recente registrado.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================== */}
-      {/* SUBABA 3: GASTOS & MEIOS                                       */}
-      {/* ============================================================== */}
-      {activeSubTab === 'expenses' && (
-        <div className="space-y-4">
-          {/* Consumo por Meio de Pagamento (Contas & Cartões) */}
-          {hasBusiness && (
-            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-              <div>
-                <h3 className="font-bold text-zinc-100 text-sm">
-                  Consumo por Meio de Pagamento
-                </h3>
-                <p className="text-[11px] text-zinc-400">
-                  Quanto os gastos de {businessName} utilizaram de cada meio no período
-                </p>
-              </div>
-
-              {businessData.expensesBySource && businessData.expensesBySource.length > 0 ? (
-                <div className="space-y-2.5">
-                  {businessData.expensesBySource.map((src) => (
-                    <div
-                      key={src.id}
-                      className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between gap-2.5"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
-                          style={{ backgroundColor: src.color || '#f59e0b' }}
-                        >
-                          <CreditCard className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-zinc-100 truncate">
-                              {src.name}
-                            </span>
-                            <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300">
-                              {src.type === 'card' ? 'Cartão' : 'Conta'}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400 block mt-0.5">
-                            Pago: {formatHidden(formatCurrency(src.paidAmount))}
-                            {src.pendingAmount > 0
-                              ? ` • Fatura: ${formatHidden(formatCurrency(src.pendingAmount))}`
-                              : ''}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span className="text-xs font-extrabold text-rose-400 shrink-0">
-                        - {formatHidden(formatCurrency(src.totalAmount))}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-6 text-center text-xs text-zinc-500">
-                  Nenhum gasto do negócio registrado com contas/cartões no período.
-                </div>
-              )}
             </div>
           )}
-
-          {/* Últimos Gastos do Negócio */}
-          {hasBusiness && (
-            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-zinc-100 text-sm">
-                    Últimos Gastos do Negócio
-                  </h3>
-                  <p className="text-[11px] text-zinc-400">
-                    Insumos, materiais e custos comerciais recentes
-                  </p>
-                </div>
-                <Link
-                  href="/transacoes"
-                  className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 shrink-0"
-                >
-                  Extrato <Eye className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              {businessData.recentExpenses && businessData.recentExpenses.length > 0 ? (
-                <div className="space-y-2">
-                  {businessData.recentExpenses.slice(0, 5).map((exp) => (
-                    <div
-                      key={exp.id}
-                      className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl flex items-center justify-between gap-2"
-                    >
-                      <div className="min-w-0">
-                        <span className="font-bold text-zinc-100 text-xs block truncate">
-                          {exp.description}
-                        </span>
-                        <span className="text-[10px] text-zinc-400 block">
-                          {formatDate(exp.due_date)} • {exp.category_name} • {exp.source_name}
-                        </span>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <span className="text-xs font-extrabold text-rose-400 block">
-                          - {formatHidden(formatCurrency(exp.amount))}
-                        </span>
-                        <span className={`text-[9px] font-semibold ${exp.is_paid ? 'text-emerald-400' : 'text-amber-400'}`}>
-                          {exp.is_paid ? 'Pago' : 'Pendente'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-6 text-center text-xs text-zinc-500">
-                  Nenhum gasto comercial recente.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Gastos por Categoria (Gráfico de Rosca) */}
-          <CategoryDonutChart
-            transactions={periodTransactions}
-            expenseEvolution={generalData?.expenseCategoryEvolution || []}
-            currentMonth={flowChart.month}
-            year={flowChart.year}
-            hideMonthSelector={true}
-            periodLabel={activePeriodLabel}
-          />
         </div>
       )}
     </div>
