@@ -29,7 +29,7 @@ export async function getProducts(includeInactive: boolean = false): Promise<Pro
 
   let query = supabase
     .from('products')
-    .select('*, service_products(*, product:products!service_products_product_id_fkey(id, name, cost_price, stock_quantity, min_stock))')
+    .select('*, service_products:service_products!service_products_service_id_fkey(*, product:products!service_products_product_id_fkey(id, name, cost_price, stock_quantity, min_stock))')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
 

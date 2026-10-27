@@ -242,12 +242,12 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     transaction_id?: string | null;
     account?: { name?: string } | null;
     items?: {
+      product_id?: string | null;
       product_name: string;
       quantity: number;
       total_price: number;
       unit_cost?: number;
       is_service_component?: boolean;
-      product?: { type?: string; cost_price?: number } | null;
     }[];
   };
 
@@ -295,14 +295,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
           sale_date,
           transaction_id,
           account:accounts(name),
-          items:sale_items(
-            product_name,
-            quantity,
-            total_price,
-            unit_cost,
-            is_service_component,
-            product:products(type, cost_price)
-          )
+          items:sale_items(*)
         `)
         .eq('user_id', user.id)
         .gte('sale_date', bizSalesStartIso)
@@ -359,16 +352,14 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       .in('status', ['pending', 'partially_paid']),
     supabase
       .from('recurrences')
-      .select('id, amount, frequency, active, scope, type')
+      .select('*')
       .eq('user_id', user.id)
       .eq('active', true)
       .eq('type', 'expense'),
     supabase
       .from('products')
-      .select('id, name, type, cost_price, stock_quantity, min_stock, active')
-      .eq('user_id', user.id)
-      .eq('active', true)
-      .eq('type', 'product'),
+      .select('*')
+      .eq('user_id', user.id),
     supabase
       .from('business_profiles')
       .select('default_cycle_days')
@@ -404,11 +395,34 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     (t) => t.type === 'income' && isBusinessTransaction(t)
   );
 
+  // Mapa de produtos do catálogo para resolver tipo ('service' | 'product') e custo sem ambiguidade de FK no PostgREST
+  type CatalogProductRow = {
+    id: string;
+    name: string;
+    type?: string;
+    cost_price?: number;
+    stock_quantity?: number | null;
+    min_stock?: number | null;
+    active?: boolean;
+  };
+  const catalogProducts = (productsCatalogData as CatalogProductRow[] | null) || [];
+  const productByIdMap = new Map<string, CatalogProductRow>();
+  const productByNameMap = new Map<string, CatalogProductRow>();
+  for (const p of catalogProducts) {
+    if (p.id) productByIdMap.set(p.id, p);
+    if (p.name) productByNameMap.set(p.name.trim().toLowerCase(), p);
+  }
+
   // Coleta IDs de transações geradas automaticamente por vendas, amortizações e mensalidades do clube
   // para evitar dupla contagem ao somar receitas manuais do negócio (RN-02 / INC-02)
   const linkedTxIds = new Set<string>();
+  const unlinkedSaleDateAmounts = new Set<string>();
   for (const s of allSales) {
-    if (s.transaction_id) linkedTxIds.add(s.transaction_id);
+    if (s.transaction_id) {
+      linkedTxIds.add(s.transaction_id);
+    } else if (s.payment_method !== 'on_credit' && s.sale_date) {
+      unlinkedSaleDateAmounts.add(`${getZonedYMD(s.sale_date)}:${Number(s.total_amount).toFixed(2)}`);
+    }
   }
   for (const a of amortizationsData || []) {
     if (a.transaction_id) linkedTxIds.add(a.transaction_id);
@@ -468,19 +482,19 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   for (const tx of businessIncomes) {
     if (!tx.is_paid) continue;
     if (linkedTxIds.has(tx.id)) continue;
+    const effectiveDate = tx.paid_at ? getZonedYMD(tx.paid_at) : tx.due_date || tx.transaction_date;
+    if (!effectiveDate) continue;
+    const amt = Number(tx.amount) || 0;
     const descLower = (tx.description || '').trim().toLowerCase();
+    // Se for uma venda legada sem transaction_id vinculado mas já existente em sales na mesma data/valor, evita duplicar
     if (
-      descLower.startsWith('atendimento:') ||
-      descLower.startsWith('entrada atendimento:') ||
-      descLower.startsWith('amortização:') ||
-      descLower.startsWith('mensalidade:')
+      descLower.startsWith('atendimento:') &&
+      unlinkedSaleDateAmounts.has(`${effectiveDate}:${amt.toFixed(2)}`)
     ) {
       continue;
     }
-    const effectiveDate = tx.paid_at ? getZonedYMD(tx.paid_at) : tx.due_date || tx.transaction_date;
-    if (!effectiveDate) continue;
     const dayRecord = salesByDate.get(effectiveDate) || { revenue: 0, salesCount: 0 };
-    dayRecord.revenue += Number(tx.amount) || 0;
+    dayRecord.revenue += amt;
     salesByDate.set(effectiveDate, dayRecord);
   }
 
@@ -643,10 +657,13 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
     if (s.items && Array.isArray(s.items)) {
       for (const item of s.items) {
         const qty = Number(item.quantity) || 1;
+        const catalogProd =
+          (item.product_id ? productByIdMap.get(item.product_id) : undefined) ||
+          productByNameMap.get((item.product_name || '').trim().toLowerCase());
         const unitCost =
           Number(item.unit_cost) > 0
             ? Number(item.unit_cost)
-            : Number(item.product?.cost_price) || 0;
+            : Number(catalogProd?.cost_price) || 0;
         partsAndProductsCost += qty * unitCost;
       }
     }
@@ -763,21 +780,25 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   };
 
   // Alertas de Produtos com Estoque Baixo (RN-10 / INC-16)
-  const lowStockProducts: LowStockProductAlert[] = ((productsCatalogData as {
-    id: string;
-    name: string;
-    cost_price?: number;
-    stock_quantity?: number;
-    min_stock?: number;
-  }[] | null) || [])
-    .filter((p) => (Number(p.stock_quantity) || 0) <= (Number(p.min_stock ?? 2)))
+  const lowStockProducts: LowStockProductAlert[] = catalogProducts
+    .filter(
+      (p) =>
+        p.active !== false &&
+        p.type === 'product' &&
+        p.stock_quantity !== null &&
+        p.stock_quantity !== undefined &&
+        p.min_stock !== null &&
+        p.min_stock !== undefined &&
+        Number(p.min_stock) > 0 &&
+        Number(p.stock_quantity) <= Number(p.min_stock)
+    )
     .map((p) => ({
       id: p.id,
       name: p.name,
       stockQuantity: Number(p.stock_quantity) || 0,
-      minStock: Number(p.min_stock ?? 2),
+      minStock: Number(p.min_stock) || 0,
       stock_quantity: Number(p.stock_quantity) || 0,
-      min_stock: Number(p.min_stock ?? 2),
+      min_stock: Number(p.min_stock) || 0,
       costPrice: Number(p.cost_price) || 0,
     }))
     .sort((a, b) => a.stockQuantity - b.stockQuantity);
@@ -912,14 +933,6 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   let serviceCount = 0;
   let productCount = 0;
 
-  type SaleItemWithProduct = {
-    product_name: string;
-    quantity: number;
-    total_price: number;
-    is_service_component?: boolean;
-    product?: { type?: string } | null;
-  };
-
   for (const s of selectedMonthSales) {
     const rawName = (s.client_name || '').trim();
     const lowerName = rawName.toLowerCase();
@@ -944,13 +957,16 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       clientAggMap.set(clientKey, curClient);
     }
 
-    const items = (s.items as unknown as SaleItemWithProduct[]) || [];
+    const items = s.items || [];
     if (items.length > 0) {
       for (const item of items) {
         if (item.is_service_component) continue;
         const itemTotal = Number(item.total_price) || 0;
         const itemQty = Number(item.quantity) || 1;
-        const isProduct = item.product?.type === 'product';
+        const catalogProd =
+          (item.product_id ? productByIdMap.get(item.product_id) : undefined) ||
+          productByNameMap.get((item.product_name || '').trim().toLowerCase());
+        const isProduct = catalogProd?.type === 'product';
 
         if (isProduct) {
           productRevenue += itemTotal;
