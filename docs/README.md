@@ -4,6 +4,15 @@ Este diretório contém o registro histórico e as especificações formais de e
 
 ---
 
+## 🧠 Inteligência Financeira & Evolução Analítica
+
+Documentação técnica da auditoria contábil, diagnóstico de confiabilidade dos cálculos e arquitetura para evolução analítica e Inteligência Artificial:
+
+1. **[01. Auditoria e Diagnóstico da Inteligência Financeira](./inteligencia-financeira/01-auditoria-diagnostico-inteligencia-financeira.md)**
+   * Mapeamento completo das 17 tabelas, 5 RPCs SQL, 13 Server Actions, fórmulas de todos os indicadores, 14 inconsistências/divergências contábeis identificadas no código, catálogo de perguntas respondidas/viáveis/dependentes de novos dados, arquitetura de integração com IA (*Tool Calling* determinístico sobre RLS) e matriz de testes.
+
+---
+
 ## 🚀 Evolução SaaS Canário (Plataforma Multi-Segmento)
 
 Documentação gerada nas fases da evolução do sistema para atendimento a múltiplos ramos profissionais:

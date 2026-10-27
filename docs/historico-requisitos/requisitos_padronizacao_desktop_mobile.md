@@ -73,3 +73,4 @@ Com o crescimento do sistema e a especialização das interfaces web desktop e m
 | **Separação Clientes vs Clube de Assinaturas** | ✅ Rotas separadas | ✅ Rotas separadas |
 | **Exportação de Relatórios (PDF / Excel / CSV)** | ✅ No topo das telas | ✅ No topo das telas |
 | **Emissão de Notas em PDF e WhatsApp** | ✅ Modal com PDF e WhatsApp | ✅ Modal com PDF e WhatsApp |
+

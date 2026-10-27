@@ -69,3 +69,4 @@ Além disso, era essencial permitir o **envio direto do arquivo PDF pelo WhatsAp
 | [`src/components/sales/SaleReceiptModal.tsx`](file:///home/alexandrerangel/Projetos/financeiro-app/src/components/sales/SaleReceiptModal.tsx) | Interface modal com visualização da folha A4, ações de baixar PDF, imprimir e compartilhar no WhatsApp |
 | [`src/components/sales/SalesView.tsx`](file:///home/alexandrerangel/Projetos/financeiro-app/src/components/sales/SalesView.tsx) | Botão de ação rápida (`ReceiptText`) em cada item do histórico de vendas e atendimentos |
 | [`src/components/clients/ClientHistoryModal.tsx`](file:///home/alexandrerangel/Projetos/financeiro-app/src/components/clients/ClientHistoryModal.tsx) | Emissão direta da nota a partir da ficha e histórico do cliente no CRM |
+
