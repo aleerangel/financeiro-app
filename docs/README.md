@@ -10,6 +10,10 @@ Documentação técnica da auditoria contábil, diagnóstico de confiabilidade d
 
 1. **[01. Auditoria e Diagnóstico da Inteligência Financeira](./inteligencia-financeira/01-auditoria-diagnostico-inteligencia-financeira.md)**
    * Mapeamento completo das 17 tabelas, 5 RPCs SQL, 13 Server Actions, fórmulas de todos os indicadores, 14 inconsistências/divergências contábeis identificadas no código, catálogo de perguntas respondidas/viáveis/dependentes de novos dados, arquitetura de integração com IA (*Tool Calling* determinístico sobre RLS) e matriz de testes.
+2. **[02. Catálogo de Inconsistências, Falhas, Erros e Correções Necessárias](./inteligencia-financeira/02-inconsistencias-falhas-e-correcoes.md)**
+   * Documento focado exclusivamente nos 16 bugs, divergências de cálculo, falhas de lógica, erros de migration/segurança e plano técnico de correção item a item (`INC-01` a `INC-16`).
+3. **[03. Engenharia de Requisitos & Plano Técnico — Saneamento Contábil e Evolução Analítica](./inteligencia-financeira/03-engenharia-requisitos-correcoes-inteligencia.md)**
+   * Especificação consolidada das 10 Regras de Negócio (`RN-01` a `RN-10`) definidas na entrevista de requisitos para resolver todos os itens (`INC-01` a `INC-16`), incluindo unificação do faturamento em caixa, baixa bancária em fatura de cartão, data efetiva de pagamento no fluxo de caixa, estoque/custo de produtos, peças inclusas em serviços e Ponto de Equilíbrio.
 
 ---
 
