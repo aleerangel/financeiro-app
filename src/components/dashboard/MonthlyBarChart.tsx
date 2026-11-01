@@ -378,10 +378,10 @@ export function MonthlyBarChart({
 
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
               <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                Receitas ({MONTH_SHORT_NAMES[refMonth]})
+                Recebido ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
               </span>
-              <span className="text-sm font-extrabold text-zinc-100">
-                {formatCurrency(totalIncome)}
+              <span className="text-sm font-extrabold text-emerald-400">
+                {formatCurrency(receivedIncome)}
               </span>
             </div>
           </div>
