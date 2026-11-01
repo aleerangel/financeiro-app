@@ -313,13 +313,17 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
         .order('amortized_at', { ascending: false })
         .range(from, to) as unknown as PromiseLike<{ data: RawAmortizationRow[] | null; error: { message: string } | null }>
     ),
-    supabase
-      .from('subscription_invoices')
-      .select('id, amount, paid_at, due_date, transaction_id')
-      .eq('user_id', user.id)
-      .eq('status', 'paid')
-      .gte('due_date', baseEarliestDate)
-      .lte('due_date', latestDate),
+    fetchAllPages<RawPaidInvoiceRow>((from, to) =>
+      supabase
+        .from('subscription_invoices')
+        .select('id, amount, paid_at, due_date, transaction_id')
+        .eq('user_id', user.id)
+        .eq('status', 'paid')
+        .or(
+          `and(paid_at.gte.${baseEarliestDate},paid_at.lte.${latestDate}),and(paid_at.is.null,due_date.gte.${baseEarliestDate},due_date.lte.${latestDate})`
+        )
+        .range(from, to) as unknown as PromiseLike<{ data: RawPaidInvoiceRow[] | null; error: { message: string } | null }>
+    ),
     fetchAllPages<Transaction>((from, to) =>
       supabase
         .from('transactions')
@@ -330,8 +334,9 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
           credit_card:credit_cards(id, name, color)
         `)
         .eq('user_id', user.id)
-        .gte('due_date', baseEarliestDate)
-        .lte('due_date', latestDate)
+        .or(
+          `and(is_paid.eq.true,paid_at.gte.${baseEarliestDate},paid_at.lte.${latestDate}),and(is_paid.eq.true,paid_at.is.null,due_date.gte.${baseEarliestDate},due_date.lte.${latestDate}),and(is_paid.eq.false,due_date.gte.${baseEarliestDate},due_date.lte.${latestDate})`
+        )
         .order('due_date', { ascending: false })
         .range(from, to) as unknown as PromiseLike<{ data: Transaction[] | null; error: { message: string } | null }>
     ),
@@ -1115,8 +1120,9 @@ export async function getGeneralDashboardData(
         .from('transactions')
         .select('id, amount, type, is_paid, paid_at, due_date, transaction_date, account_id, description, notes, scope, category:categories(id, name, color)')
         .eq('user_id', user.id)
-        .gte('due_date', queryStartDate)
-        .lte('due_date', queryEndDate)
+        .or(
+          `and(is_paid.eq.true,paid_at.gte.${salesQueryStart},paid_at.lte.${salesQueryEnd}),and(is_paid.eq.true,paid_at.is.null,due_date.gte.${queryStartDate},due_date.lte.${queryEndDate}),and(is_paid.eq.false,due_date.gte.${queryStartDate},due_date.lte.${queryEndDate})`
+        )
         .range(from, to) as unknown as PromiseLike<{ data: GeneralTxRow[] | null; error: { message: string } | null }>
     ),
     fetchAllPages<{ total_amount: number; sale_date: string; payment_method: string }>((from, to) =>
@@ -1137,13 +1143,17 @@ export async function getGeneralDashboardData(
         .lte('amortized_at', salesQueryEnd)
         .range(from, to) as unknown as PromiseLike<{ data: { amount: number; amortized_at: string }[] | null; error: { message: string } | null }>
     ),
-    supabase
-      .from('subscription_invoices')
-      .select('amount, paid_at, due_date')
-      .eq('user_id', user.id)
-      .eq('status', 'paid')
-      .gte('due_date', queryStartDate)
-      .lte('due_date', queryEndDate),
+    fetchAllPages<{ amount: number; paid_at: string | null; due_date: string }>((from, to) =>
+      supabase
+        .from('subscription_invoices')
+        .select('amount, paid_at, due_date')
+        .eq('user_id', user.id)
+        .eq('status', 'paid')
+        .or(
+          `and(paid_at.gte.${queryStartDate},paid_at.lte.${queryEndDate}),and(paid_at.is.null,due_date.gte.${queryStartDate},due_date.lte.${queryEndDate})`
+        )
+        .range(from, to) as unknown as PromiseLike<{ data: { amount: number; paid_at: string | null; due_date: string }[] | null; error: { message: string } | null }>
+    ),
     // Saldo acumulado anterior ao período, calculado no banco
     supabase.rpc('get_account_prior_balance', { p_before: queryStartDate }),
   ]);
@@ -1381,16 +1391,18 @@ export async function getYearlyCategoryEvolution(year: number): Promise<{
 
   const startDate = `${year}-01-01`;
   const endDate = `${year}-12-31`;
+  const { startIso, endIso } = getZonedRangeBoundsIso(startDate, endDate);
 
   const { data: txData, error } = await fetchAllPages<RawEvolutionTransaction>((from, to) =>
     supabase
       .from('transactions')
       .select(
-        'id, amount, type, is_paid, due_date, description, notes, category:categories(id, name, color)'
+        'id, amount, type, is_paid, paid_at, due_date, description, notes, category:categories(id, name, color)'
       )
       .eq('user_id', user.id)
-      .gte('due_date', startDate)
-      .lte('due_date', endDate)
+      .or(
+        `and(is_paid.eq.true,paid_at.gte.${startIso},paid_at.lte.${endIso}),and(is_paid.eq.true,paid_at.is.null,due_date.gte.${startDate},due_date.lte.${endDate}),and(is_paid.eq.false,due_date.gte.${startDate},due_date.lte.${endDate})`
+      )
       .range(from, to) as unknown as PromiseLike<{ data: RawEvolutionTransaction[] | null; error: { message: string } | null }>
   );
 

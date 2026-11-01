@@ -1,6 +1,7 @@
 import { Transaction } from '@/types/database';
 import { isBusinessTransaction } from './business-scope-utils';
 import { formatDate } from './utils';
+import { getZonedYMD } from './date-utils';
 
 export type TransactionFilterType =
   | 'all'
@@ -101,7 +102,11 @@ export function groupTransactionsByDay(
   const map = new Map<string, TransactionDayGroup>();
 
   for (const t of transactions) {
-    const d = t.due_date;
+    const d = t.is_paid && t.paid_at
+      ? getZonedYMD(t.paid_at)
+      : (t.due_date || t.transaction_date || '');
+    if (!d) continue;
+
     const existing = map.get(d) || {
       date: d,
       items: [],

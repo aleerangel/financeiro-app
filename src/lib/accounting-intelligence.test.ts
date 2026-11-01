@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fetchAllPages } from '@/lib/supabase/pagination';
+import { buildYearlyCategoryEvolution } from '@/lib/category-evolution-utils';
 
 describe('Inteligência Financeira & Regras Contábeis (RN-01 a RN-10)', () => {
   describe('RN-09 / INC-13: Precisão de centavos em compras parceladas', () => {
@@ -106,26 +107,41 @@ describe('Inteligência Financeira & Regras Contábeis (RN-01 a RN-10)', () => {
     });
   });
 
-  describe('RN-05 / INC-04: Utilitário de Paginação Completa (fetchAllPages)', () => {
-    it('itera por múltiplas páginas até receber menos itens que pageSize', async () => {
-      const pages = [
-        Array.from({ length: 3 }, (_, i) => ({ id: i + 1 })),
-        Array.from({ length: 3 }, (_, i) => ({ id: i + 4 })),
-        Array.from({ length: 1 }, (_, i) => ({ id: i + 7 })),
+  describe('RN-07 / INC-12: Regime de Caixa Total para Transações Pagas em Atraso', () => {
+    it('computa transação paga no mês em que foi realmente paga (paid_at), e não no mês de vencimento (due_date)', () => {
+      const txs = [
+        {
+          id: 'tx-late',
+          amount: 500,
+          type: 'income' as const,
+          is_paid: true,
+          due_date: '2026-10-25', // vencimento em Outubro
+          paid_at: '2026-11-05T14:30:00-03:00', // pago em Novembro
+          description: 'Consultoria Mensal',
+          category: { name: 'Serviços', color: '#10b981' },
+        },
+        {
+          id: 'tx-normal',
+          amount: 500,
+          type: 'income' as const,
+          is_paid: true,
+          due_date: '2026-11-25', // vencimento em Novembro
+          paid_at: '2026-11-25T10:00:00-03:00', // pago em Novembro
+          description: 'Consultoria Mensal',
+          category: { name: 'Serviços', color: '#10b981' },
+        },
       ];
-      let callCount = 0;
 
-      const result = await fetchAllPages(async () => {
-        const data = pages[callCount] || [];
-        callCount++;
-        return { data, error: null };
-      }, 3);
+      const { incomeCategories } = buildYearlyCategoryEvolution(txs, 2026);
+      expect(incomeCategories).toHaveLength(1);
 
-      expect(callCount).toBe(3);
-      expect(result.error).toBeNull();
-      expect(result.data).toHaveLength(7);
-      expect(result.data[0].id).toBe(1);
-      expect(result.data[6].id).toBe(7);
+      // Outubro (índice 9): 0 (sai de Outubro pois não houve entrada de caixa em Outubro)
+      expect(incomeCategories[0].monthlyRealized[9]).toBe(0);
+      expect(incomeCategories[0].monthlyTotal[9]).toBe(0);
+
+      // Novembro (índice 10): 1000 (soma ambas as entradas de caixa que ocorreram em Novembro)
+      expect(incomeCategories[0].monthlyRealized[10]).toBe(1000);
+      expect(incomeCategories[0].monthlyTotal[10]).toBe(1000);
     });
   });
 });

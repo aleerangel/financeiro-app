@@ -4,8 +4,9 @@ import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { calculateInstallmentDueDates } from '@/lib/credit-card-utils';
-import { getZonedParts, getTodayYMD } from '@/lib/date-utils';
+import { getZonedParts, getTodayYMD, getZonedRangeBoundsIso, getZonedYMD } from '@/lib/date-utils';
 import { applyScopeToNotes } from '@/lib/business-scope-utils';
+import { fetchAllPages } from '@/lib/supabase/pagination';
 
 export interface CreateTransactionInput {
   description: string;
@@ -50,27 +51,41 @@ export async function getTransactions(month: number, year: number): Promise<Tran
   const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month + 1, 0).getDate();
   const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const { startIso, endIso } = getZonedRangeBoundsIso(startDate, endDate);
 
-  const { data, error } = await supabase
-    .from('transactions')
-    .select(`
-      *,
-      category:categories(*),
-      account:accounts(*),
-      credit_card:credit_cards(*)
-    `)
-    .eq('user_id', user.id)
-    .gte('due_date', startDate)
-    .lte('due_date', endDate)
-    .order('due_date', { ascending: false })
-    .order('created_at', { ascending: false });
+  // Busca em Regime de Caixa:
+  // - Se paga: data efetiva do pagamento (paid_at) no mês selecionado (ou fallback due_date se paid_at for null)
+  // - Se pendente: data prevista de vencimento (due_date) no mês selecionado
+  const { data, error } = await fetchAllPages<Transaction>((from, to) =>
+    supabase
+      .from('transactions')
+      .select(`
+        *,
+        category:categories(*),
+        account:accounts(*),
+        credit_card:credit_cards(*)
+      `)
+      .eq('user_id', user.id)
+      .or(
+        `and(is_paid.eq.true,paid_at.gte.${startIso},paid_at.lte.${endIso}),and(is_paid.eq.true,paid_at.is.null,due_date.gte.${startDate},due_date.lte.${endDate}),and(is_paid.eq.false,due_date.gte.${startDate},due_date.lte.${endDate})`
+      )
+      .order('due_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to) as unknown as PromiseLike<{ data: Transaction[] | null; error: { message: string } | null }>
+  );
 
   if (error) {
     console.error('Erro ao buscar transações:', error);
     return [];
   }
 
-  return (data as unknown as Transaction[]) || [];
+  const txList = (data || []).sort((a, b) => {
+    const dateA = a.is_paid && a.paid_at ? getZonedYMD(a.paid_at) : (a.due_date || a.transaction_date || '');
+    const dateB = b.is_paid && b.paid_at ? getZonedYMD(b.paid_at) : (b.due_date || b.transaction_date || '');
+    return dateB.localeCompare(dateA);
+  });
+
+  return txList;
 }
 
 export async function createTransaction(input: CreateTransactionInput) {

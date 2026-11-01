@@ -1,8 +1,11 @@
+import { getZonedYMD } from './date-utils';
+
 export interface RawEvolutionTransaction {
   id?: string;
   amount: number;
   type: 'income' | 'expense';
   is_paid: boolean;
+  paid_at?: string | null;
   due_date: string;
   description?: string;
   notes?: string | null;
@@ -132,9 +135,13 @@ export function buildYearlyCategoryEvolution(
   const yearPrefix = `${year}-`;
 
   for (const tx of transactions) {
-    if (!tx.due_date || !tx.due_date.startsWith(yearPrefix)) continue;
+    const effectiveDate = tx.is_paid && tx.paid_at
+      ? getZonedYMD(tx.paid_at)
+      : (tx.due_date || '');
 
-    const parts = tx.due_date.split('-');
+    if (!effectiveDate || !effectiveDate.startsWith(yearPrefix)) continue;
+
+    const parts = effectiveDate.split('-');
     if (parts.length < 3) continue;
     const monthIndex = Number(parts[1]) - 1;
     const dayIndex = Math.min(30, Math.max(0, Number(parts[2]) - 1));

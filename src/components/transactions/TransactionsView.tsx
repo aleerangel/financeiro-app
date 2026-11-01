@@ -413,7 +413,11 @@ export function TransactionsView({
               {!groupByDay && (
                 <>
                   <span>•</span>
-                  <span>Vencimento: {formatDate(t.due_date)}</span>
+                  <span>
+                    {t.is_paid && t.paid_at
+                      ? `Pago em: ${formatDate(t.paid_at)}`
+                      : `Vencimento: ${formatDate(t.due_date)}`}
+                  </span>
                 </>
               )}
             </div>
@@ -570,7 +574,11 @@ export function TransactionsView({
             {!groupByDay && (
               <>
                 <span>•</span>
-                <span className="text-[10px]">{formatDate(t.due_date)}</span>
+                <span className="text-[10px]">
+                  {t.is_paid && t.paid_at
+                    ? `Pago em: ${formatDate(t.paid_at)}`
+                    : `Vencimento: ${formatDate(t.due_date)}`}
+                </span>
               </>
             )}
           </div>
