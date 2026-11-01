@@ -1,4 +1,5 @@
 import { Account, AccountYieldType, Transaction } from '@/types/database';
+import { getZonedParts } from './date-utils';
 
 /**
  * Taxa mensal líquida estimada para 100% do CDI (~0.85% a.m. líquido já descontando IR médio).
@@ -120,7 +121,8 @@ export function isYieldTransaction(
  *
  * Regras:
  * - Se o mês for passado: retorna 0 (no passado só contam lançamentos efetivamente realizados).
- * - Se o mês for o atual: calcula a soma de Math.max(0, estimated_monthly_yield - total_yield_current_month) por conta.
+ * - Se o mês for o atual: calcula pro-rata pelos dias restantes do mês (se for o último dia, retorna 0)
+ *   e desconta o que já foi creditado/lançado.
  * - Se o mês for futuro: calcula a soma integral de estimated_monthly_yield de todas as contas.
  */
 export function calculatePendingProjectedYield(
@@ -128,7 +130,8 @@ export function calculatePendingProjectedYield(
   targetMonth: number,
   targetYear: number,
   currentMonth: number,
-  currentYear: number
+  currentYear: number,
+  currentDay?: number
 ): number {
   if (!accounts || accounts.length === 0) return 0;
 
@@ -140,13 +143,26 @@ export function calculatePendingProjectedYield(
     return 0;
   }
 
-  // Mês atual: desconta o que já foi creditado/lançado neste mês
+  // Mês atual: pro-rata pelos dias restantes do mês e desconta o que já foi creditado
   if (targetYear === currentYear && targetMonth === currentMonth) {
+    const todayDay = currentDay !== undefined ? currentDay : getZonedParts().day;
+    const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const remainingDays = Math.max(0, totalDaysInMonth - todayDay);
+
+    if (remainingDays === 0) {
+      return 0;
+    }
+
+    const remainingRatio = remainingDays / totalDaysInMonth;
+
     const pendingTotal = accounts.reduce((acc, a) => {
       const est = Number(a.estimated_monthly_yield) || 0;
       const recorded = Number(a.total_yield_current_month) || 0;
-      return acc + Math.max(0, est - recorded);
+      const unrecordedEst = Math.max(0, est - recorded);
+      const proRataEst = est * remainingRatio;
+      return acc + Math.min(unrecordedEst, proRataEst);
     }, 0);
+
     return Math.round(pendingTotal * 100) / 100;
   }
 
