@@ -19,6 +19,7 @@ import {
   ArrowDownRight,
   ChevronLeft,
   ChevronRight,
+  PieChart,
 } from 'lucide-react';
 
 const MONTH_SHORT_NAMES = [
@@ -83,7 +84,9 @@ export function MonthlyBarChart({
     projectedNet,
     pendingYield,
     receivedIncomePct,
+    pendingIncomePct,
     incomeSegments,
+    radius,
   } = useMemo(() => {
     let recInc = 0;
     let pendInc = 0;
@@ -154,12 +157,41 @@ export function MonthlyBarChart({
         ? Math.min(100, Math.max(0, Math.round((recInc / tIncome) * 100)))
         : 0;
 
+    const pendingIncPct = tIncome > 0 ? Math.max(0, 100 - recIncPct) : 0;
+
     const segments = Array.from(incomeMap.values())
       .map((seg) => ({
         ...seg,
         percentage: tIncome > 0 ? (seg.total / tIncome) * 100 : 0,
       }))
       .sort((a, b) => b.total - a.total);
+
+    const radius = 60;
+    const circumference = 2 * Math.PI * radius;
+
+    const segmentsWithArcs = segments.reduce<{
+      acc: number;
+      items: (typeof segments[0] & {
+        strokeDasharray: string;
+        strokeDashoffset: number;
+      })[];
+    }>(
+      (state, item) => {
+        const arcLength = (item.percentage / 100) * circumference;
+        return {
+          acc: state.acc + arcLength,
+          items: [
+            ...state.items,
+            {
+              ...item,
+              strokeDasharray: `${arcLength} ${circumference}`,
+              strokeDashoffset: -state.acc,
+            },
+          ],
+        };
+      },
+      { acc: 0, items: [] }
+    ).items;
 
     return {
       receivedIncome: recInc,
@@ -171,7 +203,9 @@ export function MonthlyBarChart({
       projectedNet: pNet,
       pendingYield,
       receivedIncomePct: recIncPct,
-      incomeSegments: segments,
+      pendingIncomePct: pendingIncPct,
+      incomeSegments: segmentsWithArcs,
+      radius,
     };
   }, [activeTransactions, accounts, refMonth, refYear, currentMonth, year]);
 
@@ -257,8 +291,8 @@ export function MonthlyBarChart({
         </div>
       </div>
 
-      {/* Composição de Receitas por Categoria */}
-      <div className={`space-y-3 py-1 transition-opacity ${loadingCustom ? 'opacity-60' : 'opacity-100'}`}>
+      {/* Barra de Progresso das Receitas (Recebido vs. A Receber) */}
+      <div className={`space-y-1.5 transition-opacity ${loadingCustom ? 'opacity-60' : 'opacity-100'}`}>
         <div className="flex justify-between items-center text-xs">
           <span className="flex items-center gap-1.5 font-medium text-emerald-400">
             <TrendingUp className="w-3.5 h-3.5" />
@@ -275,29 +309,86 @@ export function MonthlyBarChart({
           </span>
         </div>
 
-        {/* Barra multi-cores de Receitas */}
-        <div className="w-full h-4 bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-zinc-800 flex gap-1">
+        <div className="w-full h-3.5 bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-zinc-800 flex gap-0.5">
           {totalIncome > 0 ? (
-            incomeSegments.map((seg) => (
-              <div
-                key={seg.name}
-                className="h-full rounded-full transition-all duration-700 shadow-sm relative group"
-                style={{
-                  width: `${seg.percentage}%`,
-                  backgroundColor: seg.color,
-                }}
-                title={`${seg.name}: ${formatCurrency(seg.total)} (${seg.percentage.toFixed(0)}%)\nRecebido: ${formatCurrency(seg.received)}${seg.pending > 0 ? ` | A receber: ${formatCurrency(seg.pending)}` : ''}`}
-              />
-            ))
+            <>
+              {receivedIncomePct > 0 && (
+                <div
+                  className="h-full bg-emerald-400 rounded-full transition-all duration-700 shadow-sm shadow-emerald-400/20"
+                  style={{ width: `${receivedIncomePct}%` }}
+                  title={`Recebido: ${formatCurrency(receivedIncome)} (${receivedIncomePct}%)`}
+                />
+              )}
+              {pendingIncomePct > 0 && (
+                <div
+                  className="h-full bg-amber-500/25 border border-dashed border-amber-400/40 rounded-full transition-all duration-700"
+                  style={{ width: `${pendingIncomePct}%` }}
+                  title={`A receber: ${formatCurrency(pendingIncome)} (${pendingIncomePct}%)`}
+                />
+              )}
+            </>
           ) : (
             <div className="h-full w-full bg-zinc-800/40 rounded-full" />
           )}
         </div>
+      </div>
 
-        {/* Lista de Categorias de Receita com Indicador Acima/Abaixo da Média */}
-        {incomeSegments.length > 0 ? (
-          <div className="space-y-2 pt-1 max-h-40 overflow-y-auto pr-1 scrollbar-thin">
-            {incomeSegments.map((seg) => {
+      {/* Donut Chart + Legenda de Categorias com Indicador de Média */}
+      {totalIncome === 0 || incomeSegments.length === 0 ? (
+        <div className="py-8 flex flex-col items-center justify-center text-center text-zinc-500">
+          <PieChart className="w-9 h-9 mb-2 opacity-30 text-zinc-400" />
+          <p className="text-sm font-semibold text-zinc-300">
+            Sem receitas em {periodLabel || `${MONTH_SHORT_NAMES[refMonth]}/${refYear}`}
+          </p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Lançamentos de receita aparecerão aqui categorizados.
+          </p>
+        </div>
+      ) : (
+        <div className={`flex flex-col sm:flex-row items-center justify-between gap-5 pt-1 transition-opacity ${loadingCustom ? 'opacity-60' : 'opacity-100'}`}>
+          {/* SVG Donut Chart */}
+          <div className="relative w-40 h-40 shrink-0 flex items-center justify-center">
+            <svg
+              className="w-full h-full -rotate-90 transform"
+              viewBox="0 0 160 160"
+            >
+              <circle
+                cx="80"
+                cy="80"
+                r={radius}
+                className="text-zinc-800/80 stroke-current"
+                strokeWidth="20"
+                fill="transparent"
+              />
+              {incomeSegments.map((cat, index) => (
+                <circle
+                  key={index}
+                  cx="80"
+                  cy="80"
+                  r={radius}
+                  stroke={cat.color}
+                  strokeWidth="20"
+                  strokeDasharray={cat.strokeDasharray}
+                  strokeDashoffset={cat.strokeDashoffset}
+                  fill="transparent"
+                  className="transition-all duration-500 hover:opacity-80"
+                />
+              ))}
+            </svg>
+
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+              <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
+                Receitas ({MONTH_SHORT_NAMES[refMonth]})
+              </span>
+              <span className="text-sm font-extrabold text-zinc-100">
+                {formatCurrency(totalIncome)}
+              </span>
+            </div>
+          </div>
+
+          {/* Legenda de Categorias */}
+          <div className="w-full space-y-2 max-h-44 overflow-y-auto pr-1 scrollbar-thin">
+            {incomeSegments.map((seg, index) => {
               const evo = evolutionMetricsMap.get(seg.name.toLowerCase());
               const hasAvgComparison =
                 evo &&
@@ -306,25 +397,25 @@ export function MonthlyBarChart({
 
               return (
                 <div
-                  key={seg.name}
-                  className="flex items-center justify-between text-xs gap-2 py-1 border-b border-zinc-800/50 last:border-none"
+                  key={index}
+                  className="flex items-center justify-between text-xs gap-2 py-0.5"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
                       style={{ backgroundColor: seg.color }}
                     />
-                    <span className="font-semibold text-zinc-200 truncate">
+                    <span className="font-medium text-zinc-200 truncate">
                       {seg.name}
                     </span>
                     {seg.pending > 0 && (
                       <span className="text-[10px] text-amber-400 font-medium shrink-0">
-                        (+{formatCurrency(seg.pending)} a receber)
+                        (+{formatCurrency(seg.pending)})
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {hasAvgComparison && evo && (
                       <span
                         className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${
@@ -362,12 +453,8 @@ export function MonthlyBarChart({
               );
             })}
           </div>
-        ) : (
-          <p className="text-xs text-zinc-500 py-2">
-            Nenhuma receita registrada em {MONTH_SHORT_NAMES[refMonth]}/{refYear}.
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Sub-indicadores: Balanço Geral (Realizado vs Projeção) */}
       <div className="border-t border-zinc-800/80 pt-3.5 grid grid-cols-2 gap-4">
