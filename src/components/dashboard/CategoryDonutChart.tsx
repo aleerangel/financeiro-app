@@ -69,7 +69,7 @@ export function CategoryDonutChart({
     for (const item of expenseEvolution) {
       map.set(
         item.name.toLowerCase(),
-        computeCategoryEvolutionMetrics(item, refMonth, 'total', {
+        computeCategoryEvolutionMetrics(item, refMonth, 'realized', {
           selectedYear: refYear,
         })
       );
@@ -97,19 +97,18 @@ export function CategoryDonutChart({
       const amt = Number(t.amount);
       if (t.is_paid) {
         paidExp += amt;
+        const catName = t.category?.name || 'Outras Despesas';
+        const catColor = t.category?.color || '#64748b';
+        const current = map.get(catName) || {
+          name: catName,
+          color: catColor,
+          total: 0,
+        };
+        current.total += amt;
+        map.set(catName, current);
       } else {
         pendExp += amt;
       }
-
-      const catName = t.category?.name || 'Outras Despesas';
-      const catColor = t.category?.color || '#64748b';
-      const current = map.get(catName) || {
-        name: catName,
-        color: catColor,
-        total: 0,
-      };
-      current.total += amt;
-      map.set(catName, current);
     }
 
     const total = paidExp + pendExp;
@@ -122,7 +121,7 @@ export function CategoryDonutChart({
     const totals = Array.from(map.values())
       .map((item) => ({
         ...item,
-        percentage: total > 0 ? (item.total / total) * 100 : 0,
+        percentage: paidExp > 0 ? (item.total / paidExp) * 100 : 0,
       }))
       .sort((a, b) => b.total - a.total);
 
@@ -214,7 +213,7 @@ export function CategoryDonutChart({
           )}
 
           <span className="text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">
-            Total: {formatCurrency(totalExpense)}
+            Pago: {formatCurrency(paidExpense)}
           </span>
 
           {onExpandEvolution && (
@@ -236,7 +235,7 @@ export function CategoryDonutChart({
         <div className="flex justify-between items-center text-xs">
           <span className="flex items-center gap-1.5 font-medium text-rose-400">
             <TrendingDown className="w-3.5 h-3.5" />
-            Despesas ({MONTH_SHORT_NAMES[refMonth]})
+            Despesas ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
             <span className="text-[11px] text-zinc-400 font-normal">
               ({paidExpensePct}% pago)
             </span>
@@ -274,14 +273,14 @@ export function CategoryDonutChart({
       </div>
 
       {/* Donut Chart + Legenda de Categorias com Indicador de Média */}
-      {totalExpense === 0 || categoryTotals.length === 0 ? (
+      {paidExpense === 0 || categoryTotals.length === 0 ? (
         <div className="py-8 flex flex-col items-center justify-center text-center text-zinc-500">
           <PieChart className="w-9 h-9 mb-2 opacity-30 text-zinc-400" />
           <p className="text-sm font-semibold text-zinc-300">
-            Sem despesas em {MONTH_SHORT_NAMES[refMonth]}/{refYear}
+            Sem despesas efetuadas em {periodLabel || `${MONTH_SHORT_NAMES[refMonth]}/${refYear}`}
           </p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Lançamentos de despesa aparecerão aqui categorizados.
+            Lançamentos de despesa paga aparecerão aqui categorizados.
           </p>
         </div>
       ) : (
@@ -318,10 +317,10 @@ export function CategoryDonutChart({
 
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
               <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                Despesas ({MONTH_SHORT_NAMES[refMonth]})
+                Despesas ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
               </span>
               <span className="text-sm font-extrabold text-zinc-100">
-                {formatCurrency(totalExpense)}
+                {formatCurrency(paidExpense)}
               </span>
             </div>
           </div>

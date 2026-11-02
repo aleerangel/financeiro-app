@@ -66,7 +66,7 @@ export function MonthlyBarChart({
     for (const item of incomeEvolution) {
       map.set(
         item.name.toLowerCase(),
-        computeCategoryEvolutionMetrics(item, refMonth, 'total', {
+        computeCategoryEvolutionMetrics(item, refMonth, 'realized', {
           selectedYear: refYear,
         })
       );
@@ -160,11 +160,12 @@ export function MonthlyBarChart({
     const pendingIncPct = tIncome > 0 ? Math.max(0, 100 - recIncPct) : 0;
 
     const segments = Array.from(incomeMap.values())
+      .filter((seg) => seg.received > 0)
       .map((seg) => ({
         ...seg,
-        percentage: tIncome > 0 ? (seg.total / tIncome) * 100 : 0,
+        percentage: recInc > 0 ? (seg.received / recInc) * 100 : 0,
       }))
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => b.received - a.received);
 
     const radius = 60;
     const circumference = 2 * Math.PI * radius;
@@ -334,14 +335,14 @@ export function MonthlyBarChart({
       </div>
 
       {/* Donut Chart + Legenda de Categorias com Indicador de Média */}
-      {totalIncome === 0 || incomeSegments.length === 0 ? (
+      {receivedIncome === 0 || incomeSegments.length === 0 ? (
         <div className="py-8 flex flex-col items-center justify-center text-center text-zinc-500">
           <PieChart className="w-9 h-9 mb-2 opacity-30 text-zinc-400" />
           <p className="text-sm font-semibold text-zinc-300">
-            Sem receitas em {periodLabel || `${MONTH_SHORT_NAMES[refMonth]}/${refYear}`}
+            Sem receitas efetuadas em {periodLabel || `${MONTH_SHORT_NAMES[refMonth]}/${refYear}`}
           </p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Lançamentos de receita aparecerão aqui categorizados.
+            Lançamentos de receita recebida aparecerão aqui categorizados.
           </p>
         </div>
       ) : (
@@ -378,7 +379,7 @@ export function MonthlyBarChart({
 
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
               <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                Recebido ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
+                Receitas ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
               </span>
               <span className="text-sm font-extrabold text-emerald-400">
                 {formatCurrency(receivedIncome)}
@@ -408,11 +409,6 @@ export function MonthlyBarChart({
                     <span className="font-medium text-zinc-200 truncate">
                       {seg.name}
                     </span>
-                    {seg.pending > 0 && (
-                      <span className="text-[10px] text-amber-400 font-medium shrink-0">
-                        (+{formatCurrency(seg.pending)})
-                      </span>
-                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -443,7 +439,7 @@ export function MonthlyBarChart({
                     )}
 
                     <span className="font-bold text-zinc-100">
-                      {formatCurrency(seg.total)}
+                      {formatCurrency(seg.received)}
                     </span>
                     <span className="text-[10px] text-zinc-400 w-8 text-right font-semibold">
                       {seg.percentage.toFixed(0)}%
