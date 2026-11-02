@@ -26,6 +26,8 @@ import {
 } from '@/lib/actions/dashboard';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { Transaction } from '@/types/database';
+import { getTransactions } from '@/lib/actions/transactions';
+import { getZonedYMD } from '@/lib/date-utils';
 import {
   isBarbeariaServiceIncome,
   computeRevenueSplit,
@@ -186,15 +188,81 @@ export function MobileSummaryView({
     return flowChart.weeksMeta?.[flowChart.selectedWeekIndex];
   }, [flowChart.weeksMeta, flowChart.selectedWeekIndex]);
 
-  // Transações estritamente filtradas para o período ativo
-  const periodTransactions = useMemo(() => {
-    if (flowChart.period === 'weekly' && currentWeek) {
-      return transactions.filter(
-        (t) => t.due_date >= currentWeek.startDate && t.due_date <= currentWeek.endDate
-      );
+  // Carregamento dinâmico de transações quando o mês ou ano do seletor mobile mudar
+  const activePeriodKey = `${flowChart.year}-${flowChart.month}`;
+  const [loadedTransactions, setLoadedTransactions] = useState<{
+    key: string;
+    data: Transaction[];
+    loading: boolean;
+  }>({
+    key: `${year}-${month}`,
+    data: transactions,
+    loading: false,
+  });
+
+  useEffect(() => {
+    // Se for o mês inicial passado via props, sincroniza com as transações da prop
+    if (flowChart.month === month && flowChart.year === year) {
+      setLoadedTransactions({
+        key: activePeriodKey,
+        data: transactions,
+        loading: false,
+      });
+      return;
     }
-    return transactions;
-  }, [transactions, flowChart.period, currentWeek]);
+
+    let isCancelled = false;
+    setLoadedTransactions((prev) => ({
+      ...prev,
+      loading: true,
+    }));
+
+    getTransactions(flowChart.month, flowChart.year)
+      .then((data) => {
+        if (!isCancelled) {
+          setLoadedTransactions({
+            key: activePeriodKey,
+            data: data || [],
+            loading: false,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar transações do período móvel:', err);
+        if (!isCancelled) {
+          setLoadedTransactions((prev) => ({
+            ...prev,
+            loading: false,
+          }));
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [flowChart.month, flowChart.year, month, year, transactions, activePeriodKey]);
+
+  // Transações estritamente filtradas para o período ativo (mês ou semana selecionada)
+  const periodTransactions = useMemo(() => {
+    const baseList =
+      loadedTransactions.key === activePeriodKey
+        ? loadedTransactions.data
+        : transactions;
+
+    if (flowChart.period === 'weekly' && currentWeek) {
+      return baseList.filter((t) => {
+        const effectiveDate =
+          t.is_paid && t.paid_at
+            ? getZonedYMD(t.paid_at)
+            : (t.due_date || '');
+        return (
+          effectiveDate >= currentWeek.startDate &&
+          effectiveDate <= currentWeek.endDate
+        );
+      });
+    }
+    return baseList;
+  }, [loadedTransactions, activePeriodKey, transactions, flowChart.period, currentWeek]);
 
   // Label do período ativo para o seletor único e para os módulos
   const activePeriodLabel = useMemo(() => {
@@ -393,8 +461,7 @@ export function MobileSummaryView({
       }
     } else {
       // No modo mensal: transações do mês selecionado
-      const isCurrentLoadedMonth = flowChart.month === month && flowChart.year === year;
-      if (isCurrentLoadedMonth && periodTransactions.length > 0) {
+      if (periodTransactions.length > 0) {
         for (const t of periodTransactions) {
           const amt = Number(t.amount) || 0;
           if (t.type === 'income') {
@@ -406,10 +473,11 @@ export function MobileSummaryView({
           }
         }
       } else {
-        const curYearStat = yearlyStats[flowChart.month] || generalData?.yearlyStats?.[flowChart.month];
+        const activeGeneral = (flowChart.activeData as GeneralDashboardData) || generalData;
+        const curYearStat = activeGeneral?.yearlyStats?.[flowChart.month] || yearlyStats[flowChart.month];
         recInc = curYearStat?.generalIncome || 0;
         pdExp = curYearStat?.generalExpense || 0;
-        pendExp = isCurrentLoadedMonth ? businessData.monthSummary?.pendingExpenses || 0 : 0;
+        pendExp = 0;
       }
     }
 
@@ -426,6 +494,7 @@ export function MobileSummaryView({
   }, [
     flowChart.period,
     flowChart.activeStats,
+    flowChart.activeData,
     flowChart.month,
     flowChart.year,
     month,
@@ -433,8 +502,7 @@ export function MobileSummaryView({
     periodTransactions,
     transactions,
     yearlyStats,
-    generalData?.yearlyStats,
-    businessData.monthSummary,
+    generalData,
   ]);
 
   // Totais do Negócio no Período Ativo (Faturamento, Gastos e Lucro)
@@ -945,9 +1013,10 @@ export function MobileSummaryView({
 
           {/* Comparativo de Receitas e Balanço Geral */}
           <MonthlyBarChart
+            key={`income-${flowChart.year}-${flowChart.month}-${flowChart.period}-${flowChart.selectedWeekIndex}`}
             transactions={periodTransactions}
             accounts={accounts}
-            incomeEvolution={generalData?.incomeCategoryEvolution || []}
+            incomeEvolution={(flowChart.activeData as GeneralDashboardData)?.incomeCategoryEvolution || generalData?.incomeCategoryEvolution || []}
             currentMonth={flowChart.month}
             year={flowChart.year}
             hideMonthSelector={true}
@@ -955,10 +1024,11 @@ export function MobileSummaryView({
           />
 
           {/* Gastos por Categoria (Gráfico de Rosca - Oculta se não houver gastos) */}
-          {totalExpense > 0 && (
+          {(totalExpense > 0 || paidExpense > 0 || loadedTransactions.loading) && (
             <CategoryDonutChart
+              key={`expense-${flowChart.year}-${flowChart.month}-${flowChart.period}-${flowChart.selectedWeekIndex}`}
               transactions={periodTransactions}
-              expenseEvolution={generalData?.expenseCategoryEvolution || []}
+              expenseEvolution={(flowChart.activeData as GeneralDashboardData)?.expenseCategoryEvolution || generalData?.expenseCategoryEvolution || []}
               currentMonth={flowChart.month}
               year={flowChart.year}
               hideMonthSelector={true}

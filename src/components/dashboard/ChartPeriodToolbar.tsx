@@ -165,6 +165,7 @@ export function useIndependentChartPeriod<T extends ChartPeriodDataShape<S>, S>(
     weeksMeta,
     selectedWeekIndex,
     activeStats,
+    activeData,
     subtitle,
     loading,
     handleYearChange,
