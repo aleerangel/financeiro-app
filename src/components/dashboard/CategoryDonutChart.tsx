@@ -315,9 +315,9 @@ export function CategoryDonutChart({
               ))}
             </svg>
 
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-              <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                Despesas ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-2">
+              <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider truncate max-w-[105px]">
+                Despesas ({MONTH_SHORT_NAMES[refMonth]})
               </span>
               <span className="text-sm font-extrabold text-zinc-100">
                 {formatCurrency(paidExpense)}
