@@ -11,6 +11,7 @@ import {
 import { resolveIncomeCategoryMeta } from '@/lib/business-scope-utils';
 import { useReferenceMonthTransactions } from '@/hooks/useReferenceMonthTransactions';
 import { formatCurrency } from '@/lib/utils';
+import { isPastMonth } from '@/lib/date-utils';
 import {
   TrendingUp,
   Sparkles,
@@ -57,6 +58,8 @@ export function MonthlyBarChart({
     handlePrevMonth,
     handleNextMonth,
   } = useReferenceMonthTransactions(transactions, currentMonth, year);
+
+  const isPast = isPastMonth(refMonth, refYear);
 
   const evolutionMetricsMap = useMemo(() => {
     const map = new Map<
@@ -299,14 +302,20 @@ export function MonthlyBarChart({
             <TrendingUp className="w-3.5 h-3.5" />
             Receitas ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
             <span className="text-[11px] text-zinc-400 font-normal">
-              ({receivedIncomePct}% recebido)
+              {isPast
+                ? pendingIncome > 0
+                  ? `(${receivedIncomePct}% recebido • ${formatCurrency(pendingIncome)} em aberto)`
+                  : '(100% recebido)'
+                : `(${receivedIncomePct}% recebido)`}
             </span>
           </span>
           <span className="text-xs font-bold text-zinc-200">
             {formatCurrency(receivedIncome)}{' '}
-            <span className="text-zinc-500 font-normal">
-              / {formatCurrency(totalIncome)}
-            </span>
+            {pendingIncome > 0 ? (
+              <span className="text-zinc-500 font-normal">
+                / {formatCurrency(totalIncome)}
+              </span>
+            ) : null}
           </span>
         </div>
 
@@ -316,7 +325,7 @@ export function MonthlyBarChart({
               {receivedIncomePct > 0 && (
                 <div
                   className="h-full bg-emerald-400 rounded-full transition-all duration-700 shadow-sm shadow-emerald-400/20"
-                  style={{ width: `${receivedIncomePct}%` }}
+                  style={{ width: `${isPast && pendingIncome === 0 ? 100 : receivedIncomePct}%` }}
                   title={`Recebido: ${formatCurrency(receivedIncome)} (${receivedIncomePct}%)`}
                 />
               )}
@@ -324,7 +333,7 @@ export function MonthlyBarChart({
                 <div
                   className="h-full bg-amber-500/25 border border-dashed border-amber-400/40 rounded-full transition-all duration-700"
                   style={{ width: `${pendingIncomePct}%` }}
-                  title={`A receber: ${formatCurrency(pendingIncome)} (${pendingIncomePct}%)`}
+                  title={isPast ? `Não recebido no mês: ${formatCurrency(pendingIncome)}` : `A receber: ${formatCurrency(pendingIncome)} (${pendingIncomePct}%)`}
                 />
               )}
             </>
@@ -473,29 +482,53 @@ export function MonthlyBarChart({
         </div>
 
         <div className="text-right">
-          <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">
-            Projeção Final ({MONTH_SHORT_NAMES[refMonth]})
-          </span>
-          <span
-            className={`text-base font-bold mt-0.5 block ${
-              projectedNet >= 0 ? 'text-emerald-400' : 'text-rose-400'
-            }`}
-          >
-            {projectedNet >= 0
-              ? `+${formatCurrency(projectedNet)}`
-              : `-${formatCurrency(Math.abs(projectedNet))}`}
-          </span>
-          <span className="text-[10px] text-zinc-500 block">
-            {pendingIncome > 0
-              ? `+${formatCurrency(pendingIncome)} a receber`
-              : 'Tudo recebido'}
-            {pendingExpense > 0
-              ? ` | -${formatCurrency(pendingExpense)} a pagar`
-              : ''}
-            {pendingYield > 0
-              ? ` | +${formatCurrency(pendingYield)} rendimentos`
-              : ''}
-          </span>
+          {isPast ? (
+            <div>
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">
+                {pendingIncome > 0 ? `Em Aberto (${MONTH_SHORT_NAMES[refMonth]})` : `Status (${MONTH_SHORT_NAMES[refMonth]})`}
+              </span>
+              <span
+                className={`text-base font-bold mt-0.5 block ${
+                  pendingIncome > 0 ? 'text-amber-400' : 'text-zinc-300'
+                }`}
+              >
+                {pendingIncome > 0
+                  ? formatCurrency(pendingIncome)
+                  : 'Mês Encerrado'}
+              </span>
+              <span className="text-[10px] text-zinc-500 block">
+                {pendingIncome > 0
+                  ? 'Previsto não recebido no mês'
+                  : 'Todas as receitas liquidadas'}
+              </span>
+            </div>
+          ) : (
+            <div>
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">
+                Projeção Final ({MONTH_SHORT_NAMES[refMonth]})
+              </span>
+              <span
+                className={`text-base font-bold mt-0.5 block ${
+                  projectedNet >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              >
+                {projectedNet >= 0
+                  ? `+${formatCurrency(projectedNet)}`
+                  : `-${formatCurrency(Math.abs(projectedNet))}`}
+              </span>
+              <span className="text-[10px] text-zinc-500 block">
+                {pendingIncome > 0
+                  ? `+${formatCurrency(pendingIncome)} a receber`
+                  : 'Tudo recebido'}
+                {pendingExpense > 0
+                  ? ` | -${formatCurrency(pendingExpense)} a pagar`
+                  : ''}
+                {pendingYield > 0
+                  ? ` | +${formatCurrency(pendingYield)} rendimentos`
+                  : ''}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

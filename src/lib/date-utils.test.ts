@@ -6,6 +6,8 @@ import {
   getZonedRangeBoundsIso,
   resolveSaleTimestamps,
   isPastMonth,
+  isCurrentMonth,
+  isFutureMonth,
 } from './date-utils';
 import { formatDateTime, formatDate } from './utils';
 
@@ -68,6 +70,23 @@ describe('isPastMonth', () => {
     const lateOct = new Date('2026-11-01T01:00:00Z'); // 31/10 22h em SP
     expect(isPastMonth(9, 2026, lateOct)).toBe(false);
     expect(isPastMonth(8, 2026, lateOct)).toBe(true);
+  });
+});
+
+describe('isCurrentMonth & isFutureMonth', () => {
+  const now = new Date('2026-10-19T15:00:00Z'); // outubro/2026
+
+  it('detecta corretamente o mês corrente', () => {
+    expect(isCurrentMonth(9, 2026, now)).toBe(true);
+    expect(isCurrentMonth(8, 2026, now)).toBe(false);
+    expect(isCurrentMonth(10, 2026, now)).toBe(false);
+  });
+
+  it('detecta corretamente meses futuros', () => {
+    expect(isFutureMonth(10, 2026, now)).toBe(true);
+    expect(isFutureMonth(0, 2027, now)).toBe(true);
+    expect(isFutureMonth(9, 2026, now)).toBe(false);
+    expect(isFutureMonth(8, 2026, now)).toBe(false);
   });
 });
 

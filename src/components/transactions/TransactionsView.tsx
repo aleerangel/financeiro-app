@@ -43,7 +43,7 @@ import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
-import { getZonedParts } from '@/lib/date-utils';
+import { getZonedParts, isPastMonth } from '@/lib/date-utils';
 import {
   TransactionFilterType,
   formatDayGroupLabel,
@@ -257,6 +257,8 @@ export function TransactionsView({
   const pendingExpense = transactions
     .filter((t) => t.type === 'expense' && !t.is_paid)
     .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+  const isPast = isPastMonth(month, year);
 
   // Rendimentos estimados pendentes das contas para o mês selecionado
   const { month: currentMonth, year: currentYear } = useMemo(() => getZonedParts(), []);
@@ -713,7 +715,11 @@ export function TransactionsView({
               </span>
             </div>
             <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
-              {pendingIncome > 0
+              {isPast
+                ? pendingIncome > 0
+                  ? `${formatCurrency(pendingIncome)} não recebido no mês`
+                  : 'Tudo recebido'
+                : pendingIncome > 0
                 ? `+ ${formatCurrency(pendingIncome)} a receber`
                 : 'Tudo recebido'}
             </div>
@@ -733,7 +739,11 @@ export function TransactionsView({
               </span>
             </div>
             <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
-              {pendingExpense > 0
+              {isPast
+                ? pendingExpense > 0
+                  ? `${formatCurrency(pendingExpense)} não pago no mês`
+                  : 'Tudo pago'
+                : pendingExpense > 0
                 ? `+ ${formatCurrency(pendingExpense)} a pagar`
                 : 'Tudo pago'}
             </div>

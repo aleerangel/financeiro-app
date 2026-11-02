@@ -4,7 +4,7 @@ import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { calculateInstallmentDueDates } from '@/lib/credit-card-utils';
-import { getZonedParts, getTodayYMD, getZonedRangeBoundsIso, getZonedYMD } from '@/lib/date-utils';
+import { getZonedParts, getTodayYMD, getZonedRangeBoundsIso, getZonedYMD, isCurrentMonth } from '@/lib/date-utils';
 import { applyScopeToNotes } from '@/lib/business-scope-utils';
 import { fetchAllPages } from '@/lib/supabase/pagination';
 
@@ -55,7 +55,13 @@ export async function getTransactions(month: number, year: number): Promise<Tran
 
   // Busca em Regime de Caixa:
   // - Se paga: data efetiva do pagamento (paid_at) no mês selecionado (ou fallback due_date se paid_at for null)
-  // - Se pendente: data prevista de vencimento (due_date) no mês selecionado
+  // - Se pendente no mês atual: inclui também pendências de meses anteriores ainda não quitadas
+  // - Se pendente em mês passado: restringe às pendências que venceram naquele mês
+  const isCurrent = isCurrentMonth(month, year);
+  const pendingClause = isCurrent
+    ? `and(is_paid.eq.false,due_date.gte.${year - 1}-01-01,due_date.lte.${endDate})`
+    : `and(is_paid.eq.false,due_date.gte.${startDate},due_date.lte.${endDate})`;
+
   const { data, error } = await fetchAllPages<Transaction>((from, to) =>
     supabase
       .from('transactions')
@@ -67,7 +73,7 @@ export async function getTransactions(month: number, year: number): Promise<Tran
       `)
       .eq('user_id', user.id)
       .or(
-        `and(is_paid.eq.true,paid_at.gte.${startIso},paid_at.lte.${endIso}),and(is_paid.eq.true,paid_at.is.null,due_date.gte.${startDate},due_date.lte.${endDate}),and(is_paid.eq.false,due_date.gte.${startDate},due_date.lte.${endDate})`
+        `and(is_paid.eq.true,paid_at.gte.${startIso},paid_at.lte.${endIso}),and(is_paid.eq.true,paid_at.is.null,due_date.gte.${startDate},due_date.lte.${endDate}),${pendingClause}`
       )
       .order('due_date', { ascending: false })
       .order('created_at', { ascending: false })

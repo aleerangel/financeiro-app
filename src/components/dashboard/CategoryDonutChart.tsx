@@ -8,6 +8,7 @@ import {
 } from '@/lib/category-evolution-utils';
 import { useReferenceMonthTransactions } from '@/hooks/useReferenceMonthTransactions';
 import { formatCurrency } from '@/lib/utils';
+import { isPastMonth } from '@/lib/date-utils';
 import {
   PieChart,
   TrendingDown,
@@ -16,6 +17,7 @@ import {
   ArrowDownRight,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
 } from 'lucide-react';
 
 const MONTH_SHORT_NAMES = [
@@ -60,6 +62,8 @@ export function CategoryDonutChart({
     handlePrevMonth,
     handleNextMonth,
   } = useReferenceMonthTransactions(transactions, currentMonth, year);
+
+  const isPast = isPastMonth(refMonth, refYear);
 
   const evolutionMetricsMap = useMemo(() => {
     const map = new Map<
@@ -212,6 +216,16 @@ export function CategoryDonutChart({
             </div>
           )}
 
+          {isPast && pendingExpense > 0 && (
+            <span
+              className="flex items-center gap-1 text-[11px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full"
+              title={`Contas que venceram no mês e não foram pagas nele: ${formatCurrency(pendingExpense)}`}
+            >
+              <AlertCircle className="w-3 h-3" />
+              {formatCurrency(pendingExpense)} não pago no mês
+            </span>
+          )}
+
           <span className="text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">
             Pago: {formatCurrency(paidExpense)}
           </span>
@@ -237,14 +251,20 @@ export function CategoryDonutChart({
             <TrendingDown className="w-3.5 h-3.5" />
             Despesas ({periodLabel || MONTH_SHORT_NAMES[refMonth]})
             <span className="text-[11px] text-zinc-400 font-normal">
-              ({paidExpensePct}% pago)
+              {isPast
+                ? pendingExpense > 0
+                  ? `(${paidExpensePct}% pago • ${formatCurrency(pendingExpense)} não pago)`
+                  : '(100% pago)'
+                : `(${paidExpensePct}% pago)`}
             </span>
           </span>
           <span className="text-xs font-bold text-zinc-200">
             {formatCurrency(paidExpense)}{' '}
-            <span className="text-zinc-500 font-normal">
-              / {formatCurrency(totalExpense)}
-            </span>
+            {pendingExpense > 0 ? (
+              <span className="text-zinc-500 font-normal">
+                / {formatCurrency(totalExpense)}
+              </span>
+            ) : null}
           </span>
         </div>
 
@@ -254,7 +274,7 @@ export function CategoryDonutChart({
               {paidExpensePct > 0 && (
                 <div
                   className="h-full bg-rose-400 rounded-full transition-all duration-700 shadow-sm shadow-rose-400/20"
-                  style={{ width: `${paidExpensePct}%` }}
+                  style={{ width: `${isPast && pendingExpense === 0 ? 100 : paidExpensePct}%` }}
                   title={`Pago: ${formatCurrency(paidExpense)} (${paidExpensePct}%)`}
                 />
               )}
@@ -262,7 +282,7 @@ export function CategoryDonutChart({
                 <div
                   className="h-full bg-amber-500/25 border border-dashed border-amber-400/40 rounded-full transition-all duration-700"
                   style={{ width: `${pendingExpensePct}%` }}
-                  title={`A pagar: ${formatCurrency(pendingExpense)} (${pendingExpensePct}%)`}
+                  title={isPast ? `Não pago no mês: ${formatCurrency(pendingExpense)}` : `A pagar: ${formatCurrency(pendingExpense)} (${pendingExpensePct}%)`}
                 />
               )}
             </>

@@ -27,7 +27,7 @@ import {
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { Transaction } from '@/types/database';
 import { getTransactions } from '@/lib/actions/transactions';
-import { getZonedYMD } from '@/lib/date-utils';
+import { getZonedYMD, isPastMonth } from '@/lib/date-utils';
 import {
   isBarbeariaServiceIncome,
   computeRevenueSplit,
@@ -831,7 +831,13 @@ export function MobileSummaryView({
                   {formatHidden(formatCurrency(receivedIncome))}
                 </span>
                 <span className="text-[9px] text-zinc-400 block truncate leading-tight w-full">
-                  {pendingIncome > 0 ? `prev: ${formatHidden(formatCurrency(totalIncome))}` : '100% recebido'}
+                  {isPastMonth(flowChart.month, flowChart.year)
+                    ? pendingIncome > 0
+                      ? `em aberto: ${formatHidden(formatCurrency(pendingIncome))}`
+                      : '100% recebido'
+                    : pendingIncome > 0
+                    ? `prev: ${formatHidden(formatCurrency(totalIncome))}`
+                    : '100% recebido'}
                 </span>
               </button>
 
@@ -854,7 +860,13 @@ export function MobileSummaryView({
                   {formatHidden(formatCurrency(paidExpense))}
                 </span>
                 <span className="text-[9px] text-zinc-400 block truncate leading-tight w-full">
-                  {pendingExpense > 0 ? `prev: ${formatHidden(formatCurrency(totalExpense))}` : '100% pago'}
+                  {isPastMonth(flowChart.month, flowChart.year)
+                    ? pendingExpense > 0
+                      ? `não pago: ${formatHidden(formatCurrency(pendingExpense))}`
+                      : '100% pago'
+                    : pendingExpense > 0
+                    ? `prev: ${formatHidden(formatCurrency(totalExpense))}`
+                    : '100% pago'}
                 </span>
               </button>
 
@@ -877,7 +889,9 @@ export function MobileSummaryView({
                   {formatHidden(formatCurrency(realizedBalance))}
                 </span>
                 <span className="text-[9px] text-zinc-400 block truncate leading-tight w-full">
-                  prev: {formatHidden(formatCurrency(projectedBalance))}
+                  {isPastMonth(flowChart.month, flowChart.year)
+                    ? 'mês encerrado'
+                    : `prev: ${formatHidden(formatCurrency(projectedBalance))}`}
                 </span>
               </button>
             </div>

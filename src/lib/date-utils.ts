@@ -154,3 +154,15 @@ export function isPastMonth(month: number, year: number, now: Date = new Date())
   return year < cur.year || (year === cur.year && month < cur.month);
 }
 
+/** true se (month, year) é o mês corrente no fuso do app. */
+export function isCurrentMonth(month: number, year: number, now: Date = new Date()): boolean {
+  const cur = getZonedParts(now);
+  return year === cur.year && month === cur.month;
+}
+
+/** true se (month, year) é posterior ao mês corrente no fuso do app. */
+export function isFutureMonth(month: number, year: number, now: Date = new Date()): boolean {
+  const cur = getZonedParts(now);
+  return year > cur.year || (year === cur.year && month > cur.month);
+}
+
