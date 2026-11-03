@@ -2,13 +2,18 @@
 
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { AppNotification, UserNotificationPreferences } from '@/types/notifications';
-import { getTodayYMD } from '@/lib/date-utils';
+import {
+  AppNotification,
+  UserNotificationPreferences,
+  PushSubscriptionJSON,
+} from '@/types/notifications';
+import { getTodayYMD, addDaysToYMD, formatDateBR } from '@/lib/date-utils';
 import { formatCurrency } from '@/lib/utils';
+import { dispatchWebPushToUser } from '@/lib/web-push';
 
-export async function getNotificationPreferences(): Promise<UserNotificationPreferences> {
+export async function getNotificationPreferences(targetUserId?: string): Promise<UserNotificationPreferences> {
   const supabase = await createClient();
-  const user = await getAuthenticatedUser();
+  const user = targetUserId ? { id: targetUserId } : await getAuthenticatedUser();
 
   const defaultPreferences: UserNotificationPreferences = {
     user_id: user?.id || '',
@@ -18,6 +23,7 @@ export async function getNotificationPreferences(): Promise<UserNotificationPref
     notify_credits: true,
     notify_client_returns: true,
     notify_birthdays: true,
+    notify_days_before: [0, 1, 3],
     push_subscription: null,
   };
 
@@ -42,6 +48,9 @@ export async function getNotificationPreferences(): Promise<UserNotificationPref
       notify_credits: data.notify_credits ?? true,
       notify_client_returns: data.notify_client_returns ?? true,
       notify_birthdays: data.notify_birthdays ?? true,
+      notify_days_before: Array.isArray(data.notify_days_before) && data.notify_days_before.length > 0
+        ? data.notify_days_before
+        : [0, 1, 3],
       push_subscription: data.push_subscription || null,
       created_at: data.created_at,
       updated_at: data.updated_at,
@@ -68,6 +77,7 @@ export async function saveNotificationPreferences(
     notify_credits: input.notify_credits ?? current.notify_credits,
     notify_client_returns: input.notify_client_returns ?? current.notify_client_returns,
     notify_birthdays: input.notify_birthdays ?? current.notify_birthdays,
+    notify_days_before: input.notify_days_before ?? current.notify_days_before,
     push_subscription: input.push_subscription !== undefined ? input.push_subscription : current.push_subscription,
     updated_at: new Date().toISOString(),
   };
@@ -82,6 +92,64 @@ export async function saveNotificationPreferences(
 
   revalidatePath('/dashboard');
   return payload;
+}
+
+/**
+ * Salva a inscrição do dispositivo atual no banco para suporte a múltiplos aparelhos
+ */
+export async function savePushSubscription(
+  subscriptionJSON: PushSubscriptionJSON,
+  userAgent?: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const user = await getAuthenticatedUser();
+
+  if (!user) return { success: false, error: 'Não autenticado' };
+  if (!subscriptionJSON.endpoint || !subscriptionJSON.keys?.p256dh || !subscriptionJSON.keys?.auth) {
+    return { success: false, error: 'Dados de inscrição Web Push inválidos.' };
+  }
+
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    {
+      user_id: user.id,
+      endpoint: subscriptionJSON.endpoint,
+      p256dh: subscriptionJSON.keys.p256dh,
+      auth: subscriptionJSON.keys.auth,
+      user_agent: userAgent || null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'endpoint' }
+  );
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Remove a inscrição de um aparelho ao desativar o Web Push
+ */
+export async function removePushSubscription(
+  endpoint: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const user = await getAuthenticatedUser();
+
+  if (!user) return { success: false, error: 'Não autenticado' };
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('endpoint', endpoint);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
 }
 
 export async function getNotifications(limit: number = 30): Promise<AppNotification[]> {
@@ -163,16 +231,20 @@ export async function deleteNotification(id: string): Promise<void> {
 }
 
 /**
- * Motor gerador de alertas inteligentes com idempotência por data
+ * Motor gerador de alertas inteligentes com antecedência configurável e disparo Web Push
  */
-export async function syncAndGenerateNotifications(): Promise<void> {
+export async function syncAndGenerateNotifications(targetUserId?: string): Promise<{ createdCount: number }> {
   const supabase = await createClient();
-  const user = await getAuthenticatedUser();
+  const user = targetUserId ? { id: targetUserId } : await getAuthenticatedUser();
 
-  if (!user) return;
+  if (!user) return { createdCount: 0 };
 
-  const prefs = await getNotificationPreferences();
+  const prefs = await getNotificationPreferences(user.id);
   const today = getTodayYMD();
+  const daysBeforeList = Array.isArray(prefs.notify_days_before) && prefs.notify_days_before.length > 0
+    ? Array.from(new Set(prefs.notify_days_before)).sort((a, b) => a - b)
+    : [0, 1, 3];
+
   const rowsToInsert: Array<{
     user_id: string;
     category: AppNotification['category'];
@@ -184,43 +256,77 @@ export async function syncAndGenerateNotifications(): Promise<void> {
     metadata?: Record<string, unknown>;
   }> = [];
 
-  // 1. Contas a pagar (vencendo hoje ou atrasadas)
+  // 1. Contas a Pagar (Despesas) com Antecedência e em Atraso
   if (prefs.notify_bills) {
-    const { data: bills } = await supabase
+    // A. Contas em Atraso (sempre verificadas no dia atual)
+    const { data: overdueBills } = await supabase
       .from('transactions')
       .select('id, description, amount, due_date, type')
       .eq('user_id', user.id)
       .eq('type', 'expense')
       .eq('is_paid', false)
-      .lte('due_date', today)
+      .lt('due_date', today)
       .order('due_date', { ascending: true })
       .limit(10);
 
-    if (bills && bills.length > 0) {
-      for (const bill of bills) {
-        const isOverdue = bill.due_date < today;
-        const category = isOverdue ? 'bill_overdue' : 'bill_due';
-        const title = isOverdue ? 'Conta em Atraso' : 'Conta Vence Hoje';
-        const message = isOverdue
-          ? `A despesa "${bill.description}" de ${formatCurrency(bill.amount)} venceu em ${bill.due_date}.`
-          : `A despesa "${bill.description}" de ${formatCurrency(bill.amount)} vence hoje.`;
-
+    if (overdueBills && overdueBills.length > 0) {
+      for (const bill of overdueBills) {
         rowsToInsert.push({
           user_id: user.id,
-          category,
-          title,
-          message,
+          category: 'bill_overdue',
+          title: 'Conta em Atraso',
+          message: `A despesa "${bill.description}" de ${formatCurrency(bill.amount)} venceu em ${formatDateBR(bill.due_date)}.`,
           action_url: '/transacoes',
           action_label: 'Ver no Extrato',
-          idempotency_key: `${category}:${bill.id}:${today}`,
-          metadata: { transaction_id: bill.id, amount: bill.amount },
+          idempotency_key: `bill_overdue:${bill.id}:${today}`,
+          metadata: { transaction_id: bill.id, amount: bill.amount, due_date: bill.due_date },
         });
+      }
+    }
+
+    // B. Contas no dia e com Antecedência configurada
+    for (const daysBefore of daysBeforeList) {
+      const targetDate = addDaysToYMD(today, daysBefore);
+      const { data: advanceBills } = await supabase
+        .from('transactions')
+        .select('id, description, amount, due_date, type')
+        .eq('user_id', user.id)
+        .eq('type', 'expense')
+        .eq('is_paid', false)
+        .eq('due_date', targetDate)
+        .limit(10);
+
+      if (advanceBills && advanceBills.length > 0) {
+        for (const bill of advanceBills) {
+          let title = 'Conta Vence Hoje';
+          let message = `A despesa "${bill.description}" de ${formatCurrency(bill.amount)} vence hoje.`;
+
+          if (daysBefore === 1) {
+            title = 'Conta Vence Amanhã';
+            message = `A despesa "${bill.description}" de ${formatCurrency(bill.amount)} vence amanhã (${formatDateBR(bill.due_date)}).`;
+          } else if (daysBefore > 1) {
+            title = 'Conta a Vencer';
+            message = `A despesa "${bill.description}" de ${formatCurrency(bill.amount)} vence em ${daysBefore} dias (${formatDateBR(bill.due_date)}).`;
+          }
+
+          rowsToInsert.push({
+            user_id: user.id,
+            category: 'bill_due',
+            title,
+            message,
+            action_url: '/transacoes',
+            action_label: 'Ver no Extrato',
+            idempotency_key: `bill_due:${bill.id}:${targetDate}:day_${daysBefore}`,
+            metadata: { transaction_id: bill.id, amount: bill.amount, due_date: bill.due_date, days_before: daysBefore },
+          });
+        }
       }
     }
   }
 
-  // 2. Fiados / Vendas a prazo vencidas
+  // 2. Fiados / Vendas a Prazo
   if (prefs.notify_credits) {
+    // A. Fiados em atraso
     const { data: overdueDebts } = await supabase
       .from('sales')
       .select('id, client_name, total_amount, remaining_amount, due_date, status')
@@ -238,7 +344,7 @@ export async function syncAndGenerateNotifications(): Promise<void> {
           user_id: user.id,
           category: 'credit_overdue',
           title: 'Fiado em Atraso',
-          message: `${debt.client_name} tem pagamento de ${formatCurrency(debt.remaining_amount || debt.total_amount)} vencido em ${debt.due_date}.`,
+          message: `${debt.client_name} tem pagamento de ${formatCurrency(debt.remaining_amount || debt.total_amount)} vencido em ${formatDateBR(debt.due_date)}.`,
           action_url: '/fiados',
           action_label: 'Cobrar no WhatsApp',
           idempotency_key: `credit_overdue:${debt.id}:${today}`,
@@ -246,12 +352,50 @@ export async function syncAndGenerateNotifications(): Promise<void> {
         });
       }
     }
+
+    // B. Fiados vencendo no dia ou com antecedência
+    for (const daysBefore of daysBeforeList) {
+      const targetDate = addDaysToYMD(today, daysBefore);
+      const { data: advanceDebts } = await supabase
+        .from('sales')
+        .select('id, client_name, total_amount, remaining_amount, due_date, status')
+        .eq('user_id', user.id)
+        .eq('payment_method', 'on_credit')
+        .neq('status', 'paid')
+        .eq('due_date', targetDate)
+        .limit(10);
+
+      if (advanceDebts && advanceDebts.length > 0) {
+        for (const debt of advanceDebts) {
+          let title = 'Fiado Vence Hoje';
+          let message = `O pagamento de ${debt.client_name} (${formatCurrency(debt.remaining_amount || debt.total_amount)}) vence hoje.`;
+
+          if (daysBefore === 1) {
+            title = 'Fiado Vence Amanhã';
+            message = `O pagamento de ${debt.client_name} (${formatCurrency(debt.remaining_amount || debt.total_amount)}) vence amanhã.`;
+          } else if (daysBefore > 1) {
+            title = 'Fiado a Vencer';
+            message = `O pagamento de ${debt.client_name} (${formatCurrency(debt.remaining_amount || debt.total_amount)}) vence em ${daysBefore} dias.`;
+          }
+
+          rowsToInsert.push({
+            user_id: user.id,
+            category: 'bill_due',
+            title,
+            message,
+            action_url: '/fiados',
+            action_label: 'Ver Fiados',
+            idempotency_key: `credit_due:${debt.id}:${targetDate}:day_${daysBefore}`,
+            metadata: { sale_id: debt.id, client_name: debt.client_name, days_before: daysBefore },
+          });
+        }
+      }
+    }
   }
 
-  // 3. Aniversariantes do dia
+  // 3. Aniversariantes do Dia
   if (prefs.notify_birthdays) {
-    // Clientes com birth_date no formato YYYY-MM-DD
-    const todayParts = today.split('-'); // [YYYY, MM, DD]
+    const todayParts = today.split('-');
     const todayMonthDay = `${todayParts[1]}-${todayParts[2]}`;
 
     const { data: clients } = await supabase
@@ -281,51 +425,55 @@ export async function syncAndGenerateNotifications(): Promise<void> {
     }
   }
 
-  // 4. Mensalidades de Assinatura vencendo hoje ou atrasadas
-  if (prefs.notify_credits) {
-    const { data: subInvoices } = await supabase
-      .from('subscription_invoices')
-      .select('id, amount, due_date, status, client:clients(name)')
-      .eq('user_id', user.id)
-      .eq('status', 'pending')
-      .lte('due_date', today)
-      .order('due_date', { ascending: true })
-      .limit(10);
+  // 4. Inserção com idempotência no banco de dados
+  if (rowsToInsert.length === 0) {
+    return { createdCount: 0 };
+  }
 
-    if (subInvoices && subInvoices.length > 0) {
-      for (const inv of subInvoices) {
-        const isOverdue = inv.due_date < today;
-        const clientData = inv.client as unknown as { name?: string } | null;
-        const clientName = clientData?.name || 'Cliente';
-        const title = isOverdue ? 'Mensalidade em Atraso' : 'Mensalidade Vence Hoje';
-        const message = isOverdue
-          ? `A mensalidade de ${clientName} (${formatCurrency(inv.amount)}) venceu em ${inv.due_date}.`
-          : `A mensalidade de ${clientName} (${formatCurrency(inv.amount)}) vence hoje.`;
+  // Descobre quais dessas chaves já foram inseridas anteriormente
+  const keysToCheck = rowsToInsert.map((r) => r.idempotency_key);
+  const { data: existingRows } = await supabase
+    .from('notifications')
+    .select('idempotency_key')
+    .eq('user_id', user.id)
+    .in('idempotency_key', keysToCheck);
 
-        rowsToInsert.push({
-          user_id: user.id,
-          category: isOverdue ? 'credit_overdue' : 'bill_due',
-          title,
-          message,
-          action_url: '/clientes',
-          action_label: 'Ver Assinantes',
-          idempotency_key: `sub_invoice:${inv.id}:${today}`,
-          metadata: { invoice_id: inv.id, amount: inv.amount, client_name: clientName },
-        });
+  const existingKeySet = new Set((existingRows || []).map((x) => x.idempotency_key));
+  const trulyNewRows = rowsToInsert.filter((r) => !existingKeySet.has(r.idempotency_key));
+
+  if (trulyNewRows.length > 0) {
+    try {
+      await supabase.from('notifications').upsert(trulyNewRows, {
+        onConflict: 'user_id,idempotency_key',
+        ignoreDuplicates: true,
+      });
+    } catch (err) {
+      console.warn('Erro ao inserir notificações idempotentes:', err);
+    }
+
+    // 5. Disparo de Web Push para todos os aparelhos ativos caso o push esteja ativado
+    if (prefs.push_notifications_enabled) {
+      try {
+        if (trulyNewRows.length === 1) {
+          const first = trulyNewRows[0];
+          await dispatchWebPushToUser(user.id, {
+            title: first.title,
+            body: first.message,
+            url: first.action_url,
+          });
+        } else {
+          const first = trulyNewRows[0];
+          await dispatchWebPushToUser(user.id, {
+            title: `Alertas Financeiros: ${trulyNewRows.length} novidades`,
+            body: `${first.title}: ${first.message} (+${trulyNewRows.length - 1} outros)`,
+            url: '/transacoes',
+          });
+        }
+      } catch (err) {
+        console.warn('Erro ao despachar Web Push em segundo plano:', err);
       }
     }
   }
 
-  // 5. Inserção com idempotência (ignora se já gerado para aquele evento hoje)
-  if (rowsToInsert.length > 0) {
-    try {
-      await supabase.from('notifications').upsert(rowsToInsert, {
-        onConflict: 'user_id,idempotency_key',
-        ignoreDuplicates: true,
-      });
-    } catch {
-      // Ignora erro caso chave já exista
-    }
-  }
+  return { createdCount: trulyNewRows.length };
 }
-

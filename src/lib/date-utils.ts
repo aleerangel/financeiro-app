@@ -148,7 +148,31 @@ export function resolveSaleTimestamps(
   };
 }
 
+/**
+ * Adiciona ou subtrai dias de uma string YYYY-MM-DD mantendo consistência de calendário.
+ */
+export function addDaysToYMD(ymd: string, days: number): string {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + days);
+  const ry = date.getUTCFullYear();
+  const rm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const rd = String(date.getUTCDate()).padStart(2, '0');
+  return `${ry}-${rm}-${rd}`;
+}
+
+/**
+ * Converte YYYY-MM-DD para DD/MM/YYYY.
+ */
+export function formatDateBR(ymd: string): string {
+  if (!ymd || !ymd.includes('-')) return ymd;
+  const parts = ymd.split('-');
+  if (parts.length < 3) return ymd;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
 /** true se (month, year) é anterior ao mês corrente no fuso do app. */
+
 export function isPastMonth(month: number, year: number, now: Date = new Date()): boolean {
   const cur = getZonedParts(now);
   return year < cur.year || (year === cur.year && month < cur.month);

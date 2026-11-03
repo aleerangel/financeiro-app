@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   Bell,
-  Mail,
   Smartphone,
   Calendar,
   DollarSign,
@@ -13,12 +12,16 @@ import {
   Save,
   Loader2,
   AlertCircle,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import {
   getNotificationPreferences,
   saveNotificationPreferences,
+  savePushSubscription,
+  removePushSubscription,
 } from '@/lib/actions/notifications';
-import { UserNotificationPreferences } from '@/types/notifications';
+import { UserNotificationPreferences, PushSubscriptionJSON } from '@/types/notifications';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { toast } from 'sonner';
 
@@ -28,21 +31,56 @@ interface NotificationPreferencesModalProps {
   userEmail?: string;
 }
 
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+const AVAILABLE_DAYS_BEFORE = [
+  { days: 0, label: 'No dia do vencimento' },
+  { days: 1, label: '1 dia antes' },
+  { days: 2, label: '2 dias antes' },
+  { days: 3, label: '3 dias antes' },
+  { days: 5, label: '5 dias antes' },
+];
+
 export function NotificationPreferencesModal({
   isOpen,
   onClose,
-  userEmail,
 }: NotificationPreferencesModalProps) {
   const { hasBusiness } = useBusinessProfile();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [prefs, setPrefs] = useState<UserNotificationPreferences | null>(null);
+  const [isDeviceSubscribed, setIsDeviceSubscribed] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       return Notification.permission;
     }
     return 'default';
   });
+
+  // Checa se este navegador/aparelho específico já possui uma PushSubscription ativa
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((reg) => reg.pushManager.getSubscription())
+        .then((sub) => {
+          setIsDeviceSubscribed(Boolean(sub));
+        })
+        .catch(() => {
+          setIsDeviceSubscribed(false);
+        });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -67,27 +105,102 @@ export function NotificationPreferencesModal({
 
   if (!isOpen) return null;
 
-  const handleRequestPushPermission = async () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      toast.error('Este navegador não suporta notificações Push.');
+  const handleTogglePush = async (enable: boolean) => {
+    if (!prefs) return;
+
+    if (!enable) {
+      // Desativar Push neste dispositivo
+      try {
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            await removePushSubscription(sub.endpoint);
+            await sub.unsubscribe();
+          }
+        }
+        setIsDeviceSubscribed(false);
+        setPrefs({ ...prefs, push_notifications_enabled: false });
+        toast.info('Notificações Push desativadas neste aparelho.');
+      } catch (err) {
+        console.error('Erro ao desativar push:', err);
+      }
+      return;
+    }
+
+    // Ativar Push
+    if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) {
+      toast.error('Este navegador não suporta notificações Web Push.');
       return;
     }
 
     try {
       const permission = await Notification.requestPermission();
       setPushPermission(permission);
-      if (permission === 'granted') {
-        toast.success('Permissão de notificações Push concedida!');
-        if (prefs) {
-          setPrefs({ ...prefs, push_notifications_enabled: true });
-        }
-      } else if (permission === 'denied') {
-        toast.error('Permissão de notificações bloqueada no navegador.');
+
+      if (permission !== 'granted') {
+        toast.error('Permissão de notificações não concedida no navegador.');
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('Erro ao solicitar permissão de notificações.');
+
+      const reg = await navigator.serviceWorker.ready;
+      const vapidPublicKey =
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+        'BCXW6RXG8oJqugvGFiwBMuTlao59blJtkwPrEGonTjYNYTvAPRl2pJCLg8V2lTqkYcjCaNWTTpOcQdM8eQOa8SA';
+
+      const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedVapidKey as unknown as BufferSource,
+        });
+      }
+
+      if (sub) {
+        const rawJson = sub.toJSON();
+        const subJSON: PushSubscriptionJSON = {
+          endpoint: rawJson.endpoint || '',
+          keys: {
+            p256dh: rawJson.keys?.p256dh || '',
+            auth: rawJson.keys?.auth || '',
+          },
+        };
+        const res = await savePushSubscription(subJSON, navigator.userAgent);
+
+        if (res.success) {
+          setIsDeviceSubscribed(true);
+          setPrefs({ ...prefs, push_notifications_enabled: true });
+          toast.success('Este aparelho foi cadastrado para receber notificações!');
+        } else {
+          toast.error(res.error || 'Erro ao registrar aparelho no servidor.');
+        }
+      }
+    } catch (err: unknown) {
+      console.error('Erro ao autorizar Web Push:', err);
+      toast.error('Falha ao registrar para notificações Push.');
     }
+  };
+
+  const handleToggleDayBefore = (day: number) => {
+    if (!prefs) return;
+    const currentDays = prefs.notify_days_before || [0, 1, 3];
+    const exists = currentDays.includes(day);
+
+    let updated: number[];
+    if (exists) {
+      // Impede remover todos os dias para não ficar sem nenhum alerta
+      if (currentDays.length <= 1) {
+        toast.info('Selecione pelo menos um momento para receber os alertas.');
+        return;
+      }
+      updated = currentDays.filter((d) => d !== day);
+    } else {
+      updated = [...currentDays, day].sort((a, b) => a - b);
+    }
+
+    setPrefs({ ...prefs, notify_days_before: updated });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -97,12 +210,12 @@ export function NotificationPreferencesModal({
     try {
       setSaving(true);
       await saveNotificationPreferences({
-        email_notifications_enabled: prefs.email_notifications_enabled,
         push_notifications_enabled: prefs.push_notifications_enabled,
         notify_bills: prefs.notify_bills,
         notify_credits: prefs.notify_credits,
         notify_client_returns: prefs.notify_client_returns,
         notify_birthdays: prefs.notify_birthdays,
+        notify_days_before: prefs.notify_days_before,
       });
 
       toast.success('Preferências de notificação salvas com sucesso!');
@@ -136,7 +249,7 @@ export function NotificationPreferencesModal({
               Configurações de Notificações
             </h2>
             <p className="text-xs text-zinc-400">
-              Personalize canais e tipos de alertas do seu app
+              Personalize canais e prazos de antecedência dos seus alertas
             </p>
           </div>
         </div>
@@ -174,7 +287,7 @@ export function NotificationPreferencesModal({
                 </span>
               </div>
 
-              {/* Canal 2: Web Push (Opcional) */}
+              {/* Canal 2: Web Push (Celular PWA e Navegadores) */}
               <div className="p-3.5 bg-zinc-950/80 border border-zinc-800 rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -194,66 +307,89 @@ export function NotificationPreferencesModal({
                     <input
                       type="checkbox"
                       checked={prefs.push_notifications_enabled}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setPrefs({ ...prefs, push_notifications_enabled: checked });
-                        if (checked && pushPermission !== 'granted') {
-                          handleRequestPushPermission();
-                        }
-                      }}
+                      onChange={(e) => handleTogglePush(e.target.checked)}
                       className="sr-only peer"
                     />
                     <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                   </label>
                 </div>
 
-                {prefs.push_notifications_enabled && pushPermission !== 'granted' && (
-                  <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-amber-300 text-[11px]">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>Autorização necessária no navegador</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRequestPushPermission}
-                      className="px-2.5 py-1 bg-amber-500 text-zinc-950 font-bold text-[10px] rounded-lg shadow-sm"
-                    >
-                      Autorizar
-                    </button>
+                {/* Status do Dispositivo Atual */}
+                {prefs.push_notifications_enabled && (
+                  <div className="pt-1">
+                    {isDeviceSubscribed ? (
+                      <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-2 text-emerald-400 text-[11px] font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Este aparelho está conectado para receber notificações.</span>
+                      </div>
+                    ) : pushPermission === 'granted' ? (
+                      <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-between text-[11px]">
+                        <span className="text-blue-300">Conectar este aparelho ao Push</span>
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePush(true)}
+                          className="px-2.5 py-1 bg-blue-500 text-white font-bold text-[10px] rounded-lg shadow-sm"
+                        >
+                          Conectar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 text-amber-300 text-[11px]">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>Autorização necessária no navegador</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePush(true)}
+                          className="px-2.5 py-1 bg-amber-500 text-zinc-950 font-bold text-[10px] rounded-lg shadow-sm"
+                        >
+                          Autorizar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Canal 3: E-mail (Opcional) */}
-              <div className="p-3.5 bg-zinc-950/80 border border-zinc-800 rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-xs text-zinc-200 block">
-                      Envio por E-mail
-                    </span>
-                    <span className="text-[10px] text-zinc-400 block">
-                      {userEmail ? `Destinatário: ${userEmail}` : 'E-mail cadastrado na conta'}
-                    </span>
-                  </div>
+            {/* Seção 2: Antecedência dos Avisos (Chips Multi-Seleção) */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Antecedência dos Avisos de Vencimento</span>
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-zinc-950/80 border border-zinc-800 rounded-2xl space-y-2">
+                <p className="text-[11px] text-zinc-400">
+                  Escolha em quais momentos deseja ser alertado sobre contas a pagar e cobranças:
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {AVAILABLE_DAYS_BEFORE.map(({ days, label }) => {
+                    const isSelected = (prefs.notify_days_before || [0, 1, 3]).includes(days);
+                    return (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => handleToggleDayBefore(days)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 ${
+                          isSelected
+                            ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
+                            : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={prefs.email_notifications_enabled}
-                    onChange={(e) =>
-                      setPrefs({ ...prefs, email_notifications_enabled: e.target.checked })
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                </label>
               </div>
             </div>
 
-            {/* Seção 2: Gatilhos e Eventos Monitorados */}
+            {/* Seção 3: Eventos Monitorados */}
             <div className="space-y-3">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-400 block px-1">
                 Eventos e Alertas Ativos
@@ -269,7 +405,7 @@ export function NotificationPreferencesModal({
                         Contas a Pagar & Despesas
                       </span>
                       <span className="text-[10px] text-zinc-400">
-                        Avisos de contas vencendo hoje e boletos em atraso
+                        Avisos de contas a vencer e boletos em atraso
                       </span>
                     </div>
                   </div>
