@@ -244,7 +244,7 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
   return (
     <div className="space-y-6">
       {/* Resumo e Estatísticas de Clientes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
           <div>
             <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">

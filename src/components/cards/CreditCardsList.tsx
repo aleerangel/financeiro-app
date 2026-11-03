@@ -73,7 +73,7 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
   return (
     <div className="space-y-6">
       {/* Resumo Consolidado de Limites e Botão */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <span className="text-xs uppercase tracking-wider text-purple-400 font-semibold">
             Fatura Atual (Total)

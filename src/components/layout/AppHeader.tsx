@@ -88,13 +88,13 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
   };
 
   return (
-    <header className="hidden md:flex sticky top-0 z-30 w-full h-16 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md items-center justify-between px-6 shrink-0">
+    <header className="hidden md:flex sticky top-0 z-30 w-full h-16 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md items-center justify-between px-4 lg:px-6 shrink-0 gap-3">
       {/* Lado Esquerdo: Toggle da Sidebar & Breadcrumbs */}
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
         <button
           type="button"
           onClick={toggleSidebar}
-          className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 rounded-xl transition border border-transparent hover:border-zinc-800"
+          className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 rounded-xl transition border border-transparent hover:border-zinc-800 shrink-0"
           title={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
           aria-label="Alternar menu lateral"
         >
@@ -105,23 +105,23 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
           )}
         </button>
 
-        <div className="h-4 w-px bg-zinc-800" />
+        <div className="h-4 w-px bg-zinc-800 shrink-0" />
 
-        {/* Breadcrumbs */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
-          <span className="text-zinc-500 font-medium">{breadcrumb.section}</span>
-          <ChevronRight className="w-3.5 h-3.5 text-zinc-600" />
-          <span className="text-zinc-200 font-semibold">{breadcrumb.label}</span>
+        {/* Breadcrumbs com truncate em telas verticais/estreitas */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs min-w-0">
+          <span className="text-zinc-500 font-medium shrink-0">{breadcrumb.section}</span>
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+          <span className="text-zinc-200 font-semibold truncate max-w-[150px] lg:max-w-none">{breadcrumb.label}</span>
         </nav>
       </div>
 
       {/* Lado Direito: Notificações, Perfil e Ações Rápidas */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Botão de Privacidade / Ocultar Valores */}
         <button
           type="button"
           onClick={() => setShowValues(!showValues)}
-          className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 rounded-xl transition border border-transparent hover:border-zinc-800"
+          className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 rounded-xl transition border border-transparent hover:border-zinc-800 shrink-0"
           title={showValues ? 'Ocultar valores sensíveis' : 'Mostrar valores sensíveis'}
           aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
         >
@@ -137,12 +137,16 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
         <NotificationBell userEmail={userEmail} />
 
         {userEmail && (
-          <div className="flex items-center gap-2 pl-2 border-l border-zinc-800">
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-xs">
+          <div className="flex items-center gap-2 pl-2 border-l border-zinc-800 shrink-0">
+            <div
+              className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-xs shrink-0"
+              title={`Logado como: ${userEmail}`}
+            >
               {userEmail.charAt(0).toUpperCase()}
             </div>
+            {/* Oculta texto longo do e-mail em telas verticais/menores que xl para não quebrar a barra */}
             <span
-              className="text-xs font-medium text-zinc-300 max-w-[180px] truncate"
+              className="text-xs font-medium text-zinc-300 max-w-[150px] truncate hidden xl:inline"
               title={`Logado como: ${userEmail}`}
             >
               {userEmail}
@@ -154,7 +158,7 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className="p-2 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition disabled:opacity-50"
+          className="p-2 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition disabled:opacity-50 shrink-0"
           title="Sair da conta"
           aria-label="Sair"
         >

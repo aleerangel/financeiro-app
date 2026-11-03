@@ -178,7 +178,7 @@ export function SalesView({
   return (
     <div className="space-y-6">
       {/* Cards de Resumo Operacional do Dia */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {/* Faturamento Recebido Hoje */}
         <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-400 mb-2">

@@ -217,12 +217,12 @@ export function SmoothLineChart({
   const chartBody = (
     <>
       {hasHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-          <div>
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-3 gap-3">
+          <div className="min-w-0">
             {title && <h3 className="font-bold text-zinc-100 text-base">{title}</h3>}
             {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
           </div>
-          {rightAction && <div className="shrink-0">{rightAction}</div>}
+          {rightAction && <div className="shrink-0 flex items-center flex-wrap gap-2">{rightAction}</div>}
         </div>
       )}
 

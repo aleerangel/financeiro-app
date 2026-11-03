@@ -91,7 +91,7 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
       </div>
 
       {/* Grid de Itens */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {products.map((prod) => {
           const isService = prod.type === 'service';
 

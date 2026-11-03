@@ -132,7 +132,7 @@ export function BusinessDashboardDesktop({
   return (
     <div className="space-y-6">
       {/* KPIs de Resultado do Negócio no Mês Selecionado */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         {/* 1. Faturamento Bruto */}
         <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
@@ -408,9 +408,9 @@ export function BusinessDashboardDesktop({
       )}
 
       {/* Linha Superior: Gráfico de Vendas e Receita + Saldo das Contas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gráfico (Ocupa 2 colunas no desktop) */}
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Gráfico (Ocupa 2 colunas no desktop largo e largura total em tela vertical) */}
+        <div className="xl:col-span-2">
           <SmoothLineChart
             title={`Faturamento, Gastos e Lucro - ${businessName}`}
             subtitle={businessChart.subtitle}
@@ -562,8 +562,8 @@ export function BusinessDashboardDesktop({
         </div>
       )}
 
-      {/* Controle de Gastos da Barbearia: Consumo por Cartão/Conta + Últimos Gastos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Controle de Gastos do Negócio: Consumo por Cartão/Conta + Últimos Gastos */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Consumo da Barbearia por Conta / Cartão */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div>
@@ -696,7 +696,7 @@ export function BusinessDashboardDesktop({
       </div>
 
       {/* Grade Analítica: Divisão Serviços vs Produtos + Top 5 Clientes do Mês */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Divisão de Faturamento: Serviços vs Produtos */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div>
@@ -830,7 +830,7 @@ export function BusinessDashboardDesktop({
       </div>
 
       {/* Linha Inferior: 5 Produtos/Serviços mais vendidos + 5 Lançamentos recentes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* 5 Produtos/Serviços mais vendidos */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div>

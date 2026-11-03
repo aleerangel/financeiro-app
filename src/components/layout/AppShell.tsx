@@ -68,7 +68,7 @@ export function AppShell({ userEmail, initialProfile, initialContextMode, childr
               <div className="flex-1 flex flex-col min-w-0">
                 <AppHeader userEmail={userEmail} />
 
-                <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-8 md:py-8 md:pb-12 min-w-0">
+                <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-5 lg:px-6 xl:px-8 md:py-6 lg:py-8 md:pb-12 min-w-0">
                   <MobileBackButton />
                   {children}
                 </main>

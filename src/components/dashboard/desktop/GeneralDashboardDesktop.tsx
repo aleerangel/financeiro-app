@@ -179,7 +179,7 @@ export function GeneralDashboardDesktop({
   return (
     <div className="space-y-6">
       {/* 1. Topo: Cards de Resumo Principal */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Card Saldo em Contas */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-400 mb-2">
@@ -295,7 +295,7 @@ export function GeneralDashboardDesktop({
       </div>
 
       {/* 2. Painéis de Receitas & Balanço Geral e Gastos por Categoria */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <MonthlyBarChart
           transactions={transactions}
           accounts={accounts}
@@ -384,7 +384,7 @@ export function GeneralDashboardDesktop({
       />
 
       {/* Grid: Contas, Cartões e Últimas Transações */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Minhas Contas */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
@@ -502,7 +502,7 @@ export function GeneralDashboardDesktop({
         </div>
 
         {/* Últimos Lançamentos do Mês */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-4">
+        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-4 md:col-span-2 xl:col-span-1">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-zinc-100 flex items-center gap-2">
               <ArrowLeftRight className="w-4 h-4 text-emerald-400" />
