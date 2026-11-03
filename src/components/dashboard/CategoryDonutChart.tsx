@@ -38,10 +38,12 @@ interface CategoryDonutChartProps {
 interface CategoryTotal {
   name: string;
   color: string;
+  paid: number;
+  pending: number;
   total: number;
   percentage: number;
-  strokeDasharray: string;
-  strokeDashoffset: number;
+  strokeDasharray?: string;
+  strokeDashoffset?: number;
 }
 
 export function CategoryDonutChart({
@@ -82,7 +84,8 @@ export function CategoryDonutChart({
   }, [expenseEvolution, refMonth, refYear]);
 
   const {
-    categoryTotals,
+    chartArcs,
+    legendCategories,
     paidExpense,
     pendingExpense,
     totalExpense,
@@ -95,24 +98,42 @@ export function CategoryDonutChart({
     let paidExp = 0;
     let pendExp = 0;
 
-    const map = new Map<string, { name: string; color: string; total: number }>();
+    const map = new Map<
+      string,
+      {
+        name: string;
+        color: string;
+        paid: number;
+        pending: number;
+        total: number;
+      }
+    >();
 
     for (const t of expenseTxs) {
       const amt = Number(t.amount);
       if (t.is_paid) {
         paidExp += amt;
-        const catName = t.category?.name || 'Outras Despesas';
-        const catColor = t.category?.color || '#64748b';
-        const current = map.get(catName) || {
-          name: catName,
-          color: catColor,
-          total: 0,
-        };
-        current.total += amt;
-        map.set(catName, current);
       } else {
         pendExp += amt;
       }
+
+      const catName = t.category?.name || 'Outras Despesas';
+      const catColor = t.category?.color || '#64748b';
+      const current = map.get(catName) || {
+        name: catName,
+        color: catColor,
+        paid: 0,
+        pending: 0,
+        total: 0,
+      };
+
+      if (t.is_paid) {
+        current.paid += amt;
+      } else {
+        current.pending += amt;
+      }
+      current.total += amt;
+      map.set(catName, current);
     }
 
     const total = paidExp + pendExp;
@@ -122,19 +143,24 @@ export function CategoryDonutChart({
         : 0;
     const pendPct = total > 0 ? Math.max(0, 100 - paidPct) : 0;
 
-    const totals = Array.from(map.values())
+    // Fatias do gráfico de rosca (somente despesas já pagas)
+    const chartTotals = Array.from(map.values())
+      .filter((item) => item.paid > 0)
       .map((item) => ({
         ...item,
-        percentage: paidExp > 0 ? (item.total / paidExp) * 100 : 0,
+        percentage: paidExp > 0 ? (item.paid / paidExp) * 100 : 0,
       }))
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => b.paid - a.paid);
 
     const radius = 60;
     const circumference = 2 * Math.PI * radius;
 
-    const totalsWithArcs: CategoryTotal[] = totals.reduce<{
+    const chartArcs = chartTotals.reduce<{
       acc: number;
-      items: CategoryTotal[];
+      items: (typeof chartTotals[0] & {
+        strokeDasharray: string;
+        strokeDashoffset: number;
+      })[];
     }>(
       (state, item) => {
         const arcLength = (item.percentage / 100) * circumference;
@@ -153,8 +179,21 @@ export function CategoryDonutChart({
       { acc: 0, items: [] }
     ).items;
 
+    // Lista de categorias (inclui pendentes para visualização, mas sem desenhar no gráfico circular)
+    const legendCategories = Array.from(map.values())
+      .filter((item) => item.total > 0)
+      .map((item) => ({
+        ...item,
+        percentage: paidExp > 0 ? (item.paid / paidExp) * 100 : 0,
+      }))
+      .sort((a, b) => {
+        if (b.paid !== a.paid) return b.paid - a.paid;
+        return b.pending - a.pending;
+      });
+
     return {
-      categoryTotals: totalsWithArcs,
+      chartArcs,
+      legendCategories,
       paidExpense: paidExp,
       pendingExpense: pendExp,
       totalExpense: total,
@@ -293,14 +332,14 @@ export function CategoryDonutChart({
       </div>
 
       {/* Donut Chart + Legenda de Categorias com Indicador de Média */}
-      {paidExpense === 0 || categoryTotals.length === 0 ? (
+      {totalExpense === 0 || legendCategories.length === 0 ? (
         <div className="py-8 flex flex-col items-center justify-center text-center text-zinc-500">
           <PieChart className="w-9 h-9 mb-2 opacity-30 text-zinc-400" />
           <p className="text-sm font-semibold text-zinc-300">
-            Sem despesas efetuadas em {periodLabel || `${MONTH_SHORT_NAMES[refMonth]}/${refYear}`}
+            Sem despesas em {periodLabel || `${MONTH_SHORT_NAMES[refMonth]}/${refYear}`}
           </p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Lançamentos de despesa paga aparecerão aqui categorizados.
+            Lançamentos de despesa aparecerão aqui categorizados.
           </p>
         </div>
       ) : (
@@ -319,7 +358,7 @@ export function CategoryDonutChart({
                 strokeWidth="20"
                 fill="transparent"
               />
-              {categoryTotals.map((cat, index) => (
+              {chartArcs.map((cat, index) => (
                 <circle
                   key={index}
                   cx="80"
@@ -347,7 +386,7 @@ export function CategoryDonutChart({
 
           {/* Legenda de Categorias */}
           <div className="w-full space-y-2 max-h-44 overflow-y-auto pr-1 scrollbar-thin">
-            {categoryTotals.map((cat, index) => {
+            {legendCategories.map((cat, index) => {
               const evo = evolutionMetricsMap.get(cat.name.toLowerCase());
               const hasAvgComparison =
                 evo &&
@@ -367,6 +406,14 @@ export function CategoryDonutChart({
                     <span className="font-medium text-zinc-200 truncate">
                       {cat.name}
                     </span>
+                    {cat.pending > 0 && (
+                      <span
+                        className="text-[10px] text-amber-400 font-medium shrink-0"
+                        title={isPast ? `Não pago no mês: ${formatCurrency(cat.pending)}` : `A pagar: ${formatCurrency(cat.pending)}`}
+                      >
+                        (+{formatCurrency(cat.pending)})
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -390,7 +437,7 @@ export function CategoryDonutChart({
                     )}
 
                     <span className="font-bold text-zinc-100">
-                      {formatCurrency(cat.total)}
+                      {formatCurrency(cat.paid)}
                     </span>
                     <span className="text-[10px] text-zinc-400 w-8 text-right font-semibold">
                       {cat.percentage.toFixed(0)}%

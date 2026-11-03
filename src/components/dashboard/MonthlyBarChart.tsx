@@ -88,7 +88,8 @@ export function MonthlyBarChart({
     pendingYield,
     receivedIncomePct,
     pendingIncomePct,
-    incomeSegments,
+    chartArcs,
+    legendCategories,
     radius,
   } = useMemo(() => {
     let recInc = 0;
@@ -162,7 +163,8 @@ export function MonthlyBarChart({
 
     const pendingIncPct = tIncome > 0 ? Math.max(0, 100 - recIncPct) : 0;
 
-    const segments = Array.from(incomeMap.values())
+    // Fatias do gráfico de rosca (somente receitas já recebidas)
+    const chartSegments = Array.from(incomeMap.values())
       .filter((seg) => seg.received > 0)
       .map((seg) => ({
         ...seg,
@@ -173,9 +175,9 @@ export function MonthlyBarChart({
     const radius = 60;
     const circumference = 2 * Math.PI * radius;
 
-    const segmentsWithArcs = segments.reduce<{
+    const chartArcs = chartSegments.reduce<{
       acc: number;
-      items: (typeof segments[0] & {
+      items: (typeof chartSegments[0] & {
         strokeDasharray: string;
         strokeDashoffset: number;
       })[];
@@ -197,6 +199,18 @@ export function MonthlyBarChart({
       { acc: 0, items: [] }
     ).items;
 
+    // Lista de categorias (inclui pendentes para visualização, mas sem desenhar no gráfico circular)
+    const legendCategories = Array.from(incomeMap.values())
+      .filter((seg) => seg.total > 0)
+      .map((seg) => ({
+        ...seg,
+        percentage: recInc > 0 ? (seg.received / recInc) * 100 : 0,
+      }))
+      .sort((a, b) => {
+        if (b.received !== a.received) return b.received - a.received;
+        return b.pending - a.pending;
+      });
+
     return {
       receivedIncome: recInc,
       pendingIncome: pendInc,
@@ -208,7 +222,8 @@ export function MonthlyBarChart({
       pendingYield,
       receivedIncomePct: recIncPct,
       pendingIncomePct: pendingIncPct,
-      incomeSegments: segmentsWithArcs,
+      chartArcs,
+      legendCategories,
       radius,
     };
   }, [activeTransactions, accounts, refMonth, refYear, currentMonth, year]);
@@ -344,14 +359,14 @@ export function MonthlyBarChart({
       </div>
 
       {/* Donut Chart + Legenda de Categorias com Indicador de Média */}
-      {receivedIncome === 0 || incomeSegments.length === 0 ? (
+      {totalIncome === 0 || legendCategories.length === 0 ? (
         <div className="py-8 flex flex-col items-center justify-center text-center text-zinc-500">
           <PieChart className="w-9 h-9 mb-2 opacity-30 text-zinc-400" />
           <p className="text-sm font-semibold text-zinc-300">
-            Sem receitas efetuadas em {periodLabel || `${MONTH_SHORT_NAMES[refMonth]}/${refYear}`}
+            Sem receitas em {periodLabel || `${MONTH_SHORT_NAMES[refMonth]}/${refYear}`}
           </p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Lançamentos de receita recebida aparecerão aqui categorizados.
+            Lançamentos de receita aparecerão aqui categorizados.
           </p>
         </div>
       ) : (
@@ -370,7 +385,7 @@ export function MonthlyBarChart({
                 strokeWidth="20"
                 fill="transparent"
               />
-              {incomeSegments.map((cat, index) => (
+              {chartArcs.map((cat, index) => (
                 <circle
                   key={index}
                   cx="80"
@@ -398,7 +413,7 @@ export function MonthlyBarChart({
 
           {/* Legenda de Categorias */}
           <div className="w-full space-y-2 max-h-44 overflow-y-auto pr-1 scrollbar-thin">
-            {incomeSegments.map((seg, index) => {
+            {legendCategories.map((seg, index) => {
               const evo = evolutionMetricsMap.get(seg.name.toLowerCase());
               const hasAvgComparison =
                 evo &&
@@ -418,6 +433,14 @@ export function MonthlyBarChart({
                     <span className="font-medium text-zinc-200 truncate">
                       {seg.name}
                     </span>
+                    {seg.pending > 0 && (
+                      <span
+                        className="text-[10px] text-amber-400 font-medium shrink-0"
+                        title={isPast ? `Não recebido no mês: ${formatCurrency(seg.pending)}` : `A receber: ${formatCurrency(seg.pending)}`}
+                      >
+                        (+{formatCurrency(seg.pending)})
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
