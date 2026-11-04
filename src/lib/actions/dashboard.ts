@@ -22,6 +22,10 @@ import {
 } from '@/lib/category-evolution-utils';
 import { Transaction } from '@/types/database';
 import { ClubMonthlyOverview, getClubMonthlyOverview } from '@/lib/actions/subscriptions';
+import {
+  calculateProductGrowth,
+  getProductGrowthCutoffDay,
+} from '@/lib/product-growth-utils';
 
 export interface BusinessPeriodStat {
   label: string; // Ex: 'Jan', '01-07', 'Seg'
@@ -507,6 +511,10 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   const prevMonthIndex = currentMonth === 0 ? 11 : currentMonth - 1;
   const prevMonthYear = currentMonth === 0 ? year - 1 : year;
 
+  // Quando o mês selecionado é o mês corrente (em andamento),
+  // o crescimento é calculado comparando com o mesmo espaço de tempo (dia 1 até o dia atual) do mês anterior.
+  const cutoffDay = getProductGrowthCutoffDay(year, currentMonth);
+
   const productAgg = new Map<string, {
     selectedMonthQuantity: number;
     selectedMonthRevenue: number;
@@ -549,7 +557,10 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
           current.selectedMonthRevenue += price;
           current.currentMonthCount += qty;
         } else if (sYear === prevMonthYear && sMonth === prevMonthIndex) {
-          current.prevMonthCount += qty;
+          // No mês anterior, se o mês atual estiver em andamento, compara apenas até o mesmo dia do mês (ex: 1 a 4)
+          if (parts.day <= cutoffDay) {
+            current.prevMonthCount += qty;
+          }
         }
 
         productAgg.set(pName, current);
@@ -899,12 +910,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
   const topProducts: TopProductStat[] = Array.from(productAgg.entries())
     .filter(([, stat]) => (hasMonthProductSales ? stat.selectedMonthQuantity > 0 : stat.yearlyQuantity > 0))
     .map(([name, stat]) => {
-      let growth = 0;
-      if (stat.prevMonthCount > 0) {
-        growth = Math.round(((stat.currentMonthCount - stat.prevMonthCount) / stat.prevMonthCount) * 100);
-      } else if (stat.currentMonthCount > 0) {
-        growth = 100;
-      }
+      const growth = calculateProductGrowth(stat.currentMonthCount, stat.prevMonthCount);
       return {
         name,
         salesCount: hasMonthProductSales ? stat.selectedMonthQuantity : stat.yearlyQuantity,
