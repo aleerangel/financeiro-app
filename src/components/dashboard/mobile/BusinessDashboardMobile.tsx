@@ -356,12 +356,17 @@ export function BusinessDashboardMobile({
       {Boolean(data.topProducts && data.topProducts.length > 0) && (
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-zinc-100 text-sm">
-              Mais Vendidos
-            </h3>
+            <div>
+              <h3 className="font-bold text-zinc-100 text-sm">
+                Mais Vendidos
+              </h3>
+              <p className="text-[10px] text-zinc-400">
+                Crescimento vs. mesmo período do mês anterior
+              </p>
+            </div>
             <Link
               href="/produtos"
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
+              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 shrink-0"
             >
               Catálogo <Eye className="w-3.5 h-3.5" />
             </Link>
@@ -394,6 +399,11 @@ export function BusinessDashboardMobile({
                       className={`text-[10px] font-bold inline-flex items-center gap-0.5 ${
                         p.growth > 0 ? 'text-emerald-400' : 'text-rose-400'
                       }`}
+                      title={
+                        p.growth > 0
+                          ? 'Crescimento em relação ao mesmo período do mês anterior'
+                          : 'Queda em relação ao mesmo período do mês anterior'
+                      }
                     >
                       {p.growth > 0 ? (
                         <ArrowUpRight className="w-2.5 h-2.5" />

@@ -16,6 +16,7 @@ import {
   Users,
   MessageCircle,
   ShoppingBag,
+  Info,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import {
@@ -835,12 +836,17 @@ export function BusinessDashboardDesktop({
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-zinc-100 text-base">
-                5 Produtos/Serviços mais vendidos
-              </h3>
+              <div>
+                <h3 className="font-bold text-zinc-100 text-base">
+                  5 Produtos/Serviços mais vendidos
+                </h3>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Crescimento calculado com base no mesmo período do mês anterior
+                </p>
+              </div>
               <Link
                 href="/produtos"
-                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium"
+                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium shrink-0"
               >
                 <Eye className="w-3.5 h-3.5" />
                 Ver todos
@@ -854,7 +860,17 @@ export function BusinessDashboardDesktop({
                     <th className="pb-2.5 font-semibold">Produto</th>
                     <th className="pb-2.5 font-semibold text-center">Vendas</th>
                     <th className="pb-2.5 font-semibold text-right">Receita</th>
-                    <th className="pb-2.5 font-semibold text-right">Crescimento</th>
+                    <th className="pb-2.5 font-semibold text-right">
+                      <span className="inline-flex items-center gap-1 justify-end">
+                        <span>Crescimento</span>
+                        <span
+                          className="cursor-help text-zinc-500 hover:text-zinc-300 transition"
+                          title="Crescimento calculado comparando com o mesmo período (dia 1 até o dia atual) do mês anterior"
+                        >
+                          <Info className="w-3 h-3" />
+                        </span>
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/60">
@@ -872,17 +888,26 @@ export function BusinessDashboardDesktop({
                       </td>
                       <td className="py-3 text-right">
                         {p.growth > 0 ? (
-                          <span className="inline-flex items-center gap-0.5 text-emerald-400 font-bold text-[11px]">
+                          <span
+                            className="inline-flex items-center gap-0.5 text-emerald-400 font-bold text-[11px]"
+                            title="Crescimento em relação ao mesmo período do mês anterior"
+                          >
                             <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
                             {p.growth}%
                           </span>
                         ) : p.growth < 0 ? (
-                          <span className="inline-flex items-center gap-0.5 text-rose-400 font-bold text-[11px]">
+                          <span
+                            className="inline-flex items-center gap-0.5 text-rose-400 font-bold text-[11px]"
+                            title="Queda em relação ao mesmo período do mês anterior"
+                          >
                             <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
                             {Math.abs(p.growth)}%
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-0.5 text-zinc-500 font-medium text-[11px]">
+                          <span
+                            className="inline-flex items-center gap-0.5 text-zinc-500 font-medium text-[11px]"
+                            title="Sem variação em relação ao mesmo período do mês anterior"
+                          >
                             <Minus className="w-3 h-3" />
                             0%
                           </span>

@@ -43,3 +43,4 @@ describe('Crescimento de Produtos/Serviços (MTD vs Período Equivalente)', () =
     expect(cutoff).toBe(31);
   });
 });
+

@@ -33,3 +33,4 @@ export function getProductGrowthCutoffDay(
   }
   return 31;
 }
+
