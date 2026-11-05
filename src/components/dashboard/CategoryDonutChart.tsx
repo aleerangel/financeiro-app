@@ -35,17 +35,6 @@ interface CategoryDonutChartProps {
   periodLabel?: string;
 }
 
-interface CategoryTotal {
-  name: string;
-  color: string;
-  paid: number;
-  pending: number;
-  total: number;
-  percentage: number;
-  strokeDasharray?: string;
-  strokeDashoffset?: number;
-}
-
 export function CategoryDonutChart({
   transactions,
   expenseEvolution = [],

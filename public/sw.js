@@ -47,7 +47,7 @@ self.addEventListener('push', (event) => {
       const parsed = event.data.json();
       data = { ...data, ...parsed };
     }
-  } catch (err) {
+  } catch {
     if (event.data) {
       data.body = event.data.text();
     }

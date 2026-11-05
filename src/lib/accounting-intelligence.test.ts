@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { fetchAllPages } from '@/lib/supabase/pagination';
 import { buildYearlyCategoryEvolution } from '@/lib/category-evolution-utils';
 
 describe('Inteligência Financeira & Regras Contábeis (RN-01 a RN-10)', () => {

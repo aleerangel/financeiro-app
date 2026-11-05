@@ -96,12 +96,16 @@ function PayInvoiceModalDialog({
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [loadingAccounts, setLoadingAccounts] = useState(true);
-  const [pendingItems, setPendingItems] = useState<Transaction[]>(pendingTransactions || []);
+  const [fetchedPendingItems, setFetchedPendingItems] = useState<Transaction[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const pendingItems =
+    pendingTransactions && pendingTransactions.length > 0
+      ? pendingTransactions
+      : fetchedPendingItems;
 
   useEffect(() => {
     let active = true;
-    setLoadingAccounts(true);
     getAccounts()
       .then((list) => {
         if (active) {
@@ -122,10 +126,7 @@ function PayInvoiceModalDialog({
   }, []);
 
   useEffect(() => {
-    if (pendingTransactions && pendingTransactions.length > 0) {
-      setPendingItems(pendingTransactions);
-      return;
-    }
+    if (pendingTransactions && pendingTransactions.length > 0) return;
 
     let active = true;
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -138,7 +139,7 @@ function PayInvoiceModalDialog({
         const filtered = txs.filter(
           (t) => !t.is_paid && t.due_date && t.due_date >= startDate && t.due_date <= endDate
         );
-        setPendingItems(filtered);
+        setFetchedPendingItems(filtered);
       })
       .catch((err) => {
         console.error('Erro ao carregar itens da fatura:', err);

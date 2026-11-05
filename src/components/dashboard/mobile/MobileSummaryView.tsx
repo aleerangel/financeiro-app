@@ -14,7 +14,6 @@ import {
   BarChart2,
   CreditCard,
   Eye,
-  Store,
 } from 'lucide-react';
 import {
   BusinessDashboardData,
@@ -200,23 +199,15 @@ export function MobileSummaryView({
     loading: false,
   });
 
+  const isInitialPeriod = flowChart.month === month && flowChart.year === year;
+
   useEffect(() => {
-    // Se for o mês inicial passado via props, sincroniza com as transações da prop
-    if (flowChart.month === month && flowChart.year === year) {
-      setLoadedTransactions({
-        key: activePeriodKey,
-        data: transactions,
-        loading: false,
-      });
+    // Se for o mês inicial passado via props, não precisa fazer requisição
+    if (isInitialPeriod) {
       return;
     }
 
     let isCancelled = false;
-    setLoadedTransactions((prev) => ({
-      ...prev,
-      loading: true,
-    }));
-
     getTransactions(flowChart.month, flowChart.year)
       .then((data) => {
         if (!isCancelled) {
@@ -240,14 +231,15 @@ export function MobileSummaryView({
     return () => {
       isCancelled = true;
     };
-  }, [flowChart.month, flowChart.year, month, year, transactions, activePeriodKey]);
+  }, [flowChart.month, flowChart.year, isInitialPeriod, activePeriodKey]);
 
   // Transações estritamente filtradas para o período ativo (mês ou semana selecionada)
   const periodTransactions = useMemo(() => {
-    const baseList =
-      loadedTransactions.key === activePeriodKey
-        ? loadedTransactions.data
-        : transactions;
+    const baseList = isInitialPeriod
+      ? transactions
+      : loadedTransactions.key === activePeriodKey
+      ? loadedTransactions.data
+      : transactions;
 
     if (flowChart.period === 'weekly' && currentWeek) {
       return baseList.filter((t) => {
@@ -262,7 +254,7 @@ export function MobileSummaryView({
       });
     }
     return baseList;
-  }, [loadedTransactions, activePeriodKey, transactions, flowChart.period, currentWeek]);
+  }, [isInitialPeriod, loadedTransactions, activePeriodKey, transactions, flowChart.period, currentWeek]);
 
   // Label do período ativo para o seletor único e para os módulos
   const activePeriodLabel = useMemo(() => {
@@ -496,9 +488,6 @@ export function MobileSummaryView({
     flowChart.activeStats,
     flowChart.activeData,
     flowChart.month,
-    flowChart.year,
-    month,
-    year,
     periodTransactions,
     transactions,
     yearlyStats,

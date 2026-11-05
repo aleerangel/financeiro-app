@@ -48,7 +48,6 @@ export function getSalePaymentMethodLabel(method: string): string {
 export function generateSaleReceiptWhatsAppText({
   sale,
   businessProfile,
-  messageSettings,
 }: SaleReceiptOptions): string {
   const receiptNum = formatReceiptNumber(sale.id, sale.sale_date);
   const clientName = sale.client?.name || sale.client_name || 'Cliente';
@@ -135,7 +134,6 @@ export interface GeneratedSaleReceiptPdf {
 export async function generateSaleReceiptPdf({
   sale,
   businessProfile,
-  messageSettings,
 }: SaleReceiptOptions): Promise<GeneratedSaleReceiptPdf> {
   const { jsPDF, autoTable } = await loadPdfLibs();
 
@@ -473,7 +471,7 @@ export async function shareSaleReceiptPdfViaWhatsApp({
   sale,
   businessProfile,
 }: SaleReceiptOptions): Promise<{ sharedViaNative: boolean }> {
-  const { filename, getFile, download } = await generateSaleReceiptPdf({
+  const { getFile, download } = await generateSaleReceiptPdf({
     sale,
     businessProfile,
   });
