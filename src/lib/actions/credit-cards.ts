@@ -275,8 +275,21 @@ export async function setCreditCardInvoicePaid(
 
   if (!isPaid) {
     updatePayload.account_id = null;
-  } else if (accountId !== undefined) {
-    updatePayload.account_id = accountId || null;
+  } else if (accountId === 'none') {
+    updatePayload.account_id = null;
+  } else if (accountId) {
+    updatePayload.account_id = accountId;
+  } else {
+    // Se isPaid=true e accountId não foi informado nem é 'none', vincula à primeira conta bancária do usuário
+    const { data: defaultAcc } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    updatePayload.account_id = defaultAcc?.id || null;
   }
 
   const { error } = await supabase
@@ -348,7 +361,23 @@ export async function payCreditCardInvoiceAmount(
   }
 
   const nowIso = new Date().toISOString();
-  const resolvedAccountId = accountId || null;
+  let resolvedAccountId: string | null = null;
+  if (accountId === 'none') {
+    resolvedAccountId = null;
+  } else if (accountId) {
+    resolvedAccountId = accountId;
+  } else {
+    // Se accountId não foi informado nem é 'none', vincula à conta bancária padrão do usuário
+    const { data: defaultAcc } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    resolvedAccountId = defaultAcc?.id || null;
+  }
 
   // Caso 1: Pagamento direcionado a um lançamento específico da fatura
   if (targetTransactionId) {

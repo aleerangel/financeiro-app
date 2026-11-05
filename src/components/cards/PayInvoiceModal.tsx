@@ -95,22 +95,26 @@ function PayInvoiceModalDialog({
   const [partialAmountStr, setPartialAmountStr] = useState('');
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [pendingItems, setPendingItems] = useState<Transaction[]>(pendingTransactions || []);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setLoadingAccounts(true);
     getAccounts()
       .then((list) => {
         if (active) {
           setAccounts(list);
           if (list.length > 0) {
-            setSelectedAccountId(list[0].id);
+            setSelectedAccountId((prev) => prev || list[0].id);
           }
+          setLoadingAccounts(false);
         }
       })
       .catch((err) => {
         console.error('Erro ao buscar contas bancárias:', err);
+        if (active) setLoadingAccounts(false);
       });
     return () => {
       active = false;
@@ -175,12 +179,17 @@ function PayInvoiceModalDialog({
 
     try {
       setSubmitting(true);
+      const accountToDebit =
+        selectedAccountId === 'none'
+          ? 'none'
+          : selectedAccountId || (accounts.length > 0 ? accounts[0].id : null);
+
       const res = await payCreditCardInvoiceAmount(
         card.id,
         month,
         year,
         effectivePayAmount,
-        selectedAccountId || null,
+        accountToDebit,
         selectedTargetTxId || null
       );
 
@@ -488,18 +497,24 @@ function PayInvoiceModalDialog({
               <Landmark className="w-3.5 h-3.5 text-emerald-400" />
               Debitar de qual conta bancária?
             </label>
-            <select
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
-            >
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name} ({formatCurrency(acc.current_balance)})
-                </option>
-              ))}
-              <option value="">Não debitar de nenhuma conta (pagamento externo)</option>
-            </select>
+            {loadingAccounts ? (
+              <div className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-500 animate-pulse">
+                Carregando contas bancárias...
+              </div>
+            ) : (
+              <select
+                value={selectedAccountId}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+              >
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name} ({formatCurrency(acc.current_balance)})
+                  </option>
+                ))}
+                <option value="none">Não debitar de nenhuma conta (pagamento externo)</option>
+              </select>
+            )}
             <p className="text-[11px] text-zinc-500">
               O valor pago abaterá o saldo da conta selecionada sem duplicar os gastos por categoria.
             </p>
@@ -509,12 +524,14 @@ function PayInvoiceModalDialog({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={submitting || effectivePayAmount <= 0}
+              disabled={submitting || loadingAccounts || effectivePayAmount <= 0}
               className="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/20 disabled:opacity-40 text-center active:scale-95 flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
               {submitting
                 ? 'Processando Pagamento...'
+                : loadingAccounts
+                ? 'Carregando contas...'
                 : `Confirmar Pagamento de ${formatCurrency(effectivePayAmount)}`}
             </button>
           </div>

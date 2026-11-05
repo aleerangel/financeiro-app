@@ -327,6 +327,28 @@ export async function toggleTransactionPaid(id: string, is_paid: boolean) {
     if (current?.credit_card_id) {
       updatePayload.account_id = null;
     }
+  } else {
+    // Se for compra de cartão marcada como paga sem conta vinculada, vincula à conta bancária padrão
+    const { data: current } = await supabase
+      .from('transactions')
+      .select('credit_card_id, account_id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (current?.credit_card_id && !current.account_id) {
+      const { data: defaultAcc } = await supabase
+        .from('accounts')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (defaultAcc) {
+        updatePayload.account_id = defaultAcc.id;
+      }
+    }
   }
 
   const { error } = await supabase
