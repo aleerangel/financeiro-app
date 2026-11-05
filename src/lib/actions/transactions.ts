@@ -3,7 +3,7 @@
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
-import { calculateInstallmentDueDates } from '@/lib/credit-card-utils';
+import { calculateInstallmentDueDates, parseAdvancePaymentMetadata } from '@/lib/credit-card-utils';
 import { getZonedParts, getTodayYMD, getZonedRangeBoundsIso, getZonedYMD, isCurrentMonth } from '@/lib/date-utils';
 import { applyScopeToNotes } from '@/lib/business-scope-utils';
 import { fetchAllPages } from '@/lib/supabase/pagination';
@@ -241,8 +241,23 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
     updates.is_paid = input.is_paid;
     updates.paid_at = input.is_paid ? new Date().toISOString() : null;
   }
-  if (input.notes !== undefined || input.scope !== undefined) {
-    updates.notes = applyScopeToNotes(input.notes, input.scope || 'personal');
+  if (input.notes !== undefined) {
+    // Preserva tag de vínculo com adiantamento parcial caso a transação seja editada
+    const { data: existingTx } = await supabase
+      .from('transactions')
+      .select('notes')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    let finalNotes = input.notes || '';
+    const match = existingTx?.notes?.match(/\[ADVANCE_PARTIAL_PAYMENT:(\{.*?\})\]/);
+    if (match && !finalNotes.includes(match[0])) {
+      finalNotes = finalNotes ? `${finalNotes}\n${match[0]}` : match[0];
+    }
+    updates.notes = applyScopeToNotes(finalNotes, input.scope || 'personal');
+  } else if (input.scope !== undefined) {
+    updates.notes = applyScopeToNotes(undefined, input.scope);
   }
   if (input.scope !== undefined) {
     updates.scope = input.scope;
@@ -295,12 +310,28 @@ export async function toggleTransactionPaid(id: string, is_paid: boolean) {
 
   if (!user) throw new Error('Não autenticado');
 
+  const updatePayload: Record<string, unknown> = {
+    is_paid,
+    paid_at: is_paid ? new Date().toISOString() : null,
+  };
+
+  if (!is_paid) {
+    // Se for compra de cartão desmarcada como paga, remove vínculo com conta pagadora
+    const { data: current } = await supabase
+      .from('transactions')
+      .select('credit_card_id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (current?.credit_card_id) {
+      updatePayload.account_id = null;
+    }
+  }
+
   const { error } = await supabase
     .from('transactions')
-    .update({
-      is_paid,
-      paid_at: is_paid ? new Date().toISOString() : null,
-    })
+    .update(updatePayload)
     .eq('id', id)
     .eq('user_id', user.id);
 
@@ -318,32 +349,52 @@ export async function deleteTransaction(id: string, deleteEntireGroup: boolean =
 
   if (!user) throw new Error('Não autenticado');
 
-  if (deleteEntireGroup) {
-    // Busca o installment_group_id da transação antes de deletar
-    const { data: current } = await supabase
-      .from('transactions')
-      .select('installment_group_id')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single();
+  // 1. Busca dados da transação antes de excluir para verificar se é adiantamento parcial ou grupo de parcelas
+  const { data: current } = await supabase
+    .from('transactions')
+    .select('id, amount, notes, installment_group_id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
 
-    if (current?.installment_group_id) {
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('installment_group_id', current.installment_group_id)
-        .eq('user_id', user.id);
+  // 2. Se for um adiantamento parcial de fatura, restaura o valor na transação de origem
+  if (current?.notes) {
+    const meta = parseAdvancePaymentMetadata(current.notes);
+    if (meta?.parent_transaction_id && meta.abated_amount > 0) {
+      try {
+        const { data: parentTx } = await supabase
+          .from('transactions')
+          .select('id, amount, is_paid')
+          .eq('id', meta.parent_transaction_id)
+          .eq('user_id', user.id)
+          .single();
 
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) throw new Error(error.message);
+        if (parentTx) {
+          const restoredAmount = Math.round((Number(parentTx.amount) + Number(meta.abated_amount)) * 100) / 100;
+          await supabase
+            .from('transactions')
+            .update({
+              amount: restoredAmount,
+              is_paid: false,
+            })
+            .eq('id', parentTx.id)
+            .eq('user_id', user.id);
+        }
+      } catch (restoreErr) {
+        console.error('Erro ao restaurar valor original da compra ao excluir adiantamento:', restoreErr);
+      }
     }
+  }
+
+  // 3. Exclui a transação (ou o grupo inteiro se solicitado e existente)
+  if (deleteEntireGroup && current?.installment_group_id) {
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('installment_group_id', current.installment_group_id)
+      .eq('user_id', user.id);
+
+    if (error) throw new Error(error.message);
   } else {
     const { error } = await supabase
       .from('transactions')

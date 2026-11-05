@@ -287,4 +287,56 @@ export function getCardInvoiceStatus(
   };
 }
 
+export interface AdvancePaymentMetadata {
+  parent_transaction_id: string;
+  abated_amount: number;
+  type: 'credit_card_advance_partial';
+}
+
+/**
+ * Cria notas estruturadas vinculando um adiantamento parcial à sua transação de origem.
+ */
+export function createAdvancePaymentNotes(
+  parentTxId: string,
+  abatedAmount: number,
+  existingNotes?: string | null
+): string {
+  const payload: AdvancePaymentMetadata = {
+    parent_transaction_id: parentTxId,
+    abated_amount: Math.round(abatedAmount * 100) / 100,
+    type: 'credit_card_advance_partial',
+  };
+  const tag = `[ADVANCE_PARTIAL_PAYMENT:${JSON.stringify(payload)}]`;
+  return existingNotes ? `${existingNotes}\n${tag}` : tag;
+}
+
+/**
+ * Extrai os metadados de adiantamento parcial de fatura caso existam nas observações.
+ */
+export function parseAdvancePaymentMetadata(
+  notes?: string | null
+): AdvancePaymentMetadata | null {
+  if (!notes || !notes.includes('[ADVANCE_PARTIAL_PAYMENT:')) return null;
+  const match = notes.match(/\[ADVANCE_PARTIAL_PAYMENT:(\{.*?\})\]/);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(match[1]);
+    if (parsed.parent_transaction_id && typeof parsed.abated_amount === 'number') {
+      return parsed as AdvancePaymentMetadata;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+/**
+ * Remove a tag técnica de adiantamento para visualização limpa nas observações.
+ */
+export function stripAdvancePaymentTag(notes?: string | null): string {
+  if (!notes) return '';
+  return notes.replace(/\[ADVANCE_PARTIAL_PAYMENT:.*?\]\s*/g, '').trim();
+}
+
+
 

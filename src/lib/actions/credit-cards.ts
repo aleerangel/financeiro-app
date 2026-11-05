@@ -8,6 +8,7 @@ import {
   CardInvoiceStatus,
   getCardCycleInfo,
   getCardInvoiceStatus,
+  createAdvancePaymentNotes,
 } from '@/lib/credit-card-utils';
 
 export interface CreditCardWithUsage extends CreditCard {
@@ -307,7 +308,8 @@ export async function payCreditCardInvoiceAmount(
   month: number,
   year: number,
   amountToPay: number,
-  accountId?: string | null
+  accountId?: string | null,
+  targetTransactionId?: string | null
 ): Promise<PayInvoiceResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -348,13 +350,93 @@ export async function payCreditCardInvoiceAmount(
   const nowIso = new Date().toISOString();
   const resolvedAccountId = accountId || null;
 
-  // Caso 1: Pagamento total ou valor maior/igual ao total pendente
+  // Caso 1: Pagamento direcionado a um lançamento específico da fatura
+  if (targetTransactionId) {
+    const targetItem = items.find((i) => i.id === targetTransactionId);
+    if (!targetItem) {
+      throw new Error('O lançamento selecionado não foi encontrado ou já foi quitado.');
+    }
+
+    const itemAmt = Math.round(Number(targetItem.amount) * 100) / 100;
+    const roundedAmount = Math.round(amountToPay * 100) / 100;
+
+    if (roundedAmount > itemAmt + 0.009) {
+      throw new Error(
+        `O valor do adiantamento não pode ser maior que o saldo deste lançamento (${itemAmt.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}).`
+      );
+    }
+
+    if (roundedAmount >= itemAmt - 0.009) {
+      // Quita o lançamento inteiro
+      await supabase
+        .from('transactions')
+        .update({
+          is_paid: true,
+          paid_at: nowIso,
+          account_id: resolvedAccountId,
+        })
+        .eq('id', targetItem.id)
+        .eq('user_id', user.id);
+    } else {
+      // Abate parcialmente este lançamento: divide em parcela paga e saldo pendente
+      const paidPart = roundedAmount;
+      const unpaidPart = Math.round((itemAmt - paidPart) * 100) / 100;
+
+      // 1. Atualiza o item original para o valor restante não pago
+      await supabase
+        .from('transactions')
+        .update({
+          amount: unpaidPart,
+        })
+        .eq('id', targetItem.id)
+        .eq('user_id', user.id);
+
+      // 2. Insere a parcela quitada vinculada à conta pagadora com metadados reversíveis
+      const updatedNotes = createAdvancePaymentNotes(targetItem.id, paidPart, targetItem.notes);
+
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          description: `${targetItem.description} (Parcial)`,
+          amount: paidPart,
+          type: targetItem.type,
+          payment_method: targetItem.payment_method,
+          transaction_date: targetItem.transaction_date,
+          due_date: targetItem.due_date,
+          category_id: targetItem.category_id,
+          account_id: resolvedAccountId,
+          credit_card_id: targetItem.credit_card_id,
+          installment_group_id: null, // Desvincula para não deletar outras parcelas caso o adiantamento seja excluído
+          current_installment: targetItem.current_installment,
+          total_installments: targetItem.total_installments,
+          notes: updatedNotes,
+          scope: targetItem.scope || 'personal',
+          is_paid: true,
+          paid_at: nowIso,
+        });
+    }
+
+    revalidatePath('/cartoes');
+    revalidatePath('/contas');
+    revalidatePath('/transacoes');
+    revalidatePath('/dashboard');
+
+    const remainingPending = Math.round(Math.max(0, totalPending - roundedAmount) * 100) / 100;
+    return {
+      paidAmount: roundedAmount,
+      remainingPending,
+      isFullyPaid: remainingPending <= 0.009,
+    };
+  }
+
+  // Caso 2: Pagamento total da fatura
   if (amountToPay >= totalPending - 0.009) {
     await setCreditCardInvoicePaid(cardId, month, year, true, resolvedAccountId);
     return { paidAmount: totalPending, remainingPending: 0, isFullyPaid: true };
   }
 
-  // Caso 2: Pagamento parcial
+  // Caso 3: Pagamento parcial sem lançamento específico (abatimento sequencial geral)
   let remaining = Math.round(amountToPay * 100) / 100;
 
   for (const item of items) {
@@ -389,7 +471,9 @@ export async function payCreditCardInvoiceAmount(
         .eq('id', item.id)
         .eq('user_id', user.id);
 
-      // 2. Insere a parte quitada vinculada à conta pagadora
+      // 2. Insere a parte quitada vinculada à conta pagadora com metadados reversíveis
+      const updatedNotes = createAdvancePaymentNotes(item.id, paidPart, item.notes);
+
       await supabase
         .from('transactions')
         .insert({
@@ -403,10 +487,10 @@ export async function payCreditCardInvoiceAmount(
           category_id: item.category_id,
           account_id: resolvedAccountId,
           credit_card_id: item.credit_card_id,
-          installment_group_id: item.installment_group_id,
+          installment_group_id: null,
           current_installment: item.current_installment,
           total_installments: item.total_installments,
-          notes: item.notes,
+          notes: updatedNotes,
           scope: item.scope || 'personal',
           is_paid: true,
           paid_at: nowIso,

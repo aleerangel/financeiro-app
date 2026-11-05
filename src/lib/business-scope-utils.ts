@@ -117,11 +117,14 @@ export function applyScopeToNotes(
 }
 
 /**
- * Remove a tag técnica [Barbearia] das observações para exibição limpa na UI.
+ * Remove tags técnicas das observações para exibição limpa na UI.
  */
 export function stripScopeTagFromNotes(notes: string | null | undefined): string {
   if (!notes) return '';
-  return notes.replace(/\[Barbearia\]\s*/gi, '').trim();
+  return notes
+    .replace(/\[Barbearia\]\s*/gi, '')
+    .replace(/\[ADVANCE_PARTIAL_PAYMENT:.*?\]\s*/g, '')
+    .trim();
 }
 
 export interface ServiceVsProductSplit {

@@ -638,6 +638,7 @@ export function CreditCardInvoicesPanel({
         totalAmount={currentInvoice.total}
         paidAmount={currentInvoice.paidTotal}
         pendingAmount={currentInvoice.pendingTotal}
+        pendingTransactions={currentInvoice.items.filter((tx) => !tx.is_paid)}
         isInvoiceOpen={getTodayYMD() < invoiceDatesInfo.closingDateStr}
         dueDateStr={invoiceDatesInfo.dueDateStr}
         closingDateStr={invoiceDatesInfo.closingDateStr}

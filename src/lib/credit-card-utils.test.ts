@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { calculateInstallmentDueDates, getCardInvoiceStatus } from './credit-card-utils';
+import {
+  calculateInstallmentDueDates,
+  getCardInvoiceStatus,
+  createAdvancePaymentNotes,
+  parseAdvancePaymentMetadata,
+  stripAdvancePaymentTag,
+} from './credit-card-utils';
 
 describe('credit-card-utils - calculateInstallmentDueDates', () => {
   it('places purchase on current invoice when transaction is on or before closing day (dueDay > closingDay)', () => {
@@ -179,4 +185,51 @@ describe('credit-card-utils - getCardInvoiceStatus', () => {
     expect(status.dueLabel).toBe('Vence dia 5');
   });
 });
+
+describe('credit-card-utils - Advance Payment Metadata', () => {
+  it('creates advance notes with JSON tag and preserves existing notes', () => {
+    const parentId = 'tx-123';
+    const amount = 160.5;
+    const existing = 'Compra do som na promoção';
+
+    const notes = createAdvancePaymentNotes(parentId, amount, existing);
+    expect(notes).toContain(existing);
+    expect(notes).toContain('[ADVANCE_PARTIAL_PAYMENT:{"parent_transaction_id":"tx-123","abated_amount":160.5,"type":"credit_card_advance_partial"}]');
+  });
+
+  it('creates advance notes without existing notes', () => {
+    const parentId = 'tx-456';
+    const amount = 50;
+
+    const notes = createAdvancePaymentNotes(parentId, amount, null);
+    expect(notes).toBe('[ADVANCE_PARTIAL_PAYMENT:{"parent_transaction_id":"tx-456","abated_amount":50,"type":"credit_card_advance_partial"}]');
+  });
+
+  it('parses advance metadata correctly from notes', () => {
+    const parentId = 'tx-789';
+    const amount = 220.35;
+    const notes = `Alguma anotação\n${createAdvancePaymentNotes(parentId, amount)}`;
+
+    const parsed = parseAdvancePaymentMetadata(notes);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.parent_transaction_id).toBe('tx-789');
+    expect(parsed?.abated_amount).toBe(220.35);
+    expect(parsed?.type).toBe('credit_card_advance_partial');
+  });
+
+  it('returns null when notes do not contain advance metadata', () => {
+    expect(parseAdvancePaymentMetadata('Apenas uma observação qualquer')).toBeNull();
+    expect(parseAdvancePaymentMetadata(null)).toBeNull();
+    expect(parseAdvancePaymentMetadata(undefined)).toBeNull();
+    expect(parseAdvancePaymentMetadata('[ADVANCE_PARTIAL_PAYMENT:{invalid-json}]')).toBeNull();
+  });
+
+  it('strips advance payment tags cleanly from notes', () => {
+    const parentId = 'tx-123';
+    const raw = createAdvancePaymentNotes(parentId, 100, 'Observação legítima');
+    expect(stripAdvancePaymentTag(raw)).toBe('Observação legítima');
+    expect(stripAdvancePaymentTag(null)).toBe('');
+  });
+});
+
 

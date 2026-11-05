@@ -9,8 +9,13 @@ import {
   Receipt,
   Landmark,
 } from 'lucide-react';
-import { CreditCardWithUsage, payCreditCardInvoiceAmount } from '@/lib/actions/credit-cards';
+import {
+  CreditCardWithUsage,
+  payCreditCardInvoiceAmount,
+  getCreditCardTransactions,
+} from '@/lib/actions/credit-cards';
 import { getAccounts, AccountWithBalance } from '@/lib/actions/accounts';
+import { Transaction } from '@/types/database';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -27,6 +32,7 @@ interface PayInvoiceModalProps {
   isInvoiceOpen: boolean;
   dueDateStr: string;
   closingDateStr: string;
+  pendingTransactions?: Transaction[];
   onSuccess: () => void;
 }
 
@@ -43,6 +49,7 @@ export function PayInvoiceModal({
   isInvoiceOpen,
   dueDateStr,
   closingDateStr,
+  pendingTransactions,
   onSuccess,
 }: PayInvoiceModalProps) {
   if (!isOpen) return null;
@@ -60,6 +67,7 @@ export function PayInvoiceModal({
       isInvoiceOpen={isInvoiceOpen}
       dueDateStr={dueDateStr}
       closingDateStr={closingDateStr}
+      pendingTransactions={pendingTransactions}
       onSuccess={onSuccess}
     />
   );
@@ -79,12 +87,15 @@ function PayInvoiceModalDialog({
   isInvoiceOpen,
   dueDateStr,
   closingDateStr,
+  pendingTransactions,
   onSuccess,
 }: DialogProps) {
   const [payMode, setPayMode] = useState<'full' | 'partial'>('full');
+  const [selectedTargetTxId, setSelectedTargetTxId] = useState<string>('');
   const [partialAmountStr, setPartialAmountStr] = useState('');
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [pendingItems, setPendingItems] = useState<Transaction[]>(pendingTransactions || []);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -106,9 +117,39 @@ function PayInvoiceModalDialog({
     };
   }, []);
 
+  useEffect(() => {
+    if (pendingTransactions && pendingTransactions.length > 0) {
+      setPendingItems(pendingTransactions);
+      return;
+    }
+
+    let active = true;
+    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    getCreditCardTransactions(card.id)
+      .then((txs) => {
+        if (!active) return;
+        const filtered = txs.filter(
+          (t) => !t.is_paid && t.due_date && t.due_date >= startDate && t.due_date <= endDate
+        );
+        setPendingItems(filtered);
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar itens da fatura:', err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [card.id, month, year, pendingTransactions]);
+
   const numericPartial = parseFloat(partialAmountStr.replace(',', '.')) || 0;
   const effectivePayAmount = payMode === 'full' || !isInvoiceOpen ? pendingAmount : numericPartial;
 
+  const selectedTargetItem = pendingItems.find((t) => t.id === selectedTargetTxId);
+  const maxAllowed = selectedTargetItem ? Number(selectedTargetItem.amount) : pendingAmount;
   const remainingAfterPayment = Math.max(0, pendingAmount - effectivePayAmount);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,8 +160,16 @@ function PayInvoiceModalDialog({
       return;
     }
 
-    if (effectivePayAmount > pendingAmount + 0.01) {
-      toast.error(`O valor não pode ser maior que o saldo em aberto (${formatCurrency(pendingAmount)})`);
+    if (effectivePayAmount > maxAllowed + 0.009) {
+      if (selectedTargetItem) {
+        toast.error(
+          `O valor não pode ser maior que o saldo deste lançamento (${formatCurrency(Number(selectedTargetItem.amount))})`
+        );
+      } else {
+        toast.error(
+          `O valor não pode ser maior que o saldo em aberto da fatura (${formatCurrency(pendingAmount)})`
+        );
+      }
       return;
     }
 
@@ -131,11 +180,16 @@ function PayInvoiceModalDialog({
         month,
         year,
         effectivePayAmount,
-        selectedAccountId || null
+        selectedAccountId || null,
+        selectedTargetTxId || null
       );
 
       if (res.isFullyPaid) {
         toast.success(`Fatura de ${monthName} quitada integralmente!`);
+      } else if (selectedTargetItem) {
+        toast.success(
+          `Adiantamento de ${formatCurrency(res.paidAmount)} em "${selectedTargetItem.description}" registrado! Limite liberado.`
+        );
       } else {
         toast.success(
           `Pagamento de ${formatCurrency(res.paidAmount)} registrado! Limite de ${formatCurrency(res.paidAmount)} liberado.`
@@ -300,28 +354,75 @@ function PayInvoiceModalDialog({
                       />
                       <div>
                         <span className="text-xs font-bold block">
-                          Pagar outro valor (parcial)
+                          Pagar outro valor (parcial / adiantamento)
                         </span>
                         <span className="text-[11px] text-zinc-400 block">
-                          Antecipe parte da fatura e libere limite agora
+                          Antecipe um lançamento específico ou quite parte da fatura
                         </span>
                       </div>
                     </div>
                   </div>
 
                   {payMode === 'partial' && (
-                    <div className="pt-2 border-t border-purple-500/20 space-y-2">
-                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex items-center justify-center gap-1">
-                        <span className="text-xl font-bold text-zinc-400">R$</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="0,00"
-                          value={partialAmountStr}
-                          onChange={(e) => setPartialAmountStr(e.target.value)}
-                          autoFocus
-                          className="w-36 bg-transparent text-2xl font-extrabold text-zinc-100 text-center focus:outline-none placeholder:text-zinc-600"
-                        />
+                    <div className="pt-2 border-t border-purple-500/20 space-y-3">
+                      {/* Seletor de Lançamento Alvo */}
+                      <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-purple-300 block">
+                          Qual lançamento deseja antecipar?
+                        </label>
+                        <select
+                          value={selectedTargetTxId}
+                          onChange={(e) => {
+                            const nextId = e.target.value;
+                            setSelectedTargetTxId(nextId);
+                            if (nextId) {
+                              const target = pendingItems.find((t) => t.id === nextId);
+                              if (target) {
+                                setPartialAmountStr(Number(target.amount).toFixed(2).replace('.', ','));
+                              }
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 focus:border-purple-500 rounded-xl text-xs text-zinc-100 focus:outline-none transition"
+                        >
+                          <option value="">Abater saldo geral da fatura (automático)</option>
+                          {pendingItems.map((tx) => {
+                            const isInst = (tx.total_installments || 1) > 1;
+                            const instBadge = isInst ? ` (${tx.current_installment}/${tx.total_installments})` : '';
+                            return (
+                              <option key={tx.id} value={tx.id}>
+                                {tx.description}{instBadge} • {formatCurrency(Number(tx.amount))}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        {selectedTargetItem ? (
+                          <p className="text-[11px] text-purple-300/80">
+                            Saldo deste lançamento: {formatCurrency(Number(selectedTargetItem.amount))}. Você pode adiantá-lo integralmente ou digitar um valor menor abaixo.
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-zinc-400">
+                            O valor pago abaterá os lançamentos pendentes em ordem cronológica.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Input de Valor */}
+                      <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
+                          Valor a pagar agora:
+                        </label>
+                        <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex items-center justify-center gap-1 focus-within:border-purple-500/60 transition">
+                          <span className="text-xl font-bold text-zinc-400">R$</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0,00"
+                            value={partialAmountStr}
+                            onChange={(e) => setPartialAmountStr(e.target.value)}
+                            autoFocus
+                            className="w-36 bg-transparent text-2xl font-extrabold text-zinc-100 text-center focus:outline-none placeholder:text-zinc-600"
+                          />
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1">
