@@ -177,6 +177,10 @@ export async function updateClient(id: string, input: CreateClientInput): Promis
 
   if (!user) throw new Error('Não autenticado');
 
+  if (!id || !id.trim()) {
+    throw new Error('ID do cliente é obrigatório para atualização.');
+  }
+
   if (!input.name.trim()) {
     throw new Error('Informe o nome do cliente.');
   }
@@ -232,6 +236,10 @@ export async function deleteClient(id: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error('Não autenticado');
+
+  if (!id || !id.trim()) {
+    throw new Error('ID do cliente é obrigatório para exclusão.');
+  }
 
   const { error } = await supabase
     .from('clients')

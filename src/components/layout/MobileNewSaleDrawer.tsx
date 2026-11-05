@@ -76,6 +76,7 @@ function MobileNewSaleDrawerDialog() {
   // Modal de cadastro de cliente
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
+  const [initialClientName, setInitialClientName] = useState('');
 
   // Prompt para salvar item avulso no catálogo após a venda
   const [promptSaveItem, setPromptSaveItem] = useState<{
@@ -607,6 +608,7 @@ function MobileNewSaleDrawerDialog() {
                   type="button"
                   onClick={() => {
                     setClientToEdit(null);
+                    setInitialClientName('');
                     setClientModalOpen(true);
                   }}
                   className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 active:scale-95 transition"
@@ -662,16 +664,8 @@ function MobileNewSaleDrawerDialog() {
                       <button
                         type="button"
                         onClick={() => {
-                          setClientToEdit({
-                            id: '',
-                            user_id: '',
-                            name: clientSearch.trim(),
-                            phone: null,
-                            cpf: null,
-                            notes: null,
-                            created_at: '',
-                            updated_at: '',
-                          });
+                          setClientToEdit(null);
+                          setInitialClientName(clientSearch.trim());
                           setClientModalOpen(true);
                         }}
                         className="w-full py-2 px-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
@@ -700,16 +694,8 @@ function MobileNewSaleDrawerDialog() {
                         <button
                           type="button"
                           onClick={() => {
-                            setClientToEdit({
-                              id: '',
-                              user_id: '',
-                              name: clientSearch.trim(),
-                              phone: null,
-                              cpf: null,
-                              notes: null,
-                              created_at: '',
-                              updated_at: '',
-                            });
+                            setClientToEdit(null);
+                            setInitialClientName(clientSearch.trim());
                             setClientModalOpen(true);
                           }}
                           className="text-[11px] font-bold text-emerald-400 hover:underline inline-flex items-center gap-1"
@@ -969,8 +955,12 @@ function MobileNewSaleDrawerDialog() {
       {/* Modal de Cadastro Rápido de Novo Cliente */}
       <ClientModal
         isOpen={clientModalOpen}
-        onClose={() => setClientModalOpen(false)}
+        onClose={() => {
+          setClientModalOpen(false);
+          setInitialClientName('');
+        }}
         clientToEdit={clientToEdit}
+        initialName={initialClientName}
         onSuccess={(newClient) => {
           if (newClient) {
             setClients((prev) => {
@@ -982,6 +972,7 @@ function MobileNewSaleDrawerDialog() {
             toast.success(`Cliente "${newClient.name}" cadastrado com sucesso!`);
           }
           setClientModalOpen(false);
+          setInitialClientName('');
         }}
       />
 

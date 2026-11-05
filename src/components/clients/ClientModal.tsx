@@ -9,17 +9,20 @@ interface ClientModalProps {
   isOpen: boolean;
   onClose: () => void;
   clientToEdit?: Client | null;
+  initialName?: string;
   onSuccess?: (createdOrUpdatedClient?: Client) => void;
 }
 
 interface DialogProps {
   clientToEdit?: Client | null;
+  initialName?: string;
   onClose: () => void;
   onSuccess?: (createdOrUpdatedClient?: Client) => void;
 }
 
-function ClientModalDialog({ clientToEdit, onClose, onSuccess }: DialogProps) {
-  const [name, setName] = useState(clientToEdit?.name || '');
+function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: DialogProps) {
+  const isEditing = Boolean(clientToEdit?.id && clientToEdit.id.trim().length > 0);
+  const [name, setName] = useState(clientToEdit?.name || initialName || '');
   const [phone, setPhone] = useState(clientToEdit?.phone || '');
   const [cpf, setCpf] = useState(clientToEdit?.cpf || '');
   const [birthDate, setBirthDate] = useState(clientToEdit?.birth_date || '');
@@ -47,7 +50,7 @@ function ClientModalDialog({ clientToEdit, onClose, onSuccess }: DialogProps) {
       };
 
       let result: Client;
-      if (clientToEdit) {
+      if (isEditing && clientToEdit) {
         result = await updateClient(clientToEdit.id, payload);
       } else {
         result = await createClient(payload);
@@ -78,10 +81,10 @@ function ClientModalDialog({ clientToEdit, onClose, onSuccess }: DialogProps) {
           </div>
           <div>
             <h2 className="text-lg font-bold text-zinc-100">
-              {clientToEdit ? 'Editar Cliente' : 'Novo Cliente'}
+              {isEditing ? 'Editar Cliente' : 'Novo Cliente'}
             </h2>
             <p className="text-xs text-zinc-400">
-              {clientToEdit ? 'Atualize as informações do cliente' : 'Cadastre um cliente para sua barbearia'}
+              {isEditing ? 'Atualize as informações do cliente' : 'Cadastre um cliente para sua base'}
             </p>
           </div>
         </div>
@@ -181,7 +184,7 @@ function ClientModalDialog({ clientToEdit, onClose, onSuccess }: DialogProps) {
               disabled={loading}
               className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/10 disabled:opacity-50"
             >
-              {loading ? 'Salvando...' : clientToEdit ? 'Atualizar Cliente' : 'Cadastrar Cliente'}
+              {loading ? 'Salvando...' : isEditing ? 'Atualizar Cliente' : 'Cadastrar Cliente'}
             </button>
           </div>
         </form>
@@ -190,13 +193,24 @@ function ClientModalDialog({ clientToEdit, onClose, onSuccess }: DialogProps) {
   );
 }
 
-export function ClientModal({ isOpen, onClose, clientToEdit, onSuccess }: ClientModalProps) {
+export function ClientModal({
+  isOpen,
+  onClose,
+  clientToEdit,
+  initialName,
+  onSuccess,
+}: ClientModalProps) {
   if (!isOpen) return null;
+
+  const modalKey = clientToEdit?.id
+    ? `${clientToEdit.id}-${clientToEdit.updated_at}`
+    : `new-${initialName || 'empty'}`;
 
   return (
     <ClientModalDialog
-      key={clientToEdit ? `${clientToEdit.id}-${clientToEdit.updated_at}` : 'new'}
+      key={modalKey}
       clientToEdit={clientToEdit}
+      initialName={initialName}
       onClose={onClose}
       onSuccess={onSuccess}
     />

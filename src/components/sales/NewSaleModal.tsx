@@ -919,6 +919,7 @@ export function NewSaleModal({
       <ClientModal
         isOpen={clientModalOpen}
         onClose={() => setClientModalOpen(false)}
+        initialName={!selectedClientId && clientName ? clientName.trim() : undefined}
         onSuccess={(newClient) => {
           if (newClient) {
             setClientsList((prev) => [newClient, ...prev]);
