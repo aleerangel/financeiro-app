@@ -318,54 +318,56 @@ export function GeneralDashboardDesktop({
       </div>
 
       {/* 3. Gráficos de Fluxo e Evolução de Saldo em Contas com Seletor Interno */}
-      {/* Gráfico 1: Fluxo (Vendas, Receitas e Balanço) */}
-      <SmoothLineChart
-        title="Fluxo (Vendas, Receitas e Balanço)"
-        subtitle={flowChart.subtitle}
-        series={flowSeries}
-        labels={flowLabels}
-        tooltipLabels={flowTooltipLabels}
-        height={260}
-        rightAction={
-          <ChartPeriodToolbar
-            period={flowChart.period}
-            onPeriodChange={flowChart.setPeriod}
-            year={flowChart.year}
-            month={flowChart.month}
-            onYearChange={flowChart.handleYearChange}
-            onMonthChange={flowChart.handleMonthChange}
-            weeksMeta={flowChart.weeksMeta}
-            selectedWeekIndex={flowChart.selectedWeekIndex}
-            onWeekChange={flowChart.handleWeekChange}
-            loading={flowChart.loading}
-          />
-        }
-      />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Gráfico 1: Fluxo (Vendas, Receitas e Balanço) */}
+        <SmoothLineChart
+          title="Fluxo (Vendas, Receitas e Balanço)"
+          subtitle={flowChart.subtitle}
+          series={flowSeries}
+          labels={flowLabels}
+          tooltipLabels={flowTooltipLabels}
+          height={260}
+          rightAction={
+            <ChartPeriodToolbar
+              period={flowChart.period}
+              onPeriodChange={flowChart.setPeriod}
+              year={flowChart.year}
+              month={flowChart.month}
+              onYearChange={flowChart.handleYearChange}
+              onMonthChange={flowChart.handleMonthChange}
+              weeksMeta={flowChart.weeksMeta}
+              selectedWeekIndex={flowChart.selectedWeekIndex}
+              onWeekChange={flowChart.handleWeekChange}
+              loading={flowChart.loading}
+            />
+          }
+        />
 
-      {/* Gráfico 2: Evolução do Saldo em Contas */}
-      <SmoothLineChart
-        title="Evolução do Saldo em Contas"
-        subtitle={balanceChart.subtitle}
-        series={balanceSeries}
-        labels={balanceLabels}
-        tooltipLabels={balanceTooltipLabels}
-        height={260}
-        dynamicYScale
-        rightAction={
-          <ChartPeriodToolbar
-            period={balanceChart.period}
-            onPeriodChange={balanceChart.setPeriod}
-            year={balanceChart.year}
-            month={balanceChart.month}
-            onYearChange={balanceChart.handleYearChange}
-            onMonthChange={balanceChart.handleMonthChange}
-            weeksMeta={balanceChart.weeksMeta}
-            selectedWeekIndex={balanceChart.selectedWeekIndex}
-            onWeekChange={balanceChart.handleWeekChange}
-            loading={balanceChart.loading}
-          />
-        }
-      />
+        {/* Gráfico 2: Evolução do Saldo em Contas */}
+        <SmoothLineChart
+          title="Evolução do Saldo em Contas"
+          subtitle={balanceChart.subtitle}
+          series={balanceSeries}
+          labels={balanceLabels}
+          tooltipLabels={balanceTooltipLabels}
+          height={260}
+          dynamicYScale
+          rightAction={
+            <ChartPeriodToolbar
+              period={balanceChart.period}
+              onPeriodChange={balanceChart.setPeriod}
+              year={balanceChart.year}
+              month={balanceChart.month}
+              onYearChange={balanceChart.handleYearChange}
+              onMonthChange={balanceChart.handleMonthChange}
+              weeksMeta={balanceChart.weeksMeta}
+              selectedWeekIndex={balanceChart.selectedWeekIndex}
+              onWeekChange={balanceChart.handleWeekChange}
+              loading={balanceChart.loading}
+            />
+          }
+        />
+      </div>
 
       {/* Modal de Evolução de Receitas ou Despesas por Categoria */}
       <CategoryEvolutionModal

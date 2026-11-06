@@ -142,7 +142,7 @@ export function SmoothLineChart({
   }, [series, dynamicYScale]);
 
   // Dimensões SVG internas
-  const svgWidth = compactLayout ? 360 : 650;
+  const svgWidth = compactLayout ? 360 : 800;
   const svgHeight = height;
   const padLeft = compactLayout ? 42 : 85;
   const padRight = compactLayout ? 12 : 25;
@@ -227,10 +227,10 @@ export function SmoothLineChart({
       )}
 
       {/* SVG do Gráfico */}
-      <div className="w-full overflow-hidden relative">
+      <div className="w-full overflow-hidden relative flex items-center justify-center">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          className="w-full h-auto overflow-visible select-none"
+          className="w-full h-auto max-h-[290px] xl:max-h-[310px] overflow-visible select-none"
           preserveAspectRatio="xMidYMid meet"
           onMouseLeave={() => setHoveredIndex(null)}
         >
