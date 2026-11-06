@@ -177,9 +177,63 @@ describe('monthly-wrapped-utils', () => {
     expect(data.businessStats?.topProductOrService?.quantity).toBe(2);
     expect(data.businessStats?.vipClient?.name).toBe('Lorenzzo');
     expect(data.businessStats?.vipClient?.visitsCount).toBe(2);
+    expect(data.businessStats?.busiestDayOfWeek?.name).toBe('Quinta-feira');
+    expect(data.businessStats?.busiestDayOfWeek?.count).toBe(2);
 
     // WhatsApp share text
     expect(data.shareText).toContain('Barbearia Rangel');
     expect(data.shareText).toContain('Mestre da Poupança');
+  });
+
+  it('correctly handles ISO timestamp dates when identifying busiest weekday', () => {
+    const data = buildMonthlyWrappedData({
+      month: 9,
+      year: 2026,
+      currentTransactions: [],
+      previousTransactions: [],
+      hasBusiness: true,
+      currentSales: [
+        {
+          id: 's1',
+          user_id: 'u1',
+          sale_date: '2026-10-16T14:30:00.000Z', // Sexta-feira
+          total_amount: 50,
+          paid_amount: 50,
+          remaining_amount: 0,
+          status: 'paid',
+          payment_method: 'pix',
+          created_at: '',
+          updated_at: '',
+        },
+        {
+          id: 's2',
+          user_id: 'u1',
+          sale_date: '2026-10-16T17:45:00.000Z', // Sexta-feira
+          total_amount: 60,
+          paid_amount: 60,
+          remaining_amount: 0,
+          status: 'paid',
+          payment_method: 'pix',
+          created_at: '',
+          updated_at: '',
+        },
+        {
+          id: 's3',
+          user_id: 'u1',
+          sale_date: '2026-10-17T11:00:00.000Z', // Sábado
+          total_amount: 40,
+          paid_amount: 40,
+          remaining_amount: 0,
+          status: 'paid',
+          payment_method: 'pix',
+          created_at: '',
+          updated_at: '',
+        },
+      ],
+    });
+
+    expect(data.businessStats?.busiestDayOfWeek?.name).toBe('Sexta-feira');
+    expect(data.businessStats?.busiestDayOfWeek?.count).toBe(2);
+    expect(data.businessStats?.totalSalesCount).toBe(3);
   });
 });

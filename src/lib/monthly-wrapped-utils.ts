@@ -86,6 +86,36 @@ const WEEKDAY_NAMES = [
   'Quinta-feira', 'Sexta-feira', 'Sábado',
 ];
 
+export function parseSaleWeekday(saleDateStr: string): number | null {
+  if (!saleDateStr) return null;
+  const raw = String(saleDateStr).trim();
+  if (!raw) return null;
+
+  const dateObj = raw.includes('T') ? new Date(raw) : new Date(`${raw}T12:00:00`);
+  if (isNaN(dateObj.getTime())) return null;
+
+  try {
+    const weekdayStr = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo',
+      weekday: 'short',
+    }).format(dateObj);
+
+    const map: Record<string, number> = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
+
+    return typeof map[weekdayStr] === 'number' ? map[weekdayStr] : dateObj.getDay();
+  } catch {
+    return dateObj.getDay();
+  }
+}
+
 export function getMonthName(month: number): string {
   return MONTH_NAMES[month] || '';
 }
@@ -292,9 +322,10 @@ export function buildMonthlyWrappedData(params: {
     for (const sale of currentSales) {
       // Dia da semana mais movimentado
       if (sale.sale_date) {
-        const dateObj = new Date(`${sale.sale_date}T12:00:00`);
-        const dayIdx = dateObj.getDay();
-        weekdayCountMap.set(dayIdx, (weekdayCountMap.get(dayIdx) || 0) + 1);
+        const dayIdx = parseSaleWeekday(sale.sale_date);
+        if (dayIdx !== null && typeof dayIdx === 'number' && !isNaN(dayIdx)) {
+          weekdayCountMap.set(dayIdx, (weekdayCountMap.get(dayIdx) || 0) + 1);
+        }
       }
 
       // Cliente VIP
@@ -333,7 +364,7 @@ export function buildMonthlyWrappedData(params: {
     let busiestDayOfWeek: { name: string; count: number } | null = null;
     let maxDayCount = 0;
     for (const [dayIdx, count] of weekdayCountMap.entries()) {
-      if (count > maxDayCount) {
+      if (typeof dayIdx === 'number' && !isNaN(dayIdx) && count > maxDayCount && WEEKDAY_NAMES[dayIdx]) {
         maxDayCount = count;
         busiestDayOfWeek = {
           name: WEEKDAY_NAMES[dayIdx],

@@ -26,7 +26,7 @@ interface MonthlyWrappedStoriesProps {
   onFinish?: () => void;
 }
 
-const SLIDE_DURATION = 6500; // 6.5 segundos por slide
+const SLIDE_DURATION = 12000; // 12 segundos por slide
 
 export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesProps) {
   // Quantidade de slides: se tiver business são 5 slides (0..4), senão são 4 (0..3)
@@ -368,11 +368,13 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
               )}
 
               {data.businessStats.busiestDayOfWeek && (
-                <div className="p-2.5 rounded-xl bg-white/10 border border-white/10 text-center text-xs text-white/80">
-                  <span className="flex items-center justify-center gap-1 text-white font-medium">
-                    <Calendar className="w-3.5 h-3.5 text-primary" /> {data.businessStats.busiestDayOfWeek.name}
+                <div className="p-2.5 rounded-xl bg-white/10 border border-white/10 text-center text-xs text-white/90">
+                  <span className="flex items-center justify-center gap-1.5 text-white font-bold text-sm">
+                    <Calendar className="w-3.5 h-3.5 text-violet-400" /> {data.businessStats.busiestDayOfWeek.name}
                   </span>
-                  <span>foi o dia da semana com mais clientes ({data.businessStats.busiestDayOfWeek.count} atendimentos)</span>
+                  <span className="text-white/70 block text-[11px] mt-0.5">
+                    Dia com mais clientes ({data.businessStats.busiestDayOfWeek.count} atendimentos)
+                  </span>
                 </div>
               )}
             </div>

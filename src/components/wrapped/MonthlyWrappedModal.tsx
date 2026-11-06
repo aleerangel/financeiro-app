@@ -89,7 +89,7 @@ export function MonthlyWrappedModal({
                 Retrospectiva {monthName} {year}
               </h2>
               <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                Spotify Wrapped financeiro do mês
+                Fechamento financeiro interativo
               </span>
             </div>
           </div>
