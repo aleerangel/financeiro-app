@@ -40,6 +40,8 @@ import { MonthlyBarChart } from '../MonthlyBarChart';
 import { CategoryDonutChart } from '../CategoryDonutChart';
 import { SmoothLineChart, ChartSeries } from '../SmoothLineChart';
 import { useIndependentChartPeriod } from '../ChartPeriodToolbar';
+import { MonthlyWrappedBanner } from '@/components/wrapped/MonthlyWrappedBanner';
+import { MonthlyWrappedModal } from '@/components/wrapped/MonthlyWrappedModal';
 
 const MONTH_FULL_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -86,6 +88,8 @@ export function MobileSummaryView({
   const [selectedMetric, setSelectedMetric] = useState<
     'all' | 'totalIncome' | 'totalExpense' | 'netBalance'
   >('all');
+
+  const [wrappedOpen, setWrappedOpen] = useState(false);
 
   // Ref para controlar seleção de semana na transição entre meses
   const targetWeekRef = useRef<'first' | 'last' | null>(null);
@@ -607,6 +611,17 @@ export function MobileSummaryView({
             <span className="truncate">{businessName}</span>
           </button>
         </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* RETROSPECTIVA MENSAL ESTILO SPOTIFY WRAPPED (MESES PASSADOS)   */}
+      {/* ============================================================== */}
+      {flowChart.period === 'monthly' && isPastMonth(flowChart.month, flowChart.year) && (
+        <MonthlyWrappedBanner
+          month={flowChart.month}
+          year={flowChart.year}
+          onOpenWrapped={() => setWrappedOpen(true)}
+        />
       )}
 
       {/* ============================================================== */}
@@ -1424,6 +1439,14 @@ export function MobileSummaryView({
           )}
         </div>
       )}
+
+      {/* Modal de Retrospectiva Mensal Estilo Spotify Wrapped */}
+      <MonthlyWrappedModal
+        isOpen={wrappedOpen}
+        onClose={() => setWrappedOpen(false)}
+        month={flowChart.month}
+        year={flowChart.year}
+      />
     </div>
   );
 }

@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Layers,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { AccountWithBalance, getAccounts } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -21,7 +24,8 @@ import { ExportDropdown } from '@/components/ui/ExportDropdown';
 import { exportTransactionsReport, ExportFormat } from '@/lib/export-utils';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
 import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
-import { getZonedParts } from '@/lib/date-utils';
+import { getZonedParts, isPastMonth } from '@/lib/date-utils';
+import { MonthlyWrappedBanner } from '@/components/wrapped/MonthlyWrappedBanner';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useMobileNavigation, OptimisticMutation } from '@/context/MobileNavigationContext';
 import { seedClientCache, getCachedSimpleClients, getCachedProducts } from '@/lib/client-cache';
@@ -82,6 +86,14 @@ const EditAccountBalanceModal = dynamic(
   { ssr: false }
 );
 
+const MonthlyWrappedModal = dynamic(
+  () =>
+    import('@/components/wrapped/MonthlyWrappedModal').then(
+      (m) => m.MonthlyWrappedModal
+    ),
+  { ssr: false }
+);
+
 interface DashboardMonthCache {
   transactions: Transaction[];
   businessData: BusinessDashboardData;
@@ -115,7 +127,8 @@ export function DashboardView({
   initialTransactions = [],
   initialIsMobile = false,
 }: DashboardViewProps) {
-  const { month, year, formattedMonth } = useDateContext();
+  const { month, year, formattedMonth, prevMonth, nextMonth } = useDateContext();
+  const [wrappedOpen, setWrappedOpen] = useState(false);
   const { isMobile } = { isMobile: useIsMobile(768, initialIsMobile) };
   const { activeTab, contextMode } = useMobileNavigation();
   const router = useRouter();
@@ -599,6 +612,14 @@ export function DashboardView({
           defaultMode="adjust"
           onSuccess={refreshData}
         />
+
+        {/* Modal de Retrospectiva Mensal Estilo Spotify Wrapped */}
+        <MonthlyWrappedModal
+          isOpen={wrappedOpen}
+          onClose={() => setWrappedOpen(false)}
+          month={month}
+          year={year}
+        />
       </div>
     );
   }
@@ -623,6 +644,42 @@ export function DashboardView({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {/* Navegação de Mês/Ano Desktop */}
+          <div className="flex items-center bg-zinc-900 border border-zinc-800 px-2 py-1 rounded-xl shadow-sm">
+            <button
+              type="button"
+              onClick={prevMonth}
+              className="p-1 text-zinc-400 hover:text-zinc-100 rounded-lg hover:bg-zinc-800 transition cursor-pointer"
+              aria-label="Mês anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-bold text-zinc-200 px-2 select-none min-w-[130px] text-center">
+              {formattedMonth}
+            </span>
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="p-1 text-zinc-400 hover:text-zinc-100 rounded-lg hover:bg-zinc-800 transition cursor-pointer"
+              aria-label="Próximo mês"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Botão de Retrospectiva do Mês se for mês passado */}
+          {isPastMonth(month, year) && (
+            <button
+              type="button"
+              onClick={() => setWrappedOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-md shadow-violet-600/20 active:scale-[0.98] transition cursor-pointer"
+              title={`Ver Retrospectiva de ${formattedMonth}`}
+            >
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <span>Retrospectiva</span>
+            </button>
+          )}
+
           {/* Alternador Principal: Negócio vs Geral (Apenas se hasBusiness for true) */}
           {hasBusiness && (
             <div className="flex items-center bg-zinc-900 border border-zinc-800 p-1 rounded-xl shadow-sm">
@@ -660,6 +717,15 @@ export function DashboardView({
           />
         </div>
       </div>
+
+      {/* Banner de Retrospectiva para Meses Anteriores */}
+      {isPastMonth(month, year) && (
+        <MonthlyWrappedBanner
+          month={month}
+          year={year}
+          onOpenWrapped={() => setWrappedOpen(true)}
+        />
+      )}
 
       {/* Hub Unificado de Confirmações & Pendências do Dia (Topo Absoluto Desktop) */}
       <UnifiedDailyPendingHub
@@ -740,6 +806,14 @@ export function DashboardView({
         account={accountToAdjustBalance}
         defaultMode="adjust"
         onSuccess={refreshData}
+      />
+
+      {/* Modal de Retrospectiva Mensal Estilo Spotify Wrapped */}
+      <MonthlyWrappedModal
+        isOpen={wrappedOpen}
+        onClose={() => setWrappedOpen(false)}
+        month={month}
+        year={year}
       />
     </div>
   );
