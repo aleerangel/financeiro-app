@@ -338,39 +338,39 @@ export function MessageSettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[94vh]">
+      <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[94vh]">
         {/* Header Superior */}
-        <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[#1E293B] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="w-9 h-9 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/25 flex items-center justify-center text-[#FACC15]">
               <Settings className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-bold text-[#F8FAFC]">
                 Configurações de WhatsApp & Pix
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#94A3B8]">
                 Chave de recebimento e modelos automáticos de mensagens
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Abas Principais: Chave Pix vs Modelos de Mensagens */}
-        <div className="flex items-center border-b border-slate-800 bg-slate-950/40 px-5 pt-2">
+        <div className="flex items-center border-b border-[#1E293B] bg-[#080B11]/60 px-5 pt-2">
           <button
             type="button"
             onClick={() => setActiveTab('templates')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
               activeTab === 'templates'
-                ? 'border-amber-500 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-[#FACC15] text-[#FACC15]'
+                : 'border-transparent text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -380,10 +380,10 @@ export function MessageSettingsModal({
           <button
             type="button"
             onClick={() => setActiveTab('pix')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
               activeTab === 'pix'
-                ? 'border-amber-500 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-[#FACC15] text-[#FACC15]'
+                : 'border-transparent text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <QrCode className="w-4 h-4" />
@@ -405,7 +405,7 @@ export function MessageSettingsModal({
 
               {/* Tipo de Chave */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                <label className="text-xs font-semibold text-[#94A3B8] block mb-1.5">
                   Tipo da Chave Pix
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -415,10 +415,10 @@ export function MessageSettingsModal({
                         key={type}
                         type="button"
                         onClick={() => setPixKeyType(type)}
-                        className={`px-3 py-2 rounded-xl text-xs font-medium border text-left transition-all ${
+                        className={`px-3 py-2 rounded-xl text-xs font-medium border text-left transition-all cursor-pointer ${
                           pixKeyType === type
-                            ? 'bg-amber-500/15 text-amber-400 border-amber-500/40 shadow-sm'
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                            ? 'bg-[#FACC15]/15 text-[#FACC15] border-[#FACC15]/40 shadow-sm'
+                            : 'bg-[#080B11] border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC]'
                         }`}
                       >
                         {PIX_KEY_LABELS[type]}
@@ -430,7 +430,7 @@ export function MessageSettingsModal({
 
               {/* Chave Pix */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                <label className="text-xs font-semibold text-[#94A3B8] block mb-1.5">
                   Chave Pix
                 </label>
                 <input
@@ -446,13 +446,13 @@ export function MessageSettingsModal({
                       ? 'Ex: contato@seunegocio.com'
                       : 'Digite a chave Pix'
                   }
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+                  className="w-full bg-[#080B11] border border-[#1E293B] rounded-xl px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition-colors"
                 />
               </div>
 
               {/* Nome do Favorecido */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                <label className="text-xs font-semibold text-[#94A3B8] block mb-1.5">
                   Nome do Favorecido / {businessName || 'Negócio'} (Opcional)
                 </label>
                 <input
@@ -460,23 +460,23 @@ export function MessageSettingsModal({
                   value={pixHolderName}
                   onChange={(e) => setPixHolderName(e.target.value)}
                   placeholder={`Ex: ${businessName || 'Meu Negócio'} ou Alexandre Rangel`}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+                  className="w-full bg-[#080B11] border border-[#1E293B] rounded-xl px-3.5 py-2.5 text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition-colors"
                 />
               </div>
 
               {/* Toggle de inclusão padrão */}
-              <label className="flex items-center gap-3 p-3.5 bg-slate-950/60 border border-slate-800 rounded-xl cursor-pointer">
+              <label className="flex items-center gap-3 p-3.5 bg-[#080B11] border border-[#1E293B] rounded-xl cursor-pointer">
                 <input
                   type="checkbox"
                   checked={includePixDefault}
                   onChange={(e) => setIncludePixDefault(e.target.checked)}
-                  className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 bg-slate-900 border-slate-700"
+                  className="w-4 h-4 rounded text-[#FACC15] focus:ring-[#FACC15] bg-[#080B11] border-[#1E293B]"
                 />
                 <div className="text-xs">
-                  <span className="font-semibold text-white block">
+                  <span className="font-semibold text-[#F8FAFC] block">
                     Incluir Chave Pix por padrão
                   </span>
-                  <span className="text-slate-400">
+                  <span className="text-[#94A3B8]">
                     Marca automaticamente o envio de Pix ao abrir os modais de cobrança e recibos
                   </span>
                 </div>
@@ -831,18 +831,18 @@ export function MessageSettingsModal({
           )}
 
           {/* Botões do Rodapé */}
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+          <div className="pt-3 border-t border-[#1E293B] flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-medium transition-colors"
+              className="px-4 py-2.5 rounded-xl text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] text-xs font-medium transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-bold text-xs flex items-center gap-1.5 shadow-md shadow-[#FACC15]/15 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{saving ? 'Salvando...' : 'Salvar Configurações'}</span>

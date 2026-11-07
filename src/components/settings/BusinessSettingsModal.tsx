@@ -154,29 +154,29 @@ export function BusinessSettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <div className="w-full max-w-xl bg-[#0D121F] border border-[#1E293B] rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
         {/* Botão Fechar */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+          className="absolute top-4 right-4 p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Topo / Cabeçalho */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-[#FACC15]/10 border border-[#FACC15]/25 text-[#FACC15] flex items-center justify-center shrink-0">
             <Store className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-zinc-100 flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-[#F8FAFC] flex items-center gap-2">
               Meu Negócio
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15]/30">
                 Canário
               </span>
             </h2>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-[#94A3B8]">
               Personalize o nome fantasia, segmento e rotinas do seu negócio
             </p>
           </div>
@@ -190,26 +190,26 @@ export function BusinessSettingsModal({
 
         <form onSubmit={handleSave} className="space-y-5">
           {/* 1. Ativação do Módulo de Negócio */}
-          <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-2xl flex items-center justify-between gap-4">
+          <div className="p-4 bg-[#080B11] border border-[#1E293B] rounded-2xl flex items-center justify-between gap-4">
             <div>
-              <span className="text-sm font-bold text-zinc-100 block">
+              <span className="text-sm font-bold text-[#F8FAFC] block">
                 Ativar ferramentas de negócio
               </span>
-              <span className="text-[11px] text-zinc-400 block mt-0.5">
+              <span className="text-[11px] text-[#94A3B8] block mt-0.5">
                 Exibir controle de atendimentos, clientes, catálogo e fiados
               </span>
             </div>
             <button
               type="button"
               onClick={() => setHasBusiness(!hasBusiness)}
-              className={`w-12 h-6 rounded-full transition-colors relative p-0.5 shrink-0 ${
-                hasBusiness ? 'bg-emerald-500' : 'bg-zinc-700'
+              className={`w-12 h-6 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer ${
+                hasBusiness ? 'bg-[#FACC15]' : 'bg-[#1E293B]'
               }`}
               role="switch"
               aria-checked={hasBusiness}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
+                className={`w-5 h-5 rounded-full bg-[#080B11] shadow-md transition-transform ${
                   hasBusiness ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
@@ -220,7 +220,7 @@ export function BusinessSettingsModal({
             <>
               {/* 2. Nome Fantasia */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-1.5">
                   Nome Fantasia do Negócio *
                 </label>
                 <input
@@ -229,17 +229,17 @@ export function BusinessSettingsModal({
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="Ex: Minha Barbearia, Studio VIP, Silva Consultoria"
                   required
-                  className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-100 focus:outline-none focus:border-amber-500 transition placeholder:text-zinc-600"
+                  className="w-full px-3.5 py-2.5 bg-[#080B11] border border-[#1E293B] rounded-xl text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition placeholder:text-[#64748B]"
                 />
               </div>
 
               {/* 2.1 CNPJ da Empresa (Opcional) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
                     CNPJ da Empresa
                   </label>
-                  <span className="text-[10px] text-zinc-500 font-medium">Opcional</span>
+                  <span className="text-[10px] text-[#64748B] font-medium">Opcional</span>
                 </div>
                 <input
                   type="text"
@@ -247,16 +247,16 @@ export function BusinessSettingsModal({
                   onChange={handleCnpjChange}
                   placeholder="00.000.000/0000-00"
                   maxLength={18}
-                  className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-100 focus:outline-none focus:border-amber-500 transition placeholder:text-zinc-600 font-mono"
+                  className="w-full px-3.5 py-2.5 bg-[#080B11] border border-[#1E293B] rounded-xl text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition placeholder:text-[#64748B] font-mono"
                 />
-                <p className="text-[10px] text-zinc-500 mt-1">
+                <p className="text-[10px] text-[#64748B] mt-1">
                   Exibido em relatórios consolidados e extratos da sua empresa.
                 </p>
               </div>
 
               {/* 3. Seleção do Macro-Segmento */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
                   Segmento de Atuação
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -267,10 +267,10 @@ export function BusinessSettingsModal({
                         key={opt.value}
                         type="button"
                         onClick={() => handleSegmentChange(opt.value)}
-                        className={`p-2.5 rounded-xl text-left border transition flex flex-col justify-between gap-1.5 ${
+                        className={`p-2.5 rounded-xl text-left border transition flex flex-col justify-between gap-1.5 cursor-pointer ${
                           isSelected
-                            ? 'bg-amber-500/10 border-amber-500/40 text-amber-300'
-                            : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                            ? 'bg-[#FACC15]/10 border-[#FACC15]/50 text-[#FACC15]'
+                            : 'bg-[#080B11] border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC] hover:border-[#64748B]'
                         }`}
                       >
                         <span className="text-xl">{opt.icon}</span>
@@ -286,14 +286,14 @@ export function BusinessSettingsModal({
 
                 {/* Diálogo/Aviso contextual de atualização de templates WhatsApp ao trocar segmento */}
                 {segment !== profile.segment && (
-                  <div className="mt-3 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
+                  <div className="mt-3 p-3.5 bg-[#FACC15]/10 border border-[#FACC15]/30 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
                     <div className="flex items-start gap-2.5">
-                      <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <Sparkles className="w-4 h-4 text-[#FACC15] shrink-0 mt-0.5" />
                       <div className="text-xs">
-                        <span className="font-bold text-amber-300 block">
+                        <span className="font-bold text-[#FACC15] block">
                           Segmento alterado para {SEGMENTS_CONFIG[segment]?.label}
                         </span>
-                        <span className="text-zinc-300 block mt-0.5">
+                        <span className="text-[#94A3B8] block mt-0.5">
                           Deseja atualizar os modelos padrão de WhatsApp para o estilo deste novo segmento ou manter seus textos atuais?
                         </span>
                       </div>
@@ -302,10 +302,10 @@ export function BusinessSettingsModal({
                       <button
                         type="button"
                         onClick={() => setUpdateTemplatesOnSave(true)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           updateTemplatesOnSave
-                            ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
-                            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                            ? 'bg-[#FACC15] text-[#080B11] shadow-md shadow-[#FACC15]/20'
+                            : 'bg-[#151D30] text-[#94A3B8] hover:text-[#F8FAFC]'
                         }`}
                       >
                         ✓ Atualizar textos para {SEGMENTS_CONFIG[segment]?.label}
@@ -313,10 +313,10 @@ export function BusinessSettingsModal({
                       <button
                         type="button"
                         onClick={() => setUpdateTemplatesOnSave(false)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                           !updateTemplatesOnSave
-                            ? 'bg-zinc-700 text-zinc-100 border border-zinc-600'
-                            : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+                            ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B]'
+                            : 'bg-[#080B11] text-[#94A3B8] hover:text-[#F8FAFC]'
                         }`}
                       >
                         Manter meus textos atuais
@@ -329,8 +329,8 @@ export function BusinessSettingsModal({
               {/* 4. Nomenclatura das Vendas e Ciclo Padrão */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Sliders className="w-3.5 h-3.5 text-zinc-400" />
+                  <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-[#64748B]" />
                     Rótulo das Operações
                   </label>
                   <input
@@ -338,16 +338,16 @@ export function BusinessSettingsModal({
                     value={salesLabel}
                     onChange={(e) => setSalesLabel(e.target.value)}
                     placeholder="Ex: Atendimentos, Vendas, Serviços"
-                    className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-100 focus:outline-none focus:border-amber-500 transition"
+                    className="w-full px-3.5 py-2.5 bg-[#080B11] border border-[#1E293B] rounded-xl text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                   />
-                  <span className="text-[10px] text-zinc-500 mt-1 block">
+                  <span className="text-[10px] text-[#64748B] mt-1 block">
                     Usado em menus, botões e recibos
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                  <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#64748B]" />
                     Ciclo de Retorno CRM (Dias)
                   </label>
                   <input
@@ -356,30 +356,30 @@ export function BusinessSettingsModal({
                     max="180"
                     value={defaultCycleDays}
                     onChange={(e) => setDefaultCycleDays(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-100 focus:outline-none focus:border-amber-500 transition"
+                    className="w-full px-3.5 py-2.5 bg-[#080B11] border border-[#1E293B] rounded-xl text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                   />
-                  <span className="text-[10px] text-zinc-500 mt-1 block">
+                  <span className="text-[10px] text-[#64748B] mt-1 block">
                     Janela estimada de retorno para clientes recorrentes
                   </span>
                 </div>
               </div>
 
               {/* 5. Dados Pix para Cobranças e Recibos WhatsApp */}
-              <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-zinc-200 font-bold text-xs">
+              <div className="p-4 bg-[#080B11] border border-[#1E293B] rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 text-[#F8FAFC] font-bold text-xs">
                   <QrCode className="w-4 h-4 text-emerald-400" />
                   <span>Dados Pix para Mensagens WhatsApp (Opcional)</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                    <label className="block text-[11px] font-medium text-[#94A3B8] mb-1">
                       Tipo de Chave
                     </label>
                     <select
                       value={pixKeyType}
                       onChange={(e) => setPixKeyType(e.target.value as PixKeyType)}
-                      className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-[#080B11] border border-[#1E293B] rounded-xl text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50"
                     >
                       {Object.entries(PIX_KEY_LABELS).map(([key, label]) => (
                         <option key={key} value={key}>
@@ -390,7 +390,7 @@ export function BusinessSettingsModal({
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                    <label className="block text-[11px] font-medium text-[#94A3B8] mb-1">
                       Chave Pix
                     </label>
                     <input
@@ -398,13 +398,13 @@ export function BusinessSettingsModal({
                       value={pixKey}
                       onChange={(e) => setPixKey(e.target.value)}
                       placeholder="Ex: celular, e-mail ou CPF"
-                      className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 placeholder:text-zinc-600"
+                      className="w-full px-3 py-2 bg-[#080B11] border border-[#1E293B] rounded-xl text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 placeholder:text-[#64748B]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                  <label className="block text-[11px] font-medium text-[#94A3B8] mb-1">
                     Nome do Titular
                   </label>
                   <input
@@ -412,22 +412,22 @@ export function BusinessSettingsModal({
                     value={pixHolderName}
                     onChange={(e) => setPixHolderName(e.target.value)}
                     placeholder="Ex: João da Silva / Barbearia Top"
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 placeholder:text-zinc-600"
+                    className="w-full px-3 py-2 bg-[#080B11] border border-[#1E293B] rounded-xl text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 placeholder:text-[#64748B]"
                   />
                 </div>
               </div>
 
               {/* 6. Atalho para Personalização de Modelos de Mensagens WhatsApp */}
-              <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-2xl flex items-center justify-between gap-3">
+              <div className="p-4 bg-[#080B11] border border-[#1E293B] rounded-2xl flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
                     <MessageCircle className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-zinc-200 block">
+                    <span className="text-xs font-bold text-[#F8FAFC] block">
                       Modelos de Mensagens do WhatsApp
                     </span>
-                    <span className="text-[11px] text-zinc-400 block mt-0.5">
+                    <span className="text-[11px] text-[#94A3B8] block mt-0.5">
                       Personalize textos de cobrança, fiados, radar de retorno e aniversários
                     </span>
                   </div>
@@ -436,7 +436,7 @@ export function BusinessSettingsModal({
                 <button
                   type="button"
                   onClick={() => setMessageModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-xl text-xs font-bold transition active:scale-95 shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-[#FACC15]/10 hover:bg-[#FACC15]/20 text-[#FACC15] border border-[#FACC15]/30 rounded-xl text-xs font-bold transition active:scale-95 shrink-0 cursor-pointer"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span>Personalizar Textos</span>
@@ -446,12 +446,12 @@ export function BusinessSettingsModal({
           )}
 
           {/* Botões de Ação */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#1E293B]">
             <button
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] transition cursor-pointer"
             >
               Cancelar
             </button>
@@ -459,7 +459,7 @@ export function BusinessSettingsModal({
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/10 transition active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-bold text-xs rounded-xl shadow-lg shadow-[#FACC15]/15 transition active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>

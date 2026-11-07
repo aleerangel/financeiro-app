@@ -229,55 +229,55 @@ export function NotificationPreferencesModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <div className="w-full max-w-lg bg-[#0D121F] border border-[#1E293B] rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
         {/* Botão fechar */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+          className="absolute top-4 right-4 p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <div className="w-10 h-10 rounded-2xl bg-[#FACC15]/10 border border-[#FACC15]/25 flex items-center justify-center text-[#FACC15]">
             <Bell className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-zinc-100">
+            <h2 className="text-base font-bold text-[#F8FAFC]">
               Configurações de Notificações
             </h2>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-[#94A3B8]">
               Personalize canais e prazos de antecedência dos seus alertas
             </p>
           </div>
         </div>
 
         {loading || !prefs ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-2 text-zinc-400">
-            <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+          <div className="py-12 flex flex-col items-center justify-center gap-2 text-[#94A3B8]">
+            <Loader2 className="w-6 h-6 animate-spin text-[#FACC15]" />
             <span className="text-xs">Carregando preferências...</span>
           </div>
         ) : (
           <form onSubmit={handleSave} className="space-y-5">
             {/* Seção 1: Canais de Notificação */}
             <div className="space-y-3">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-400 block px-1">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#94A3B8] block px-1">
                 Canais de Entrega
               </span>
 
               {/* Canal 1: Central In-App (Fixa/Obrigatória) */}
-              <div className="p-3.5 bg-zinc-950/80 border border-zinc-800 rounded-2xl flex items-center justify-between">
+              <div className="p-3.5 bg-[#080B11] border border-[#1E293B] rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
                     <Bell className="w-4 h-4 stroke-[2.5]" />
                   </div>
                   <div>
-                    <span className="font-bold text-xs text-zinc-200 block">
+                    <span className="font-bold text-xs text-[#F8FAFC] block">
                       Central no App (Sino)
                     </span>
-                    <span className="text-[10px] text-zinc-400">
+                    <span className="text-[10px] text-[#94A3B8]">
                       Alertas no topo do painel e extrato (Sempre ativo)
                     </span>
                   </div>
@@ -288,17 +288,17 @@ export function NotificationPreferencesModal({
               </div>
 
               {/* Canal 2: Web Push (Celular PWA e Navegadores) */}
-              <div className="p-3.5 bg-zinc-950/80 border border-zinc-800 rounded-2xl space-y-2.5">
+              <div className="p-3.5 bg-[#080B11] border border-[#1E293B] rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
                       <Smartphone className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="font-bold text-xs text-zinc-200 block">
+                      <span className="font-bold text-xs text-[#F8FAFC] block">
                         Notificações Web Push (Celular e PC)
                       </span>
-                      <span className="text-[10px] text-zinc-400">
+                      <span className="text-[10px] text-[#94A3B8]">
                         Receba avisos na tela mesmo com o aplicativo fechado
                       </span>
                     </div>
@@ -310,7 +310,7 @@ export function NotificationPreferencesModal({
                       onChange={(e) => handleTogglePush(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    <div className="w-9 h-5 bg-[#1E293B] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FACC15]"></div>
                   </label>
                 </div>
 
@@ -323,26 +323,26 @@ export function NotificationPreferencesModal({
                         <span>Este aparelho está conectado para receber notificações.</span>
                       </div>
                     ) : pushPermission === 'granted' ? (
-                      <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-between text-[11px]">
-                        <span className="text-blue-300">Conectar este aparelho ao Push</span>
+                      <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-between text-[11px]">
+                        <span className="text-indigo-300">Conectar este aparelho ao Push</span>
                         <button
                           type="button"
                           onClick={() => handleTogglePush(true)}
-                          className="px-2.5 py-1 bg-blue-500 text-white font-bold text-[10px] rounded-lg shadow-sm"
+                          className="px-2.5 py-1 bg-indigo-500 text-white font-bold text-[10px] rounded-lg shadow-sm cursor-pointer"
                         >
                           Conectar
                         </button>
                       </div>
                     ) : (
-                      <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2 text-amber-300 text-[11px]">
+                      <div className="p-2.5 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-xl flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 text-[#FACC15] text-[11px]">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           <span>Autorização necessária no navegador</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleTogglePush(true)}
-                          className="px-2.5 py-1 bg-amber-500 text-zinc-950 font-bold text-[10px] rounded-lg shadow-sm"
+                          className="px-2.5 py-1 bg-[#FACC15] text-[#080B11] font-bold text-[10px] rounded-lg shadow-sm cursor-pointer"
                         >
                           Autorizar
                         </button>
@@ -356,14 +356,14 @@ export function NotificationPreferencesModal({
             {/* Seção 2: Antecedência dos Avisos (Chips Multi-Seleção) */}
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#94A3B8] flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#FACC15]" />
                   <span>Antecedência dos Avisos de Vencimento</span>
                 </span>
               </div>
 
-              <div className="p-3.5 bg-zinc-950/80 border border-zinc-800 rounded-2xl space-y-2">
-                <p className="text-[11px] text-zinc-400">
+              <div className="p-3.5 bg-[#080B11] border border-[#1E293B] rounded-2xl space-y-2">
+                <p className="text-[11px] text-[#94A3B8]">
                   Escolha em quais momentos deseja ser alertado sobre contas a pagar e cobranças:
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
@@ -374,13 +374,13 @@ export function NotificationPreferencesModal({
                         key={days}
                         type="button"
                         onClick={() => handleToggleDayBefore(days)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 cursor-pointer ${
                           isSelected
-                            ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
-                            : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                            ? 'bg-[#FACC15] text-[#080B11] shadow-md shadow-[#FACC15]/15'
+                            : 'bg-[#151D30] border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC]'
                         }`}
                       >
-                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />}
                         <span>{label}</span>
                       </button>
                     );
@@ -391,20 +391,20 @@ export function NotificationPreferencesModal({
 
             {/* Seção 3: Eventos Monitorados */}
             <div className="space-y-3">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-400 block px-1">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#94A3B8] block px-1">
                 Eventos e Alertas Ativos
               </span>
 
-              <div className="bg-zinc-950/80 border border-zinc-800 rounded-2xl divide-y divide-zinc-800/80 overflow-hidden">
+              <div className="bg-[#080B11] border border-[#1E293B] rounded-2xl divide-y divide-[#1E293B] overflow-hidden">
                 {/* 1. Contas a Pagar */}
-                <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
+                <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-[#151D30]/40 transition">
                   <div className="flex items-center gap-2.5">
                     <Calendar className="w-4 h-4 text-rose-400" />
                     <div>
-                      <span className="text-xs font-bold text-zinc-200 block">
+                      <span className="text-xs font-bold text-[#F8FAFC] block">
                         Contas a Pagar & Despesas
                       </span>
-                      <span className="text-[10px] text-zinc-400">
+                      <span className="text-[10px] text-[#94A3B8]">
                         Avisos de contas a vencer e boletos em atraso
                       </span>
                     </div>
@@ -413,7 +413,7 @@ export function NotificationPreferencesModal({
                     type="checkbox"
                     checked={prefs.notify_bills}
                     onChange={(e) => setPrefs({ ...prefs, notify_bills: e.target.checked })}
-                    className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
+                    className="w-4 h-4 rounded text-[#FACC15] focus:ring-[#FACC15] bg-[#080B11] border-[#1E293B]"
                   />
                 </label>
 
@@ -421,14 +421,14 @@ export function NotificationPreferencesModal({
                 {hasBusiness && (
                   <>
                     {/* 2. Fiados / Contas a Receber */}
-                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
+                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-[#151D30]/40 transition">
                       <div className="flex items-center gap-2.5">
                         <DollarSign className="w-4 h-4 text-amber-400" />
                         <div>
-                          <span className="text-xs font-bold text-zinc-200 block">
+                          <span className="text-xs font-bold text-[#F8FAFC] block">
                             Fiados & Vendas a Prazo
                           </span>
-                          <span className="text-[10px] text-zinc-400">
+                          <span className="text-[10px] text-[#94A3B8]">
                             Alertas de fiados vencidos prontos para cobrança
                           </span>
                         </div>
@@ -437,19 +437,19 @@ export function NotificationPreferencesModal({
                         type="checkbox"
                         checked={prefs.notify_credits}
                         onChange={(e) => setPrefs({ ...prefs, notify_credits: e.target.checked })}
-                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
+                        className="w-4 h-4 rounded text-[#FACC15] focus:ring-[#FACC15] bg-[#080B11] border-[#1E293B]"
                       />
                     </label>
 
                     {/* 3. Retorno de Clientes (CRM) */}
-                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
+                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-[#151D30]/40 transition">
                       <div className="flex items-center gap-2.5">
-                        <Users className="w-4 h-4 text-blue-400" />
+                        <Users className="w-4 h-4 text-sky-400" />
                         <div>
-                          <span className="text-xs font-bold text-zinc-200 block">
+                          <span className="text-xs font-bold text-[#F8FAFC] block">
                             Radar de Retorno de Clientes (CRM)
                           </span>
-                          <span className="text-[10px] text-zinc-400">
+                          <span className="text-[10px] text-[#94A3B8]">
                             Clientes que atingiram o período ideal para novo atendimento
                           </span>
                         </div>
@@ -460,19 +460,19 @@ export function NotificationPreferencesModal({
                         onChange={(e) =>
                           setPrefs({ ...prefs, notify_client_returns: e.target.checked })
                         }
-                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
+                        className="w-4 h-4 rounded text-[#FACC15] focus:ring-[#FACC15] bg-[#080B11] border-[#1E293B]"
                       />
                     </label>
 
                     {/* 4. Aniversariantes do Dia */}
-                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-zinc-900/50 transition">
+                    <label className="p-3 flex items-center justify-between cursor-pointer hover:bg-[#151D30]/40 transition">
                       <div className="flex items-center gap-2.5">
                         <Cake className="w-4 h-4 text-pink-400" />
                         <div>
-                          <span className="text-xs font-bold text-zinc-200 block">
+                          <span className="text-xs font-bold text-[#F8FAFC] block">
                             Aniversariantes do Dia
                           </span>
-                          <span className="text-[10px] text-zinc-400">
+                          <span className="text-[10px] text-[#94A3B8]">
                             Lembretes matinais para enviar mensagens de felicitações
                           </span>
                         </div>
@@ -483,7 +483,7 @@ export function NotificationPreferencesModal({
                         onChange={(e) =>
                           setPrefs({ ...prefs, notify_birthdays: e.target.checked })
                         }
-                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-zinc-900 border-zinc-700"
+                        className="w-4 h-4 rounded text-[#FACC15] focus:ring-[#FACC15] bg-[#080B11] border-[#1E293B]"
                       />
                     </label>
                   </>
@@ -492,18 +492,18 @@ export function NotificationPreferencesModal({
             </div>
 
             {/* Ações do Rodapé */}
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-zinc-800">
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#1E293B]">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition"
+                className="px-4 py-2.5 text-xs text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+                className="px-5 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-bold text-xs rounded-xl transition shadow-lg shadow-[#FACC15]/15 flex items-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
