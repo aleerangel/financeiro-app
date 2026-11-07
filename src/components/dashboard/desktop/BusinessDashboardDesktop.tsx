@@ -89,14 +89,14 @@ export function BusinessDashboardDesktop({
     {
       id: 'revenue',
       name: 'Faturamento',
-      color: '#22c55e', // Verde
+      color: '#38BDF8', // Azul Safira
       values: businessChart.activeStats.map((s) => s.revenue),
       formatValue: (v) => formatHidden(formatCurrency(v)),
     },
     {
       id: 'expenses',
       name: `Gastos ${businessName}`,
-      color: '#f43f5e', // Rosa/Vermelho
+      color: '#94A3B8', // Ardósia Metálico
       values: businessChart.activeStats.map((s) => s.expenses || 0),
       formatValue: (v) => formatHidden(formatCurrency(v)),
     },

@@ -281,21 +281,21 @@ export function MobileSummaryView({
       {
         id: 'totalIncome',
         name: 'Entradas',
-        color: '#22c55e', // Verde esmeralda
+        color: '#38BDF8', // Azul Safira
         values: flowChart.activeStats.map((s) => s.generalIncome || 0),
         formatValue: (v) => formatHidden(formatCurrency(v)),
       },
       {
         id: 'totalExpense',
         name: 'Saídas',
-        color: '#f43f5e', // Coral/Vermelho
+        color: '#94A3B8', // Ardósia Metálico
         values: flowChart.activeStats.map((s) => s.generalExpense || 0),
         formatValue: (v) => formatHidden(formatCurrency(v)),
       },
       {
         id: 'netBalance',
         name: 'Balanço',
-        color: '#3b82f6', // Azul
+        color: '#FACC15', // Canário Radiante
         values: flowChart.activeStats.map(
           (s) => (s.generalIncome || 0) - (s.generalExpense || 0)
         ),
@@ -312,21 +312,21 @@ export function MobileSummaryView({
       {
         id: 'revenue',
         name: 'Faturamento',
-        color: '#22c55e', // Verde
+        color: '#38BDF8', // Azul Safira
         values: businessChart.activeStats.map((s) => s.revenue || 0),
         formatValue: (v) => formatHidden(formatCurrency(v)),
       },
       {
         id: 'expenses',
         name: `Gastos ${businessName}`,
-        color: '#f43f5e', // Rosa/Vermelho
+        color: '#94A3B8', // Ardósia Metálico
         values: businessChart.activeStats.map((s) => s.expenses || 0),
         formatValue: (v) => formatHidden(formatCurrency(v)),
       },
       {
         id: 'netProfit',
         name: 'Lucro Líquido',
-        color: '#eab308', // Amarelo/Dourado
+        color: '#FACC15', // Canário Radiante
         values: businessChart.activeStats.map(
           (s) => s.netProfit ?? (s.revenue - (s.expenses || 0))
         ),
@@ -368,13 +368,13 @@ export function MobileSummaryView({
     return flowSeries.filter((s) => s.id === selectedMetric);
   }, [flowSeries, selectedMetric]);
 
-  // Série Dedicada: Evolução do Saldo em Contas (1 curva roxa)
+  // Série Dedicada: Evolução do Saldo em Contas (1 curva dourada Canário)
   const balanceSeries: ChartSeries[] = useMemo(
     () => [
       {
         id: 'accountBalance',
         name: 'Saldo em Contas',
-        color: '#a855f7', // Roxo Neon
+        color: '#FACC15', // Canário Radiante
         values: flowChart.activeStats.map((s) => s.accountBalance || 0),
         formatValue: (v) => formatHidden(formatCurrency(v)),
       },
