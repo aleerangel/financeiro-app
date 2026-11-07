@@ -11,6 +11,9 @@ import {
   Landmark,
   ArrowLeftRight,
   Pencil,
+  Plus,
+  ArrowRightLeft,
+  PieChart,
 } from 'lucide-react';
 import { AccountWithBalance } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -168,6 +171,12 @@ export function GeneralDashboardDesktop({
   }
 
   const totalIncome = receivedIncome + pendingIncome;
+  const receivedIncomePct =
+    totalIncome > 0
+      ? Math.min(100, Math.round((receivedIncome / totalIncome) * 100))
+      : receivedIncome > 0
+      ? 100
+      : 0;
 
   let totalCurrentInvoice = 0;
   let totalUsed = 0;
@@ -178,16 +187,25 @@ export function GeneralDashboardDesktop({
     totalAvailable += Number(c.available_limit || 0);
   }
 
+  const paidExpenseTotal = paidExpense + totalCurrentInvoice;
+  const totalExpectedExpense = paidExpense + pendingExpense + totalCurrentInvoice;
+  const paidExpensePct =
+    totalExpectedExpense > 0
+      ? Math.min(100, Math.round((paidExpenseTotal / totalExpectedExpense) * 100))
+      : paidExpenseTotal > 0
+      ? 100
+      : 0;
+
   const recentTransactions = transactions
     .filter((t) => !(t.recurrence_id && !t.is_paid))
     .slice(0, 5);
 
   return (
     <div className="space-y-6 min-w-0">
-      {/* 1. Primeira Linha: Indicadores principais na ordem Entradas -> Saídas -> Resultado (~134px) */}
+      {/* 1. Primeira Linha: Indicadores principais na ordem Entradas -> Saídas -> Resultado (~145px) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0">
         {/* Coluna 1: Entradas (Receitas do Mês) */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm min-w-0">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between shadow-sm min-w-0">
           <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
               Receitas do Mês
@@ -200,8 +218,23 @@ export function GeneralDashboardDesktop({
             <h2 className="text-2xl font-bold text-emerald-400 tabular-nums">
               {formatHidden(formatCurrency(receivedIncome))}
             </h2>
+
+            {/* Barra de Progresso / Realização da Receita */}
+            <div className="my-2">
+              <div className="flex items-center justify-between text-[10px] text-[#94A3B8] mb-1">
+                <span className="font-medium text-emerald-400">{receivedIncomePct}% recebido</span>
+                <span>{pendingIncome > 0 ? `Restam ${formatHidden(formatCurrency(pendingIncome))}` : '100% liquidado'}</span>
+              </div>
+              <div className="w-full h-1.5 bg-[#080B11] rounded-full overflow-hidden border border-[#1E293B]">
+                <div
+                  className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                  style={{ width: `${receivedIncomePct}%` }}
+                />
+              </div>
+            </div>
+
             <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
-              <span>{pendingIncome > 0 ? `Total: ${formatHidden(formatCurrency(totalIncome))}` : '100% recebido'}</span>
+              <span>{pendingIncome > 0 ? `Total: ${formatHidden(formatCurrency(totalIncome))}` : 'Meta concluída'}</span>
               {hasBusiness && (
                 <span className="text-[#64748B] truncate">{businessName}: {formatHidden(formatCurrency(barberShopIncome))}</span>
               )}
@@ -210,7 +243,7 @@ export function GeneralDashboardDesktop({
         </div>
 
         {/* Coluna 2: Saídas (Despesas Pagas + Faturas de Cartões) */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm min-w-0">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between shadow-sm min-w-0">
           <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-rose-400">
               Despesas & Gastos
@@ -221,8 +254,23 @@ export function GeneralDashboardDesktop({
           </div>
           <div>
             <h2 className="text-2xl font-bold text-rose-400 tabular-nums">
-              {formatHidden(formatCurrency(paidExpense + totalCurrentInvoice))}
+              {formatHidden(formatCurrency(paidExpenseTotal))}
             </h2>
+
+            {/* Barra de Progresso / Realização da Despesa */}
+            <div className="my-2">
+              <div className="flex items-center justify-between text-[10px] text-[#94A3B8] mb-1">
+                <span className="font-medium text-rose-400">{paidExpensePct}% liquidado</span>
+                <span>{pendingExpense > 0 ? `A pagar: ${formatHidden(formatCurrency(pendingExpense))}` : 'Faturas somadas'}</span>
+              </div>
+              <div className="w-full h-1.5 bg-[#080B11] rounded-full overflow-hidden border border-[#1E293B]">
+                <div
+                  className="h-full bg-rose-400 rounded-full transition-all duration-500"
+                  style={{ width: `${paidExpensePct}%` }}
+                />
+              </div>
+            </div>
+
             <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
               <span>Pagas: {formatHidden(formatCurrency(paidExpense))}</span>
               <span>Faturas: {formatHidden(formatCurrency(totalCurrentInvoice))}</span>
@@ -231,7 +279,7 @@ export function GeneralDashboardDesktop({
         </div>
 
         {/* Coluna 3: Resultado Líquido & Saldo em Contas */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm min-w-0 md:col-span-2 xl:col-span-1">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between shadow-sm min-w-0 md:col-span-2 xl:col-span-1">
           <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-[#FACC15]">
               Saldo Total em Contas
@@ -242,6 +290,31 @@ export function GeneralDashboardDesktop({
           </div>
           <div>
             <h2 className="text-2xl font-bold text-[#F8FAFC] tabular-nums">{formatHidden(formatCurrency(totalBalance))}</h2>
+
+            {/* Indicador de Balanço Operacional Mensal */}
+            <div className="my-2">
+              <div className="flex items-center justify-between text-[10px] text-[#94A3B8] mb-1">
+                <span className="text-[#94A3B8]">Resultado no mês</span>
+                <span className={receivedIncome - paidExpenseTotal >= 0 ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold'}>
+                  {receivedIncome - paidExpenseTotal >= 0 ? '+' : ''}{formatHidden(formatCurrency(receivedIncome - paidExpenseTotal))}
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-[#080B11] rounded-full overflow-hidden border border-[#1E293B]">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    receivedIncome >= paidExpenseTotal ? 'bg-[#FACC15]' : 'bg-rose-500'
+                  }`}
+                  style={{
+                    width: `${
+                      receivedIncome > 0
+                        ? Math.min(100, Math.max(12, Math.round((Math.max(0, receivedIncome - paidExpenseTotal) / receivedIncome) * 100)))
+                        : 20
+                    }%`,
+                  }}
+                />
+              </div>
+            </div>
+
             <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
               <span className={receivedIncome - paidExpense >= 0 ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
                 Balanço: {formatHidden(formatCurrency(receivedIncome - paidExpense))}
@@ -385,6 +458,71 @@ export function GeneralDashboardDesktop({
                 </p>
               )}
             </div>
+
+            {/* Preenchimento inteligente quando há poucas contas: Concentração de Liquidez e Ações Rápidas */}
+            {accounts.length > 0 && accounts.length <= 2 && (
+              <div className="mt-3 space-y-3">
+                <div className="p-3 bg-[#080B11]/80 border border-[#1E293B]/70 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-[#94A3B8]">
+                    <span className="font-semibold uppercase tracking-wider text-[10px] text-[#94A3B8]">
+                      Concentração de Saldo
+                    </span>
+                    <span className="text-[#FACC15] font-medium text-[10px]">
+                      {accounts.length === 1 ? '100% nesta conta' : 'Distribuição'}
+                    </span>
+                  </div>
+                  {accounts.map((acc) => {
+                    const pct =
+                      totalBalance > 0
+                        ? Math.max(
+                            0,
+                            Math.min(
+                              100,
+                              Math.round(
+                                (Number(acc.current_balance || 0) / totalBalance) * 100
+                              )
+                            )
+                          )
+                        : 0;
+                    return (
+                      <div key={`dist-${acc.id}`} className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                          <span className="truncate max-w-[120px]">{acc.name}</span>
+                          <span className="tabular-nums font-medium text-zinc-200">{pct}%</span>
+                        </div>
+                        <div className="w-full h-1 bg-[#1E293B] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${pct}%`,
+                              backgroundColor: acc.color || '#3b82f6',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Ações Rápidas */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href="/contas"
+                    className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-[#1E293B]/40 hover:bg-[#1E293B] border border-[#1E293B] text-[11px] font-medium text-zinc-300 hover:text-white transition"
+                  >
+                    <Plus className="w-3 h-3 text-[#FACC15]" />
+                    Nova Conta
+                  </Link>
+                  <Link
+                    href="/transacoes"
+                    className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-[#1E293B]/40 hover:bg-[#1E293B] border border-[#1E293B] text-[11px] font-medium text-zinc-300 hover:text-white transition"
+                  >
+                    <ArrowRightLeft className="w-3 h-3 text-[#38BDF8]" />
+                    Transferir
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="pt-2 border-t border-[#1E293B]/80 flex items-center justify-between text-xs">

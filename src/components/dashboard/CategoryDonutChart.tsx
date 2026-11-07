@@ -451,6 +451,47 @@ export function CategoryDonutChart({
           </div>
         </div>
       )}
+
+      {/* Sub-indicadores de Rodapé: Total Pago vs A Pagar / Faturas (Espelhado ao MonthlyBarChart) */}
+      <div className="border-t border-zinc-800/80 pt-3.5 grid grid-cols-2 gap-4">
+        <div>
+          <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">
+            Total Pago ({MONTH_SHORT_NAMES[refMonth]})
+          </span>
+          <span className="text-base font-bold mt-0.5 block text-rose-400">
+            {formatCurrency(paidExpense)}
+          </span>
+          <span className="text-[10px] text-zinc-500 block truncate">
+            {paidExpensePct}% das saídas ({legendCategories.filter((c) => c.paid > 0).length} categorias)
+          </span>
+        </div>
+
+        <div className="text-right">
+          <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">
+            {isPast
+              ? pendingExpense > 0
+                ? `Não Pago (${MONTH_SHORT_NAMES[refMonth]})`
+                : `Status (${MONTH_SHORT_NAMES[refMonth]})`
+              : `A Pagar / Faturas (${MONTH_SHORT_NAMES[refMonth]})`}
+          </span>
+          <span
+            className={`text-base font-bold mt-0.5 block ${
+              pendingExpense > 0 ? 'text-amber-400' : 'text-zinc-300'
+            }`}
+          >
+            {pendingExpense > 0
+              ? formatCurrency(pendingExpense)
+              : isPast
+              ? 'Mês Encerrado'
+              : 'Tudo Liquidado'}
+          </span>
+          <span className="text-[10px] text-zinc-500 block truncate">
+            {pendingExpense > 0
+              ? `Total previsto: ${formatCurrency(totalExpense)}`
+              : 'Nenhuma pendência neste mês'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

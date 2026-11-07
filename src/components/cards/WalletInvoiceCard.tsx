@@ -338,6 +338,32 @@ export function WalletInvoiceCard({
             </div>
           </div>
         </div>
+
+        {/* Rodapé Consolidado de Limite de Crédito da Carteira */}
+        {totalLimit > 0 && (
+          <div className="pt-3 mt-2 border-t border-[#1E293B]/80">
+            <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mb-1.5">
+              <span className="font-medium text-xs text-[#F8FAFC]">Limite Consolidado</span>
+              <span className="font-bold text-indigo-300 tabular-nums text-xs">
+                {Math.round((totalUsed / totalLimit) * 100)}% usado
+              </span>
+            </div>
+            <div className="w-full h-1.5 bg-[#080B11] rounded-full overflow-hidden border border-[#1E293B]">
+              <div
+                className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, Math.round((totalUsed / totalLimit) * 100))}%`,
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-[#64748B] mt-1.5 tabular-nums">
+              <span>Limite Total: {formatHidden(formatCurrency(totalLimit))}</span>
+              <span className="text-emerald-400 font-medium">
+                Disp: {formatHidden(formatCurrency(totalAvailable))}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* CAMADA 2: O CARTÃO SELECIONADO PREENCHENDO TODO O CARD COM ANIMAÇÃO */}
