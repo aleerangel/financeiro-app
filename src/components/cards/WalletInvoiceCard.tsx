@@ -25,6 +25,7 @@ export function WalletInvoiceCard({
   className = '',
 }: WalletInvoiceCardProps) {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
@@ -317,18 +318,26 @@ export function WalletInvoiceCard({
           </span>
         </div>
 
-        {/* Pilha de Cartões (Design de Carteira Sobreposta) */}
+        {/* Pilha de Cartões (Design de Carteira com Sobreposição Real) */}
         <div className="pt-2">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2">
-            Carteira (toque no cartão para ver detalhes):
-          </span>
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+              Carteira
+            </span>
+            <span className="text-[10px] text-purple-400 font-medium">
+              Toque no cartão para ver detalhes
+            </span>
+          </div>
 
-          <div className="space-y-1.5">
-            {cardsWithStatus.map(({ card, status }) => {
+          <div className="relative pt-1 pb-1">
+            {cardsWithStatus.map(({ card, status }, index) => {
+              const isHovered = hoveredCardId === card.id;
               return (
                 <div
                   key={card.id}
                   onClick={() => setSelectedCardId(card.id)}
+                  onMouseEnter={() => setHoveredCardId(card.id)}
+                  onMouseLeave={() => setHoveredCardId(null)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -337,39 +346,67 @@ export function WalletInvoiceCard({
                       setSelectedCardId(card.id);
                     }
                   }}
-                  className="group relative p-2.5 rounded-xl border border-white/10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer select-none active:scale-[0.99] flex items-center justify-between overflow-hidden"
+                  className={`group relative p-3 rounded-2xl border border-white/20 transition-all duration-300 cursor-pointer select-none overflow-hidden ${
+                    index > 0 ? '-mt-9 sm:-mt-10' : ''
+                  } ${
+                    isHovered
+                      ? '-translate-y-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.6),0_12px_24px_rgba(0,0,0,0.4)]'
+                      : 'shadow-[0_-3px_12px_rgba(0,0,0,0.4),0_6px_16px_rgba(0,0,0,0.3)]'
+                  } active:scale-[0.99]`}
                   style={{
+                    zIndex: isHovered ? 40 : index + 1,
                     backgroundColor: card.color || '#8b5cf6',
                     backgroundImage:
-                      'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.2) 0%, transparent 70%)',
+                      'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 45%, rgba(0,0,0,0.25) 100%)',
                   }}
                 >
-                  {/* Borda lateral estilizada do cartão */}
-                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                    <div className="w-5 h-4 rounded bg-amber-300/80 border border-amber-400 flex items-center justify-center shrink-0 opacity-90 shadow-xs">
-                      <div className="w-3.5 h-2.5 border border-amber-600/40 rounded-xs" />
+                  {/* Linha Superior (Sempre visível mesmo sobreposto) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {/* Chip dourado estilizado */}
+                      <div className="w-5 h-4 rounded bg-amber-300 border border-amber-400 flex items-center justify-center shrink-0 shadow-xs">
+                        <div className="w-3.5 h-2.5 border border-amber-600/40 rounded-xs" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs text-white truncate drop-shadow-sm">
+                            {card.name}
+                          </span>
+                          <Wifi className="w-3 h-3 text-white/70 rotate-90 shrink-0" />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-xs text-white truncate drop-shadow-sm">
-                          {card.name}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        <span className="font-extrabold text-xs sm:text-sm text-white drop-shadow-sm block leading-none">
+                          {formatHidden(formatCurrency(card.current_invoice || 0))}
                         </span>
-                        <Wifi className="w-3 h-3 text-white/70 rotate-90 shrink-0" />
+                        <span className="text-[9px] font-semibold text-white/75 uppercase tracking-wider block mt-0.5">
+                          Fatura
+                        </span>
                       </div>
-                      <span className="text-[10px] text-white/80 block truncate">
-                        {status.isOpen ? status.closingLabel : status.dueLabel}
+
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${
+                          status.isOpen
+                            ? 'bg-emerald-500/25 text-emerald-100 border-emerald-400/40'
+                            : 'bg-amber-500/25 text-amber-100 border-amber-400/40'
+                        }`}
+                      >
+                        {status.isOpen ? 'Aberta' : 'Fechada'}
                       </span>
                     </div>
                   </div>
 
-                  {/* Valor da Fatura daquele cartão */}
-                  <div className="text-right shrink-0">
-                    <span className="font-extrabold text-xs sm:text-sm text-white drop-shadow-sm block">
-                      {formatHidden(formatCurrency(card.current_invoice || 0))}
+                  {/* Linha Inferior (Vencimento/Fechamento e Limite Disponível) */}
+                  <div className="mt-2.5 pt-2 border-t border-white/15 flex items-center justify-between text-[10px] text-white/85">
+                    <span className="truncate">
+                      {status.isOpen ? status.closingLabel : status.dueLabel}
                     </span>
-                    <span className="text-[9px] font-semibold text-white/70 uppercase">
-                      Fatura
+                    <span className="text-white/90 text-[10px] font-medium">
+                      Disp: {formatHidden(formatCurrency(card.available_limit))}
                     </span>
                   </div>
                 </div>
