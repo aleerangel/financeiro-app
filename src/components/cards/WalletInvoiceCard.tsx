@@ -196,7 +196,7 @@ export function WalletInvoiceCard({
     >
       {/* CAMADA 1: VISÃO CONSOLIDADA DA CARTEIRA COM PILHA SOBREPOSTA */}
       <div
-        className={`transition-opacity transition-transform duration-200 ease-out flex flex-col justify-between h-full ${
+        className={`transition-opacity transition-transform duration-500 ease-out flex flex-col justify-between h-full ${
           selectedCardId
             ? 'opacity-0 scale-98 pointer-events-none -translate-y-2'
             : 'opacity-100 scale-100 pointer-events-auto translate-y-0'
@@ -343,7 +343,7 @@ export function WalletInvoiceCard({
       {/* CAMADA 2: O CARTÃO SELECIONADO PREENCHENDO TODO O CARD COM ANIMAÇÃO */}
       {activeExpandedCard && (
         <div
-          className={`absolute inset-0 p-5 rounded-2xl flex flex-col justify-between transition-opacity transition-transform duration-200 ease-out overflow-hidden ${
+          className={`absolute inset-0 p-5 rounded-2xl flex flex-col justify-between transition-opacity transition-transform duration-500 ease-out overflow-hidden ${
             selectedCardId
               ? 'opacity-100 scale-100 pointer-events-auto translate-y-0'
               : 'opacity-0 scale-98 pointer-events-none translate-y-3'
