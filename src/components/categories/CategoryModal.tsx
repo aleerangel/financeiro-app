@@ -109,8 +109,8 @@ function CategoryModalDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+      <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-950 font-bold"
@@ -118,13 +118,13 @@ function CategoryModalDialog({
             >
               <CategoryIcon name={icon} className="w-4 h-4 text-zinc-950" />
             </div>
-            <h3 className="font-bold text-zinc-100 text-lg">
+            <h3 className="font-bold text-[#F8FAFC] text-lg">
               {isEditing ? 'Editar Categoria' : 'Nova Categoria'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition"
+            className="p-1 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -140,17 +140,17 @@ function CategoryModalDialog({
           {/* Escopo: Pessoal vs Negócio (Apenas se hasBusiness for true) */}
           {hasBusiness && (
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
                 Uso da Categoria
               </label>
-              <div className="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+              <div className="grid grid-cols-2 gap-2 bg-[#080B11] p-1 rounded-xl border border-[#1E293B]">
                 <button
                   type="button"
                   onClick={() => setScope('personal')}
                   className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
                     scope === 'personal'
-                      ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B]'
+                      : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                   }`}
                 >
                   <User className="w-3.5 h-3.5" />
@@ -161,8 +161,8 @@ function CategoryModalDialog({
                   onClick={() => setScope('business')}
                   className={`py-2 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 truncate ${
                     scope === 'business'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-[#FACC15]/20 text-[#FDE047] border border-[#FACC15]/40 font-bold'
+                      : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                   }`}
                 >
                   <Store className="w-3.5 h-3.5 shrink-0" />
@@ -174,17 +174,17 @@ function CategoryModalDialog({
 
           {/* Tipo de Categoria */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
               Tipo
             </label>
-            <div className="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+            <div className="grid grid-cols-2 gap-2 bg-[#080B11] p-1 rounded-xl border border-[#1E293B]">
               <button
                 type="button"
                 onClick={() => setType('expense')}
                 className={`py-2 text-xs font-semibold rounded-lg transition ${
                   type === 'expense'
                     ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
                 Despesa
@@ -195,7 +195,7 @@ function CategoryModalDialog({
                 className={`py-2 text-xs font-semibold rounded-lg transition ${
                   type === 'income'
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
                 Receita
@@ -205,7 +205,7 @@ function CategoryModalDialog({
 
           {/* Nome */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-1.5">
               Nome da Categoria *
             </label>
             <input
@@ -213,7 +213,7 @@ function CategoryModalDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Alimentação, Lazer, Barbearia..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition"
               required
               autoFocus
             />
@@ -221,7 +221,7 @@ function CategoryModalDialog({
 
           {/* Seletor de Cores */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
               Cor
             </label>
             <div className="flex flex-wrap items-center gap-2">
@@ -250,10 +250,10 @@ function CategoryModalDialog({
 
           {/* Seletor de Ícones */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
               Ícone
             </label>
-            <div className="grid grid-cols-7 gap-2 max-h-36 overflow-y-auto p-2 bg-zinc-950 rounded-xl border border-zinc-800">
+            <div className="grid grid-cols-7 gap-2 max-h-36 overflow-y-auto p-2 bg-[#080B11] rounded-xl border border-[#1E293B]">
               {CATEGORY_ICONS_LIST.map((item) => {
                 const Icon = item.icon;
                 const isSelected = icon === item.name;
@@ -266,8 +266,8 @@ function CategoryModalDialog({
                     title={item.label}
                     className={`p-2 rounded-lg flex items-center justify-center transition ${
                       isSelected
-                        ? 'bg-emerald-500 text-zinc-950 font-bold scale-105'
-                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
+                        ? 'bg-[#FACC15] text-[#080B11] font-bold scale-105'
+                        : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30]'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -278,19 +278,19 @@ function CategoryModalDialog({
           </div>
 
           {/* Ações */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1E293B]">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-zinc-400 hover:text-zinc-200 transition"
+              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-zinc-950 transition shadow-lg shadow-emerald-500/10 disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] transition shadow-lg shadow-[#FACC15]/20 disabled:opacity-50"
             >
               {loading ? 'Salvando...' : isEditing ? 'Atualizar Categoria' : 'Criar Categoria'}
             </button>

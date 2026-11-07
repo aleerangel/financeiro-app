@@ -109,27 +109,27 @@ export function SaleReceiptModal({
       ];
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-zinc-950 sm:p-4 sm:bg-black/80 sm:backdrop-blur-sm sm:items-center sm:justify-center overflow-hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-[#080B11] sm:p-4 sm:bg-black/80 sm:backdrop-blur-sm sm:items-center sm:justify-center overflow-hidden animate-in fade-in duration-200">
       {/* Container Principal */}
-      <div className="relative w-full h-full sm:h-auto sm:max-w-3xl bg-zinc-950 sm:border sm:border-zinc-800 sm:rounded-3xl shadow-2xl flex flex-col sm:max-h-[92vh] overflow-hidden">
+      <div className="relative w-full h-full sm:h-auto sm:max-w-3xl bg-[#0D121F] sm:border sm:border-[#1E293B] sm:rounded-3xl shadow-2xl flex flex-col sm:max-h-[92vh] overflow-hidden">
         
         {/* Barra Superior Mobile: Botão Voltar Proeminente + Título + Fechar */}
-        <div className="flex sm:hidden items-center justify-between px-3.5 py-3 border-b border-zinc-800 bg-zinc-900/90 backdrop-blur-md shrink-0 print:hidden">
+        <div className="flex sm:hidden items-center justify-between px-3.5 py-3 border-b border-[#1E293B] bg-[#0D121F]/90 backdrop-blur-md shrink-0 print:hidden">
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-zinc-100 hover:text-white bg-zinc-800/90 active:bg-zinc-700 active:scale-95 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[#F8FAFC] hover:text-white bg-[#151D30] active:bg-[#1E293B] active:scale-95 transition"
             aria-label="Voltar"
           >
-            <ArrowLeft className="w-4 h-4 text-zinc-200 stroke-[2.5]" />
+            <ArrowLeft className="w-4 h-4 text-slate-200 stroke-[2.5]" />
             <span className="text-xs font-bold">Voltar</span>
           </button>
 
           <div className="text-center">
-            <h2 className="text-xs font-bold text-zinc-100">
+            <h2 className="text-xs font-bold text-[#F8FAFC]">
               Nota de Serviço / Venda
             </h2>
-            <span className="text-[10px] font-mono text-amber-400 font-semibold">
+            <span className="text-[10px] font-mono text-[#FACC15] font-semibold tabular-nums">
               {receiptNum}
             </span>
           </div>
@@ -137,7 +137,7 @@ export function SaleReceiptModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+            className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition"
             aria-label="Fechar"
           >
             <X className="w-4 h-4" />
@@ -145,19 +145,19 @@ export function SaleReceiptModal({
         </div>
 
         {/* Barra Superior Desktop */}
-        <div className="hidden sm:flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md shrink-0 print:hidden">
+        <div className="hidden sm:flex items-center justify-between px-5 py-3.5 border-b border-[#1E293B] bg-[#0D121F]/80 backdrop-blur-md shrink-0 print:hidden">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+            <div className="p-2 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/20 text-[#FACC15]">
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+              <h2 className="text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
                 Nota de Serviço / Venda
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#151D30] text-[#FACC15] border border-[#1E293B] tabular-nums">
                   {receiptNum}
                 </span>
               </h2>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-[#94A3B8]">
                 Visualização A4 formal pronta para impressão ou envio de PDF
               </p>
             </div>
@@ -182,7 +182,7 @@ export function SaleReceiptModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-xl text-xs font-semibold transition active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#151D30] hover:bg-[#1E293B] text-[#F8FAFC] border border-[#1E293B] rounded-xl text-xs font-semibold transition active:scale-95"
               title="Imprimir folha A4"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -193,7 +193,7 @@ export function SaleReceiptModal({
               type="button"
               onClick={handleDownloadPdf}
               disabled={downloadingPdf || sharingPdf}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs shadow-md shadow-amber-500/10 transition active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold rounded-xl text-xs shadow-md shadow-[#FACC15]/10 transition active:scale-95 disabled:opacity-50"
               title="Baixar arquivo PDF formal"
             >
               {downloadingPdf ? (
@@ -204,12 +204,12 @@ export function SaleReceiptModal({
               <span>Baixar PDF</span>
             </button>
 
-            <div className="h-4 w-px bg-zinc-800 mx-1" />
+            <div className="h-4 w-px bg-[#1E293B] mx-1" />
 
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+              className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition"
               aria-label="Fechar modal"
             >
               <X className="w-4 h-4" />
@@ -218,7 +218,7 @@ export function SaleReceiptModal({
         </div>
 
         {/* Área de Visualização do Documento A4 */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-8 bg-zinc-900/50 flex justify-center">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-8 bg-[#080B11] flex justify-center">
           <div
             id="printable-sale-receipt"
             className="w-full max-w-[700px] bg-white text-zinc-900 rounded-2xl p-4 sm:p-8 shadow-xl border border-zinc-200 space-y-6 print:m-0 print:p-0 print:border-none print:shadow-none print:rounded-none h-fit"
@@ -433,7 +433,7 @@ export function SaleReceiptModal({
         </div>
 
         {/* Barra Fixa Inferior no Mobile (Ações Primárias) */}
-        <div className="flex sm:hidden items-center gap-2.5 p-3.5 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md shrink-0 print:hidden safe-area-bottom">
+        <div className="flex sm:hidden items-center gap-2.5 p-3.5 border-t border-[#1E293B] bg-[#080B11]/95 backdrop-blur-md shrink-0 print:hidden safe-area-bottom">
           <button
             type="button"
             onClick={handleSharePdfWhatsApp}
@@ -452,13 +452,13 @@ export function SaleReceiptModal({
             type="button"
             onClick={handleDownloadPdf}
             disabled={downloadingPdf || sharingPdf}
-            className="flex items-center justify-center gap-1.5 py-3 px-3.5 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-100 font-semibold rounded-2xl text-xs border border-zinc-700 transition active:scale-95 disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 py-3 px-3.5 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-bold rounded-2xl text-xs shadow-md shadow-[#FACC15]/20 transition active:scale-95 disabled:opacity-50"
             title="Baixar arquivo PDF"
           >
             {downloadingPdf ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Download className="w-4 h-4" />
+              <Download className="w-4 h-4 stroke-[2.5]" />
             )}
             <span>PDF</span>
           </button>

@@ -261,7 +261,7 @@ export function SmoothLineChart({
                   y1={yPos}
                   x2={svgWidth - padRight}
                   y2={yPos}
-                  stroke={isZero ? '#52525b' : '#27272a'}
+                  stroke={isZero ? '#334155' : '#1E293B'}
                   strokeDasharray={isZero ? undefined : '4 4'}
                   strokeWidth={isZero ? '1.5' : '1'}
                 />
@@ -269,9 +269,10 @@ export function SmoothLineChart({
                   x={padLeft - 8}
                   y={yPos + 4}
                   textAnchor="end"
-                  fill={isZero ? '#d4d4d8' : '#71717a'}
+                  fill={isZero ? '#F8FAFC' : '#64748B'}
                   fontSize="11"
                   fontWeight={isZero ? '700' : '600'}
+                  className="tabular-nums"
                 >
                   {formatTickLabel(tick)}
                 </text>
@@ -289,10 +290,10 @@ export function SmoothLineChart({
                 x={xPos}
                 y={svgHeight - (compactLayout ? 6 : 10)}
                 textAnchor="middle"
-                fill={isHovered ? '#f4f4f5' : '#a1a1aa'}
+                fill={isHovered ? '#F8FAFC' : '#94A3B8'}
                 fontSize={compactLayout ? '10' : '11'}
                 fontWeight={isHovered ? '700' : '600'}
-                className="transition-colors"
+                className="transition-colors tabular-nums"
               >
                 {m}
               </text>
@@ -432,14 +433,14 @@ export function SmoothLineChart({
 
       {/* Legenda inferior */}
       {!hideLegend && series.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-5 mt-3 pt-3 border-t border-zinc-800/80">
+        <div className="flex flex-wrap items-center justify-center gap-5 mt-3 pt-3 border-t border-[#1E293B]/80">
           {series.map((s) => (
             <div key={`legend-${s.id}`} className="flex items-center gap-2 text-xs">
               <span
                 className="w-2.5 h-2.5 rounded-full shadow-sm"
                 style={{ backgroundColor: s.color }}
               />
-              <span className="text-zinc-300 font-medium">{s.name}</span>
+              <span className="text-[#94A3B8] font-medium">{s.name}</span>
             </div>
           ))}
         </div>
@@ -455,7 +456,7 @@ export function SmoothLineChart({
     <div
       className={`${
         compactLayout ? 'p-3 sm:p-5' : 'p-5'
-      } bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between relative`}
+      } bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between relative`}
     >
       {chartBody}
     </div>

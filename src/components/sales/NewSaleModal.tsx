@@ -373,18 +373,18 @@ export function NewSaleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <div className="w-full max-w-xl bg-[#0D121F] border border-[#1E293B] rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+          className="absolute top-4 right-4 p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-xl font-extrabold text-zinc-100 mb-1">
+        <h2 className="text-xl font-extrabold text-[#F8FAFC] mb-1">
           Novo(a) {salesLabel}
         </h2>
-        <p className="text-xs text-zinc-400 mb-5">
+        <p className="text-xs text-[#94A3B8] mb-5">
           Registro rápido: informe o cliente, data, serviços prestados e finalize.
         </p>
 
@@ -399,13 +399,13 @@ export function NewSaleModal({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
                   Cliente
                 </label>
                 <button
                   type="button"
                   onClick={() => setClientModalOpen(true)}
-                  className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition"
+                  className="text-[11px] text-[#FACC15] hover:text-[#FDE047] flex items-center gap-1 font-semibold transition"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   + Novo Cadastro
@@ -422,7 +422,7 @@ export function NewSaleModal({
                   setSelectedClientId(matched ? matched.id : null);
                 }}
                 placeholder="Selecione ou digite o nome do cliente..."
-                className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-base text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition font-medium"
+                className="w-full px-4 py-3 rounded-xl bg-[#080B11] border border-[#1E293B] text-base text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition font-medium"
                 required
                 autoFocus
               />
@@ -435,14 +435,14 @@ export function NewSaleModal({
               </datalist>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-[#94A3B8] mb-1.5 uppercase tracking-wider">
                 Data
               </label>
               <input
                 type="date"
                 value={saleDate}
                 onChange={(e) => setSaleDate(e.target.value)}
-                className="w-full px-3.5 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition font-medium"
+                className="w-full px-3.5 py-3 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition font-medium"
                 required
               />
             </div>
@@ -450,7 +450,7 @@ export function NewSaleModal({
 
           {/* Grade de Serviços Rápidos (Toque para adicionar) */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 mb-2 uppercase tracking-wider">
+            <label className="block text-xs font-semibold text-[#94A3B8] mb-2 uppercase tracking-wider">
               Serviços & Produtos (Toque para adicionar)
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -464,12 +464,12 @@ export function NewSaleModal({
                     onClick={() => handleAddItem(p)}
                     className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between h-20 ${
                       isSelected
-                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 ring-1 ring-emerald-500/30'
-                        : 'bg-zinc-950 border-zinc-800/90 text-zinc-300 hover:border-zinc-700'
+                        ? 'bg-[#FACC15]/15 border-[#FACC15]/50 text-[#FDE047] ring-1 ring-[#FACC15]/30'
+                        : 'bg-[#080B11] border-[#1E293B] text-slate-300 hover:border-[#FACC15]/40'
                     }`}
                   >
-                    <span className="font-bold text-xs truncate block">{p.name}</span>
-                    <span className="font-extrabold text-sm text-zinc-100 block">
+                    <span className="font-bold text-xs truncate block text-[#F8FAFC]">{p.name}</span>
+                    <span className="font-extrabold text-sm text-[#F8FAFC] block tabular-nums">
                       {formatCurrency(Number(p.default_price))}
                     </span>
                   </button>
@@ -480,12 +480,12 @@ export function NewSaleModal({
 
           {/* Itens Adicionados na Comanda */}
           {selectedItems.length > 0 && (
-            <div className="space-y-2 p-4 bg-zinc-950/80 border border-zinc-800/90 rounded-2xl">
-              <span className="text-xs font-semibold text-zinc-400 block mb-2 uppercase tracking-wider">
+            <div className="space-y-2 p-4 bg-[#080B11] border border-[#1E293B] rounded-2xl">
+              <span className="text-xs font-semibold text-[#94A3B8] block mb-2 uppercase tracking-wider">
                 Itens na Comanda
               </span>
 
-              <div className="divide-y divide-zinc-800/60">
+              <div className="divide-y divide-[#1E293B]/60">
                 {selectedItems
                   .filter((item) => !item.is_service_component)
                   .map((item) => {
@@ -502,49 +502,49 @@ export function NewSaleModal({
                       <div key={item.product_id} className="py-2.5 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <span className="text-sm font-semibold text-zinc-100 block truncate">
+                            <span className="text-sm font-semibold text-[#F8FAFC] block truncate">
                               {item.product_name}
                             </span>
-                            <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-0.5">
+                            <div className="flex items-center gap-1.5 text-xs text-[#94A3B8] mt-0.5">
                               <span>Valor un: R$</span>
                               <input
                                 type="text"
                                 value={item.unit_price}
                                 onChange={(e) => handleUpdatePrice(item.product_id, e.target.value)}
-                                className="w-16 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 text-center font-bold focus:outline-none focus:border-emerald-500"
+                                className="w-16 px-1.5 py-0.5 rounded bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] text-center font-bold focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
                               />
                             </div>
                           </div>
 
                           <div className="flex items-center gap-3 shrink-0">
-                            <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-2 py-1">
+                            <div className="flex items-center gap-1.5 bg-[#0D121F] border border-[#1E293B] rounded-xl px-2 py-1">
                               <button
                                 type="button"
                                 onClick={() => handleUpdateQuantity(item.product_id, -1, false, null)}
-                                className="p-1 hover:text-zinc-100 text-zinc-400"
+                                className="p-1 hover:text-[#F8FAFC] text-[#94A3B8]"
                               >
                                 <Minus className="w-3.5 h-3.5" />
                               </button>
-                              <span className="text-xs font-extrabold text-zinc-100 px-1">
+                              <span className="text-xs font-extrabold text-[#F8FAFC] px-1 tabular-nums">
                                 {item.quantity}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleUpdateQuantity(item.product_id, 1, false, null)}
-                                className="p-1 hover:text-zinc-100 text-zinc-400"
+                                className="p-1 hover:text-[#F8FAFC] text-[#94A3B8]"
                               >
                                 <Plus className="w-3.5 h-3.5" />
                               </button>
                             </div>
 
-                            <span className="text-sm font-bold text-emerald-400 min-w-[70px] text-right">
+                            <span className="text-sm font-bold text-[#FACC15] min-w-[70px] text-right tabular-nums">
                               {formatCurrency(item.quantity * item.unit_price)}
                             </span>
 
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(item.product_id, false, null)}
-                              className="p-1 text-zinc-500 hover:text-red-400 transition"
+                              className="p-1 text-[#64748B] hover:text-rose-400 transition"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -553,23 +553,23 @@ export function NewSaleModal({
 
                         {/* Peças / Produtos Inclusos no Serviço (sem cobrar valor extra do cliente) */}
                         {isServiceItem && physicalProducts.length > 0 && (
-                          <div className="pl-3 border-l-2 border-zinc-800 space-y-1.5">
+                          <div className="pl-3 border-l-2 border-[#1E293B] space-y-1.5">
                             {serviceComponents.map((comp) => (
                               <div
                                 key={`${comp.parent_service_id}-${comp.product_id}`}
-                                className="flex items-center justify-between gap-2 bg-zinc-900/60 px-2.5 py-1.5 rounded-xl border border-zinc-800/70"
+                                className="flex items-center justify-between gap-2 bg-[#0D121F] px-2.5 py-1.5 rounded-xl border border-[#1E293B]"
                               >
                                 <div className="min-w-0">
-                                  <span className="text-xs font-medium text-zinc-300 truncate block">
+                                  <span className="text-xs font-medium text-slate-300 truncate block">
                                     🔩 {comp.product_name}
                                   </span>
-                                  <span className="text-[10px] text-zinc-500 block">
+                                  <span className="text-[10px] text-[#64748B] block">
                                     Incluso no serviço (baixa de estoque • R$ 0 ao cliente)
                                   </span>
                                 </div>
 
                                 <div className="flex items-center gap-2 shrink-0">
-                                  <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-lg px-1.5 py-0.5">
+                                  <div className="flex items-center gap-1 bg-[#080B11] border border-[#1E293B] rounded-lg px-1.5 py-0.5">
                                     <button
                                       type="button"
                                       onClick={() =>
@@ -580,11 +580,11 @@ export function NewSaleModal({
                                           comp.parent_service_id || null
                                         )
                                       }
-                                      className="p-0.5 text-zinc-400 hover:text-zinc-200"
+                                      className="p-0.5 text-[#94A3B8] hover:text-[#F8FAFC]"
                                     >
                                       <Minus className="w-3 h-3" />
                                     </button>
-                                    <span className="text-[11px] font-bold text-zinc-200 px-1">
+                                    <span className="text-[11px] font-bold text-[#F8FAFC] px-1 tabular-nums">
                                       {comp.quantity}
                                     </span>
                                     <button
@@ -597,7 +597,7 @@ export function NewSaleModal({
                                           comp.parent_service_id || null
                                         )
                                       }
-                                      className="p-0.5 text-zinc-400 hover:text-zinc-200"
+                                      className="p-0.5 text-[#94A3B8] hover:text-[#F8FAFC]"
                                     >
                                       <Plus className="w-3 h-3" />
                                     </button>
@@ -612,7 +612,7 @@ export function NewSaleModal({
                                         comp.parent_service_id || null
                                       )
                                     }
-                                    className="p-1 text-zinc-500 hover:text-red-400 transition"
+                                    className="p-1 text-[#64748B] hover:text-rose-400 transition"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -625,7 +625,7 @@ export function NewSaleModal({
                                 <select
                                   value={selectedServicePartId}
                                   onChange={(e) => setSelectedServicePartId(e.target.value)}
-                                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
+                                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50"
                                 >
                                   <option value="">Selecionar peça/produto usado...</option>
                                   {physicalProducts.map((pp) => (
@@ -644,7 +644,7 @@ export function NewSaleModal({
                                     item.product_id &&
                                     handleAddServiceComponent(item.product_id, selectedServicePartId)
                                   }
-                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold disabled:opacity-40"
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#FACC15]/20 text-[#FDE047] border border-[#FACC15]/30 text-xs font-semibold disabled:opacity-40"
                                 >
                                   Incluir
                                 </button>
@@ -654,7 +654,7 @@ export function NewSaleModal({
                                     setAddingPartForServiceId(null);
                                     setSelectedServicePartId('');
                                   }}
-                                  className="px-2 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200"
+                                  className="px-2 py-1.5 rounded-lg text-xs text-[#94A3B8] hover:text-[#F8FAFC]"
                                 >
                                   Cancelar
                                 </button>
@@ -666,7 +666,7 @@ export function NewSaleModal({
                                   setAddingPartForServiceId(item.product_id || null);
                                   setSelectedServicePartId('');
                                 }}
-                                className="text-[11px] text-emerald-400/90 hover:text-emerald-300 font-semibold flex items-center gap-1"
+                                className="text-[11px] text-[#FACC15] hover:text-[#FDE047] font-semibold flex items-center gap-1"
                               >
                                 <Plus className="w-3 h-3" />
                                 Incluir peça/insumo usado neste serviço (sem cobrar extra)
@@ -684,13 +684,13 @@ export function NewSaleModal({
           {/* Forma de Pagamento e Conta de Destino */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+              <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
                 Forma de Pagamento
               </label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as SalePaymentMethod)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
               >
                 <option value="pix">Pix</option>
                 <option value="cash">Dinheiro em Espécie</option>
@@ -701,13 +701,13 @@ export function NewSaleModal({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+              <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
                 {paymentMethod === 'on_credit' ? 'Conta Padrão' : 'Conta de Entrada'}
               </label>
               <select
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
               >
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -720,26 +720,26 @@ export function NewSaleModal({
 
           {/* Seção Condicional de Venda a Prazo */}
           {paymentMethod === 'on_credit' && (
-            <div className="p-4 bg-zinc-950/80 rounded-2xl border border-zinc-800 space-y-3.5">
+            <div className="p-4 bg-[#080B11] rounded-2xl border border-[#1E293B] space-y-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#FACC15] flex items-center gap-1.5">
                   <CalendarClock className="w-4 h-4" />
                   Condições do Pagamento a Prazo
                 </span>
                 {!selectedClientId && !findExactClientMatch(clientsList, clientName) && (
-                  <span className="text-[11px] text-amber-400/90 font-medium">
+                  <span className="text-[11px] text-[#FACC15] font-medium">
                     * Cliente obrigatório
                   </span>
                 )}
               </div>
 
               {!selectedClientId && !findExactClientMatch(clientsList, clientName) && (
-                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs flex items-center justify-between">
+                <div className="p-2.5 bg-[#FACC15]/10 border border-[#FACC15]/20 rounded-xl text-[#FDE047] text-xs flex items-center justify-between">
                   <span>Selecione ou cadastre o cliente para poder vender a prazo.</span>
                   <button
                     type="button"
                     onClick={() => setClientModalOpen(true)}
-                    className="font-bold underline ml-2 hover:text-amber-200"
+                    className="font-bold underline ml-2 hover:text-[#FACC15]"
                   >
                     Cadastrar
                   </button>
@@ -749,7 +749,7 @@ export function NewSaleModal({
               {/* Entrada Imediata */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
+                  <label className="block text-xs font-medium text-[#94A3B8] mb-1">
                     Entrada Imediata (Opcional)
                   </label>
                   <input
@@ -760,19 +760,19 @@ export function NewSaleModal({
                     placeholder="R$ 0,00"
                     value={initialPayment}
                     onChange={(e) => setInitialPayment(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                    className="w-full px-3 py-2 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                   />
                 </div>
 
                 {parseFloat(initialPayment || '0') > 0 && (
                   <div>
-                    <label className="block text-xs font-medium text-zinc-300 mb-1">
+                    <label className="block text-xs font-medium text-[#94A3B8] mb-1">
                       Forma da Entrada
                     </label>
                     <select
                       value={initialPaymentMethod}
                       onChange={(e) => setInitialPaymentMethod(e.target.value as PaymentMethod)}
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                      className="w-full px-3 py-2 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                     >
                       <option value="pix">Pix</option>
                       <option value="cash">Dinheiro em Espécie</option>
@@ -786,7 +786,7 @@ export function NewSaleModal({
               {/* Data de Vencimento Opcional */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-medium text-zinc-300">
+                  <label className="text-xs font-medium text-[#94A3B8]">
                     Data de Vencimento (Opcional)
                   </label>
                   <div className="flex items-center gap-1">
@@ -797,7 +797,7 @@ export function NewSaleModal({
                         d.setDate(d.getDate() + 7);
                         setDueDate(d.toISOString().split('T')[0]);
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-zinc-850 hover:bg-zinc-800 text-[10px] text-zinc-300 transition"
+                      className="px-2 py-0.5 rounded-lg bg-[#151D30] hover:bg-[#1E293B] text-[10px] text-slate-300 transition"
                     >
                       +7d
                     </button>
@@ -808,7 +808,7 @@ export function NewSaleModal({
                         d.setDate(d.getDate() + 15);
                         setDueDate(d.toISOString().split('T')[0]);
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-zinc-850 hover:bg-zinc-800 text-[10px] text-zinc-300 transition"
+                      className="px-2 py-0.5 rounded-lg bg-[#151D30] hover:bg-[#1E293B] text-[10px] text-slate-300 transition"
                     >
                       +15d
                     </button>
@@ -819,7 +819,7 @@ export function NewSaleModal({
                         d.setDate(d.getDate() + 30);
                         setDueDate(d.toISOString().split('T')[0]);
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-zinc-850 hover:bg-zinc-800 text-[10px] text-zinc-300 transition"
+                      className="px-2 py-0.5 rounded-lg bg-[#151D30] hover:bg-[#1E293B] text-[10px] text-slate-300 transition"
                     >
                       +30d
                     </button>
@@ -827,7 +827,7 @@ export function NewSaleModal({
                       <button
                         type="button"
                         onClick={() => setDueDate('')}
-                        className="px-2 py-0.5 rounded-lg bg-zinc-850 hover:bg-zinc-800 text-[10px] text-rose-400 transition"
+                        className="px-2 py-0.5 rounded-lg bg-[#151D30] hover:bg-[#1E293B] text-[10px] text-rose-400 transition"
                       >
                         Limpar
                       </button>
@@ -838,14 +838,14 @@ export function NewSaleModal({
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                  className="w-full px-3 py-2 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                 />
               </div>
 
               {/* Resumo visual do fiado */}
-              <div className="pt-1 flex items-center justify-between text-xs text-zinc-400">
+              <div className="pt-1 flex items-center justify-between text-xs text-[#94A3B8]">
                 <span>Saldo que ficará a receber:</span>
-                <strong className="text-amber-400 font-bold">
+                <strong className="text-[#FACC15] font-bold tabular-nums">
                   {formatCurrency(
                     Math.max(0, totalAmount - (parseFloat(initialPayment || '0') || 0))
                   )}
@@ -856,24 +856,24 @@ export function NewSaleModal({
 
           {/* Opção de Venda Recorrente / Mensalidade do Clube */}
           {paymentMethod !== 'on_credit' && (
-            <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800">
+            <div className="p-3.5 rounded-2xl bg-[#080B11] border border-[#1E293B]">
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isRecurring}
                   onChange={(e) => setIsRecurring(e.target.checked)}
-                  className="rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-0"
+                  className="rounded border-[#1E293B] bg-[#0D121F] text-[#FACC15] focus:ring-0"
                 />
-                <Crown className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-semibold text-zinc-200">
+                <Crown className="w-4 h-4 text-[#FACC15]" />
+                <span className="text-xs font-semibold text-[#F8FAFC]">
                   Tornar Venda Recorrente (Clube / Mensalidade)
                 </span>
               </label>
 
               {isRecurring && (
-                <div className="mt-3 pt-3 border-t border-zinc-800/70 grid grid-cols-2 gap-3 animate-in fade-in">
+                <div className="mt-3 pt-3 border-t border-[#1E293B] grid grid-cols-2 gap-3 animate-in fade-in">
                   <div>
-                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                    <label className="block text-[11px] font-medium text-[#94A3B8] mb-1">
                       Dia de Vencimento Mensal *
                     </label>
                     <input
@@ -883,15 +883,15 @@ export function NewSaleModal({
                       value={recurringDueDay}
                       onChange={(e) => setRecurringDueDay(e.target.value)}
                       placeholder="Ex: 10"
-                      className="w-full px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 font-semibold focus:outline-none focus:border-amber-400"
+                      className="w-full px-3 py-1.5 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] font-semibold focus:outline-none focus:border-[#FACC15]/50"
                       required={isRecurring}
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                    <label className="block text-[11px] font-medium text-[#94A3B8] mb-1">
                       Valor da Mensalidade
                     </label>
-                    <p className="text-xs font-bold text-emerald-400 pt-1.5">
+                    <p className="text-xs font-bold text-emerald-400 pt-1.5 tabular-nums">
                       {formatCurrency(totalAmount)} /mês
                     </p>
                   </div>
@@ -905,7 +905,7 @@ export function NewSaleModal({
             <button
               type="submit"
               disabled={loading || selectedItems.length === 0}
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-extrabold text-base rounded-2xl transition shadow-xl shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-extrabold text-base rounded-2xl transition shadow-xl shadow-[#FACC15]/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-5 h-5" />
               {loading

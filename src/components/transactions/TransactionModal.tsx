@@ -220,33 +220,33 @@ function TransactionModalDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-[#0D121F] border border-[#1E293B] rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+          className="absolute top-4 right-4 p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-bold text-zinc-100 mb-3">
+        <h2 className="text-lg font-bold text-[#F8FAFC] mb-3">
           {isEditing ? 'Editar Transação' : 'Nova Transação'}
         </h2>
 
         {/* Seletor de Escopo: Pessoal vs Negócio (Apenas se hasBusiness for true) */}
         {hasBusiness && (
           <div className="mb-3">
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#94A3B8] mb-1.5">
               Destino do Lançamento
             </label>
-            <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
+            <div className="grid grid-cols-2 gap-1.5 bg-[#080B11] p-1 rounded-2xl border border-[#1E293B]">
               <button
                 type="button"
                 onClick={() => handleScopeChange('personal')}
                 className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
                   scope === 'personal'
-                    ? 'bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B] shadow-sm'
+                    : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
                 <User className="w-3.5 h-3.5" />
@@ -258,8 +258,8 @@ function TransactionModalDialog({
                 onClick={() => handleScopeChange('business')}
                 className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition truncate ${
                   scope === 'business'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-[#FACC15]/20 text-[#FDE047] border border-[#FACC15]/40 shadow-sm'
+                    : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
                 <Store className="w-3.5 h-3.5 shrink-0" />
@@ -270,14 +270,14 @@ function TransactionModalDialog({
         )}
 
         {/* Abas de Tipo */}
-        <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-5">
+        <div className="grid grid-cols-3 gap-1 bg-[#080B11] p-1 rounded-2xl border border-[#1E293B] mb-5">
           <button
             type="button"
             onClick={() => setTab('expense')}
             className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition ${
               tab === 'expense'
                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                : 'text-zinc-400 hover:text-zinc-200'
+                : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <ArrowDownRight className="w-3.5 h-3.5" />
@@ -289,8 +289,8 @@ function TransactionModalDialog({
             onClick={() => setTab('credit')}
             className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition ${
               tab === 'credit'
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-[#6366F1]/20 text-[#A5B4FC] border border-[#6366F1]/30'
+                : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <CardIcon className="w-3.5 h-3.5" />
@@ -303,7 +303,7 @@ function TransactionModalDialog({
             className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition ${
               tab === 'income'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                : 'text-zinc-400 hover:text-zinc-200'
+                : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -320,17 +320,17 @@ function TransactionModalDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Campo de Valor em Destaque */}
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Valor (R$)</label>
+            <label className="block text-xs font-medium text-[#94A3B8] mb-1">Valor (R$)</label>
             <input
               type="text"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0,00"
-              className={`w-full text-2xl sm:text-3xl font-extrabold px-4 py-3 rounded-2xl bg-zinc-950 border border-zinc-800 focus:outline-none transition ${
+              className={`w-full text-2xl sm:text-3xl font-extrabold px-4 py-3 rounded-2xl bg-[#080B11] border border-[#1E293B] focus:outline-none transition tabular-nums ${
                 tab === 'income'
                   ? 'text-emerald-400 focus:border-emerald-500'
                   : tab === 'credit'
-                  ? 'text-purple-300 focus:border-purple-500'
+                  ? 'text-[#A5B4FC] focus:border-[#6366F1]'
                   : 'text-rose-400 focus:border-rose-500'
               }`}
               required
@@ -340,13 +340,13 @@ function TransactionModalDialog({
 
           {/* Descrição */}
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Descrição</label>
+            <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">Descrição</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ex: Supermercado, Almoço, Salário"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition"
               required
             />
           </div>
@@ -354,12 +354,12 @@ function TransactionModalDialog({
           <div className="grid grid-cols-2 gap-3">
             {/* Data da Compra */}
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Data</label>
+              <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">Data</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                 required
               />
             </div>
@@ -367,10 +367,10 @@ function TransactionModalDialog({
             {/* Categoria */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-zinc-300">Categoria</label>
+                <label className="block text-xs font-medium text-[#94A3B8]">Categoria</label>
                 <Link
                   href="/categorias"
-                  className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium"
+                  className="text-[11px] text-[#FACC15] hover:text-[#FDE047] font-medium"
                 >
                   Gerenciar
                 </Link>
@@ -378,7 +378,7 @@ function TransactionModalDialog({
               <select
                 value={categoryId}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
               >
                 <option value="">Selecione...</option>
                 {filteredCategories.map((c) => (
@@ -392,15 +392,15 @@ function TransactionModalDialog({
 
           {/* Seletor de Conta ou Cartão de Crédito */}
           {tab === 'credit' ? (
-            <div className="space-y-3 p-4 bg-purple-950/20 border border-purple-900/40 rounded-2xl">
+            <div className="space-y-3 p-4 bg-[#6366F1]/10 border border-[#6366F1]/30 rounded-2xl">
               <div>
-                <label className="block text-xs font-medium text-purple-200 mb-1.5">
+                <label className="block text-xs font-medium text-[#A5B4FC] mb-1.5">
                   Cartão de Crédito
                 </label>
                 <select
                   value={cardId}
                   onChange={(e) => setCardId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 transition"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#6366F1] transition"
                 >
                   {cards.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -412,13 +412,13 @@ function TransactionModalDialog({
 
               {!isEditing && (
                 <div>
-                  <label className="block text-xs font-medium text-purple-200 mb-1.5">
+                  <label className="block text-xs font-medium text-[#A5B4FC] mb-1.5">
                     Número de Parcelas
                   </label>
                   <select
                     value={installments}
                     onChange={(e) => setInstallments(parseInt(e.target.value) || 1)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 transition"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#6366F1] transition tabular-nums"
                   >
                     <option value={1}>1x à vista ({formatCurrency(parsedAmount)})</option>
                     {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24].map((num) => (
@@ -428,7 +428,7 @@ function TransactionModalDialog({
                     ))}
                   </select>
                   {installments > 1 && (
-                    <p className="text-[11px] text-purple-300/80 mt-1.5">
+                    <p className="text-[11px] text-[#A5B4FC]/80 mt-1.5">
                       💡 O sistema gerará automaticamente as {installments} parcelas nos meses subsequentes.
                     </p>
                   )}
@@ -438,11 +438,11 @@ function TransactionModalDialog({
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1.5">Conta</label>
+                <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">Conta</label>
                 <select
                   value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                 >
                   {accounts.map((a) => (
                     <option key={a.id} value={a.id}>
@@ -453,11 +453,11 @@ function TransactionModalDialog({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1.5">Status</label>
+                <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">Status</label>
                 <select
                   value={isPaid ? 'true' : 'false'}
                   onChange={(e) => setIsPaid(e.target.value === 'true')}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                 >
                   <option value="true">{tab === 'income' ? 'Recebido' : 'Pago'}</option>
                   <option value="false">{tab === 'income' ? 'A Receber' : 'Pendente'}</option>
@@ -468,13 +468,13 @@ function TransactionModalDialog({
 
           {/* Observações */}
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Observações (opcional)</label>
+            <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">Observações (opcional)</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Comentários adicionais..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition"
             />
           </div>
 
@@ -483,19 +483,19 @@ function TransactionModalDialog({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2.5 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition"
+              className="px-4 py-2.5 text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className={`px-5 py-2.5 font-semibold text-sm rounded-xl transition disabled:opacity-50 text-zinc-950 ${
+              className={`px-5 py-2.5 font-bold text-sm rounded-xl transition disabled:opacity-50 ${
                 tab === 'income'
-                  ? 'bg-emerald-400 hover:bg-emerald-500'
+                  ? 'bg-emerald-400 hover:bg-emerald-300 text-[#080B11]'
                   : tab === 'credit'
-                  ? 'bg-purple-400 hover:bg-purple-500'
-                  : 'bg-rose-400 hover:bg-rose-500'
+                  ? 'bg-[#6366F1] hover:bg-[#818CF8] text-white shadow-md shadow-[#6366F1]/20'
+                  : 'bg-rose-500 hover:bg-rose-400 text-white shadow-md shadow-rose-500/20'
               }`}
             >
               {loading ? 'Salvando...' : isEditing ? 'Atualizar Transação' : 'Confirmar Lançamento'}

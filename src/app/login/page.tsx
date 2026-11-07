@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { TestTube, Database, Sparkles, Loader2, ArrowRight } from 'lucide-react';
 import { loginOrCreateSandboxUser, createSandboxAccount } from '@/lib/actions/dev-sandbox';
+import { CanaryLogo } from '@/components/ui/CanaryLogo';
 import dynamic from 'next/dynamic';
 
 const DevSandboxModal = dynamic(
@@ -72,25 +73,13 @@ function LoginForm() {
 
   return (
     <>
-      <div className="w-full max-w-sm p-6 sm:p-7 bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl text-center space-y-5">
-        {/* Identidade Canário */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 font-bold text-2xl shadow-lg shadow-amber-500/10">
-            <span role="img" aria-label="Canário">
-              🐤
-            </span>
-          </div>
-          <div>
-            <h1 className="text-xl font-extrabold text-zinc-100 flex items-center justify-center gap-1.5">
-              Canário
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                PRO
-              </span>
-            </h1>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Gestão Financeira & Negócios Autônomos
-            </p>
-          </div>
+      <div className="w-full max-w-sm p-6 sm:p-7 bg-[#0D121F] border border-[#1E293B] rounded-3xl shadow-2xl text-center space-y-6">
+        {/* Identidade Canário Oficial */}
+        <div className="flex flex-col items-center gap-3">
+          <CanaryLogo size="lg" />
+          <p className="text-xs text-[#94A3B8]">
+            Gestão Financeira &amp; Negócios Autônomos
+          </p>
         </div>
 
         {(authError || errorMessage) && (
@@ -103,13 +92,13 @@ function LoginForm() {
 
         {/* Em desenvolvimento: Botões diretos de 1 clique para entrar sem login */}
         {showDevSandbox && (
-          <div className="space-y-2.5 p-3.5 bg-zinc-950/70 border border-amber-500/25 rounded-2xl text-left">
-            <div className="flex items-center justify-between text-[11px] font-bold text-amber-400">
+          <div className="space-y-2.5 p-3.5 bg-[#080B11]/80 border border-[#FACC15]/25 rounded-2xl text-left">
+            <div className="flex items-center justify-between text-[11px] font-bold text-[#FACC15]">
               <span className="flex items-center gap-1.5">
                 <TestTube className="w-3.5 h-3.5" />
                 Acesso Dev Local (1 Clique)
               </span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 uppercase font-mono">
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#FACC15]/15 border border-[#FACC15]/30 uppercase font-mono text-[#FACC15]">
                 Sem Senha
               </span>
             </div>
@@ -118,7 +107,7 @@ function LoginForm() {
               type="button"
               disabled={loading || devActionLoading !== null}
               onClick={() => handleDevQuickAccess('demo')}
-              className="w-full py-2.5 px-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-between shadow-md shadow-amber-500/20 transition active:scale-[0.98] disabled:opacity-50"
+              className="w-full py-2.5 px-3 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold rounded-xl text-xs flex items-center justify-between shadow-md shadow-[#FACC15]/20 transition active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
               <span className="flex items-center gap-2">
                 <Database className="w-3.5 h-3.5" />
@@ -135,7 +124,7 @@ function LoginForm() {
               type="button"
               disabled={loading || devActionLoading !== null}
               onClick={() => handleDevQuickAccess('clean')}
-              className="w-full py-2 px-3 bg-blue-600/15 hover:bg-blue-600/25 text-blue-300 border border-blue-500/30 font-semibold rounded-xl text-xs flex items-center justify-between transition active:scale-[0.98] disabled:opacity-50"
+              className="w-full py-2 px-3 bg-blue-600/15 hover:bg-blue-600/25 text-blue-300 border border-blue-500/30 font-semibold rounded-xl text-xs flex items-center justify-between transition active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
               <span className="flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-blue-400" />
@@ -152,27 +141,27 @@ function LoginForm() {
               type="button"
               onClick={() => setSandboxModalOpen(true)}
               disabled={loading || devActionLoading !== null}
-              className="w-full text-center text-[10px] text-zinc-400 hover:text-zinc-200 pt-1 block"
+              className="w-full text-center text-[10px] text-[#94A3B8] hover:text-[#F8FAFC] pt-1 block cursor-pointer transition-colors"
             >
-              Opções avançadas de simulação & segmentos ▾
+              Opções avançadas de simulação &amp; segmentos ▾
             </button>
           </div>
         )}
 
         {showDevSandbox && (
           <div className="relative flex items-center justify-center">
-            <div className="border-t border-zinc-800 w-full" />
-            <span className="bg-zinc-900 px-2 text-[10px] text-zinc-500 uppercase tracking-wider">
+            <div className="border-t border-[#1E293B] w-full" />
+            <span className="bg-[#0D121F] px-2 text-[10px] text-[#64748B] uppercase tracking-wider">
               ou autenticar com
             </span>
-            <div className="border-t border-zinc-800 w-full" />
+            <div className="border-t border-[#1E293B] w-full" />
           </div>
         )}
 
         <button
           onClick={handleLogin}
           disabled={loading || devActionLoading !== null}
-          className="w-full py-3 px-4 bg-zinc-100 text-zinc-950 hover:bg-zinc-200 transition font-bold rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm active:scale-[0.99]"
+          className="w-full py-3 px-4 bg-[#F8FAFC] text-[#080B11] hover:bg-white transition font-bold rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] cursor-pointer"
         >
           {loading ? 'Redirecionando...' : 'Entrar com Google'}
         </button>
@@ -190,7 +179,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-100 p-4">
+    <main className="min-h-screen flex items-center justify-center bg-[#080B11] text-[#F8FAFC] p-4">
       <Suspense fallback={null}>
         <LoginForm />
       </Suspense>

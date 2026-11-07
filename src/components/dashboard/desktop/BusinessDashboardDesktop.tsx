@@ -103,7 +103,7 @@ export function BusinessDashboardDesktop({
     {
       id: 'netProfit',
       name: 'Lucro Líquido',
-      color: '#eab308', // Amarelo/Dourado
+      color: '#FACC15', // Canário Radiante
       values: businessChart.activeStats.map(
         (s) => s.netProfit ?? s.revenue - (s.expenses || 0)
       ),
@@ -135,9 +135,9 @@ export function BusinessDashboardDesktop({
       {/* KPIs de Resultado do Negócio no Mês Selecionado */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         {/* 1. Faturamento Bruto */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#94A3B8]">
               Faturamento ({formattedMonth || 'Mês'})
             </span>
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -145,17 +145,17 @@ export function BusinessDashboardDesktop({
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-2xl font-extrabold text-emerald-400 block">
+            <span className="text-lg sm:text-2xl font-extrabold text-emerald-400 block tabular-nums">
               {formatHidden(formatCurrency(summary.revenue))}
             </span>
-            <span className="text-[11px] text-zinc-400 mt-1 block">
+            <span className="text-[11px] text-[#94A3B8] mt-1 block tabular-nums">
               Ticket médio: {formatHidden(formatCurrency(summary.averageTicket))}
             </span>
           </div>
         </div>
 
         {/* 2. Clientes Atendidos no Mês */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-blue-400">
               Clientes Atendidos
@@ -165,10 +165,10 @@ export function BusinessDashboardDesktop({
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-2xl font-extrabold text-blue-400 block">
+            <span className="text-lg sm:text-2xl font-extrabold text-blue-400 block tabular-nums">
               {summary.salesCount} {formatSalesUnit(summary.salesCount, salesLabel)}
             </span>
-            <span className="text-[11px] text-zinc-400 mt-1 block">
+            <span className="text-[11px] text-[#94A3B8] mt-1 block">
               {summary.uniqueClientsCount} {summary.uniqueClientsCount === 1 ? 'cliente único' : 'clientes únicos'}
               {summary.clientReturnRate > 1 ? ` • ${summary.clientReturnRate.toFixed(1)}x visitas` : ''}
             </span>
@@ -176,7 +176,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* 3. Gastos do Negócio */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400">
               Gastos do Negócio
@@ -186,10 +186,10 @@ export function BusinessDashboardDesktop({
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-2xl font-extrabold text-rose-400 block">
+            <span className="text-lg sm:text-2xl font-extrabold text-rose-400 block tabular-nums">
               {formatHidden(formatCurrency(summary.paidExpenses))}
             </span>
-            <span className="text-[11px] text-zinc-400 mt-1 block">
+            <span className="text-[11px] text-[#94A3B8] mt-1 block tabular-nums">
               {summary.pendingExpenses > 0
                 ? `+ ${formatHidden(formatCurrency(summary.pendingExpenses))} em aberto/fatura`
                 : 'Nenhum custo pendente'}
@@ -198,33 +198,33 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* 3. Lucro Líquido Real */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-400">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#FACC15]">
               Lucro Líquido Real
             </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="w-7 h-7 rounded-lg bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
               <Wallet className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-2">
             <span
-              className={`text-lg sm:text-2xl font-extrabold block ${
-                summary.netProfit >= 0 ? 'text-zinc-100' : 'text-rose-400'
+              className={`text-lg sm:text-2xl font-extrabold block tabular-nums ${
+                summary.netProfit >= 0 ? 'text-[#F8FAFC]' : 'text-rose-400'
               }`}
             >
               {formatHidden(formatCurrency(summary.netProfit))}
             </span>
-            <span className="text-[11px] text-zinc-400 mt-1 block">
+            <span className="text-[11px] text-[#94A3B8] mt-1 block tabular-nums">
               Após faturas: {formatHidden(formatCurrency(summary.projectedProfit))}
             </span>
           </div>
         </div>
 
         {/* 4. Margem de Lucro (%) */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#94A3B8]">
               Margem de Lucro
             </span>
             <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
@@ -233,19 +233,19 @@ export function BusinessDashboardDesktop({
           </div>
           <div className="mt-2">
             <span
-              className={`text-lg sm:text-2xl font-extrabold block ${
+              className={`text-lg sm:text-2xl font-extrabold block tabular-nums ${
                 summary.profitMargin >= 70
                   ? 'text-emerald-400'
                   : summary.profitMargin >= 40
                   ? 'text-amber-300'
                   : summary.revenue > 0
                   ? 'text-rose-400'
-                  : 'text-zinc-400'
+                  : 'text-[#94A3B8]'
               }`}
             >
               {summary.revenue > 0 ? (showValues ? `${summary.profitMargin}%` : '••••') : '—'}
             </span>
-            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-2">
+            <div className="w-full h-1.5 bg-[#080B11] rounded-full overflow-hidden mt-2">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
                   summary.profitMargin >= 70
@@ -265,18 +265,18 @@ export function BusinessDashboardDesktop({
         {/* 6. A Receber (Fiados) */}
         <Link
           href="/fiados"
-          className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 hover:bg-zinc-850 rounded-2xl flex flex-col justify-between transition-all duration-200 group cursor-pointer shadow-sm"
+          className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] hover:border-[#FACC15]/50 hover:bg-[#151D30] rounded-2xl flex flex-col justify-between transition-all duration-200 group cursor-pointer shadow-sm"
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-400 group-hover:text-amber-300">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#FACC15] group-hover:text-[#FDE047]">
               A Receber (Fiados)
             </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 group-hover:bg-amber-500/20 flex items-center justify-center text-amber-400 transition-colors">
+            <div className="w-7 h-7 rounded-lg bg-[#FACC15]/10 border border-[#FACC15]/20 group-hover:bg-[#FACC15]/20 flex items-center justify-center text-[#FACC15] transition-colors">
               <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-2xl font-extrabold text-amber-400 block tracking-tight">
+            <span className="text-lg sm:text-2xl font-extrabold text-[#FACC15] block tracking-tight tabular-nums">
               {formatHidden(formatCurrency(summary.totalReceivables || 0))}
             </span>
             <span className="text-[11px] text-zinc-400 group-hover:text-zinc-300 mt-1 flex items-center gap-1 transition-colors">
@@ -288,7 +288,7 @@ export function BusinessDashboardDesktop({
 
       {/* Alerta de Reposição de Estoque (Largura total quando houver itens em estoque baixo) */}
       {data.lowStockProducts && data.lowStockProducts.length > 0 && (
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-rose-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-rose-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
               <ShoppingBag className="w-4 h-4" />
@@ -360,7 +360,7 @@ export function BusinessDashboardDesktop({
               return (
                 <div
                   key={client.id}
-                  className="p-3 bg-zinc-900/80 border border-zinc-800 rounded-xl flex flex-col justify-between gap-2 hover:border-zinc-700 transition"
+                  className="p-3 bg-[#080B11]/80 border border-[#1E293B] rounded-xl flex flex-col justify-between gap-2 hover:border-[#FACC15]/40 transition"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-1">
@@ -437,7 +437,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* Saldo das Contas (Ocupa 1 coluna) */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-zinc-100 text-base">Saldo das Contas</h3>
@@ -508,7 +508,7 @@ export function BusinessDashboardDesktop({
 
       {/* Ponto de Equilíbrio (Break-Even) — Barra Horizontal de Largura Total */}
       {data.breakEven && (data.breakEven.totalExpenses > 0 || data.breakEven.revenue > 0) && (
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="font-bold text-zinc-100 text-base flex items-center gap-2.5 flex-wrap">
@@ -566,7 +566,7 @@ export function BusinessDashboardDesktop({
       {/* Controle de Gastos do Negócio: Consumo por Cartão/Conta + Últimos Gastos */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Consumo da Barbearia por Conta / Cartão */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -636,7 +636,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* Últimos Gastos do Negócio (Insumos, Ferramentas, Produtos, etc.) */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -699,7 +699,7 @@ export function BusinessDashboardDesktop({
       {/* Grade Analítica: Divisão Serviços vs Produtos + Top 5 Clientes do Mês */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Divisão de Faturamento: Serviços vs Produtos */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -763,7 +763,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* Top 5 Clientes Mais Assíduos do Mês */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -833,7 +833,7 @@ export function BusinessDashboardDesktop({
       {/* Linha Inferior: 5 Produtos/Serviços mais vendidos + 5 Lançamentos recentes */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* 5 Produtos/Serviços mais vendidos */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -930,7 +930,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* 5 Lançamentos recentes */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-zinc-100 text-base">5 Lançamentos recentes</h3>

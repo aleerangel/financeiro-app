@@ -128,34 +128,34 @@ export function AmortizeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+      <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
         {/* Cabeçalho */}
-        <div className="p-4 sm:p-5 border-b border-zinc-800/80 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-[#1E293B] flex items-center justify-between">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-zinc-100 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-400" />
+            <h2 className="text-base sm:text-lg font-bold text-[#F8FAFC] flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-[#FACC15]" />
               {isConsolidated ? 'Receber Débito do Cliente' : 'Amortizar Comanda'}
             </h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Cliente: <strong className="text-zinc-200">{clientName || 'Cliente'}</strong>
+            <p className="text-xs text-[#94A3B8] mt-0.5">
+              Cliente: <strong className="text-[#F8FAFC]">{clientName || 'Cliente'}</strong>
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+            className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-lg transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Resumo do Débito */}
-        <div className="px-5 py-3.5 bg-zinc-950/60 border-b border-zinc-800/60 flex items-center justify-between">
+        <div className="px-5 py-3.5 bg-[#080B11] border-b border-[#1E293B] flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8] block">
               Saldo Devedor Atual
             </span>
-            <span className="text-xl font-black text-rose-400">
+            <span className="text-xl font-black text-rose-400 tabular-nums">
               {formatCurrency(totalDebt)}
             </span>
           </div>
@@ -163,7 +163,7 @@ export function AmortizeModal({
           <button
             type="button"
             onClick={handlePayFull}
-            className="px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold transition active:scale-95"
+            className="px-3 py-1.5 bg-[#FACC15]/15 hover:bg-[#FACC15]/25 border border-[#FACC15]/30 text-[#FDE047] rounded-xl text-xs font-bold transition active:scale-95"
           >
             Quitar Total
           </button>
@@ -179,11 +179,11 @@ export function AmortizeModal({
 
           {/* Valor a Amortizar */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#94A3B8] mb-1.5">
               Valor a Receber (R$) *
             </label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-500">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
                 R$
               </span>
               <input
@@ -198,7 +198,7 @@ export function AmortizeModal({
                   setError(null);
                 }}
                 placeholder="0,00"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-100 font-bold text-base focus:outline-none focus:border-emerald-500 transition"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-[#F8FAFC] font-bold text-base focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
               />
             </div>
           </div>
@@ -206,13 +206,13 @@ export function AmortizeModal({
           {/* Forma de Pagamento e Conta */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#94A3B8] mb-1.5">
                 Forma de Pagto *
               </label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
               >
                 <option value="pix">Pix</option>
                 <option value="cash">Dinheiro em Espécie</option>
@@ -223,13 +223,13 @@ export function AmortizeModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#94A3B8] mb-1.5">
                 Conta de Entrada *
               </label>
               <select
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
               >
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -242,7 +242,7 @@ export function AmortizeModal({
 
           {/* Data do Pagamento */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#94A3B8] mb-1.5">
               Data do Recebimento
             </label>
             <div className="relative">
@@ -250,14 +250,14 @@ export function AmortizeModal({
                 type="date"
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
               />
             </div>
           </div>
 
           {/* Observações */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#94A3B8] mb-1.5">
               Observação (Opcional)
             </label>
             <input
@@ -265,7 +265,7 @@ export function AmortizeModal({
               placeholder="Ex: Pagamento adiantado via Pix"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 transition placeholder:text-zinc-600"
+              className="w-full px-3 py-2 rounded-xl bg-[#080B11] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition placeholder:text-slate-500"
             />
           </div>
 
@@ -274,7 +274,7 @@ export function AmortizeModal({
             <button
               type="submit"
               disabled={loading || !amountStr || parseFloat(amountStr) <= 0}
-              className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black text-sm rounded-xl transition shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
+              className="w-full py-3.5 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-black text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
               {loading

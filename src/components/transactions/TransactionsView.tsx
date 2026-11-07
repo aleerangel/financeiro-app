@@ -365,7 +365,7 @@ export function TransactionsView({
 
     return (
       <div
-        className="p-4 flex items-center justify-between gap-3 hover:bg-zinc-800/40 transition group"
+        className="p-4 flex items-center justify-between gap-3 hover:bg-[#151D30] transition group"
       >
         {/* Lado Esquerdo: Ícone + Descrição + Detalhes */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -508,7 +508,7 @@ export function TransactionsView({
           setTransactionToEdit(t);
           setModalOpen(true);
         }}
-        className="p-3.5 hover:bg-zinc-800/40 active:bg-zinc-800/60 transition cursor-pointer"
+        className="p-3.5 hover:bg-[#151D30] active:bg-[#1B253D] transition cursor-pointer"
       >
         {/* Linha 1: Ícone + Título Fluido + Valor Alinhado à Direita */}
         <div className="flex items-center justify-between gap-2.5">
@@ -636,19 +636,19 @@ export function TransactionsView({
     <div className="space-y-4">
       {/* 1. LINHA 1: Busca por Texto */}
       <div className="relative">
-        <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Buscar descrição ou nota..."
-          className="w-full pl-10 pr-9 py-2.5 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition shadow-sm"
+          className="w-full pl-10 pr-9 py-2.5 bg-[#0D121F] border border-[#1E293B] rounded-2xl text-xs sm:text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15] transition shadow-sm"
         />
         {searchTerm && (
           <button
             type="button"
             onClick={() => setSearchTerm('')}
-            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-200 absolute right-3 top-1/2 -translate-y-1/2 transition"
+            className="p-1 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] absolute right-3 top-1/2 -translate-y-1/2 transition cursor-pointer"
             title="Limpar busca"
           >
             <X className="w-4 h-4" />
@@ -657,23 +657,23 @@ export function TransactionsView({
       </div>
 
       {/* 2. LINHA 2: Seletor de Mês em Linha Inteira com Botão de Exportar à Direita */}
-      <div className="flex items-center justify-between gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
-        <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs">
+      <div className="flex items-center justify-between gap-3 p-3 bg-[#0D121F] border border-[#1E293B] rounded-2xl">
+        <div className="flex items-center gap-1.5 bg-[#080B11] border border-[#1E293B] px-3 py-1.5 rounded-xl text-xs">
           <button
             type="button"
             onClick={prevMonth}
-            className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+            className="p-1 rounded-lg hover:bg-[#151D30] text-[#94A3B8] hover:text-[#F8FAFC] transition cursor-pointer"
             title="Mês anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="font-bold text-zinc-100 px-2 capitalize text-xs sm:text-sm">
+          <span className="font-bold text-[#F8FAFC] px-2 capitalize text-xs sm:text-sm">
             {formattedMonth}
           </span>
           <button
             type="button"
             onClick={nextMonth}
-            className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition"
+            className="p-1 rounded-lg hover:bg-[#151D30] text-[#94A3B8] hover:text-[#F8FAFC] transition cursor-pointer"
             title="Próximo mês"
           >
             <ChevronRight className="w-4 h-4" />
@@ -694,24 +694,24 @@ export function TransactionsView({
       {/* 3. LINHA 3: Resumo de Receitas e Despesas com Botão Único de Evolução */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
             Fluxo do Mês
           </span>
           <button
             type="button"
             onClick={() => setEvolutionModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition shadow-sm active:scale-95 group"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0D121F] hover:bg-[#151D30] border border-[#1E293B] text-xs font-semibold text-[#FACC15] hover:text-[#FDE047] transition shadow-sm active:scale-95 group cursor-pointer"
             title="Ver evolução de entradas e saídas"
           >
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <TrendingUp className="w-3.5 h-3.5 text-[#FACC15] group-hover:scale-110 transition-transform" />
             <span>Ver Evolução</span>
-            <span className="text-[11px] text-zinc-500 font-normal">›</span>
+            <span className="text-[11px] text-[#64748B] font-normal">›</span>
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {/* Card Receitas */}
-          <div className="p-3.5 sm:p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="p-3.5 sm:p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
@@ -719,11 +719,11 @@ export function TransactionsView({
                   Receitas
                 </span>
               </div>
-              <span className="text-base sm:text-2xl font-bold text-emerald-400 block tracking-tight">
+              <span className="text-base sm:text-2xl font-bold text-emerald-400 block tracking-tight tabular-nums">
                 +{formatCurrency(receivedIncome)}
               </span>
             </div>
-            <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
+            <div className="mt-2 pt-2 border-t border-[#1E293B]/80 text-[10px] text-[#94A3B8] tabular-nums">
               {isPast
                 ? pendingIncome > 0
                   ? `${formatCurrency(pendingIncome)} não recebido no mês`
@@ -735,7 +735,7 @@ export function TransactionsView({
           </div>
 
           {/* Card Despesas */}
-          <div className="p-3.5 sm:p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+          <div className="p-3.5 sm:p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
@@ -743,11 +743,11 @@ export function TransactionsView({
                   Despesas
                 </span>
               </div>
-              <span className="text-base sm:text-2xl font-bold text-rose-400 block tracking-tight">
+              <span className="text-base sm:text-2xl font-bold text-rose-400 block tracking-tight tabular-nums">
                 -{formatCurrency(paidExpense)}
               </span>
             </div>
-            <div className="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
+            <div className="mt-2 pt-2 border-t border-[#1E293B]/80 text-[10px] text-[#94A3B8] tabular-nums">
               {isPast
                 ? pendingExpense > 0
                   ? `${formatCurrency(pendingExpense)} não pago no mês`
@@ -761,7 +761,7 @@ export function TransactionsView({
       </div>
 
       {/* 4. LINHA 4: Filtros de Tipo/Escopo, Conta/Cartão, Categoria & Alternador de Modo */}
-      <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5 text-xs">
+      <div className="p-3 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-2.5 text-xs">
         {/* Pílulas de Filtro Rápido (Todos, Pessoal, Negócio, Receitas, Despesas, Cartão, Pendentes) */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           {[
@@ -781,10 +781,10 @@ export function TransactionsView({
               key={item.id}
               type="button"
               onClick={() => setFilter(item.id)}
-              className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition shrink-0 ${
+              className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition shrink-0 cursor-pointer ${
                 filter === item.id
-                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
-                  : 'bg-zinc-950 border border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-[#FACC15] text-[#080B11] shadow-sm'
+                  : 'bg-[#080B11] border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               {item.label}
@@ -862,16 +862,16 @@ export function TransactionsView({
 
       {/* Lista de Transações (Agrupada por Dia ou Lista Corrida) */}
       {loading ? (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl py-16 text-center text-zinc-500 text-xs">
+        <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl py-16 text-center text-[#64748B] text-xs">
           Carregando transações de {formattedMonth}...
         </div>
       ) : filteredTransactions.length === 0 ? (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl py-16 text-center text-zinc-500">
-          <Clock className="w-8 h-8 mx-auto mb-2 opacity-30 text-zinc-400" />
-          <p className="text-sm font-medium">
+        <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl py-16 text-center text-[#64748B]">
+          <Clock className="w-8 h-8 mx-auto mb-2 opacity-30 text-[#94A3B8]" />
+          <p className="text-sm font-medium text-[#F8FAFC]">
             Nenhum lançamento encontrado em {formattedMonth}.
           </p>
-          <p className="text-xs text-zinc-600 mt-1">
+          <p className="text-xs text-[#64748B] mt-1">
             Ajuste os filtros ou use o botão &quot;Nova Transação&quot; para
             registrar entradas e saídas.
           </p>
@@ -884,16 +884,16 @@ export function TransactionsView({
             return (
               <div
                 key={group.date}
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"
+                className="bg-[#0D121F] border border-[#1E293B] rounded-2xl overflow-hidden"
               >
                 {/* Cabeçalho do Dia com Subtotal Diário */}
-                <div className="px-3.5 sm:px-4 py-2.5 bg-zinc-950/70 border-b border-zinc-800/80 flex items-center justify-between gap-2 text-xs">
-                  <span className="font-bold text-zinc-200 flex items-center gap-1.5 sm:gap-2 truncate min-w-0">
-                    <CalendarDays className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <div className="px-3.5 sm:px-4 py-2.5 bg-[#080B11]/80 border-b border-[#1E293B]/80 flex items-center justify-between gap-2 text-xs">
+                  <span className="font-bold text-[#F8FAFC] flex items-center gap-1.5 sm:gap-2 truncate min-w-0">
+                    <CalendarDays className="w-3.5 h-3.5 text-[#FACC15] shrink-0" />
                     <span className="truncate">{formatDayGroupLabel(group.date)}</span>
                   </span>
 
-                  <div className="flex items-center gap-2 sm:gap-3 text-[11px] shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-3 text-[11px] shrink-0 tabular-nums">
                     {/* Entradas e Saídas do dia exibidas apenas no Desktop */}
                     <div className="hidden md:flex items-center gap-2.5">
                       {group.incomeTotal > 0 && (
@@ -922,7 +922,7 @@ export function TransactionsView({
                   </div>
                 </div>
 
-                <div className="divide-y divide-zinc-800/80">
+                <div className="divide-y divide-[#1E293B]/80">
                   {group.items.map((t) => renderTransactionRow(t))}
                 </div>
               </div>
@@ -930,7 +930,7 @@ export function TransactionsView({
           })}
         </div>
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl divide-y divide-zinc-800/80 overflow-hidden">
+        <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl divide-y divide-[#1E293B]/80 overflow-hidden">
           {filteredTransactions.map((t) => renderTransactionRow(t))}
         </div>
       )}

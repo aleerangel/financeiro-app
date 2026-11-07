@@ -75,7 +75,7 @@ export function BusinessDashboardMobile({
       {/* 1. KPIs Principais: Faturamento, Clientes e Lucro Líquido */}
       <div className="space-y-2.5">
         {/* Card 1: Faturamento */}
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl">
           <div className="flex items-center justify-between text-zinc-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
               Faturamento • {formattedMonth || 'Mês Atual'}
@@ -95,7 +95,7 @@ export function BusinessDashboardMobile({
         </div>
 
         {/* Card 2: Clientes Atendidos */}
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl">
           <div className="flex items-center justify-between text-zinc-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
               Clientes Atendidos
@@ -116,7 +116,7 @@ export function BusinessDashboardMobile({
         </div>
 
         {/* Card 3: Lucro Líquido Real */}
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl">
           <div className="flex items-center justify-between text-zinc-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
               Lucro Líquido Real
@@ -153,7 +153,7 @@ export function BusinessDashboardMobile({
         {(summary.totalReceivables || 0) > 0 && (
           <Link
             href="/fiados"
-            className="block p-4 bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 rounded-2xl transition-all active:scale-[0.99]"
+            className="block p-4 bg-[#0D121F] border border-[#1E293B] hover:border-amber-500/40 rounded-2xl transition-all active:scale-[0.99]"
           >
             <div className="flex items-center justify-between text-zinc-400">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
@@ -181,7 +181,7 @@ export function BusinessDashboardMobile({
 
         {/* Ponto de Equilíbrio (Break-Even) */}
         {data.breakEven && (data.breakEven.totalExpenses > 0 || data.breakEven.revenue > 0) && (
-          <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-2.5">
+          <div className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
                 Ponto de Equilíbrio
@@ -220,7 +220,7 @@ export function BusinessDashboardMobile({
 
         {/* Alerta de Estoque Baixo */}
         {data.lowStockProducts && data.lowStockProducts.length > 0 && (
-          <div className="p-4 bg-zinc-900 border border-rose-500/30 rounded-2xl space-y-2">
+          <div className="p-4 bg-[#0D121F] border border-rose-500/30 rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-rose-400">
                 Estoque Baixo ({data.lowStockProducts.length})
@@ -245,7 +245,7 @@ export function BusinessDashboardMobile({
 
       {/* 2. Divisão de Faturamento: Serviços vs Produtos */}
       {isMixedRevenueSplit(revenueSplit) && (
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+        <div className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-zinc-100 text-sm">
@@ -271,7 +271,7 @@ export function BusinessDashboardMobile({
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 pt-1">
-            <div className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl">
+            <div className="p-2.5 bg-[#080B11]/80 border border-[#1E293B]/80 rounded-xl">
               <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 mb-0.5">
                 <SegmentIcon segment={profile.segment} className="w-3 h-3" /> Serviços ({revenueSplit.servicePercentage}%)
               </span>
@@ -283,7 +283,7 @@ export function BusinessDashboardMobile({
               </span>
             </div>
 
-            <div className="p-2.5 bg-zinc-950/70 border border-zinc-800/80 rounded-xl">
+            <div className="p-2.5 bg-[#080B11]/80 border border-[#1E293B]/80 rounded-xl">
               <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1 mb-0.5">
                 <ShoppingBag className="w-3 h-3" /> Produtos ({revenueSplit.productPercentage}%)
               </span>
@@ -300,7 +300,7 @@ export function BusinessDashboardMobile({
 
       {/* 3. Top Clientes do Mês */}
       {Boolean(data.topClients && data.topClients.length > 0) && (
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+        <div className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-zinc-100 text-sm">
@@ -322,7 +322,7 @@ export function BusinessDashboardMobile({
             {data.topClients.slice(0, 5).map((client, idx) => (
               <div
                 key={`${client.name}-${idx}`}
-                className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+                className="p-2.5 bg-[#080B11]/80 border border-[#1E293B]/80 rounded-xl flex items-center justify-between"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span className="w-5 h-5 rounded-md bg-zinc-800 text-zinc-300 font-extrabold text-[10px] flex items-center justify-center shrink-0">
@@ -354,7 +354,7 @@ export function BusinessDashboardMobile({
 
       {/* 4. Produtos e Serviços Mais Vendidos */}
       {Boolean(data.topProducts && data.topProducts.length > 0) && (
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+        <div className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-zinc-100 text-sm">
@@ -376,7 +376,7 @@ export function BusinessDashboardMobile({
             {data.topProducts.slice(0, 5).map((p, idx) => (
               <div
                 key={`${p.name}-${idx}`}
-                className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between"
+                className="p-2.5 bg-[#080B11]/80 border border-[#1E293B]/80 rounded-xl flex items-center justify-between"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -422,7 +422,7 @@ export function BusinessDashboardMobile({
 
       {/* 5. Alerta de Retenção: Clientes para Retorno (+30 dias) */}
       {data.inactiveClientsAlerts && data.inactiveClientsAlerts.length > 0 && (
-        <div className="p-4 bg-zinc-900 border border-amber-500/25 rounded-2xl space-y-3">
+        <div className="p-4 bg-[#0D121F] border border-amber-500/25 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-amber-300 text-sm flex items-center gap-1.5">
               <Users className="w-4 h-4 text-amber-400" />

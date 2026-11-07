@@ -66,24 +66,24 @@ function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: Di
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="w-full max-w-md bg-[#0D121F] border border-[#1E293B] rounded-3xl p-6 shadow-2xl relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+          className="absolute top-4 right-4 p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition"
         >
           <X className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <div className="w-10 h-10 rounded-2xl bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
             <User className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-zinc-100">
+            <h2 className="text-lg font-bold text-[#F8FAFC]">
               {isEditing ? 'Editar Cliente' : 'Novo Cliente'}
             </h2>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-[#94A3B8]">
               {isEditing ? 'Atualize as informações do cliente' : 'Cadastre um cliente para sua base'}
             </p>
           </div>
@@ -97,7 +97,7 @@ function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: Di
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+            <label className="block text-xs font-semibold text-[#94A3B8] mb-1.5">
               Nome Completo *
             </label>
             <input
@@ -105,7 +105,7 @@ function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: Di
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: João da Silva"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition font-medium"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition font-medium"
               required
               autoFocus
             />
@@ -113,8 +113,8 @@ function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: Di
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-zinc-400" />
+              <label className="block text-xs font-semibold text-[#94A3B8] mb-1.5 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-[#64748B]" />
                 Telefone / WhatsApp (opcional)
               </label>
               <input
@@ -122,15 +122,15 @@ function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: Di
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="(11) 99999-9999"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition"
               />
-              <span className="text-[10px] text-zinc-400 mt-1 block">
+              <span className="text-[10px] text-[#64748B] mt-1 block">
                 Cadastre o número para mensagens automáticas
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+              <label className="block text-xs font-semibold text-[#94A3B8] mb-1.5">
                 CPF (opcional)
               </label>
               <input
@@ -138,27 +138,27 @@ function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: Di
                 value={cpf}
                 onChange={(e) => setCpf(e.target.value)}
                 placeholder="000.000.000-00"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-              <Cake className="w-3.5 h-3.5 text-zinc-400" />
+            <label className="block text-xs font-semibold text-[#94A3B8] mb-1.5 flex items-center gap-1.5">
+              <Cake className="w-3.5 h-3.5 text-[#64748B]" />
               Data de Nascimento (opcional)
             </label>
             <input
               type="date"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-zinc-400" />
+            <label className="block text-xs font-semibold text-[#94A3B8] mb-1.5 flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-[#64748B]" />
               Observações (opcional)
             </label>
             <textarea
@@ -166,7 +166,7 @@ function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: Di
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Ex: Prefere corte degradê na zero, barba alinhada com navalha..."
               rows={2}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition resize-none"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-xs text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition resize-none"
             />
           </div>
 
@@ -175,14 +175,14 @@ function ClientModalDialog({ clientToEdit, initialName, onClose, onSuccess }: Di
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition"
+              className="px-4 py-2.5 text-xs text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/10 disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-bold text-xs rounded-xl transition shadow-lg shadow-[#FACC15]/20 disabled:opacity-50"
             >
               {loading ? 'Salvando...' : isEditing ? 'Atualizar Cliente' : 'Cadastrar Cliente'}
             </button>

@@ -61,7 +61,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-xl border-t border-zinc-800/80 px-3 py-1.5 pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#080B11]/95 backdrop-blur-xl border-t border-[#1E293B] px-3 py-1.5 pb-safe">
       <div className="flex items-center justify-around relative">
         {/* Item 1: Início */}
         {(() => {
@@ -74,7 +74,7 @@ export function BottomNav() {
               type="button"
               onClick={() => handleTabClick(item.tab)}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition active:scale-95 ${
-                isActive ? 'text-emerald-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                isActive ? 'text-[#FACC15] font-semibold' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
@@ -94,7 +94,7 @@ export function BottomNav() {
               href="/transacoes"
               prefetch={true}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition active:scale-95 ${
-                isActive ? 'text-emerald-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                isActive ? 'text-[#FACC15] font-semibold' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
@@ -108,7 +108,7 @@ export function BottomNav() {
           <button
             type="button"
             onClick={() => setQuickActionOpen(true)}
-            className="w-13 h-13 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 flex items-center justify-center shadow-lg shadow-emerald-500/25 border-4 border-zinc-950 active:scale-90 transition-transform"
+            className="w-13 h-13 rounded-full bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] flex items-center justify-center shadow-lg shadow-[#FACC15]/25 border-4 border-[#080B11] active:scale-90 transition-transform"
             aria-label="Adicionar movimentação ou atendimento"
           >
             <Plus className="w-6 h-6 stroke-[3]" />
@@ -126,7 +126,7 @@ export function BottomNav() {
               type="button"
               onClick={() => handleTabClick(item.tab)}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition active:scale-95 ${
-                isActive ? 'text-emerald-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                isActive ? 'text-[#FACC15] font-semibold' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
@@ -146,7 +146,7 @@ export function BottomNav() {
               type="button"
               onClick={() => handleTabClick(item.tab)}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition active:scale-95 ${
-                isActive ? 'text-emerald-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                isActive ? 'text-[#FACC15] font-semibold' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />

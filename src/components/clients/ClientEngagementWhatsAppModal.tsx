@@ -224,17 +224,17 @@ export function ClientEngagementWhatsAppModal({
       : 'Radar de Retorno no WhatsApp';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[#1E293B] flex items-center justify-between bg-[#0D121F]">
           <div className="flex items-center gap-2.5">
             <div
               className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
                 purpose === 'birthday'
                   ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                   : purpose === 'inactive_recovery'
-                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                  ? 'bg-[#FACC15]/10 border-[#FACC15]/20 text-[#FACC15]'
                   : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
               }`}
             >
@@ -245,34 +245,34 @@ export function ClientEngagementWhatsAppModal({
               )}
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">{modalTitle}</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-base font-bold text-[#F8FAFC]">{modalTitle}</h2>
+              <p className="text-xs text-[#94A3B8]">
                 Personalize o estilo e revise antes de enviar
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Resumo do Cliente */}
-        <div className="p-4 bg-slate-950/50 border-b border-slate-800/80 flex items-center justify-between">
+        <div className="p-4 bg-[#080B11] border-b border-[#1E293B] flex items-center justify-between">
           <div>
-            <span className="text-xs text-slate-400 block">Cliente</span>
-            <span className="text-sm font-semibold text-white">{client.name}</span>
+            <span className="text-xs text-[#94A3B8] block">Cliente</span>
+            <span className="text-sm font-semibold text-[#F8FAFC]">{client.name}</span>
             {client.phone && (
-              <span className="text-xs text-slate-400 block">{client.phone}</span>
+              <span className="text-xs text-[#94A3B8] block">{client.phone}</span>
             )}
           </div>
           <div className="text-right">
             {typeof daysSinceLastVisit === 'number' && (
               <>
-                <span className="text-xs text-slate-400 block">Último corte</span>
-                <span className="text-xs font-semibold text-amber-400">
+                <span className="text-xs text-[#94A3B8] block">Último atendimento</span>
+                <span className="text-xs font-semibold text-[#FACC15]">
                   há {daysSinceLastVisit} dias
                 </span>
               </>
@@ -299,7 +299,7 @@ export function ClientEngagementWhatsAppModal({
         <div className="p-5 space-y-4 overflow-y-auto flex-1">
           {/* Seletor de Tons */}
           <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+            <label className="text-xs font-semibold text-[#94A3B8] block mb-1.5">
               Estilo da Abordagem:
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -313,8 +313,8 @@ export function ClientEngagementWhatsAppModal({
                     onClick={() => handleToneSelect(tone.id)}
                     className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                       isSelected
-                        ? 'bg-amber-500/15 text-amber-400 border-amber-500/40 shadow-sm'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#FACC15]/15 text-[#FDE047] border-[#FACC15]/40 shadow-sm'
+                        : 'bg-[#080B11] border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC]'
                     }`}
                   >
                     <IconComponent className="w-4 h-4" />
@@ -328,13 +328,13 @@ export function ClientEngagementWhatsAppModal({
           {/* Textarea de Edição Livre */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-300">
+              <label className="text-xs font-semibold text-[#94A3B8]">
                 Texto do WhatsApp:
               </label>
               <button
                 type="button"
                 onClick={() => setMessage(generateMessage(selectedToneId))}
-                className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                className="text-xs text-[#FACC15] hover:text-[#FDE047] transition-colors"
               >
                 Restaurar padrão
               </button>
@@ -344,11 +344,11 @@ export function ClientEngagementWhatsAppModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={6}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono leading-relaxed"
+              className="w-full bg-[#080B11] border border-[#1E293B] rounded-xl p-3.5 text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition-all font-mono leading-relaxed"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+          <div className="flex items-center gap-1.5 text-[11px] text-[#64748B]">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span>
               Ao enviar ou copiar, atualizamos o histórico para evitar mensagens repetitivas.
@@ -357,11 +357,11 @@ export function ClientEngagementWhatsAppModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 border-t border-[#1E293B] bg-[#080B11]/50 flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleCopyMessage}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center justify-center gap-2 transition-colors border border-slate-700/60"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#151D30] hover:bg-[#1E293B] text-[#F8FAFC] text-xs font-medium flex items-center justify-center gap-2 transition-colors border border-[#1E293B]"
           >
             {copied ? (
               <>
@@ -380,7 +380,7 @@ export function ClientEngagementWhatsAppModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-medium transition-colors"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] text-xs font-medium transition-colors"
             >
               Cancelar
             </button>

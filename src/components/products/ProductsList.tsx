@@ -73,12 +73,12 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
   return (
     <div className="space-y-6">
       {/* Topo com Resumo e Botão */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-zinc-900 border border-zinc-800 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl">
         <div>
-          <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">
-            Catálogo de Serviços & Produtos
+          <span className="text-xs uppercase tracking-wider text-[#94A3B8] font-semibold">
+            Catálogo de Serviços &amp; Produtos
           </span>
-          <h2 className="text-2xl font-bold text-zinc-100 mt-1">
+          <h2 className="text-2xl font-bold text-[#F8FAFC] mt-1">
             {products.filter((p) => p.active).length} itens ativos
           </h2>
         </div>
@@ -88,7 +88,7 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
             setProductToEdit(null);
             setModalOpen(true);
           }}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/20 cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           Novo Item
@@ -103,14 +103,14 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
           return (
             <div
               key={prod.id}
-              className={`p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between space-y-4 hover:border-zinc-700 transition ${
+              className={`p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#FACC15]/40 transition ${
                 !prod.active ? 'opacity-50' : ''
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-100 shadow-md shrink-0"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-[#F8FAFC] shadow-md shrink-0"
                     style={{ backgroundColor: prod.color || '#3b82f6' }}
                   >
                     {isService ? (
@@ -120,8 +120,8 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-zinc-100 text-sm">{prod.name}</h3>
-                    <span className="text-[10px] text-zinc-400 block mt-0.5">
+                    <h3 className="font-bold text-[#F8FAFC] text-sm">{prod.name}</h3>
+                    <span className="text-[10px] text-[#94A3B8] block mt-0.5">
                       {isService ? 'Serviço' : 'Produto Físico'}
                     </span>
                   </div>
@@ -130,34 +130,34 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                 <div className="relative">
                   <button
                     onClick={() => setActiveMenuId(activeMenuId === prod.id ? null : prod.id)}
-                    className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+                    className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
                   >
                     <MoreVertical className="w-4 h-4" />
                   </button>
 
                   {activeMenuId === prod.id && (
-                    <div className="absolute right-0 top-8 z-20 w-32 bg-zinc-950 border border-zinc-800 rounded-xl py-1 shadow-xl text-xs">
+                    <div className="absolute right-0 top-8 z-20 w-32 bg-[#0D121F] border border-[#1E293B] rounded-xl py-1 shadow-xl text-xs">
                       <button
                         onClick={() => {
                           setProductToEdit(prod);
                           setModalOpen(true);
                           setActiveMenuId(null);
                         }}
-                        className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] flex items-center gap-2 cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         Editar
                       </button>
                       <button
                         onClick={() => handleToggle(prod)}
-                        className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] flex items-center gap-2 cursor-pointer"
                       >
                         {prod.active ? 'Pausar' : 'Ativar'}
                       </button>
                       <button
                         onClick={() => handleDelete(prod.id, prod.name)}
                         disabled={actionLoadingId === prod.id}
-                        className="w-full px-3 py-2 text-left text-red-400 hover:bg-zinc-900 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-rose-400 hover:bg-[#151D30] flex items-center gap-2 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Excluir
@@ -167,18 +167,18 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                 </div>
               </div>
 
-              <div className="space-y-2 border-t border-zinc-800/80 pt-3">
+              <div className="space-y-2 border-t border-[#1E293B]/80 pt-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-zinc-400">Preço Padrão</span>
-                  <span className="text-lg font-bold text-emerald-400">
+                  <span className="text-xs text-[#94A3B8]">Preço Padrão</span>
+                  <span className="text-lg font-bold text-emerald-400 tabular-nums">
                     {formatCurrency(Number(prod.default_price))}
                   </span>
                 </div>
 
                 {!isService && (
-                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-zinc-400">
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#94A3B8]">
                     {Number(prod.cost_price || 0) > 0 && (
-                      <span>Custo: {formatCurrency(Number(prod.cost_price))}</span>
+                      <span className="tabular-nums">Custo: {formatCurrency(Number(prod.cost_price))}</span>
                     )}
                     {(Number(prod.stock_quantity || 0) > 0 || Number(prod.min_stock || 0) > 0) && (
                       <span
@@ -186,7 +186,7 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                           Number(prod.min_stock || 0) > 0 &&
                           Number(prod.stock_quantity || 0) <= Number(prod.min_stock)
                             ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                            : 'bg-zinc-800 text-zinc-300'
+                            : 'bg-[#080B11] border border-[#1E293B] text-[#94A3B8]'
                         }`}
                       >
                         Estoque: {prod.stock_quantity ?? 0}
@@ -200,11 +200,11 @@ export function ProductsList({ initialProducts }: ProductsListProps) {
                 )}
 
                 {isService && prod.service_products && prod.service_products.length > 0 && (
-                  <div className="text-[11px] text-zinc-400 flex flex-wrap gap-1">
+                  <div className="text-[11px] text-[#94A3B8] flex flex-wrap gap-1">
                     {prod.service_products.map((sp) => (
                       <span
                         key={sp.id || sp.product_id}
-                        className="px-2 py-0.5 rounded-md bg-zinc-800/80 text-zinc-300 border border-zinc-700/60"
+                        className="px-2 py-0.5 rounded-md bg-[#080B11] text-[#F8FAFC] border border-[#1E293B]"
                       >
                         {sp.quantity}x {sp.product?.name || 'Peça inclusa'}
                       </span>

@@ -351,17 +351,17 @@ export function CreditCardInvoicesPanel({
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
       {/* Abas Rápidas de Seleção de Cartão (Se houver mais de 1 cartão cadastrado) */}
       {allCards.length > 1 && (
-        <div className="px-5 pt-3.5 pb-2 border-b border-zinc-800/80 bg-zinc-950/70 flex items-center gap-2 overflow-x-auto scrollbar-none">
+        <div className="px-5 pt-3.5 pb-2 border-b border-[#1E293B] bg-[#080B11]/80 flex items-center gap-2 overflow-x-auto scrollbar-none">
           <button
             type="button"
             onClick={() => handleCardChange('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeCardId === 'all'
-                ? 'bg-zinc-100 text-zinc-950 shadow-sm'
-                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                ? 'bg-[#FACC15] text-[#080B11] shadow-sm'
+                : 'bg-[#0D121F] text-[#94A3B8] hover:text-[#F8FAFC] border border-[#1E293B]'
             }`}
           >
             <CardIcon className="w-3.5 h-3.5" />
@@ -381,21 +381,21 @@ export function CreditCardInvoicesPanel({
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   isCardActive
                     ? 'text-white shadow-md'
-                    : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                    : 'bg-[#0D121F] text-[#94A3B8] hover:text-[#F8FAFC] border border-[#1E293B]'
                 }`}
                 style={
                   isCardActive
-                    ? { backgroundColor: c.color || '#8b5cf6' }
+                    ? { backgroundColor: c.color || '#6366f1' }
                     : undefined
                 }
               >
                 <span
                   className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: c.color || '#8b5cf6' }}
+                  style={{ backgroundColor: c.color || '#6366f1' }}
                 />
                 <span className="truncate max-w-[130px]">{c.name}</span>
                 {c.current_invoice > 0 && (
-                  <span className="text-[10px] opacity-80">
+                  <span className="text-[10px] opacity-80 tabular-nums">
                     ({formatCurrency(c.current_invoice)})
                   </span>
                 )}
@@ -407,7 +407,7 @@ export function CreditCardInvoicesPanel({
 
       {/* Cabeçalho do Painel de Faturas */}
       <div
-        className="p-5 sm:p-6 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        className="p-5 sm:p-6 border-b border-[#1E293B] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         style={{
           backgroundImage: `linear-gradient(135deg, ${themeColor}22 0%, transparent 65%)`,
         }}
@@ -421,7 +421,7 @@ export function CreditCardInvoicesPanel({
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-lg font-bold text-zinc-100">
+              <h3 className="text-lg font-bold text-[#F8FAFC]">
                 {isConsolidated ? 'Faturas Consolidadas • Todos os Cartões' : `Faturas • ${activeCard?.name}`}
               </h3>
               <span
@@ -430,7 +430,7 @@ export function CreditCardInvoicesPanel({
                 {invoiceDatesInfo.statusLabel}
               </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-xs text-[#94A3B8] mt-0.5">
               {invoiceDatesInfo.subtitle}
             </p>
           </div>
@@ -438,20 +438,20 @@ export function CreditCardInvoicesPanel({
 
         <div className="flex items-center justify-between sm:justify-end gap-2">
           {/* Seletor de Mês da Fatura */}
-          <div className="flex items-center gap-1 bg-zinc-950/90 border border-zinc-800 rounded-xl px-2 py-1">
+          <div className="flex items-center gap-1 bg-[#080B11] border border-[#1E293B] rounded-xl px-2 py-1">
             <button
               onClick={handlePrevMonth}
-              className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+              className="p-1.5 hover:bg-[#151D30] rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition cursor-pointer"
               title="Fatura anterior"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs sm:text-sm font-semibold text-zinc-100 px-2 min-w-[125px] text-center">
+            <span className="text-xs sm:text-sm font-semibold text-[#F8FAFC] px-2 min-w-[125px] text-center">
               {MONTH_FULL_NAMES[selectedMonth]} {selectedYear}
             </span>
             <button
               onClick={handleNextMonth}
-              className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+              className="p-1.5 hover:bg-[#151D30] rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition cursor-pointer"
               title="Próxima fatura"
             >
               <ChevronRight className="w-4 h-4" />
@@ -461,7 +461,7 @@ export function CreditCardInvoicesPanel({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer"
+              className="p-2 rounded-xl bg-[#080B11] border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] transition cursor-pointer"
               title="Fechar aba de faturas"
             >
               <X className="w-4 h-4" />
@@ -472,7 +472,7 @@ export function CreditCardInvoicesPanel({
 
       {/* Navegação por Abas de Faturas Históricas */}
       {invoicesByMonthKey.length > 1 && (
-        <div className="px-5 pt-3 pb-0 border-b border-zinc-800/80 bg-zinc-950/40 overflow-x-auto scrollbar-none">
+        <div className="px-5 pt-3 pb-0 border-b border-[#1E293B] bg-[#080B11]/50 overflow-x-auto scrollbar-none">
           <div className="flex items-center gap-2">
             {invoicesByMonthKey.map((inv) => {
               const isSelected = inv.key === currentInvoiceKey;
@@ -485,16 +485,16 @@ export function CreditCardInvoicesPanel({
                   }}
                   className={`px-3 py-2 border-b-2 text-xs font-medium transition flex items-center gap-2 shrink-0 cursor-pointer ${
                     isSelected
-                      ? 'border-emerald-400 text-emerald-400 font-bold'
-                      : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                      ? 'border-[#FACC15] text-[#FACC15] font-bold'
+                      : 'border-transparent text-[#94A3B8] hover:text-[#F8FAFC] hover:border-[#64748B]'
                   }`}
                 >
                   <span>
                     {MONTH_SHORT_NAMES[inv.month]}/{String(inv.year).slice(-2)}
                   </span>
                   <span
-                    className={`text-xs font-semibold ${
-                      isSelected ? 'text-zinc-100' : 'text-zinc-300'
+                    className={`text-xs font-semibold tabular-nums ${
+                      isSelected ? 'text-[#F8FAFC]' : 'text-[#94A3B8]'
                     }`}
                   >
                     {formatCurrency(inv.total)}
@@ -507,13 +507,13 @@ export function CreditCardInvoicesPanel({
       )}
 
       {/* Resumo Financeiro da Fatura do Mês + Botão de Pagamento Total */}
-      <div className="p-5 bg-zinc-950/30 border-b border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 bg-[#080B11]/40 border-b border-[#1E293B] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 flex-1">
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold block">
+            <span className="text-[11px] uppercase tracking-wider text-[#94A3B8] font-semibold block">
               Total da Fatura
             </span>
-            <span className="text-base sm:text-xl font-bold text-zinc-100 mt-0.5 block">
+            <span className="text-base sm:text-xl font-bold text-[#F8FAFC] mt-0.5 block tabular-nums">
               {formatCurrency(currentInvoice.total)}
             </span>
           </div>
@@ -522,7 +522,7 @@ export function CreditCardInvoicesPanel({
             <span className="text-[11px] uppercase tracking-wider text-amber-400 font-semibold block">
               Em Aberto
             </span>
-            <span className="text-base sm:text-xl font-bold text-amber-300 mt-0.5 block">
+            <span className="text-base sm:text-xl font-bold text-amber-300 mt-0.5 block tabular-nums">
               {formatCurrency(currentInvoice.pendingTotal)}
             </span>
           </div>
@@ -531,7 +531,7 @@ export function CreditCardInvoicesPanel({
             <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold block">
               Já Pago
             </span>
-            <span className="text-base sm:text-xl font-bold text-emerald-400 mt-0.5 block">
+            <span className="text-base sm:text-xl font-bold text-emerald-400 mt-0.5 block tabular-nums">
               {formatCurrency(currentInvoice.paidTotal)}
             </span>
           </div>
@@ -542,7 +542,7 @@ export function CreditCardInvoicesPanel({
                 <Store className="w-3 h-3" />
                 Gasto {businessName}
               </span>
-              <span className="text-base sm:text-xl font-bold text-amber-300 mt-0.5 block">
+              <span className="text-base sm:text-xl font-bold text-amber-300 mt-0.5 block tabular-nums">
                 {formatCurrency(
                   currentInvoice.items
                     .filter((i) => isBusinessTransaction(i))
@@ -557,15 +557,15 @@ export function CreditCardInvoicesPanel({
         {currentInvoice.items.length > 0 && (
           <div className="flex items-center gap-2">
             {isConsolidated ? (
-              <div className="text-xs text-zinc-400 bg-zinc-800/40 border border-zinc-800 px-3 py-2 rounded-xl flex items-center gap-1.5">
-                <Info className="w-4 h-4 text-purple-400 shrink-0" />
+              <div className="text-xs text-[#94A3B8] bg-[#080B11] border border-[#1E293B] px-3 py-2 rounded-xl flex items-center gap-1.5">
+                <Info className="w-4 h-4 text-indigo-400 shrink-0" />
                 <span>Selecione um cartão na barra acima para pagar sua fatura.</span>
               </div>
             ) : currentInvoice.pendingTotal > 0 ? (
               <button
                 onClick={() => setPayModalOpen(true)}
                 disabled={actionLoading}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10 active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] disabled:opacity-50 text-[#080B11] font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/10 active:scale-95 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
                 {actionLoading
@@ -576,7 +576,7 @@ export function CreditCardInvoicesPanel({
               <button
                 onClick={() => handlePayEntireInvoice(false)}
                 disabled={actionLoading}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-200 font-medium text-xs rounded-xl transition border border-zinc-700 cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-[#151D30] hover:bg-[#1E293B] disabled:opacity-50 text-[#F8FAFC] font-medium text-xs rounded-xl transition border border-[#1E293B] cursor-pointer"
               >
                 <Clock className="w-3.5 h-3.5" />
                 {actionLoading ? 'Processando...' : 'Reabrir Fatura'}
@@ -587,18 +587,18 @@ export function CreditCardInvoicesPanel({
       </div>
 
       {/* Lista de Lançamentos da Fatura */}
-      <div className="divide-y divide-zinc-800/60">
+      <div className="divide-y divide-[#1E293B]">
         {loading ? (
-          <div className="p-10 text-center text-zinc-500 text-sm">
+          <div className="p-10 text-center text-[#94A3B8] text-sm">
             Carregando lançamentos da fatura...
           </div>
         ) : currentInvoice.items.length === 0 ? (
-          <div className="p-10 text-center text-zinc-500">
+          <div className="p-10 text-center text-[#94A3B8]">
             <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-40 text-emerald-400" />
-            <p className="text-sm font-medium text-zinc-300">
+            <p className="text-sm font-medium text-[#F8FAFC]">
               Nenhuma compra nesta fatura de {MONTH_FULL_NAMES[selectedMonth]} de {selectedYear}.
             </p>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-[#64748B] mt-1">
               Use as abas acima ou as setas para navegar entre outras faturas.
             </p>
           </div>
@@ -610,7 +610,7 @@ export function CreditCardInvoicesPanel({
             return (
               <div
                 key={tx.id}
-                className={`p-4 sm:px-6 flex items-center justify-between gap-3 hover:bg-zinc-800/30 transition ${
+                className={`p-4 sm:px-6 flex items-center justify-between gap-3 hover:bg-[#151D30]/40 transition ${
                   tx.is_paid ? 'opacity-75' : ''
                 }`}
               >
@@ -622,7 +622,7 @@ export function CreditCardInvoicesPanel({
                     className={`mt-0.5 sm:mt-0 w-8 h-8 rounded-xl flex items-center justify-center border transition shrink-0 cursor-pointer ${
                       tx.is_paid
                         ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                        : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
+                        : 'bg-[#080B11] border-[#1E293B] text-[#64748B] hover:text-[#F8FAFC] hover:border-[#64748B]'
                     }`}
                   >
                     {tx.is_paid ? (
@@ -634,7 +634,7 @@ export function CreditCardInvoicesPanel({
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm text-zinc-100 truncate">
+                      <span className="font-semibold text-sm text-[#F8FAFC] truncate">
                         {tx.description}
                       </span>
 
@@ -645,15 +645,15 @@ export function CreditCardInvoicesPanel({
                           onClick={() => tx.credit_card && handleCardChange(tx.credit_card.id)}
                           className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border transition hover:opacity-80 cursor-pointer"
                           style={{
-                            backgroundColor: `${tx.credit_card.color || '#8b5cf6'}20`,
-                            borderColor: `${tx.credit_card.color || '#8b5cf6'}40`,
+                            backgroundColor: `${tx.credit_card.color || '#6366f1'}20`,
+                            borderColor: `${tx.credit_card.color || '#6366f1'}40`,
                             color: tx.credit_card.color || '#a78bfa',
                           }}
                           title={`Filtrar apenas ${tx.credit_card.name}`}
                         >
                           <span
                             className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: tx.credit_card.color || '#8b5cf6' }}
+                            style={{ backgroundColor: tx.credit_card.color || '#6366f1' }}
                           />
                           <span>{tx.credit_card.name}</span>
                         </button>
@@ -667,7 +667,7 @@ export function CreditCardInvoicesPanel({
                       )}
 
                       {isInstallment && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-violet-500/15 text-violet-300 border border-violet-500/20">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
                           <Layers className="w-2.5 h-2.5" />
                           Parcela {tx.current_installment}/{tx.total_installments}
                         </span>
@@ -694,9 +694,9 @@ export function CreditCardInvoicesPanel({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-zinc-400 mt-1">
+                    <div className="flex items-center gap-3 text-xs text-[#94A3B8] mt-1">
                       <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-zinc-500" />
+                        <Calendar className="w-3 h-3 text-[#64748B]" />
                         Compra: {formatDate(tx.transaction_date)}
                       </span>
                       <span>•</span>
@@ -708,13 +708,13 @@ export function CreditCardInvoicesPanel({
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <span
-                      className={`text-sm sm:text-base font-bold block ${
-                        tx.is_paid ? 'text-zinc-400 line-through' : 'text-zinc-100'
+                      className={`text-sm sm:text-base font-bold block tabular-nums ${
+                        tx.is_paid ? 'text-[#64748B] line-through' : 'text-[#F8FAFC]'
                       }`}
                     >
                       {formatCurrency(tx.amount)}
                     </span>
-                    <span className="text-[10px] text-zinc-500">
+                    <span className="text-[10px] text-[#64748B]">
                       {tx.is_paid ? 'Pago' : 'Pendente'}
                     </span>
                   </div>
@@ -723,7 +723,7 @@ export function CreditCardInvoicesPanel({
                     onClick={() => handleDeleteItem(tx)}
                     disabled={itemLoadingId === tx.id}
                     title="Excluir lançamento"
-                    className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
+                    className="p-1.5 text-[#64748B] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

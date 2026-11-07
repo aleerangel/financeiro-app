@@ -193,14 +193,14 @@ export function CategoryDonutChart({
   }, [activeTransactions]);
 
   return (
-    <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-5 flex flex-col justify-between">
+    <div className="p-6 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-5 flex flex-col justify-between">
       {/* Cabeçalho */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <h3 className="font-bold text-zinc-100 text-base">
+          <h3 className="font-bold text-[#F8FAFC] text-base">
             Gastos por Categoria
           </h3>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-[#94A3B8]">
             {periodLabel ? `Execução de pagamentos e distribuição das despesas • ${periodLabel}` : 'Execução de pagamentos e distribuição das despesas'}
           </p>
         </div>
@@ -208,11 +208,11 @@ export function CategoryDonutChart({
         <div className="flex items-center gap-2 flex-wrap">
           {/* Seletor de Mês de Referência do Painel */}
           {!hideMonthSelector && (
-            <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl px-1 py-0.5 text-xs">
+            <div className="flex items-center bg-[#080B11] border border-[#1E293B] rounded-xl px-1 py-0.5 text-xs">
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                className="p-1 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-lg transition"
                 title="Mês anterior"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
@@ -220,14 +220,14 @@ export function CategoryDonutChart({
               <select
                 value={refMonth}
                 onChange={(e) => selectReferencePeriod(Number(e.target.value), refYear)}
-                className="bg-transparent text-zinc-200 font-semibold text-xs px-1 py-0.5 focus:outline-none cursor-pointer"
+                className="bg-transparent text-[#F8FAFC] font-semibold text-xs px-1 py-0.5 focus:outline-none cursor-pointer"
                 title="Selecionar mês de referência"
               >
                 {MONTH_SHORT_NAMES.map((mName, idx) => (
                   <option
                     key={mName}
                     value={idx}
-                    className="bg-zinc-900 text-zinc-100"
+                    className="bg-[#0D121F] text-[#F8FAFC]"
                   >
                     {mName}/{refYear}
                   </option>
@@ -236,7 +236,7 @@ export function CategoryDonutChart({
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition"
+                className="p-1 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-lg transition"
                 title="Próximo mês"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -296,7 +296,7 @@ export function CategoryDonutChart({
           </span>
         </div>
 
-        <div className="w-full h-3.5 bg-zinc-950 rounded-full overflow-hidden p-0.5 border border-zinc-800 flex gap-0.5">
+        <div className="w-full h-3.5 bg-[#080B11] rounded-full overflow-hidden p-0.5 border border-[#1E293B] flex gap-0.5">
           {totalExpense > 0 ? (
             <>
               {paidExpensePct > 0 && (

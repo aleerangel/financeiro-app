@@ -79,38 +79,38 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
     <div className="space-y-6">
       {/* Resumo Consolidado de Limites e Botão */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <span className="text-xs uppercase tracking-wider text-purple-400 font-semibold">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <span className="text-xs uppercase tracking-wider text-indigo-400 font-semibold">
             Fatura Atual (Total)
           </span>
-          <h3 className="text-xl sm:text-2xl font-bold text-purple-300 mt-2">
+          <h3 className="text-xl sm:text-2xl font-bold text-indigo-300 mt-2 tabular-nums">
             {formatCurrency(totalCurrentInvoice)}
           </h3>
         </div>
 
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <span className="text-xs uppercase tracking-wider text-amber-400 font-semibold">
             Limite Utilizado
           </span>
-          <h3 className="text-xl sm:text-2xl font-bold text-amber-300 mt-2">
+          <h3 className="text-xl sm:text-2xl font-bold text-amber-300 mt-2 tabular-nums">
             {formatCurrency(totalUsed)}
           </h3>
         </div>
 
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
           <span className="text-xs uppercase tracking-wider text-emerald-400 font-semibold">
             Limite Disponível
           </span>
-          <h3 className="text-xl sm:text-2xl font-bold text-emerald-400 mt-2">
+          <h3 className="text-xl sm:text-2xl font-bold text-emerald-400 mt-2 tabular-nums">
             {formatCurrency(totalAvailable)}
           </h3>
         </div>
 
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <span className="text-xs uppercase tracking-wider text-[#94A3B8] font-semibold">
             Limite Total
           </span>
-          <h3 className="text-xl sm:text-2xl font-bold text-zinc-100 mt-2">
+          <h3 className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mt-2 tabular-nums">
             {formatCurrency(totalLimit)}
           </h3>
         </div>
@@ -122,7 +122,7 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
             setCardToEdit(null);
             setModalOpen(true);
           }}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/10"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           Novo Cartão
@@ -152,11 +152,11 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
               }}
               className={`relative p-6 rounded-2xl text-white shadow-xl flex flex-col justify-between h-56 overflow-hidden transition-all cursor-pointer select-none hover:-translate-y-1 ${
                 isSelected
-                  ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-zinc-950 scale-[1.01]'
+                  ? 'ring-2 ring-[#FACC15] ring-offset-2 ring-offset-[#080B11] scale-[1.01]'
                   : 'opacity-95 hover:opacity-100'
               }`}
               style={{
-                backgroundColor: card.color || '#8b5cf6',
+                backgroundColor: card.color || '#6366f1',
                 backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.2) 0%, transparent 60%)',
               }}
             >
@@ -186,10 +186,10 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
                   </button>
 
                   {activeMenuId === card.id && (
-                    <div className="absolute right-0 top-8 z-20 w-32 bg-zinc-950 border border-zinc-800 rounded-xl py-1 shadow-2xl text-xs text-zinc-200">
+                    <div className="absolute right-0 top-8 z-20 w-32 bg-[#0D121F] border border-[#1E293B] rounded-xl py-1 shadow-2xl text-xs text-[#F8FAFC]">
                       <button
                         onClick={() => handleEdit(card)}
-                        className="w-full px-3 py-2 text-left hover:bg-zinc-900 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left hover:bg-[#151D30] flex items-center gap-2"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         Editar
@@ -197,7 +197,7 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
                       <button
                         onClick={() => handleDelete(card.id)}
                         disabled={deletingId === card.id}
-                        className="w-full px-3 py-2 text-left text-red-400 hover:bg-zinc-900 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-rose-400 hover:bg-[#151D30] flex items-center gap-2"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         {deletingId === card.id ? 'Excluindo...' : 'Excluir'}
@@ -255,11 +255,11 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
               <div className="bg-black/25 backdrop-blur-md -mx-6 -mb-6 p-4 pt-3 rounded-b-2xl border-t border-white/10 space-y-1.5">
                 <div className="flex justify-between items-baseline text-xs font-semibold">
                   <span className="text-white/70 text-[10px] uppercase font-bold tracking-wider">Fatura Atual</span>
-                  <span className="text-sm font-extrabold text-white drop-shadow-sm">
+                  <span className="text-sm font-extrabold text-white drop-shadow-sm tabular-nums">
                     {formatCurrency(card.current_invoice ?? 0)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-[11px] text-white/80 font-medium">
+                <div className="flex justify-between items-center text-[11px] text-white/80 font-medium tabular-nums">
                   <span>Usado: {formatCurrency(card.used_limit)}</span>
                   <span>Disp: {formatCurrency(card.available_limit)}</span>
                 </div>
@@ -268,7 +268,7 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
                 <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-300 rounded-full ${
-                      limitPercentage > 85 ? 'bg-red-400' : 'bg-emerald-400'
+                      limitPercentage > 85 ? 'bg-rose-400' : 'bg-emerald-400'
                     }`}
                     style={{ width: `${limitPercentage}%` }}
                   />
@@ -279,10 +279,10 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
         })}
 
         {initialCards.length === 0 && (
-          <div className="col-span-full py-12 text-center text-zinc-500 bg-zinc-900/40 border border-dashed border-zinc-800 rounded-2xl">
+          <div className="col-span-full py-12 text-center text-[#94A3B8] bg-[#0D121F]/40 border border-dashed border-[#1E293B] rounded-2xl">
             <CardIcon className="w-10 h-10 mx-auto mb-2 opacity-40" />
             <p className="text-sm font-medium">Nenhum cartão de crédito cadastrado.</p>
-            <p className="text-xs text-zinc-600 mt-1">
+            <p className="text-xs text-[#64748B] mt-1">
               Clique em &quot;Novo Cartão&quot; para gerenciar limites e faturas.
             </p>
           </div>

@@ -184,8 +184,8 @@ export function SalesView({
       {/* Cards de Resumo Operacional do Dia */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {/* Faturamento Recebido Hoje */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
               Recebido Hoje
             </span>
@@ -194,18 +194,18 @@ export function SalesView({
             </div>
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-emerald-400">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-emerald-400 tabular-nums">
               {formatCurrency(todayReceivedTotal)}
             </h2>
-            <span className="text-[10px] text-zinc-500 mt-1 block">
+            <span className="text-[10px] text-[#64748B] mt-1 block">
               Caixa líquido efetivo do dia
             </span>
           </div>
         </div>
 
         {/* Vendido a Prazo Hoje */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
               A Prazo Hoje
             </span>
@@ -214,18 +214,18 @@ export function SalesView({
             </div>
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-amber-400">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-amber-400 tabular-nums">
               {formatCurrency(todayOnCreditTotal)}
             </h2>
-            <span className="text-[10px] text-zinc-500 mt-1 block">
+            <span className="text-[10px] text-[#64748B] mt-1 block">
               Fiados gerados no dia
             </span>
           </div>
         </div>
 
         {/* Total Geral a Receber */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
               Total a Receber
             </span>
@@ -234,18 +234,18 @@ export function SalesView({
             </div>
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-rose-400">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-rose-400 tabular-nums">
               {formatCurrency(totalReceivables)}
             </h2>
-            <span className="text-[10px] text-zinc-500 mt-1 block">
+            <span className="text-[10px] text-[#64748B] mt-1 block">
               {pendingSales.length} {pendingSales.length === 1 ? 'comanda pendente' : 'comandas pendentes'}
             </span>
           </div>
         </div>
 
         {/* Clientes Atendidos Hoje */}
-        <div className="p-4 sm:p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
               {salesLabel} Hoje
             </span>
@@ -254,10 +254,10 @@ export function SalesView({
             </div>
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-100">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#F8FAFC] tabular-nums">
               {todayClientsCount} {todayClientsCount === 1 ? 'cliente' : 'clientes'}
             </h2>
-            <span className="text-[10px] text-zinc-500 mt-1 block">
+            <span className="text-[10px] text-[#64748B] mt-1 block tabular-nums">
               Ticket Médio: {formatCurrency(todayAverageTicket)}
             </span>
           </div>
@@ -269,30 +269,30 @@ export function SalesView({
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           <button
             onClick={() => setFilterMode('today')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
               filterMode === 'today'
-                ? 'bg-zinc-100 text-zinc-900'
-                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                ? 'bg-[#FACC15] text-[#080B11] shadow-sm'
+                : 'bg-[#080B11] text-[#94A3B8] hover:text-[#F8FAFC] border border-[#1E293B]'
             }`}
           >
             Hoje ({todayClientsCount})
           </button>
           <button
             onClick={() => setFilterMode('pending')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
               filterMode === 'pending'
-                ? 'bg-amber-500 text-zinc-950 font-bold'
-                : 'bg-zinc-900 text-amber-400/90 hover:text-amber-300 border border-zinc-800'
+                ? 'bg-[#FACC15] text-[#080B11] font-bold shadow-sm'
+                : 'bg-[#080B11] text-amber-400/90 hover:text-amber-300 border border-[#1E293B]'
             }`}
           >
             A Prazo / Pendentes ({pendingSales.length})
           </button>
           <button
             onClick={() => setFilterMode('all')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
               filterMode === 'all'
-                ? 'bg-zinc-100 text-zinc-900'
-                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                ? 'bg-[#FACC15] text-[#080B11] shadow-sm'
+                : 'bg-[#080B11] text-[#94A3B8] hover:text-[#F8FAFC] border border-[#1E293B]'
             }`}
           >
             Todos os Registros ({sales.length})
@@ -309,7 +309,7 @@ export function SalesView({
 
           <button
             onClick={() => setModalOpen(true)}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10 active:scale-95"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/20 active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             Novo(a) {salesLabel}
@@ -318,7 +318,7 @@ export function SalesView({
       </div>
 
       {/* Histórico de Comandas / Vendas */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl divide-y divide-zinc-800/80 overflow-hidden shadow-sm">
+      <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl divide-y divide-[#1E293B]/80 overflow-hidden shadow-sm">
         {displayedSales.map((sale) => {
           const itemsDesc = sale.items
             ? sale.items
@@ -335,7 +335,7 @@ export function SalesView({
           return (
             <div
               key={sale.id}
-              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-zinc-850/40 transition group"
+              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#151D30] transition group"
             >
               <div className="flex items-start sm:items-center gap-3 min-w-0">
                 <div
@@ -352,12 +352,12 @@ export function SalesView({
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-sm font-bold text-zinc-100 truncate">
+                    <h4 className="text-sm font-bold text-[#F8FAFC] truncate">
                       {sale.client_name}
                     </h4>
 
                     {/* Forma de Pagamento */}
-                    <span className="px-2 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-300 uppercase tracking-wider font-semibold">
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-[#080B11] border border-[#1E293B] text-[#94A3B8] uppercase tracking-wider font-semibold">
                       {PAYMENT_LABELS[sale.payment_method] || sale.payment_method}
                     </span>
 
@@ -386,7 +386,7 @@ export function SalesView({
                         {sale.due_date && (
                           <span
                             className={`text-[10px] ${
-                              isOverdue ? 'text-rose-400 font-semibold' : 'text-zinc-500'
+                              isOverdue ? 'text-rose-400 font-semibold' : 'text-[#64748B]'
                             }`}
                           >
                             {isOverdue ? 'Venceu em: ' : 'Vence em: '}
@@ -397,9 +397,9 @@ export function SalesView({
                     )}
                   </div>
 
-                  <p className="text-xs text-zinc-400 mt-1 truncate">{itemsDesc}</p>
+                  <p className="text-xs text-[#94A3B8] mt-1 truncate">{itemsDesc}</p>
 
-                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-zinc-500 mt-1">
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#64748B] mt-1">
                     <span>{formatSaleTime(sale.sale_date)}</span>
                     {sale.account && (
                       <>
@@ -410,7 +410,7 @@ export function SalesView({
                     {isOnCredit && paidAmount > 0 && isPending && (
                       <>
                         <span>•</span>
-                        <span className="text-emerald-400">
+                        <span className="text-emerald-400 tabular-nums">
                           {formatCurrency(paidAmount)} já amortizado
                         </span>
                       </>
@@ -420,13 +420,13 @@ export function SalesView({
               </div>
 
               {/* Lado Direito: Valores & Ações */}
-              <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800/60">
+              <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1E293B]/60">
                 <div className="text-left sm:text-right">
-                  <span className="text-base font-extrabold text-zinc-100 block">
+                  <span className="text-base font-extrabold text-[#F8FAFC] block tabular-nums">
                     {formatCurrency(Number(sale.total_amount))}
                   </span>
                   {isOnCredit && isPending && (
-                    <span className="text-[11px] text-amber-400 font-semibold block">
+                    <span className="text-[11px] text-amber-400 font-semibold block tabular-nums">
                       Resta: {formatCurrency(remainingAmount)}
                     </span>
                   )}
@@ -435,7 +435,7 @@ export function SalesView({
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setReceiptSaleTarget(sale)}
-                    className="p-2 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded-xl transition opacity-80 group-hover:opacity-100"
+                    className="p-2 text-[#94A3B8] hover:text-[#FACC15] hover:bg-[#151D30] rounded-xl transition opacity-80 group-hover:opacity-100 cursor-pointer"
                     title="Gerar Nota de Serviço / Venda"
                     aria-label="Gerar Nota de Serviço"
                   >
@@ -445,7 +445,7 @@ export function SalesView({
                   {isPending && (
                     <button
                       onClick={() => setAmortizeSaleTarget(sale)}
-                      className="px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold text-xs rounded-xl transition flex items-center gap-1 active:scale-95"
+                      className="px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold text-xs rounded-xl transition flex items-center gap-1 active:scale-95 cursor-pointer"
                       title="Amortizar ou quitar comanda"
                     >
                       <HandCoins className="w-3.5 h-3.5" />
@@ -456,7 +456,7 @@ export function SalesView({
                   <button
                     onClick={() => handleDelete(sale.id)}
                     disabled={deletingId === sale.id}
-                    className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-xl transition opacity-60 group-hover:opacity-100"
+                    className="p-2 text-[#64748B] hover:text-rose-400 hover:bg-[#151D30] rounded-xl transition opacity-60 group-hover:opacity-100 cursor-pointer"
                     title="Estornar comanda"
                   >
                     <Trash2 className="w-4 h-4" />

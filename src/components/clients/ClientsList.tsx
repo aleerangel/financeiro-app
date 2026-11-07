@@ -263,15 +263,15 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
     <div className="space-y-6">
       {/* Resumo e Estatísticas de Clientes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between">
           <div>
-            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
+            <span className="text-xs text-[#94A3B8] font-semibold uppercase tracking-wider block">
               Clientes Cadastrados
             </span>
-            <span className="text-2xl font-bold text-zinc-100 mt-1 block">
+            <span className="text-2xl font-bold text-[#F8FAFC] mt-1 block tabular-nums">
               {totalClients}
             </span>
-            <span className="text-[11px] text-zinc-500 block mt-0.5">
+            <span className="text-[11px] text-[#64748B] block mt-0.5">
               {counts.vip} {counts.vip === 1 ? 'cliente VIP' : 'clientes VIP'}
             </span>
           </div>
@@ -280,12 +280,12 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
           </div>
         </div>
 
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between">
           <div>
-            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
+            <span className="text-xs text-[#94A3B8] font-semibold uppercase tracking-wider block">
               Previstos / Na Janela
             </span>
-            <span className="text-2xl font-bold text-emerald-400 mt-1 block">
+            <span className="text-2xl font-bold text-emerald-400 mt-1 block tabular-nums">
               {counts.in_window}
             </span>
             <span className="text-[11px] text-amber-400/90 block mt-0.5">
@@ -299,38 +299,38 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
           </div>
         </div>
 
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between">
           <div>
-            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
+            <span className="text-xs text-[#94A3B8] font-semibold uppercase tracking-wider block">
               Faturamento Acumulado
             </span>
-            <span className="text-2xl font-bold text-emerald-400 mt-1 block">
+            <span className="text-2xl font-bold text-emerald-400 mt-1 block tabular-nums">
               {formatCurrency(totalRevenueAll)}
             </span>
-            <span className="text-[11px] text-zinc-500 block mt-0.5">
+            <span className="text-[11px] text-[#64748B] block mt-0.5">
               em {totalSalesAll} {totalSalesAll === 1 ? 'atendimento' : 'atendimentos'}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
             <DollarSign className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between">
           <div>
-            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
+            <span className="text-xs text-[#94A3B8] font-semibold uppercase tracking-wider block">
               Ticket Médio / Cliente
             </span>
-            <span className="text-2xl font-bold text-amber-400 mt-1 block">
+            <span className="text-2xl font-bold text-amber-400 mt-1 block tabular-nums">
               {formatCurrency(avgTicketPerClient)}
             </span>
             {totalSalesAll > 0 && (
-              <span className="text-[11px] text-zinc-500 block mt-0.5">
+              <span className="text-[11px] text-[#64748B] block mt-0.5 tabular-nums">
                 {formatCurrency(avgTicketPerSale)} por atendimento
               </span>
             )}
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <div className="w-10 h-10 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
             <TrendingUp className="w-5 h-5" />
           </div>
         </div>
@@ -338,20 +338,20 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
 
       {/* Painel Radar de Retorno: Clientes Na Janela ou Atrasados */}
       {radarClients.length > 0 && (
-        <div className="p-5 bg-zinc-900/90 border border-emerald-500/25 rounded-2xl space-y-4">
+        <div className="p-5 bg-[#0D121F] border border-[#FACC15]/25 rounded-2xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                 <Clock className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                <h2 className="text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
                   Radar de Retorno — Prováveis Atendimentos
                   <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                     {counts.in_window + counts.overdue} clientes
                   </span>
                 </h2>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-[#94A3B8]">
                   Clientes que entraram na janela prevista de retorno ou passaram do seu ciclo habitual
                 </p>
               </div>
@@ -366,16 +366,16 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                 <div
                   key={client.id}
                   onClick={() => setSelectedClientForHistory(client)}
-                  className="p-3.5 bg-zinc-950/80 hover:bg-zinc-950 border border-zinc-800/90 hover:border-zinc-700 rounded-xl transition cursor-pointer flex flex-col justify-between gap-3"
+                  className="p-3.5 bg-[#080B11]/80 hover:bg-[#151D30] border border-[#1E293B] hover:border-[#FACC15]/40 rounded-xl transition cursor-pointer flex flex-col justify-between gap-3"
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-bold text-xs text-zinc-100 truncate">
+                        <span className="font-bold text-xs text-[#F8FAFC] truncate">
                           {client.name}
                         </span>
                         {client.isVip && (
-                          <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <Crown className="w-3.5 h-3.5 text-[#FACC15] shrink-0" />
                         )}
                       </div>
                       <span
@@ -387,9 +387,9 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                       </span>
                     </div>
 
-                    <div className="text-[11px] text-zinc-400 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <div className="text-[11px] text-[#94A3B8] flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span>
-                        Ciclo: <strong className="text-zinc-200">~{analytics.cycleDays}d</strong>
+                        Ciclo: <strong className="text-[#F8FAFC]">~{analytics.cycleDays}d</strong>
                       </span>
                       <span>•</span>
                       <span>
@@ -402,8 +402,8 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                     </div>
 
                     {analytics.preferredWeekdays.length > 0 && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                        <Calendar className="w-3 h-3 text-blue-400 shrink-0" />
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#94A3B8]">
+                        <Calendar className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                         <span>
                           Costuma vir:{' '}
                           <strong className="text-blue-300">
@@ -415,10 +415,10 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                   </div>
 
                   <div
-                    className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-800/70"
+                    className="flex items-center justify-between gap-2 pt-2 border-t border-[#1E293B]/70"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <span className="text-[10px] text-zinc-500">
+                    <span className="text-[10px] text-[#64748B]">
                       Última vez há {analytics.daysSinceLastVisit}d
                     </span>
 
@@ -427,7 +427,7 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                         <button
                           type="button"
                           onClick={() => openEngagementModal(client)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold transition"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold transition cursor-pointer"
                           title="Chamar no WhatsApp com mensagem inteligente"
                         >
                           <MessageCircle className="w-3 h-3" />
@@ -437,10 +437,10 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
 
                       <Link
                         href={`/vendas?clientId=${client.id}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[11px] font-semibold transition"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#080B11] hover:bg-[#151D30] border border-[#1E293B] text-[#F8FAFC] text-[11px] font-semibold transition cursor-pointer"
                         title={`Registrar ${salesLabel.toLowerCase()}`}
                       >
-                        <SegmentIcon segment={profile.segment} className="w-3 h-3 text-emerald-400" />
+                        <SegmentIcon segment={profile.segment} className="w-3 h-3 text-[#FACC15]" />
                         Atender
                       </Link>
                     </div>
@@ -456,37 +456,37 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por nome, telefone ou CPF..."
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#0D121F] border border-[#1E293B] rounded-xl text-xs sm:text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15] transition"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2">
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            <div className="flex items-center gap-2 bg-[#0D121F] border border-[#1E293B] rounded-xl px-3 py-2">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-transparent text-xs font-medium text-zinc-200 focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-medium text-[#F8FAFC] focus:outline-none cursor-pointer"
               >
-                <option value="priority" className="bg-zinc-900">
+                <option value="priority" className="bg-[#0D121F]">
                   Ordenar: Prioridade de Retorno
                 </option>
-                <option value="spent" className="bg-zinc-900">
+                <option value="spent" className="bg-[#0D121F]">
                   Ordenar: Maior Valor Gasto (VIP)
                 </option>
-                <option value="visits" className="bg-zinc-900">
+                <option value="visits" className="bg-[#0D121F]">
                   Ordenar: Mais Atendimentos
                 </option>
-                <option value="recent" className="bg-zinc-900">
+                <option value="recent" className="bg-[#0D121F]">
                   Ordenar: Última Visita
                 </option>
-                <option value="name" className="bg-zinc-900">
+                <option value="name" className="bg-[#0D121F]">
                   Ordenar: Ordem Alfabética (A-Z)
                 </option>
               </select>
@@ -497,7 +497,7 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                 setClientToEdit(null);
                 setModalOpen(true);
               }}
-              className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/20 cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               Novo Cliente
@@ -514,18 +514,18 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                 key={pill.id}
                 type="button"
                 onClick={() => setStatusFilter(pill.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center gap-1.5 border ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center gap-1.5 border cursor-pointer ${
                   active
-                    ? 'bg-emerald-500 text-zinc-950 border-emerald-500 shadow-sm'
-                    : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border-zinc-800'
+                    ? 'bg-[#FACC15] text-[#080B11] border-[#FACC15] shadow-sm'
+                    : 'bg-[#0D121F] text-[#94A3B8] hover:text-[#F8FAFC] border-[#1E293B]'
                 }`}
               >
                 <span>{pill.label}</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                     active
-                      ? 'bg-zinc-950/20 text-zinc-950 font-extrabold'
-                      : 'bg-zinc-800 text-zinc-400'
+                      ? 'bg-black/20 text-[#080B11] font-extrabold'
+                      : 'bg-[#080B11] text-[#94A3B8]'
                   }`}
                 >
                   {pill.count}
@@ -537,13 +537,13 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
       </div>
 
       {/* Tabela de Clientes */}
-      <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl">
+      <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
-                <th className="pb-3 font-semibold">Cliente & Status</th>
-                <th className="pb-3 font-semibold">Janela & Dias Prováveis</th>
+              <tr className="border-b border-[#1E293B] text-[#94A3B8] uppercase tracking-wider text-[10px]">
+                <th className="pb-3 font-semibold">Cliente &amp; Status</th>
+                <th className="pb-3 font-semibold">Janela &amp; Dias Prováveis</th>
                 <th className="pb-3 font-semibold">Contato</th>
                 <th className="pb-3 font-semibold text-center">Visitas</th>
                 <th className="pb-3 font-semibold text-right">Total Gasto</th>
@@ -551,7 +551,7 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                 <th className="pb-3 font-semibold text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60">
+            <tbody className="divide-y divide-[#1E293B]/60">
               {filteredClients.map((client) => {
                 const { analytics } = client;
 
@@ -559,7 +559,7 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                   <tr
                     key={client.id}
                     onClick={() => setSelectedClientForHistory(client)}
-                    className="hover:bg-zinc-800/40 transition cursor-pointer"
+                    className="hover:bg-[#151D30] transition cursor-pointer"
                   >
                     <td className="py-3.5 font-medium text-zinc-100">
                       <div className="flex items-center gap-2.5">
