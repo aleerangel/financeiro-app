@@ -4,6 +4,8 @@ import {
   computeWeightedCycleDays,
   computePreferredWeekdays,
   computeVipClientIds,
+  computeClientMonthlyAverage,
+  computeBaseClientTicketMetrics,
 } from './client-analytics';
 
 describe('computeWeightedCycleDays', () => {
@@ -155,6 +157,73 @@ describe('computeVipClientIds', () => {
     expect(vips.has('a')).toBe(true); // >= 5 visitas
     expect(vips.has('b')).toBe(true); // maior gasto
     expect(vips.has('c')).toBe(false);
+  });
+});
+
+describe('computeClientMonthlyAverage', () => {
+  it('retorna 0 para cliente sem vendas ou com gasto 0', () => {
+    expect(computeClientMonthlyAverage([], 0)).toBe(0);
+    expect(computeClientMonthlyAverage([], 100)).toBe(0);
+  });
+
+  it('calcula a média dividindo pelo número de meses distintos com compras', () => {
+    const sales = [
+      { id: '1', total_amount: 50, sale_date: '2026-01-10T10:00:00Z' },
+      { id: '2', total_amount: 50, sale_date: '2026-01-25T10:00:00Z' },
+      { id: '3', total_amount: 60, sale_date: '2026-02-15T10:00:00Z' },
+    ];
+    // Gasto total = 160 em 2 meses (Jan/2026 e Fev/2026) -> 160 / 2 = 80/mês
+    expect(computeClientMonthlyAverage(sales, 160)).toBe(80);
+  });
+});
+
+describe('computeBaseClientTicketMetrics', () => {
+  it('calcula corretamente Ticket Médio por atendimento, Média Mensal e Acumulado por cliente', () => {
+    const clients = [
+      {
+        id: '1',
+        totalSalesCount: 3,
+        totalSpent: 160,
+        salesHistory: [
+          { id: 's1', total_amount: 50, sale_date: '2026-01-10' },
+          { id: 's2', total_amount: 50, sale_date: '2026-01-25' },
+          { id: 's3', total_amount: 60, sale_date: '2026-02-15' },
+        ],
+      },
+      {
+        id: '2',
+        totalSalesCount: 1,
+        totalSpent: 100,
+        salesHistory: [
+          { id: 's4', total_amount: 100, sale_date: '2026-02-10' },
+        ],
+      },
+      {
+        id: '3',
+        totalSalesCount: 0,
+        totalSpent: 0,
+        salesHistory: [],
+      },
+    ];
+
+    const metrics = computeBaseClientTicketMetrics(clients);
+
+    expect(metrics.totalClients).toBe(3);
+    expect(metrics.clientsWithSalesCount).toBe(2);
+    expect(metrics.totalSalesAll).toBe(4);
+    expect(metrics.totalRevenueAll).toBe(260);
+
+    // Ticket Médio por Atendimento (260 / 4 = 65)
+    expect(metrics.avgTicketPerSale).toBe(65);
+
+    // Ticket Médio Mensal por Cliente (260 / 3 meses-cliente = 86.666...)
+    expect(metrics.avgMonthlyPerClient).toBeCloseTo(86.67, 1);
+
+    // Acumulado por Cliente Cadastrado (260 / 3 = 86.666...)
+    expect(metrics.avgAccumulatedPerClient).toBeCloseTo(86.67, 1);
+
+    // Acumulado por Cliente Ativo com Compras (260 / 2 = 130)
+    expect(metrics.avgAccumulatedPerActiveClient).toBe(130);
   });
 });
 

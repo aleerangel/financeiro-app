@@ -369,3 +369,93 @@ export function getReturnPriorityScore(status: ClientReturnStatus): number {
   }
 }
 
+/**
+ * Calcula a média mensal de faturamento de um cliente individual
+ * considerando apenas os meses em que ele teve atividade de compra.
+ */
+export function computeClientMonthlyAverage(
+  sales: RawClientSale[],
+  totalSpent: number
+): number {
+  if (!sales || sales.length === 0 || totalSpent <= 0) return 0;
+  const activeMonths = new Set<string>();
+  for (const s of sales) {
+    if (s.sale_date) {
+      activeMonths.add(s.sale_date.slice(0, 7)); // 'YYYY-MM'
+    }
+  }
+  const monthsCount = Math.max(1, activeMonths.size);
+  return totalSpent / monthsCount;
+}
+
+export interface BaseClientTicketMetrics {
+  totalClients: number;
+  totalSalesAll: number;
+  totalRevenueAll: number;
+  clientsWithSalesCount: number;
+  /** Ticket Médio real por atendimento/venda (totalRevenueAll / totalSalesAll) */
+  avgTicketPerSale: number;
+  /** Ticket Médio Mensal por cliente ativo (totalRevenueAll / totalClientMonths) */
+  avgMonthlyPerClient: number;
+  /** Faturamento acumulado médio por cliente cadastrado (totalRevenueAll / totalClients) */
+  avgAccumulatedPerClient: number;
+  /** Faturamento acumulado médio por cliente ativo com compras (totalRevenueAll / clientsWithSalesCount) */
+  avgAccumulatedPerActiveClient: number;
+}
+
+/**
+ * Calcula os indicadores de Ticket Médio da carteira de clientes:
+ * 1. Ticket Médio por Atendimento (Real)
+ * 2. Ticket Médio Mensal por Cliente Ativo
+ * 3. Faturamento Acumulado Médio por Cliente (LTV)
+ */
+export function computeBaseClientTicketMetrics(
+  clients: {
+    totalSalesCount: number;
+    totalSpent: number;
+    salesHistory?: RawClientSale[];
+  }[]
+): BaseClientTicketMetrics {
+  const totalClients = clients.length;
+  let totalSalesAll = 0;
+  let totalRevenueAll = 0;
+  let totalClientMonths = 0;
+  let clientsWithSalesCount = 0;
+
+  for (const c of clients) {
+    totalSalesAll += Number(c.totalSalesCount || 0);
+    totalRevenueAll += Number(c.totalSpent || 0);
+
+    if (c.totalSalesCount > 0) {
+      clientsWithSalesCount++;
+      const activeMonths = new Set<string>();
+      const sales = c.salesHistory || [];
+      for (const s of sales) {
+        if (s.sale_date) {
+          activeMonths.add(s.sale_date.slice(0, 7));
+        }
+      }
+      totalClientMonths += Math.max(1, activeMonths.size);
+    }
+  }
+
+  const avgTicketPerSale = totalSalesAll > 0 ? totalRevenueAll / totalSalesAll : 0;
+  const avgMonthlyPerClient =
+    totalClientMonths > 0 ? totalRevenueAll / totalClientMonths : 0;
+  const avgAccumulatedPerClient =
+    totalClients > 0 ? totalRevenueAll / totalClients : 0;
+  const avgAccumulatedPerActiveClient =
+    clientsWithSalesCount > 0 ? totalRevenueAll / clientsWithSalesCount : 0;
+
+  return {
+    totalClients,
+    totalSalesAll,
+    totalRevenueAll,
+    clientsWithSalesCount,
+    avgTicketPerSale,
+    avgMonthlyPerClient,
+    avgAccumulatedPerClient,
+    avgAccumulatedPerActiveClient,
+  };
+}
+

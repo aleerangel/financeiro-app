@@ -24,6 +24,7 @@ import {
   ClientReturnStatus,
   RawClientSale,
   RawClientSaleAmortization,
+  computeClientMonthlyAverage,
 } from '@/lib/client-analytics';
 import { Sale, SalePaymentMethod, PaymentMethod } from '@/types/database';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
@@ -112,6 +113,7 @@ export function ClientHistoryModal({
   const whatsappUrl = buildWhatsappLink(client);
   const avgTicket =
     client.totalSalesCount > 0 ? client.totalSpent / client.totalSalesCount : 0;
+  const avgMonthly = computeClientMonthlyAverage(client.salesHistory, client.totalSpent);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm">
@@ -316,12 +318,13 @@ export function ClientHistoryModal({
               <div className="text-sm font-extrabold text-emerald-400 tabular-nums">
                 {formatCurrency(client.totalSpent)}{' '}
                 <span className="text-xs font-normal text-[#94A3B8]">
-                  em {client.totalSalesCount}{' '}
-                  {client.totalSalesCount === 1 ? 'atendimento' : 'atendimentos'}
+                  acumulado ({client.totalSalesCount}{' '}
+                  {client.totalSalesCount === 1 ? 'atendimento' : 'atendimentos'})
                 </span>
               </div>
-              <div className="text-xs text-[#64748B] tabular-nums">
-                Ticket médio: {formatCurrency(avgTicket)} por visita
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-[#94A3B8] pt-1.5 border-t border-[#1E293B]/60 tabular-nums gap-1">
+                <span>Por visita: <strong className="text-[#F8FAFC]">{formatCurrency(avgTicket)}</strong></span>
+                <span>Média mensal: <strong className="text-amber-400">{formatCurrency(avgMonthly)}</strong></span>
               </div>
             </div>
           </div>

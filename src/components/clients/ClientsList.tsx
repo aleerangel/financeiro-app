@@ -28,6 +28,8 @@ import {
   ClientReturnStatus,
   getReturnPriorityScore,
   RawClientSale,
+  computeBaseClientTicketMetrics,
+  computeClientMonthlyAverage,
 } from '@/lib/client-analytics';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -200,10 +202,12 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
   }, [clients, searchTerm, statusFilter, sortBy]);
 
   const totalClients = clients.length;
-  const totalSalesAll = clients.reduce((sum, c) => sum + c.totalSalesCount, 0);
-  const totalRevenueAll = clients.reduce((sum, c) => sum + c.totalSpent, 0);
-  const avgTicketPerClient = totalClients > 0 ? totalRevenueAll / totalClients : 0;
-  const avgTicketPerSale = totalSalesAll > 0 ? totalRevenueAll / totalSalesAll : 0;
+  const ticketMetrics = useMemo(
+    () => computeBaseClientTicketMetrics(clients),
+    [clients]
+  );
+  const totalSalesAll = ticketMetrics.totalSalesAll;
+  const totalRevenueAll = ticketMetrics.totalRevenueAll;
 
   const openEngagementModal = (client: ClientWithStats) => {
     let purpose: EngagementPurpose = 'general';
@@ -307,9 +311,14 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
             <span className="text-2xl font-bold text-emerald-400 mt-1 block tabular-nums">
               {formatCurrency(totalRevenueAll)}
             </span>
-            <span className="text-[11px] text-[#64748B] block mt-0.5">
-              em {totalSalesAll} {totalSalesAll === 1 ? 'atendimento' : 'atendimentos'}
-            </span>
+            <div className="text-[11px] text-[#64748B] mt-0.5 space-y-0.5 tabular-nums">
+              <span className="block">
+                em {totalSalesAll} {totalSalesAll === 1 ? 'atendimento' : 'atendimentos'}
+              </span>
+              <span className="block text-[#94A3B8]">
+                Acumulado: <strong className="text-emerald-400/90 font-medium">{formatCurrency(ticketMetrics.avgAccumulatedPerClient)}</strong> /cliente
+              </span>
+            </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
             <DollarSign className="w-5 h-5" />
@@ -319,16 +328,19 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
         <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between">
           <div>
             <span className="text-xs text-[#94A3B8] font-semibold uppercase tracking-wider block">
-              Ticket Médio / Cliente
+              Ticket Médio / Atendimento
             </span>
             <span className="text-2xl font-bold text-amber-400 mt-1 block tabular-nums">
-              {formatCurrency(avgTicketPerClient)}
+              {formatCurrency(ticketMetrics.avgTicketPerSale)}
             </span>
-            {totalSalesAll > 0 && (
-              <span className="text-[11px] text-[#64748B] block mt-0.5 tabular-nums">
-                {formatCurrency(avgTicketPerSale)} por atendimento
+            <div className="text-[11px] text-[#94A3B8] mt-1 space-y-0.5 tabular-nums">
+              <span className="block text-[#64748B]">
+                Méd. mensal: <strong className="text-amber-400/90 font-medium">{formatCurrency(ticketMetrics.avgMonthlyPerClient)}</strong> /cliente
               </span>
-            )}
+              <span className="block text-[#64748B]">
+                Acumulado: <strong className="text-zinc-300 font-medium">{formatCurrency(ticketMetrics.avgAccumulatedPerClient)}</strong> /cliente
+              </span>
+            </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
             <TrendingUp className="w-5 h-5" />
@@ -679,15 +691,16 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
                     </td>
 
                     <td className="py-3.5 text-right font-extrabold text-emerald-400">
-                      <div>{formatCurrency(client.totalSpent)}</div>
+                      <div title="Total gasto acumulado">{formatCurrency(client.totalSpent)}</div>
                       {client.totalSalesCount > 0 && (
-                        <span className="text-[10px] text-zinc-500 font-normal block">
-                          méd.{' '}
-                          {formatCurrency(
-                            client.totalSpent / client.totalSalesCount
-                          )}
-                          /visita
-                        </span>
+                        <div className="text-[10px] text-zinc-500 font-normal space-y-0.5 mt-0.5 tabular-nums">
+                          <span className="block">
+                            méd. <strong className="text-zinc-300 font-medium">{formatCurrency(client.totalSpent / client.totalSalesCount)}</strong>/visita
+                          </span>
+                          <span className="block">
+                            méd. <strong className="text-amber-400/90 font-medium">{formatCurrency(computeClientMonthlyAverage(client.salesHistory, client.totalSpent))}</strong>/mês
+                          </span>
+                        </div>
                       )}
                     </td>
 
