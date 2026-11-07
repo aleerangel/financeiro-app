@@ -184,12 +184,56 @@ export function GeneralDashboardDesktop({
 
   return (
     <div className="space-y-6 min-w-0">
-      {/* 1. Primeira Linha: Indicadores principais em 3 colunas de larguras equivalentes (gap ~16px, altura ~134px) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {/* Coluna 1: Saldo Total em Contas */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm">
+      {/* 1. Primeira Linha: Indicadores principais na ordem Entradas -> Saídas -> Resultado (~134px) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0">
+        {/* Coluna 1: Entradas (Receitas do Mês) */}
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm min-w-0">
           <div className="flex items-center justify-between text-[#94A3B8] mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
+              Receitas do Mês
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <ArrowUpRight className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-emerald-400 tabular-nums">
+              {formatHidden(formatCurrency(receivedIncome))}
+            </h2>
+            <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
+              <span>{pendingIncome > 0 ? `Total: ${formatHidden(formatCurrency(totalIncome))}` : '100% recebido'}</span>
+              {hasBusiness && (
+                <span className="text-[#64748B] truncate">{businessName}: {formatHidden(formatCurrency(barberShopIncome))}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Coluna 2: Saídas (Despesas Pagas + Faturas de Cartões) */}
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm min-w-0">
+          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-rose-400">
+              Despesas & Gastos
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+              <ArrowDownRight className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-rose-400 tabular-nums">
+              {formatHidden(formatCurrency(paidExpense + totalCurrentInvoice))}
+            </h2>
+            <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
+              <span>Pagas: {formatHidden(formatCurrency(paidExpense))}</span>
+              <span>Faturas: {formatHidden(formatCurrency(totalCurrentInvoice))}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Coluna 3: Resultado Líquido & Saldo em Contas */}
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm min-w-0 md:col-span-2 xl:col-span-1">
+          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#FACC15]">
               Saldo Total em Contas
             </span>
             <div className="w-8 h-8 rounded-lg bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15] shrink-0">
@@ -198,107 +242,170 @@ export function GeneralDashboardDesktop({
           </div>
           <div>
             <h2 className="text-2xl font-bold text-[#F8FAFC] tabular-nums">{formatHidden(formatCurrency(totalBalance))}</h2>
-            <span className="text-[11px] text-[#64748B] mt-1 block">
-              {accounts.length} {accounts.length === 1 ? 'conta cadastrada' : 'contas cadastradas'}
-            </span>
-          </div>
-        </div>
-
-        {/* Coluna 2: Fatura Consolidada dos Cartões (Compacta ~134px) */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm">
-          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-xs font-semibold uppercase tracking-wider truncate">
-                Fatura dos Cartões
-              </span>
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 shrink-0">
-                {cards.length} {cards.length === 1 ? 'cartão' : 'cartões'}
-              </span>
-            </div>
-            <Link
-              href="/cartoes"
-              className="text-[11px] font-semibold text-[#FACC15] hover:text-[#FDE047] flex items-center gap-0.5 transition-colors shrink-0"
-              title="Gerenciar cartões e faturas"
-            >
-              Faturas <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-indigo-300 tabular-nums">
-              {formatHidden(formatCurrency(totalCurrentInvoice))}
-            </h2>
             <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
-              <span>Usado: <strong className="text-[#F8FAFC] font-semibold">{formatHidden(formatCurrency(totalUsed))}</strong></span>
-              <span>Disp: <strong className="text-emerald-400 font-semibold">{formatHidden(formatCurrency(totalAvailable))}</strong></span>
-            </div>
-          </div>
-        </div>
-
-        {/* Coluna 3: Fluxo Operacional (Receitas do Mês & Despesas Pagas) */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm md:col-span-2 xl:col-span-1">
-          <div className="grid grid-cols-2 gap-3 divide-x divide-[#1E293B]/80 h-full">
-            <div className="flex flex-col justify-between pr-1">
-              <div className="flex items-center justify-between text-[#94A3B8] mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider truncate">
-                  Receitas
-                </span>
-                <div className="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center text-emerald-400 shrink-0">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div>
-                <span className="text-xl font-bold text-emerald-400 block tabular-nums">
-                  {formatHidden(formatCurrency(receivedIncome))}
-                </span>
-                {pendingIncome > 0 ? (
-                  <span className="text-[10px] text-[#94A3B8] block truncate">
-                    Total: {formatHidden(formatCurrency(totalIncome))}
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-[#64748B] block truncate">
-                    {hasBusiness ? `${businessName}: ${formatHidden(formatCurrency(barberShopIncome))}` : '100% recebido'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="pl-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-[#94A3B8] mb-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider truncate">
-                  Despesas
-                </span>
-                <div className="w-6 h-6 rounded-md bg-rose-500/10 flex items-center justify-center text-rose-400 shrink-0">
-                  <ArrowDownRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div>
-                <span className="text-xl font-bold text-rose-400 block tabular-nums">
-                  {formatHidden(formatCurrency(paidExpense))}
-                </span>
-                <span className="text-[10px] text-[#94A3B8] block truncate">
-                  {loading
-                    ? 'Calculando...'
-                    : pendingExpense > 0
-                    ? `+ ${formatHidden(formatCurrency(pendingExpense))} aberto`
-                    : 'Todas pagas'}
-                </span>
-              </div>
+              <span className={receivedIncome - paidExpense >= 0 ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
+                Balanço: {formatHidden(formatCurrency(receivedIncome - paidExpense))}
+              </span>
+              <span className="text-[#64748B]">
+                {accounts.length} {accounts.length === 1 ? 'conta' : 'contas'}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Segunda Linha: Gráfico Principal (~2/3) e Bloco Lateral (~1/3) com gap ~20px */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 min-w-0">
-        {/* Coluna Esquerda (~2/3): Gráfico Principal de Fluxo */}
-        <div className="xl:col-span-2 min-w-0">
+      {/* 2. Segunda Linha: Visão Analítica Simétrica (50% Receitas / 50% Despesas Lado a Lado) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 min-w-0">
+        {/* Esquerda (50%): Evolução de Entradas & Receitas por Categoria */}
+        <div className="min-w-0">
+          <MonthlyBarChart
+            transactions={transactions}
+            accounts={accounts}
+            incomeEvolution={generalData?.incomeCategoryEvolution || []}
+            currentMonth={month}
+            year={year}
+            onExpandEvolution={(refMonth, refYear) =>
+              setEvolutionModalState({ type: 'income', refMonth, refYear })
+            }
+          />
+        </div>
+
+        {/* Direita (50%): Distribuição de Saídas & Gastos por Categoria */}
+        <div className="min-w-0">
+          <CategoryDonutChart
+            transactions={transactions}
+            expenseEvolution={generalData?.expenseCategoryEvolution || []}
+            currentMonth={month}
+            year={year}
+            onExpandEvolution={(refMonth, refYear) =>
+              setEvolutionModalState({ type: 'expense', refMonth, refYear })
+            }
+          />
+        </div>
+      </div>
+
+      {/* 3. Terceira Linha: Detalhamento Operacional (Cartões Interativos, Lançamentos e Contas) */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 min-w-0">
+        {/* Bloco 1 (Proporção 1): Carteira Multi-Cartão Interativa */}
+        <div className="xl:col-span-4 min-w-0">
+          <WalletInvoiceCard
+            cards={cards}
+            showValues={showValues}
+          />
+        </div>
+
+        {/* Bloco 2 (Proporção 1.3 - Central Expandido): Lançamentos Recentes do Mês */}
+        <div className="xl:col-span-5 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2 text-sm sm:text-base">
+                <ArrowLeftRight className="w-4 h-4 text-[#FACC15]" />
+                Lançamentos do Mês
+              </h3>
+              <Link href="/transacoes" className="text-xs text-[#FACC15] hover:text-[#FDE047] flex items-center gap-1 font-medium transition-colors">
+                Ver todos <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="divide-y divide-[#1E293B]/80 max-h-[340px] overflow-y-auto scrollbar-thin">
+              {recentTransactions.map((t) => {
+                const isIncome = t.type === 'income';
+
+                return (
+                  <div key={t.id} className="py-2.5 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-xs font-semibold text-[#F8FAFC] block truncate">
+                        {t.description}
+                      </span>
+                      <span className="text-[10px] text-[#64748B]">
+                        {formatDate(t.due_date)} • {t.category?.name || 'Geral'}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`text-xs font-bold shrink-0 tabular-nums ${
+                        isIncome ? 'text-emerald-400' : 'text-[#F8FAFC]'
+                      }`}
+                    >
+                      {isIncome ? '+' : '-'} {formatCurrency(Number(t.amount))}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {recentTransactions.length === 0 && (
+                <p className="py-8 text-center text-xs text-[#64748B]">
+                  Nenhum lançamento registrado em {formattedMonth}.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Bloco 3 (Proporção 1): Minhas Contas Bancárias */}
+        <div className="xl:col-span-3 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2 text-sm sm:text-base">
+                <Landmark className="w-4 h-4 text-[#FACC15]" />
+                Minhas Contas
+              </h3>
+              <Link href="/contas" className="text-xs text-[#FACC15] hover:text-[#FDE047] flex items-center gap-1 font-medium transition-colors">
+                Ver todas <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="divide-y divide-[#1E293B]/80 max-h-[340px] overflow-y-auto scrollbar-thin">
+              {accounts.map((acc) => (
+                <div key={acc.id} className="py-2.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: acc.color || '#3b82f6' }}
+                    />
+                    <span className="text-sm font-medium text-[#F8FAFC] truncate">{acc.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onEditBalance && onEditBalance(acc)}
+                    className="flex items-center gap-1.5 hover:text-[#FACC15] group/bal transition shrink-0 cursor-pointer"
+                    title="Editar saldo"
+                  >
+                    <span className="text-sm font-bold text-[#F8FAFC] group-hover/bal:text-[#FACC15] tabular-nums transition">
+                      {formatCurrency(acc.current_balance)}
+                    </span>
+                    <Pencil className="w-3 h-3 text-[#64748B] opacity-60 group-hover/bal:opacity-100 group-hover/bal:text-[#FACC15] transition" />
+                  </button>
+                </div>
+              ))}
+
+              {accounts.length === 0 && (
+                <p className="py-8 text-center text-xs text-[#64748B]">
+                  Nenhuma conta cadastrada ainda.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-[#1E293B]/80 flex items-center justify-between text-xs">
+            <span className="text-[#64748B]">Saldo Total</span>
+            <span className="font-bold text-[#FACC15] text-sm tabular-nums">
+              {formatCurrency(totalBalance)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Quarta Linha: Curvas Históricas de Fluxo Consolidado e Evolução do Saldo */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 min-w-0 pt-2">
+        <div className="min-w-0">
           <SmoothLineChart
-            title="Fluxo (Vendas, Receitas e Balanço)"
+            title="Fluxo de Caixa Consolidado"
             subtitle={flowChart.subtitle}
             series={flowSeries}
             labels={flowLabels}
             tooltipLabels={flowTooltipLabels}
-            height={280}
+            height={270}
             rightAction={
               <ChartPeriodToolbar
                 period={flowChart.period}
@@ -316,219 +423,31 @@ export function GeneralDashboardDesktop({
           />
         </div>
 
-        {/* Coluna Direita (~1/3): Bloco Lateral de Gastos por Categoria */}
-        <div className="xl:col-span-1 min-w-0">
-          <CategoryDonutChart
-            transactions={transactions}
-            expenseEvolution={generalData?.expenseCategoryEvolution || []}
-            currentMonth={month}
-            year={year}
-            onExpandEvolution={(refMonth, refYear) =>
-              setEvolutionModalState({ type: 'expense', refMonth, refYear })
+        <div className="min-w-0">
+          <SmoothLineChart
+            title="Evolução do Saldo em Contas"
+            subtitle={balanceChart.subtitle}
+            series={balanceSeries}
+            labels={balanceLabels}
+            tooltipLabels={balanceTooltipLabels}
+            height={270}
+            dynamicYScale
+            rightAction={
+              <ChartPeriodToolbar
+                period={balanceChart.period}
+                onPeriodChange={balanceChart.setPeriod}
+                year={balanceChart.year}
+                month={balanceChart.month}
+                onYearChange={balanceChart.handleYearChange}
+                onMonthChange={balanceChart.handleMonthChange}
+                weeksMeta={balanceChart.weeksMeta}
+                selectedWeekIndex={balanceChart.selectedWeekIndex}
+                onWeekChange={balanceChart.handleWeekChange}
+                loading={balanceChart.loading}
+              />
             }
           />
         </div>
-      </div>
-
-      {/* 3. Terceira Linha: Três Blocos horizontais com proporção aproximada 1 : 1.3 : 1 e gap ~20px */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-5 min-w-0">
-        {/* Bloco 1 (1 parte): Minhas Contas */}
-        <div className="md:col-span-1 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm min-w-0">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2 text-sm sm:text-base">
-              <Landmark className="w-4 h-4 text-[#FACC15]" />
-              Minhas Contas
-            </h3>
-            <Link href="/contas" className="text-xs text-[#FACC15] hover:text-[#FDE047] flex items-center gap-1 font-medium transition-colors">
-              Ver todas <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="divide-y divide-[#1E293B]/80 max-h-[300px] overflow-y-auto scrollbar-thin">
-            {accounts.map((acc) => (
-              <div key={acc.id} className="py-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: acc.color || '#3b82f6' }}
-                  />
-                  <span className="text-sm font-medium text-[#F8FAFC] truncate">{acc.name}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onEditBalance && onEditBalance(acc)}
-                  className="flex items-center gap-1.5 hover:text-[#FACC15] group/bal transition shrink-0 cursor-pointer"
-                  title="Editar saldo"
-                >
-                  <span className="text-sm font-bold text-[#F8FAFC] group-hover/bal:text-[#FACC15] tabular-nums transition">
-                    {formatCurrency(acc.current_balance)}
-                  </span>
-                  <Pencil className="w-3 h-3 text-[#64748B] opacity-60 group-hover/bal:opacity-100 group-hover/bal:text-[#FACC15] transition" />
-                </button>
-              </div>
-            ))}
-
-            {accounts.length === 0 && (
-              <p className="py-6 text-center text-xs text-[#64748B]">
-                Nenhuma conta cadastrada ainda.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Bloco 2 (1.3 partes): Meus Cartões */}
-        <div className="md:col-span-1 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm min-w-0">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2 text-sm sm:text-base">
-              <CreditCard className="w-4 h-4 text-indigo-400" />
-              Meus Cartões
-            </h3>
-            <Link href="/cartoes" className="text-xs text-[#FACC15] hover:text-[#FDE047] flex items-center gap-1 font-medium transition-colors">
-              Ver todos <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="divide-y divide-[#1E293B]/80 max-h-[300px] overflow-y-auto scrollbar-thin">
-            {cards.map((card) => {
-              const cardStatus = card.invoice_status || getCardInvoiceStatus(card);
-              return (
-                <div key={card.id} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: card.color || '#6366f1' }}
-                    />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-[#F8FAFC] truncate block">{card.name}</span>
-                        <span
-                          className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold border shrink-0 ${
-                            cardStatus.isOpen
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                              : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
-                          }`}
-                        >
-                          {cardStatus.isOpen ? 'Aberta' : 'Fechada'}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-[#94A3B8] mt-0.5 truncate">
-                        {cardStatus.isOpen ? (
-                          <span>
-                            <strong className="text-[#F8FAFC] font-semibold">{cardStatus.closingLabel}</strong>
-                            {cardStatus.daysLeftLabel && (
-                              <span className="text-[#64748B] ml-1">({cardStatus.daysLeftLabel})</span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-amber-300 font-medium">{cardStatus.dueLabel}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] text-[#94A3B8] block font-medium">Fatura</span>
-                    <span className="text-sm font-bold text-indigo-300 block tabular-nums">
-                      {formatCurrency(card.current_invoice ?? 0)}
-                    </span>
-                    <div className="text-[10px] text-[#64748B] flex items-center justify-end gap-1.5 mt-0.5 tabular-nums">
-                      <span className="text-emerald-400 font-medium">Disp: {formatCurrency(card.available_limit)}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {cards.length === 0 && (
-              <p className="py-6 text-center text-xs text-[#64748B]">
-                Nenhum cartão cadastrado ainda.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Bloco 3 (1 parte): Lançamentos do Mês */}
-        <div className="md:col-span-2 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm min-w-0">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2 text-sm sm:text-base">
-              <ArrowLeftRight className="w-4 h-4 text-[#FACC15]" />
-              Lançamentos do Mês
-            </h3>
-            <Link href="/transacoes" className="text-xs text-[#FACC15] hover:text-[#FDE047] flex items-center gap-1 font-medium transition-colors">
-              Ver todos <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="divide-y divide-[#1E293B]/80 max-h-[300px] overflow-y-auto scrollbar-thin">
-            {recentTransactions.map((t) => {
-              const isIncome = t.type === 'income';
-
-              return (
-                <div key={t.id} className="py-2.5 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="text-xs font-semibold text-[#F8FAFC] block truncate">
-                      {t.description}
-                    </span>
-                    <span className="text-[10px] text-[#64748B]">
-                      {formatDate(t.due_date)} • {t.category?.name || 'Geral'}
-                    </span>
-                  </div>
-
-                  <span
-                    className={`text-xs font-bold shrink-0 tabular-nums ${
-                      isIncome ? 'text-emerald-400' : 'text-[#F8FAFC]'
-                    }`}
-                  >
-                    {isIncome ? '+' : '-'} {formatCurrency(Number(t.amount))}
-                  </span>
-                </div>
-              );
-            })}
-
-            {recentTransactions.length === 0 && (
-              <p className="py-6 text-center text-xs text-[#64748B]">
-                Nenhum lançamento registrado em {formattedMonth}.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Painéis Analíticos Complementares com espaçamento de 24px */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2">
-        <MonthlyBarChart
-          transactions={transactions}
-          accounts={accounts}
-          incomeEvolution={generalData?.incomeCategoryEvolution || []}
-          currentMonth={month}
-          year={year}
-          onExpandEvolution={(refMonth, refYear) =>
-            setEvolutionModalState({ type: 'income', refMonth, refYear })
-          }
-        />
-
-        <SmoothLineChart
-          title="Evolução do Saldo em Contas"
-          subtitle={balanceChart.subtitle}
-          series={balanceSeries}
-          labels={balanceLabels}
-          tooltipLabels={balanceTooltipLabels}
-          height={260}
-          dynamicYScale
-          rightAction={
-            <ChartPeriodToolbar
-              period={balanceChart.period}
-              onPeriodChange={balanceChart.setPeriod}
-              year={balanceChart.year}
-              month={balanceChart.month}
-              onYearChange={balanceChart.handleYearChange}
-              onMonthChange={balanceChart.handleMonthChange}
-              weeksMeta={balanceChart.weeksMeta}
-              selectedWeekIndex={balanceChart.selectedWeekIndex}
-              onWeekChange={balanceChart.handleWeekChange}
-              loading={balanceChart.loading}
-            />
-          }
-        />
       </div>
 
       {/* Modal de Evolução de Receitas ou Despesas por Categoria */}

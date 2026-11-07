@@ -132,12 +132,12 @@ export function BusinessDashboardDesktop({
 
   return (
     <div className="space-y-6 min-w-0">
-      {/* 1ª Linha: Indicadores principais em 3 colunas equivalentes (gap 16px, altura ~134px) */}
+      {/* 1ª Linha: Indicadores principais na ordem Entradas -> Saídas -> Resultado (~134px) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0">
-        {/* Coluna 1: Faturamento Bruto & Atendimentos */}
+        {/* Coluna 1: Entradas (Faturamento Bruto & Atendimentos) */}
         <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#94A3B8]">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-emerald-400">
               Faturamento ({formattedMonth || 'Mês'})
             </span>
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -158,8 +158,40 @@ export function BusinessDashboardDesktop({
           </div>
         </div>
 
-        {/* Coluna 2: Lucro Líquido Real & Rentabilidade */}
+        {/* Coluna 2: Saídas (Gastos do Negócio & Fiados a Receber) */}
         <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400">
+              Gastos do Negócio
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+              <TrendingDown className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <span className="text-2xl font-extrabold text-rose-400 block tabular-nums">
+              {formatHidden(formatCurrency(summary.paidExpenses))}
+            </span>
+            <div className="flex items-center justify-between gap-2 mt-1 text-[11px] tabular-nums">
+              <span className="text-[#94A3B8] truncate">
+                {summary.pendingExpenses > 0
+                  ? `+ ${formatHidden(formatCurrency(summary.pendingExpenses))} pend.`
+                  : 'Custos em dia'}
+              </span>
+              <Link
+                href="/fiados"
+                className="text-[#FACC15] hover:text-[#FDE047] font-semibold flex items-center gap-0.5 shrink-0 transition-colors"
+                title="Ver cobranças e fiados a receber"
+              >
+                <span>Fiados: {formatHidden(formatCurrency(summary.totalReceivables || 0))}</span>
+                <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Coluna 3: Resultado Líquido (Lucro Real & Rentabilidade) */}
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] min-w-0 md:col-span-2 xl:col-span-1">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="text-[11px] uppercase tracking-wider font-semibold text-[#FACC15]">
@@ -205,38 +237,6 @@ export function BusinessDashboardDesktop({
                   }}
                 />
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Coluna 3: Gastos do Negócio & Fiados a Receber */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] min-w-0 md:col-span-2 xl:col-span-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400">
-              Gastos do Negócio
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-              <TrendingDown className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-extrabold text-rose-400 block tabular-nums">
-              {formatHidden(formatCurrency(summary.paidExpenses))}
-            </span>
-            <div className="flex items-center justify-between gap-2 mt-1 text-[11px] tabular-nums">
-              <span className="text-[#94A3B8] truncate">
-                {summary.pendingExpenses > 0
-                  ? `+ ${formatHidden(formatCurrency(summary.pendingExpenses))} pend.`
-                  : 'Custos em dia'}
-              </span>
-              <Link
-                href="/fiados"
-                className="text-[#FACC15] hover:text-[#FDE047] font-semibold flex items-center gap-0.5 shrink-0 transition-colors"
-                title="Ver cobranças e fiados a receber"
-              >
-                <span>Fiados: {formatHidden(formatCurrency(summary.totalReceivables || 0))}</span>
-                <ArrowUpRight className="w-3 h-3" />
-              </Link>
             </div>
           </div>
         </div>
