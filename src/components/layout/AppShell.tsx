@@ -11,6 +11,7 @@ import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { BottomNav } from './BottomNav';
 import { MobileBackButton } from './MobileBackButton';
+import { MobilePullToRefresh } from './MobilePullToRefresh';
 
 // Carregamento dinâmico dos drawers e modais pesados sob demanda (zero impacto no LCP/TBT inicial)
 const QuickActionDrawer = dynamic(
@@ -69,10 +70,12 @@ export function AppShell({ userEmail, initialProfile, initialContextMode, childr
                 <AppHeader userEmail={userEmail} />
 
                 <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-5 lg:px-6 xl:px-8 md:py-6 lg:py-8 md:pb-12 min-w-0">
-                  <div className="w-full max-w-[1680px] mx-auto min-w-0">
-                    <MobileBackButton />
-                    {children}
-                  </div>
+                  <MobilePullToRefresh>
+                    <div className="w-full max-w-[1680px] mx-auto min-w-0">
+                      <MobileBackButton />
+                      {children}
+                    </div>
+                  </MobilePullToRefresh>
                 </main>
               </div>
 
