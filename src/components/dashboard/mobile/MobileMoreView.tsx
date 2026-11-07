@@ -250,11 +250,7 @@ export function MobileMoreView({
           description: `${cards.length} cartões gerenciados • Faturas e limites`,
           href: '/cartoes',
           icon: CreditCard,
-<<<<<<< HEAD
-          iconColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
-=======
           iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
->>>>>>> main
         },
         {
           title: 'Contas Fixas & Recorrências',
