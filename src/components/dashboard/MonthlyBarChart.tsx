@@ -189,6 +189,7 @@ export function MonthlyBarChart({
 
     const radius = 60;
     const circumference = 2 * Math.PI * radius;
+    const sliceGap = chartSegments.length > 1 ? 2.5 : 0;
 
     const chartArcs = chartSegments.reduce<{
       acc: number;
@@ -198,14 +199,16 @@ export function MonthlyBarChart({
       })[];
     }>(
       (state, item) => {
-        const arcLength = (item.percentage / 100) * circumference;
+        const fullArcLength = (item.percentage / 100) * circumference;
+        const visibleArcLength = Math.max(0, fullArcLength - sliceGap);
+
         return {
-          acc: state.acc + arcLength,
+          acc: state.acc + fullArcLength,
           items: [
             ...state.items,
             {
               ...item,
-              strokeDasharray: `${arcLength} ${circumference}`,
+              strokeDasharray: `${visibleArcLength} ${circumference}`,
               strokeDashoffset: -state.acc,
             },
           ],

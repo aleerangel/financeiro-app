@@ -158,6 +158,7 @@ export function CategoryDonutChart({
 
     const radius = 60;
     const circumference = 2 * Math.PI * radius;
+    const sliceGap = chartTotals.length > 1 ? 2.5 : 0;
 
     const chartArcs = chartTotals.reduce<{
       acc: number;
@@ -167,14 +168,16 @@ export function CategoryDonutChart({
       })[];
     }>(
       (state, item) => {
-        const arcLength = (item.percentage / 100) * circumference;
+        const fullArcLength = (item.percentage / 100) * circumference;
+        const visibleArcLength = Math.max(0, fullArcLength - sliceGap);
+
         return {
-          acc: state.acc + arcLength,
+          acc: state.acc + fullArcLength,
           items: [
             ...state.items,
             {
               ...item,
-              strokeDasharray: `${arcLength} ${circumference}`,
+              strokeDasharray: `${visibleArcLength} ${circumference}`,
               strokeDashoffset: -state.acc,
             },
           ],
