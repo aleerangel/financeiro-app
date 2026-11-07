@@ -91,26 +91,26 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
     <div className="space-y-6">
       {/* Resumo no Topo */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between">
           <div>
-            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
+            <span className="text-xs text-[#94A3B8] font-semibold uppercase tracking-wider block">
               Total de Categorias
             </span>
-            <span className="text-2xl font-bold text-zinc-100 mt-1 block">
+            <span className="text-2xl font-bold text-[#F8FAFC] mt-1 block tabular-nums">
               {categories.length}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <div className="w-10 h-10 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
             <Tags className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between">
           <div>
-            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
+            <span className="text-xs text-[#94A3B8] font-semibold uppercase tracking-wider block">
               Categorias de Despesa
             </span>
-            <span className="text-2xl font-bold text-rose-400 mt-1 block">
+            <span className="text-2xl font-bold text-rose-400 mt-1 block tabular-nums">
               {expenseCount}
             </span>
           </div>
@@ -119,12 +119,12 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
           </div>
         </div>
 
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between">
           <div>
-            <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">
+            <span className="text-xs text-[#94A3B8] font-semibold uppercase tracking-wider block">
               Categorias de Receita
             </span>
-            <span className="text-2xl font-bold text-emerald-400 mt-1 block">
+            <span className="text-2xl font-bold text-emerald-400 mt-1 block tabular-nums">
               {incomeCount}
             </span>
           </div>
@@ -138,23 +138,23 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-xl">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar categoria..."
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#0D121F] border border-[#1E293B] rounded-xl text-xs sm:text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition"
             />
           </div>
 
-          <div className="flex bg-zinc-900 border border-zinc-800 p-1 rounded-xl text-xs shrink-0">
+          <div className="flex bg-[#0D121F] border border-[#1E293B] p-1 rounded-xl text-xs shrink-0">
             <button
               onClick={() => setTypeFilter('all')}
               className={`px-3 py-1.5 rounded-lg font-medium transition ${
                 typeFilter === 'all'
-                  ? 'bg-zinc-800 text-zinc-100 shadow'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B] shadow'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               Todas
@@ -164,7 +164,7 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
               className={`px-3 py-1.5 rounded-lg font-medium transition ${
                 typeFilter === 'expense'
                   ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               Despesas
@@ -174,7 +174,7 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
               className={`px-3 py-1.5 rounded-lg font-medium transition ${
                 typeFilter === 'income'
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               Receitas
@@ -187,7 +187,7 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
             setCategoryToEdit(null);
             setModalOpen(true);
           }}
-          className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10"
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/20"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           Nova Categoria
@@ -202,7 +202,7 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
           return (
             <div
               key={category.id}
-              className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between gap-3 hover:border-zinc-700/80 transition group"
+              className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between gap-3 hover:border-[#FACC15]/40 transition group"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div
@@ -212,7 +212,7 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
                   <CategoryIcon name={category.icon} className="w-5 h-5 text-zinc-950 font-bold" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="font-semibold text-sm text-zinc-100 truncate">
+                  <h4 className="font-semibold text-sm text-[#F8FAFC] truncate">
                     {category.name}
                   </h4>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -226,13 +226,13 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
                       {isExpense ? 'Despesa' : 'Receita'}
                     </span>
                     {isBusinessCategory(category) && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#FACC15]/15 text-[#FDE047] border border-[#FACC15]/30">
                         <SegmentIcon segment={profile.segment} className="w-2.5 h-2.5" />
                         {businessName || 'Negócio'}
                       </span>
                     )}
                     {category.is_default && (
-                      <span className="text-[10px] text-zinc-500 font-medium">
+                      <span className="text-[10px] text-[#64748B] font-medium">
                         Padrão
                       </span>
                     )}
@@ -243,7 +243,7 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => handleEdit(category)}
-                  className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-xl transition"
+                  className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition"
                   title="Editar categoria"
                 >
                   <Pencil className="w-4 h-4" />
@@ -251,7 +251,7 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
                 <button
                   onClick={() => handleDelete(category.id, category.name)}
                   disabled={deletingId === category.id}
-                  className="p-2 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 rounded-xl transition disabled:opacity-50"
+                  className="p-2 text-[#64748B] hover:text-rose-400 hover:bg-[#151D30] rounded-xl transition disabled:opacity-50"
                   title="Excluir categoria"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -263,7 +263,7 @@ export function CategoriesList({ initialCategories }: CategoriesListProps) {
       </div>
 
       {filteredCategories.length === 0 && (
-        <div className="p-12 text-center text-zinc-500 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+        <div className="p-12 text-center text-[#64748B] bg-[#0D121F] border border-[#1E293B] rounded-2xl">
           <Tags className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">Nenhuma categoria encontrada.</p>
         </div>

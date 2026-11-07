@@ -169,19 +169,19 @@ function ProductModalDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-md bg-[#0D121F] border border-[#1E293B] rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+          className="absolute top-4 right-4 p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-bold text-zinc-100 mb-1">
+        <h2 className="text-lg font-bold text-[#F8FAFC] mb-1">
           {productToEdit ? 'Editar Serviço / Produto' : 'Novo Serviço / Produto'}
         </h2>
-        <p className="text-xs text-zinc-400 mb-5">
+        <p className="text-xs text-[#94A3B8] mb-5">
           Cadastre os serviços do seu negócio ou produtos físicos / peças com controle opcional de estoque.
         </p>
 
@@ -193,14 +193,14 @@ function ProductModalDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Tipo: Serviço ou Produto */}
-          <div className="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
+          <div className="grid grid-cols-2 gap-2 bg-[#080B11] p-1 rounded-2xl border border-[#1E293B]">
             <button
               type="button"
               onClick={() => setType('service')}
               className={`py-2 rounded-xl text-xs font-semibold transition ${
                 type === 'service'
-                  ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B]'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               {getSegmentEmoji(profile.segment)} Serviço
@@ -210,8 +210,8 @@ function ProductModalDialog({
               onClick={() => setType('product')}
               className={`py-2 rounded-xl text-xs font-semibold transition ${
                 type === 'product'
-                  ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B]'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               📦 Produto Físico
@@ -219,7 +219,7 @@ function ProductModalDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+            <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
               Nome do Item
             </label>
             <input
@@ -227,14 +227,14 @@ function ProductModalDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Corte Degrade, Manutenção, Pomada Matte"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition"
               required
             />
           </div>
 
           <div className={type === 'product' ? 'grid grid-cols-2 gap-3' : ''}>
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+              <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
                 {type === 'product' ? 'Preço de Venda (R$)' : 'Preço Padrão (R$)'}
               </label>
               <input
@@ -242,14 +242,14 @@ function ProductModalDialog({
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0,00"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                 required
               />
             </div>
 
             {type === 'product' && (
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
                   Custo Unitário (R$)
                 </label>
                 <input
@@ -257,7 +257,7 @@ function ProductModalDialog({
                   value={costPrice}
                   onChange={(e) => setCostPrice(e.target.value)}
                   placeholder="Opcional (0,00)"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                 />
               </div>
             )}
@@ -265,17 +265,17 @@ function ProductModalDialog({
 
           {/* Controle de Estoque para Produtos Físicos */}
           {type === 'product' && (
-            <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-3">
+            <div className="p-3.5 rounded-2xl bg-[#080B11] border border-[#1E293B] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
-                  <Package className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-xs font-semibold text-[#F8FAFC] flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5 text-[#FACC15]" />
                   Controle de Estoque (Opcional)
                 </span>
-                <span className="text-[10px] text-zinc-500">Baixa automática nas vendas</span>
+                <span className="text-[10px] text-[#64748B]">Baixa automática nas vendas</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                  <label className="block text-[11px] font-medium text-[#94A3B8] mb-1">
                     Qtd. em Estoque
                   </label>
                   <input
@@ -284,11 +284,11 @@ function ProductModalDialog({
                     value={stockQuantity}
                     onChange={(e) => setStockQuantity(e.target.value)}
                     placeholder="Sem controle"
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+                    className="w-full px-3 py-2 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                  <label className="block text-[11px] font-medium text-[#94A3B8] mb-1">
                     Estoque Mínimo (Alerta)
                   </label>
                   <input
@@ -297,7 +297,7 @@ function ProductModalDialog({
                     value={minStock}
                     onChange={(e) => setMinStock(e.target.value)}
                     placeholder="Ex: 5"
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+                    className="w-full px-3 py-2 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                   />
                 </div>
               </div>
@@ -306,12 +306,12 @@ function ProductModalDialog({
 
           {/* Peças / Produtos Inclusos no Serviço */}
           {type === 'service' && physicalCatalog.length > 0 && (
-            <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-3">
+            <div className="p-3.5 rounded-2xl bg-[#080B11] border border-[#1E293B] space-y-3">
               <div>
-                <span className="text-xs font-semibold text-zinc-200 block">
+                <span className="text-xs font-semibold text-[#F8FAFC] block">
                   Peças / Produtos Inclusos no Serviço (Opcional)
                 </span>
-                <span className="text-[10px] text-zinc-400 block mt-0.5">
+                <span className="text-[10px] text-[#94A3B8] block mt-0.5">
                   Itens vinculados dão baixa no estoque automaticamente ao vender o serviço, sem cobrar valor extra do cliente.
                 </span>
               </div>
@@ -320,7 +320,7 @@ function ProductModalDialog({
                 <select
                   value={selectedPartId}
                   onChange={(e) => setSelectedPartId(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                  className="flex-1 px-3 py-2 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50"
                 >
                   <option value="">Selecionar produto / peça...</option>
                   {physicalCatalog.map((prod) => (
@@ -336,14 +336,14 @@ function ProductModalDialog({
                   step="any"
                   value={selectedPartQty}
                   onChange={(e) => setSelectedPartQty(e.target.value)}
-                  className="w-16 px-2.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 text-center focus:outline-none focus:border-emerald-500"
+                  className="w-16 px-2.5 py-2 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] text-center focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
                   title="Quantidade utilizada"
                 />
                 <button
                   type="button"
                   onClick={handleAddServicePart}
                   disabled={!selectedPartId}
-                  className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 disabled:opacity-40 transition"
+                  className="p-2 rounded-xl bg-[#FACC15]/20 text-[#FDE047] border border-[#FACC15]/30 hover:bg-[#FACC15]/30 disabled:opacity-40 transition"
                   title="Vincular peça ao serviço"
                 >
                   <Plus className="w-4 h-4" />
@@ -357,14 +357,14 @@ function ProductModalDialog({
                     return (
                       <div
                         key={sp.product_id}
-                        className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800/80 text-xs"
+                        className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs"
                       >
                         <div className="min-w-0">
-                          <span className="font-semibold text-zinc-200 truncate block">
+                          <span className="font-semibold text-[#F8FAFC] truncate block">
                             {sp.quantity}x {prodObj?.name || 'Produto'}
                           </span>
                           {prodObj?.cost_price ? (
-                            <span className="text-[10px] text-zinc-500">
+                            <span className="text-[10px] text-[#64748B] tabular-nums">
                               Custo interno: {formatCurrency(Number(prodObj.cost_price) * sp.quantity)}
                             </span>
                           ) : null}
@@ -372,7 +372,7 @@ function ProductModalDialog({
                         <button
                           type="button"
                           onClick={() => handleRemoveServicePart(sp.product_id)}
-                          className="p-1 text-zinc-500 hover:text-rose-400 transition"
+                          className="p-1 text-[#64748B] hover:text-rose-400 transition"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -385,7 +385,7 @@ function ProductModalDialog({
           )}
 
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-2">
+            <label className="block text-xs font-medium text-[#94A3B8] mb-2">
               Cor do Marcador
             </label>
             <div className="flex items-center gap-2">
@@ -395,7 +395,7 @@ function ProductModalDialog({
                   key={c}
                   onClick={() => setColor(c)}
                   className={`w-7 h-7 rounded-full transition-transform ${
-                    color === c ? 'scale-110 ring-2 ring-white ring-offset-2 ring-offset-zinc-900' : 'opacity-80 hover:opacity-100'
+                    color === c ? 'scale-110 ring-2 ring-[#FACC15] ring-offset-2 ring-offset-[#0D121F]' : 'opacity-80 hover:opacity-100'
                   }`}
                   style={{ backgroundColor: c }}
                 />
@@ -408,14 +408,14 @@ function ProductModalDialog({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2.5 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition"
+              className="px-4 py-2.5 text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-sm rounded-xl transition disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-bold text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/20 disabled:opacity-50"
             >
               {loading ? 'Salvando...' : productToEdit ? 'Atualizar' : 'Salvar'}
             </button>

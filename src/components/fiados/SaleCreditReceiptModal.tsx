@@ -126,36 +126,36 @@ export function SaleCreditReceiptModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-[#1E293B] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-slate-200 hover:text-white bg-slate-800/90 active:bg-slate-700 transition sm:hidden"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-slate-200 hover:text-white bg-[#151D30] active:bg-[#1E293B] transition sm:hidden"
               aria-label="Voltar"
             >
               <ArrowLeft className="w-4 h-4 text-slate-200 stroke-[2.5]" />
               <span className="text-xs font-bold">Voltar</span>
             </button>
 
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-white">
+              <h2 className="text-sm sm:text-base font-bold text-[#F8FAFC]">
                 Enviar Recibo de Atendimento
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-400">
+              <p className="text-[11px] sm:text-xs text-[#94A3B8]">
                 Formalize o atendimento a prazo pelo WhatsApp
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] transition-colors"
             aria-label="Fechar"
           >
             <X className="w-5 h-5" />
@@ -163,21 +163,21 @@ export function SaleCreditReceiptModal({
         </div>
 
         {/* Resumo Rápido da Venda */}
-        <div className="p-4 bg-slate-950/50 border-b border-slate-800/80 space-y-2">
+        <div className="p-4 bg-[#080B11] border-b border-[#1E293B] space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">Cliente: <strong className="text-white">{clientName}</strong></span>
-            <span className="text-amber-400 font-bold text-sm">{formatCurrency(totalAmount)}</span>
+            <span className="text-[#94A3B8]">Cliente: <strong className="text-[#F8FAFC]">{clientName}</strong></span>
+            <span className="text-[#FACC15] font-bold text-sm tabular-nums">{formatCurrency(totalAmount)}</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#94A3B8]">
             {dueDate && (
               <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
                 Vencimento: {formatDate(dueDate)}
               </span>
             )}
             <span className="flex items-center gap-1">
-              <ShoppingBag className="w-3.5 h-3.5 text-slate-500" />
+              <ShoppingBag className="w-3.5 h-3.5 text-[#64748B]" />
               {items.length} {items.length === 1 ? 'item' : 'itens'}
             </span>
           </div>
@@ -186,20 +186,20 @@ export function SaleCreditReceiptModal({
         {/* Editor da Mensagem */}
         <div className="p-5 space-y-3.5 overflow-y-auto flex-1">
           {/* Toggle Pix */}
-          <div className="flex items-center justify-between p-2.5 bg-slate-950/60 border border-slate-800 rounded-xl">
+          <div className="flex items-center justify-between p-2.5 bg-[#080B11] border border-[#1E293B] rounded-xl">
             <label className="flex items-center gap-2 cursor-pointer text-xs">
               <input
                 type="checkbox"
                 checked={includePix}
                 onChange={(e) => handleTogglePix(e.target.checked)}
-                className="w-4 h-4 rounded text-purple-500 focus:ring-purple-500 bg-slate-900 border-slate-700"
+                className="w-4 h-4 rounded text-[#FACC15] focus:ring-[#FACC15] bg-[#0D121F] border-[#1E293B]"
               />
               <span className="font-semibold text-slate-300">
                 Incluir Chave Pix no recibo
               </span>
             </label>
             {messageSettings?.pix_key && (
-              <span className="text-[11px] font-mono text-emerald-400">
+              <span className="text-[11px] font-mono text-[#FACC15] tabular-nums">
                 {messageSettings.pix_key}
               </span>
             )}
@@ -213,17 +213,17 @@ export function SaleCreditReceiptModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={7}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-mono leading-relaxed"
+              className="w-full bg-[#080B11] border border-[#1E293B] rounded-xl p-3.5 text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition-all font-mono leading-relaxed"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 border-t border-[#1E293B] bg-[#080B11]/50 flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleCopyMessage}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center justify-center gap-2 transition-colors border border-slate-700/60"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#151D30] hover:bg-[#1E293B] text-[#F8FAFC] text-xs font-medium flex items-center justify-center gap-2 transition-colors border border-[#1E293B]"
           >
             {copied ? (
               <>
@@ -242,7 +242,7 @@ export function SaleCreditReceiptModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-medium transition-colors"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] text-xs font-medium transition-colors"
             >
               Agora não
             </button>

@@ -139,18 +139,18 @@ function RecurrenceModalDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl relative">
+      <div className="w-full max-w-md bg-[#0D121F] border border-[#1E293B] rounded-3xl p-6 shadow-2xl relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-zinc-800 transition"
+          className="absolute top-4 right-4 p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-bold text-zinc-100 mb-1">
+        <h2 className="text-lg font-bold text-[#F8FAFC] mb-1">
           {isEditing ? 'Editar Conta Fixa' : 'Nova Conta Fixa / Recorrência'}
         </h2>
-        <p className="text-xs text-zinc-400 mb-5">
+        <p className="text-xs text-[#94A3B8] mb-5">
           {isEditing
             ? 'Altere os dados da recorrência. Os lançamentos pendentes deste mês serão atualizados automaticamente.'
             : 'Cadastre despesas ou receitas automáticas que se repetem todo mês.'}
@@ -158,14 +158,14 @@ function RecurrenceModalDialog({
 
         {/* Escopo: Pessoal vs Negócio (Apenas se hasBusiness for true) */}
         {hasBusiness && (
-          <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-3">
+          <div className="grid grid-cols-2 gap-1.5 bg-[#080B11] p-1 rounded-2xl border border-[#1E293B] mb-3">
             <button
               type="button"
               onClick={() => setScope('personal')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
                 scope === 'personal'
-                  ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B]'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               <User className="w-3.5 h-3.5" />
@@ -175,10 +175,10 @@ function RecurrenceModalDialog({
             <button
               type="button"
               onClick={() => setScope('business')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition truncate ${
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition truncate cursor-pointer ${
                 scope === 'business'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
               <Store className="w-3.5 h-3.5 shrink-0" />
@@ -188,14 +188,14 @@ function RecurrenceModalDialog({
         )}
 
         {/* Tipo: Despesa Fixa ou Receita Fixa */}
-        <div className="grid grid-cols-2 gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800 mb-4">
+        <div className="grid grid-cols-2 gap-1 bg-[#080B11] p-1 rounded-2xl border border-[#1E293B] mb-4">
           <button
             type="button"
             onClick={() => setType('expense')}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
               type === 'expense'
                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                : 'text-zinc-400 hover:text-zinc-200'
+                : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <ArrowDownRight className="w-3.5 h-3.5" />
@@ -208,10 +208,10 @@ function RecurrenceModalDialog({
               setType('income');
               setPayMethodType('account');
             }}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition ${
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
               type === 'income'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                : 'text-zinc-400 hover:text-zinc-200'
+                : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -227,7 +227,7 @@ function RecurrenceModalDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+            <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
               Nome / Descrição
             </label>
             <input
@@ -235,26 +235,26 @@ function RecurrenceModalDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ex: Aluguel, Internet, Salário, Netflix"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Valor (R$)</label>
+              <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">Valor (R$)</label>
               <input
                 type="text"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0,00"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition font-mono"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+              <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
                 Dia do Vencimento
               </label>
               <input
@@ -263,7 +263,7 @@ function RecurrenceModalDialog({
                 max="31"
                 value={dueDay}
                 onChange={(e) => setDueDay(parseInt(e.target.value) || 1)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                 required
               />
             </div>
@@ -271,10 +271,10 @@ function RecurrenceModalDialog({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-medium text-zinc-300">Categoria</label>
+              <label className="block text-xs font-medium text-[#94A3B8]">Categoria</label>
               <Link
                 href="/categorias"
-                className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium"
+                className="text-[11px] text-[#FACC15] hover:text-[#FDE047] font-medium"
               >
                 Gerenciar
               </Link>
@@ -289,7 +289,7 @@ function RecurrenceModalDialog({
                   setScope('business');
                 }
               }}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
             >
               <option value="">Selecione...</option>
               {filteredCategories.map((c) => (
@@ -302,15 +302,15 @@ function RecurrenceModalDialog({
 
           {type === 'expense' && cards.length > 0 && (
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-zinc-300">Forma de Débito</label>
+              <label className="block text-xs font-medium text-[#94A3B8]">Forma de Débito</label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setPayMethodType('account')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition ${
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer ${
                     payMethodType === 'account'
-                      ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-                      : 'text-zinc-500 bg-zinc-950 border border-zinc-800'
+                      ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B]'
+                      : 'text-[#94A3B8] bg-[#080B11] border border-[#1E293B]'
                   }`}
                 >
                   Conta Corrente
@@ -318,10 +318,10 @@ function RecurrenceModalDialog({
                 <button
                   type="button"
                   onClick={() => setPayMethodType('card')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition ${
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer ${
                     payMethodType === 'card'
-                      ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-                      : 'text-zinc-500 bg-zinc-950 border border-zinc-800'
+                      ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B]'
+                      : 'text-[#94A3B8] bg-[#080B11] border border-[#1E293B]'
                   }`}
                 >
                   Cartão de Crédito
@@ -332,7 +332,7 @@ function RecurrenceModalDialog({
                 <select
                   value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 transition"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#080B11] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                 >
                   {accounts.map((a) => (
                     <option key={a.id} value={a.id}>
@@ -344,7 +344,7 @@ function RecurrenceModalDialog({
                 <select
                   value={cardId}
                   onChange={(e) => setCardId(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-purple-500 transition"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#080B11] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
                 >
                   {cards.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -361,14 +361,14 @@ function RecurrenceModalDialog({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2.5 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition"
+              className="px-4 py-2.5 text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-sm rounded-xl transition disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/10 disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Salvando...' : isEditing ? 'Atualizar Conta Fixa' : 'Salvar Recorrência'}
             </button>

@@ -390,27 +390,27 @@ function MobileNewSaleDrawerDialog() {
         />
 
         {/* Sheet Container */}
-        <div className="relative w-full sm:max-w-lg max-h-[94vh] flex flex-col bg-zinc-900 border border-zinc-800 rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 overflow-hidden">
+        <div className="relative w-full sm:max-w-lg max-h-[94vh] flex flex-col bg-[#0D121F] border border-[#1E293B] rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 overflow-hidden">
           {/* Barra superior de toque */}
           <div className="pt-3 pb-1 flex justify-center sm:hidden">
-            <div className="w-12 h-1 bg-zinc-700/80 rounded-full" />
+            <div className="w-12 h-1 bg-slate-700/80 rounded-full" />
           </div>
 
           {/* Header */}
-          <div className="px-5 py-3 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <div className="px-5 py-3.5 border-b border-[#1E293B] flex items-center justify-between shrink-0">
             <div>
-              <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
-                <SegmentIcon segment={profile.segment} className="w-4 h-4 text-emerald-400 stroke-[2.5]" />
+              <h3 className="text-base font-bold text-[#F8FAFC] flex items-center gap-2">
+                <SegmentIcon segment={profile.segment} className="w-4 h-4 text-[#FACC15] stroke-[2.5]" />
                 <span>Novo(a) {salesLabel} • {businessName}</span>
               </h3>
-              <span className="text-[11px] text-zinc-400">
+              <span className="text-[11px] text-[#94A3B8]">
                 Checkout rápido de balcão
               </span>
             </div>
             <button
               type="button"
               onClick={handleClose}
-              className="p-1.5 text-zinc-400 hover:text-zinc-200 bg-zinc-800/60 rounded-full transition"
+              className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] bg-[#151D30] rounded-full transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -427,9 +427,9 @@ function MobileNewSaleDrawerDialog() {
                     <h4 className="text-sm font-bold text-emerald-300">
                       Cadastrar no catálogo de serviços?
                     </h4>
-                    <p className="text-xs text-zinc-300 mt-0.5">
+                    <p className="text-xs text-slate-300 mt-0.5">
                       Você acabou de cobrar <strong>{promptSaveItem.name}</strong> por{' '}
-                      <strong>{formatCurrency(promptSaveItem.price)}</strong>. Deseja salvá-lo no catálogo para facilitar futuros atendimentos?
+                      <strong className="tabular-nums">{formatCurrency(promptSaveItem.price)}</strong>. Deseja salvá-lo no catálogo para facilitar futuros atendimentos?
                     </p>
                   </div>
                 </div>
@@ -437,14 +437,14 @@ function MobileNewSaleDrawerDialog() {
                   <button
                     type="button"
                     onClick={handleSaveToCatalog}
-                    className="flex-1 py-2 px-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs rounded-xl transition"
+                    className="flex-1 py-2 px-3 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold text-xs rounded-xl transition"
                   >
                     Sim, Salvar no Catálogo
                   </button>
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="py-2 px-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs rounded-xl transition"
+                    className="py-2 px-3 bg-[#151D30] hover:bg-[#1E293B] text-slate-300 font-semibold text-xs rounded-xl transition"
                   >
                     Agora Não
                   </button>
@@ -454,7 +454,7 @@ function MobileNewSaleDrawerDialog() {
 
             {/* 1. Seleção Rápida de Serviços / Produtos */}
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#94A3B8] block mb-2">
                 1. Selecione os Serviços / Produtos
               </label>
 
@@ -464,10 +464,10 @@ function MobileNewSaleDrawerDialog() {
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="p-3 rounded-xl border border-zinc-800 bg-zinc-950/60 h-16 flex flex-col justify-between"
+                      className="p-3 rounded-xl border border-[#1E293B] bg-[#080B11]/60 h-16 flex flex-col justify-between"
                     >
-                      <div className="w-20 h-3 bg-zinc-800 rounded" />
-                      <div className="w-12 h-3 bg-zinc-800/60 rounded" />
+                      <div className="w-20 h-3 bg-slate-800 rounded" />
+                      <div className="w-12 h-3 bg-slate-800/60 rounded" />
                     </div>
                   ))}
                 </div>
@@ -482,19 +482,19 @@ function MobileNewSaleDrawerDialog() {
                         onClick={() => handleAddProduct(p)}
                         className={`p-2.5 rounded-xl border text-left transition relative active:scale-95 flex flex-col justify-between ${
                           countInCart > 0
-                            ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300'
-                            : 'bg-zinc-950/60 border-zinc-800 text-zinc-200 hover:border-zinc-700'
+                            ? 'bg-[#FACC15]/15 border-[#FACC15]/50 text-[#FDE047] ring-1 ring-[#FACC15]/30'
+                            : 'bg-[#080B11] border-[#1E293B] text-slate-200 hover:border-[#FACC15]/40'
                         }`}
                       >
                         {countInCart > 0 && (
-                          <span className="absolute top-2 right-2 w-5 h-5 bg-emerald-500 text-zinc-950 rounded-full font-bold text-[11px] flex items-center justify-center">
+                          <span className="absolute top-2 right-2 w-5 h-5 bg-[#FACC15] text-[#080B11] rounded-full font-bold text-[11px] flex items-center justify-center">
                             {countInCart}
                           </span>
                         )}
-                        <span className="text-xs font-bold block truncate pr-5">
+                        <span className="text-xs font-bold block truncate pr-5 text-[#F8FAFC]">
                           {p.name}
                         </span>
-                        <span className="text-[11px] font-semibold text-zinc-400 mt-1 block">
+                        <span className="text-[11px] font-semibold text-[#94A3B8] mt-1 block tabular-nums">
                           {formatCurrency(Number(p.default_price))}
                         </span>
                       </button>
@@ -504,8 +504,8 @@ function MobileNewSaleDrawerDialog() {
               )}
 
               {/* Inserção de Item Avulso */}
-              <div className="mt-3 p-3 bg-zinc-950/40 rounded-xl border border-zinc-800/80">
-                <span className="text-[11px] font-semibold text-zinc-400 block mb-2">
+              <div className="mt-3 p-3 bg-[#080B11] rounded-xl border border-[#1E293B]">
+                <span className="text-[11px] font-semibold text-[#94A3B8] block mb-2">
                   Ou adicione um item avulso:
                 </span>
                 <div className="flex items-center gap-2">
@@ -514,7 +514,7 @@ function MobileNewSaleDrawerDialog() {
                     placeholder="Nome (ex: Platinado)"
                     value={customItemName}
                     onChange={(e) => setCustomItemName(e.target.value)}
-                    className="flex-1 bg-zinc-900 border border-zinc-700/60 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
+                    className="flex-1 bg-[#0D121F] border border-[#1E293B] rounded-lg px-2.5 py-1.5 text-xs text-[#F8FAFC] placeholder:text-slate-500 focus:outline-none focus:border-[#FACC15]/50"
                   />
                   <input
                     type="text"
@@ -522,12 +522,12 @@ function MobileNewSaleDrawerDialog() {
                     placeholder="R$ 0,00"
                     value={customItemPrice}
                     onChange={(e) => setCustomItemPrice(e.target.value)}
-                    className="w-24 bg-zinc-900 border border-zinc-700/60 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-500 text-center focus:outline-none"
+                    className="w-24 bg-[#0D121F] border border-[#1E293B] rounded-lg px-2.5 py-1.5 text-xs text-[#F8FAFC] placeholder:text-slate-500 text-center focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
                   />
                   <button
                     type="button"
                     onClick={handleAddCustomItem}
-                    className="p-1.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 rounded-lg font-bold transition"
+                    className="p-1.5 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] rounded-lg font-bold transition"
                     title="Adicionar item avulso"
                   >
                     <Plus className="w-4 h-4 stroke-[3]" />
@@ -538,26 +538,26 @@ function MobileNewSaleDrawerDialog() {
 
             {/* 2. Itens Selecionados no Atendimento */}
             {selectedItems.length > 0 && (
-              <div className="p-3 bg-zinc-950/80 rounded-2xl border border-zinc-800 space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
+              <div className="p-3 bg-[#080B11] rounded-2xl border border-[#1E293B] space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8] block">
                   Itens no Atendimento ({selectedItems.length})
                 </span>
-                <div className="divide-y divide-zinc-800/60">
+                <div className="divide-y divide-[#1E293B]/60">
                   {selectedItems.map((item, idx) => (
                     <div
                       key={`${item.product_id || 'custom'}-${idx}`}
                       className="py-2 flex items-center justify-between text-xs"
                     >
                       <div>
-                        <span className="font-semibold text-zinc-200 block">
+                        <span className="font-semibold text-[#F8FAFC] block">
                           {item.product_name}
                         </span>
-                        <span className="text-[11px] text-zinc-400">
+                        <span className="text-[11px] text-[#94A3B8] tabular-nums">
                           {item.quantity}x {formatCurrency(item.unit_price)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-700/60 rounded-lg p-0.5">
+                        <div className="flex items-center gap-1 bg-[#0D121F] border border-[#1E293B] rounded-lg p-0.5">
                           <button
                             type="button"
                             onClick={() =>
@@ -571,7 +571,7 @@ function MobileNewSaleDrawerDialog() {
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="px-1.5 font-bold text-zinc-100">
+                          <span className="px-1.5 font-bold text-[#F8FAFC] tabular-nums">
                             {item.quantity}
                           </span>
                           <button
@@ -583,12 +583,12 @@ function MobileNewSaleDrawerDialog() {
                                 1
                               )
                             }
-                            className="p-1 hover:text-emerald-400 transition"
+                            className="p-1 hover:text-[#FACC15] transition"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
-                        <span className="font-bold text-emerald-400 w-16 text-right">
+                        <span className="font-bold text-[#FACC15] w-16 text-right tabular-nums">
                           {formatCurrency(item.quantity * item.unit_price)}
                         </span>
                       </div>
@@ -601,7 +601,7 @@ function MobileNewSaleDrawerDialog() {
             {/* 3. Seleção e Cadastro de Cliente */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#94A3B8]">
                   2. Cliente
                 </label>
                 <button
@@ -611,7 +611,7 @@ function MobileNewSaleDrawerDialog() {
                     setInitialClientName('');
                     setClientModalOpen(true);
                   }}
-                  className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 active:scale-95 transition"
+                  className="text-xs font-bold text-[#FACC15] hover:text-[#FDE047] flex items-center gap-1 active:scale-95 transition"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>+ Novo Cliente</span>
@@ -630,7 +630,7 @@ function MobileNewSaleDrawerDialog() {
                       const exact = findExactClientMatch(clients, val);
                       setSelectedClientId(exact ? exact.id : null);
                     }}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-3 pr-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
+                    className="w-full bg-[#080B11] border border-[#1E293B] rounded-xl pl-3 pr-3 py-2 text-xs text-[#F8FAFC] placeholder:text-slate-500 focus:outline-none focus:border-[#FACC15]/50"
                   />
                 </div>
                 {selectedClientId && (
@@ -640,7 +640,7 @@ function MobileNewSaleDrawerDialog() {
                       setSelectedClientId(null);
                       setClientSearch('');
                     }}
-                    className="p-2 bg-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-xl"
+                    className="p-2 bg-[#151D30] text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl"
                     title="Remover seleção"
                   >
                     <X className="w-4 h-4" />
@@ -650,14 +650,14 @@ function MobileNewSaleDrawerDialog() {
 
               {/* Sugestões de Clientes ou Ação de Cadastro Rápido */}
               {!selectedClientId && clientSearch.trim() && (
-                <div className="mt-1.5 bg-zinc-950 border border-zinc-800 rounded-xl divide-y divide-zinc-800/80 overflow-hidden shadow-lg animate-in fade-in duration-150">
+                <div className="mt-1.5 bg-[#080B11] border border-[#1E293B] rounded-xl divide-y divide-[#1E293B]/80 overflow-hidden shadow-lg animate-in fade-in duration-150">
                   {loadingClients ? (
-                    <div className="p-3 text-[11px] text-zinc-400 flex items-center justify-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                    <div className="p-3 text-[11px] text-[#94A3B8] flex items-center justify-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FACC15]" />
                       <span>Buscando clientes cadastrados...</span>
                     </div>
                   ) : filteredClients.length === 0 ? (
-                    <div className="p-3 text-[11px] text-zinc-400 space-y-2">
+                    <div className="p-3 text-[11px] text-[#94A3B8] space-y-2">
                       <div>
                         Nenhum cliente cadastrado como <strong>&quot;{clientSearch}&quot;</strong>.
                       </div>
@@ -668,7 +668,7 @@ function MobileNewSaleDrawerDialog() {
                           setInitialClientName(clientSearch.trim());
                           setClientModalOpen(true);
                         }}
-                        className="w-full py-2 px-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+                        className="w-full py-2 px-3 bg-[#FACC15]/15 border border-[#FACC15]/30 text-[#FDE047] hover:bg-[#FACC15]/25 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
                       >
                         <UserPlus className="w-3.5 h-3.5" />
                         Cadastrar &quot;{clientSearch}&quot; agora
@@ -684,13 +684,13 @@ function MobileNewSaleDrawerDialog() {
                             setSelectedClientId(c.id);
                             setClientSearch(c.name);
                           }}
-                          className="w-full p-2.5 text-left text-xs hover:bg-zinc-900 flex items-center justify-between text-zinc-200"
+                          className="w-full p-2.5 text-left text-xs hover:bg-[#151D30] flex items-center justify-between text-[#F8FAFC]"
                         >
                           <span className="font-medium">{c.name}</span>
-                          {c.phone && <span className="text-[10px] text-zinc-400">{c.phone}</span>}
+                          {c.phone && <span className="text-[10px] text-[#94A3B8]">{c.phone}</span>}
                         </button>
                       ))}
-                      <div className="p-2 bg-zinc-900/40 text-center">
+                      <div className="p-2 bg-[#0D121F] text-center">
                         <button
                           type="button"
                           onClick={() => {
@@ -698,7 +698,7 @@ function MobileNewSaleDrawerDialog() {
                             setInitialClientName(clientSearch.trim());
                             setClientModalOpen(true);
                           }}
-                          className="text-[11px] font-bold text-emerald-400 hover:underline inline-flex items-center gap-1"
+                          className="text-[11px] font-bold text-[#FACC15] hover:underline inline-flex items-center gap-1"
                         >
                           <UserPlus className="w-3 h-3" />
                           Cadastrar novo cliente com este nome
@@ -720,13 +720,13 @@ function MobileNewSaleDrawerDialog() {
             {/* 4. Forma de Pagamento e Conta */}
             <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#94A3B8] block mb-1">
                   Forma de Pagto
                 </label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as SalePaymentMethod)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none"
+                  className="w-full bg-[#080B11] border border-[#1E293B] rounded-xl px-3 py-2 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50"
                 >
                   <option value="pix">Pix</option>
                   <option value="cash">Dinheiro</option>
@@ -737,13 +737,13 @@ function MobileNewSaleDrawerDialog() {
               </div>
 
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#94A3B8] block mb-1">
                   {paymentMethod === 'on_credit' ? 'Conta Padrão' : 'Conta de Entrada'}
                 </label>
                 <select
                   value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none"
+                  className="w-full bg-[#080B11] border border-[#1E293B] rounded-xl px-3 py-2 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50"
                 >
                   {accounts.map((a) => (
                     <option key={a.id} value={a.id}>
@@ -756,21 +756,21 @@ function MobileNewSaleDrawerDialog() {
 
             {/* Condições de Pagamento a Prazo (Mobile) */}
             {paymentMethod === 'on_credit' && (
-              <div className="p-3.5 bg-zinc-950/90 rounded-2xl border border-zinc-800 space-y-3 animate-in fade-in">
+              <div className="p-3.5 bg-[#080B11] rounded-2xl border border-[#1E293B] space-y-3 animate-in fade-in">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#FACC15] flex items-center gap-1.5">
                     <CalendarClock className="w-3.5 h-3.5" />
                     Condições do Fiado
                   </span>
                   {!selectedClientId && !findExactClientMatch(clients, clientSearch) && (
-                    <span className="text-[10px] text-amber-400 font-bold">
+                    <span className="text-[10px] text-[#FACC15] font-bold">
                       * Cliente obrigatório
                     </span>
                   )}
                 </div>
 
                 {!selectedClientId && !findExactClientMatch(clients, clientSearch) && (
-                  <div className="p-2 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-300 text-[11px]">
+                  <div className="p-2 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-xl text-[#FDE047] text-[11px]">
                     Selecione um cliente acima ou cadastre para liberar a venda a prazo.
                   </div>
                 )}
@@ -778,7 +778,7 @@ function MobileNewSaleDrawerDialog() {
                 {/* Entrada Imediata */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                    <label className="text-[11px] font-semibold text-[#94A3B8] block mb-1">
                       Entrada Imediata
                     </label>
                     <input
@@ -789,19 +789,19 @@ function MobileNewSaleDrawerDialog() {
                       placeholder="R$ 0,00"
                       value={initialPayment}
                       onChange={(e) => setInitialPayment(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-[#0D121F] border border-[#1E293B] rounded-xl px-2.5 py-1.5 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
                     />
                   </div>
 
                   {parseFloat(initialPayment || '0') > 0 && (
                     <div>
-                      <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                      <label className="text-[11px] font-semibold text-[#94A3B8] block mb-1">
                         Forma da Entrada
                       </label>
                       <select
                         value={initialPaymentMethod}
                         onChange={(e) => setInitialPaymentMethod(e.target.value as PaymentMethod)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-[#0D121F] border border-[#1E293B] rounded-xl px-2.5 py-1.5 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50"
                       >
                         <option value="pix">Pix</option>
                         <option value="cash">Dinheiro</option>
@@ -815,7 +815,7 @@ function MobileNewSaleDrawerDialog() {
                 {/* Vencimento Opcional */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-semibold text-zinc-400">
+                    <label className="text-[11px] font-semibold text-[#94A3B8]">
                       Vencimento (Opcional)
                     </label>
                     <div className="flex items-center gap-1">
@@ -826,7 +826,7 @@ function MobileNewSaleDrawerDialog() {
                           d.setDate(d.getDate() + 7);
                           setDueDate(d.toISOString().split('T')[0]);
                         }}
-                        className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300"
+                        className="px-1.5 py-0.5 rounded bg-[#151D30] hover:bg-[#1E293B] text-[10px] text-slate-300"
                       >
                         +7d
                       </button>
@@ -837,7 +837,7 @@ function MobileNewSaleDrawerDialog() {
                           d.setDate(d.getDate() + 15);
                           setDueDate(d.toISOString().split('T')[0]);
                         }}
-                        className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300"
+                        className="px-1.5 py-0.5 rounded bg-[#151D30] hover:bg-[#1E293B] text-[10px] text-slate-300"
                       >
                         +15d
                       </button>
@@ -848,7 +848,7 @@ function MobileNewSaleDrawerDialog() {
                           d.setDate(d.getDate() + 30);
                           setDueDate(d.toISOString().split('T')[0]);
                         }}
-                        className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300"
+                        className="px-1.5 py-0.5 rounded bg-[#151D30] hover:bg-[#1E293B] text-[10px] text-slate-300"
                       >
                         +30d
                       </button>
@@ -856,7 +856,7 @@ function MobileNewSaleDrawerDialog() {
                         <button
                           type="button"
                           onClick={() => setDueDate('')}
-                          className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-rose-400"
+                          className="px-1.5 py-0.5 rounded bg-[#151D30] hover:bg-[#1E293B] text-[10px] text-rose-400"
                         >
                           ✕
                         </button>
@@ -867,13 +867,13 @@ function MobileNewSaleDrawerDialog() {
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-[#0D121F] border border-[#1E293B] rounded-xl px-2.5 py-1.5 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50"
                   />
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-0.5">
+                <div className="flex items-center justify-between text-[11px] text-[#94A3B8] pt-0.5">
                   <span>Saldo a receber:</span>
-                  <strong className="text-amber-400 font-bold">
+                  <strong className="text-[#FACC15] font-bold tabular-nums">
                     {formatCurrency(
                       Math.max(0, totalAmount - (parseFloat(initialPayment || '0') || 0))
                     )}
@@ -884,24 +884,24 @@ function MobileNewSaleDrawerDialog() {
 
             {/* Opção de Venda Recorrente / Mensalidade (Mobile) */}
             {paymentMethod !== 'on_credit' && (
-              <div className="p-3 bg-zinc-950/80 rounded-2xl border border-zinc-800">
+              <div className="p-3 bg-[#080B11] rounded-2xl border border-[#1E293B]">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={isRecurring}
                     onChange={(e) => setIsRecurring(e.target.checked)}
-                    className="rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-0"
+                    className="rounded border-[#1E293B] bg-[#0D121F] text-[#FACC15] focus:ring-0"
                   />
-                  <Crown className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="text-xs font-semibold text-zinc-200">
+                  <Crown className="w-4 h-4 text-[#FACC15] shrink-0" />
+                  <span className="text-xs font-semibold text-[#F8FAFC]">
                     Tornar Venda Recorrente (Clube / Mensalidade)
                   </span>
                 </label>
 
                 {isRecurring && (
-                  <div className="mt-2.5 pt-2.5 border-t border-zinc-800 grid grid-cols-2 gap-2 animate-in fade-in">
+                  <div className="mt-2.5 pt-2.5 border-t border-[#1E293B] grid grid-cols-2 gap-2 animate-in fade-in">
                     <div>
-                      <label className="block text-[10px] font-medium text-zinc-400 mb-1">
+                      <label className="block text-[10px] font-medium text-[#94A3B8] mb-1">
                         Dia Vencimento *
                       </label>
                       <input
@@ -911,15 +911,15 @@ function MobileNewSaleDrawerDialog() {
                         value={recurringDueDay}
                         onChange={(e) => setRecurringDueDay(e.target.value)}
                         placeholder="Ex: 10"
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 font-semibold focus:outline-none focus:border-amber-400"
+                        className="w-full bg-[#0D121F] border border-[#1E293B] rounded-xl px-2.5 py-1.5 text-xs text-[#F8FAFC] font-semibold focus:outline-none focus:border-[#FACC15]/50"
                         required={isRecurring}
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-medium text-zinc-400 mb-1">
+                      <label className="block text-[10px] font-medium text-[#94A3B8] mb-1">
                         Valor Mensal
                       </label>
-                      <p className="text-xs font-bold text-emerald-400 pt-1">
+                      <p className="text-xs font-bold text-emerald-400 pt-1 tabular-nums">
                         {formatCurrency(totalAmount)}/mês
                       </p>
                     </div>
@@ -930,12 +930,12 @@ function MobileNewSaleDrawerDialog() {
           </div>
 
           {/* Rodapé Fixo com Total e Botão Finalizar */}
-          <div className="p-4 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between gap-3 shrink-0">
+          <div className="p-4 bg-[#080B11] border-t border-[#1E293B] flex items-center justify-between gap-3 shrink-0">
             <div>
-              <span className="text-[10px] uppercase font-bold text-zinc-400 block">
+              <span className="text-[10px] uppercase font-bold text-[#94A3B8] block">
                 Total do Atendimento
               </span>
-              <span className="text-xl font-extrabold text-emerald-400">
+              <span className="text-xl font-extrabold text-[#FACC15] tabular-nums">
                 {formatCurrency(totalAmount)}
               </span>
             </div>
@@ -944,7 +944,7 @@ function MobileNewSaleDrawerDialog() {
               type="button"
               disabled={submitting || selectedItems.length === 0}
               onClick={handleFinalizeSale}
-              className="flex-1 max-w-[220px] py-3 px-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/20 disabled:opacity-40 text-center active:scale-95"
+              className="flex-1 max-w-[220px] py-3 px-4 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-bold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-[#FACC15]/20 disabled:opacity-40 text-center active:scale-95"
             >
               {submitting ? 'Finalizando...' : 'Finalizar Atendimento'}
             </button>

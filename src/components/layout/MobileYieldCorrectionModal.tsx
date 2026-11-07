@@ -93,21 +93,21 @@ function MobileYieldCorrectionContent({ onClose }: { onClose: () => void }) {
       />
 
       {/* Sheet Card */}
-      <div className="relative w-full sm:max-w-md bg-zinc-900 border border-zinc-800 rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl z-10 space-y-4 max-h-[85vh] flex flex-col">
+      <div className="relative w-full sm:max-w-md bg-[#0D121F] border border-[#1E293B] rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl z-10 space-y-4 max-h-[85vh] flex flex-col">
         {/* Barra superior touch */}
-        <div className="w-12 h-1 bg-zinc-700/80 rounded-full mx-auto sm:hidden" />
+        <div className="w-12 h-1 bg-slate-700/80 rounded-full mx-auto sm:hidden" />
 
         {/* Cabeçalho */}
         <div className="flex items-center justify-between pb-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-violet-500/20 text-violet-400 border border-violet-500/30 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#6366F1]/20 text-[#A5B4FC] border border-[#6366F1]/30 flex items-center justify-center">
               <Sparkles className="w-4 h-4 stroke-[2.2]" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-zinc-100 flex items-center gap-1.5">
+              <h3 className="text-base font-bold text-[#F8FAFC] flex items-center gap-1.5">
                 Correção de Rendimentos
               </h3>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[#94A3B8]">
                 Selecione a conta que rendeu juros
               </p>
             </div>
@@ -115,7 +115,7 @@ function MobileYieldCorrectionContent({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 bg-zinc-800 rounded-full transition"
+            className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] bg-[#151D30] rounded-full transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -124,27 +124,27 @@ function MobileYieldCorrectionContent({ onClose }: { onClose: () => void }) {
         {/* Conteúdo / Lista de Contas */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
           {loading ? (
-            <div className="py-12 flex flex-col items-center justify-center text-zinc-400 space-y-2">
-              <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
+            <div className="py-12 flex flex-col items-center justify-center text-[#94A3B8] space-y-2">
+              <Loader2 className="w-6 h-6 animate-spin text-[#6366F1]" />
               <span className="text-xs">Carregando suas contas...</span>
             </div>
           ) : accounts.length === 0 ? (
             <div className="py-10 text-center space-y-3 px-4">
-              <div className="w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center mx-auto text-zinc-400">
+              <div className="w-12 h-12 rounded-2xl bg-[#151D30] border border-[#1E293B] flex items-center justify-center mx-auto text-[#94A3B8]">
                 <AlertCircle className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-zinc-200">
+                <p className="text-sm font-semibold text-[#F8FAFC]">
                   Nenhuma conta encontrada
                 </p>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-[#94A3B8] mt-1">
                   Cadastre uma conta corrente ou de investimentos para registrar rendimentos.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full py-2.5 px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs rounded-xl transition"
+                className="w-full py-2.5 px-4 bg-[#151D30] hover:bg-[#1E293B] text-[#F8FAFC] font-semibold text-xs rounded-xl transition border border-[#1E293B]"
               >
                 Entendido
               </button>
@@ -159,18 +159,18 @@ function MobileYieldCorrectionContent({ onClose }: { onClose: () => void }) {
                   key={acc.id}
                   type="button"
                   onClick={() => setSelectedAccount(acc)}
-                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-zinc-950/70 hover:bg-zinc-800/80 border border-zinc-800/90 hover:border-zinc-700 text-left transition group active:scale-[0.99]"
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#080B11] hover:bg-[#151D30] border border-[#1E293B] hover:border-[#FACC15]/40 text-left transition group active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm"
-                      style={{ backgroundColor: acc.color || '#8b5cf6' }}
+                      style={{ backgroundColor: acc.color || '#6366f1' }}
                     >
                       <Wallet className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-sm text-zinc-100 truncate">
+                        <span className="font-semibold text-sm text-[#F8FAFC] truncate">
                           {acc.name}
                         </span>
                         {acc.yield_label && (
@@ -179,10 +179,10 @@ function MobileYieldCorrectionContent({ onClose }: { onClose: () => void }) {
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-zinc-400 flex items-center gap-1 mt-0.5">
+                      <span className="text-[11px] text-[#94A3B8] flex items-center gap-1 mt-0.5">
                         {hasYield ? (
                           <>
-                            <TrendingUp className="w-3 h-3 text-violet-400" />
+                            <TrendingUp className="w-3 h-3 text-[#A5B4FC]" />
                             Rendimento ativo
                           </>
                         ) : (
@@ -194,14 +194,14 @@ function MobileYieldCorrectionContent({ onClose }: { onClose: () => void }) {
 
                   <div className="flex items-center gap-2 pl-3 shrink-0">
                     <div className="text-right">
-                      <span className="text-xs font-bold text-zinc-200 block">
+                      <span className="text-xs font-bold text-[#F8FAFC] block tabular-nums">
                         {formatCurrency(balance)}
                       </span>
-                      <span className="text-[10px] text-zinc-500 block">
+                      <span className="text-[10px] text-[#64748B] block">
                         saldo atual
                       </span>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition" />
+                    <ChevronRight className="w-4 h-4 text-[#64748B] group-hover:text-[#F8FAFC] transition" />
                   </div>
                 </button>
               );
