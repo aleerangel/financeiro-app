@@ -211,8 +211,8 @@ export function UnifiedDailyPendingHub({
     <div
       className={`rounded-2xl border transition-all duration-200 overflow-hidden shadow-lg ${
         hasOverdue
-          ? 'bg-gradient-to-r from-amber-950/35 via-zinc-900 to-zinc-900 border-amber-500/35 shadow-amber-950/20'
-          : 'bg-gradient-to-r from-emerald-950/35 via-zinc-900 to-zinc-900 border-emerald-500/35 shadow-emerald-950/20'
+          ? 'bg-gradient-to-r from-amber-950/35 via-[#0D121F] to-[#0D121F] border-amber-500/35 shadow-amber-950/20'
+          : 'bg-gradient-to-r from-emerald-950/35 via-[#0D121F] to-[#0D121F] border-emerald-500/35 shadow-emerald-950/20'
       } ${className}`}
     >
       {/* Barra de Cabeçalho do Hub - Clicável para expandir/recolher */}
@@ -234,7 +234,7 @@ export function UnifiedDailyPendingHub({
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-extrabold text-zinc-100 tracking-tight">
+              <h3 className="text-sm font-extrabold text-[#F8FAFC] tracking-tight">
                 {hasOverdue ? 'Atenção: Pendências & Vencimentos de Hoje' : 'Pendências & Confirmações de Hoje'}
               </h3>
               <span
@@ -248,7 +248,7 @@ export function UnifiedDailyPendingHub({
               </span>
             </div>
 
-            <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+            <p className="text-[11px] text-[#94A3B8] mt-0.5 truncate">
               {expanded
                 ? 'Toque para recolher a lista'
                 : 'Valide os valores que entraram ou saíram para manter os saldos exatos'}
@@ -283,10 +283,10 @@ export function UnifiedDailyPendingHub({
 
       {/* Lista Unificada Expandida */}
       {expanded && (
-        <div className="p-3.5 pt-0 space-y-2.5 border-t border-zinc-800/80 animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-2 pb-0.5 px-1">
+        <div className="p-3.5 pt-0 space-y-2.5 border-t border-[#1E293B]/80 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between text-[11px] text-[#94A3B8] pt-2 pb-0.5 px-1">
             <span>Ordene ou confirme com 1 toque:</span>
-            <div className="flex items-center gap-2 text-[11px]">
+            <div className="flex items-center gap-2 text-[11px] tabular-nums">
               {totalIncomes > 0 && (
                 <span className="text-emerald-400 font-semibold">Entradas: +{formatCurrency(totalIncomes)}</span>
               )}
@@ -305,7 +305,7 @@ export function UnifiedDailyPendingHub({
             return (
               <div
                 key={item.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-zinc-950/80 border border-zinc-800/90 gap-3 hover:border-zinc-700 transition shadow-sm"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[#080B11]/90 border border-[#1E293B] gap-3 hover:border-[#FACC15]/40 transition shadow-sm"
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0">
                   {/* Ícone Semântico do Tipo */}
@@ -314,7 +314,7 @@ export function UnifiedDailyPendingHub({
                       isIncome
                         ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                         : isInvoice
-                        ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
+                        ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'
                         : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
                     }`}
                   >
@@ -330,7 +330,7 @@ export function UnifiedDailyPendingHub({
                   {/* Informações da Transação */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs sm:text-sm font-bold text-zinc-100 truncate">
+                      <span className="text-xs sm:text-sm font-bold text-[#F8FAFC] truncate">
                         {item.description}
                       </span>
 

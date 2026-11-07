@@ -61,7 +61,7 @@ export function AppShell({ userEmail, initialProfile, initialContextMode, childr
       <DateProvider key={userEmail || 'anonymous'}>
         <MobileNavigationProvider initialContextMode={initialContextMode}>
           <SidebarProvider>
-            <div className="min-h-screen flex bg-zinc-950 text-zinc-100">
+            <div className="min-h-screen flex bg-[#080B11] text-[#F8FAFC]">
               {/* 1. Sidebar Fixa Desktop */}
               <AppSidebar />
 

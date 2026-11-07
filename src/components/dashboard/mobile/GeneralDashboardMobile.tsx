@@ -85,55 +85,55 @@ export function GeneralDashboardMobile({
   return (
     <div className="space-y-4 pb-8">
       {/* 1. Bloco Estilo Nubank: Conta & Saldo Disponível */}
-      <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-        <div className="flex items-center justify-between text-zinc-400">
+      <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-3">
+        <div className="flex items-center justify-between text-[#94A3B8]">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-[#FACC15]/10 text-[#FACC15] flex items-center justify-center">
               <Wallet className="w-4 h-4" />
             </div>
-            <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+            <span className="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider">
               Conta
             </span>
           </div>
           <Link
             href="/contas"
-            className="text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-0.5"
+            className="text-xs text-[#FACC15] hover:text-[#FDE047] flex items-center gap-0.5 transition-colors"
           >
             Ver contas <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         <div>
-          <span className="text-xs text-zinc-400 block">Saldo disponível</span>
-          <h2 className="text-3xl font-extrabold text-zinc-100 mt-1 tracking-tight">
+          <span className="text-xs text-[#94A3B8] block">Saldo disponível</span>
+          <h2 className="text-3xl font-extrabold text-[#F8FAFC] mt-1 tracking-tight tabular-nums">
             {formatHidden(formatCurrency(totalBalance))}
           </h2>
           {totalYieldMonth > 0 && (
-            <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1 mt-1">
+            <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1 mt-1 tabular-nums">
               <Sparkles className="w-3 h-3" /> Rendendo +{formatHidden(formatCurrency(totalYieldMonth))} este mês
             </span>
           )}
         </div>
 
-        {/* Atalhos Rápidos Touch (estilo pílulas / círculos Nubank) */}
-        <div className="flex items-center gap-2 pt-2 border-t border-zinc-800/80 overflow-x-auto no-scrollbar">
+        {/* Atalhos Rápidos Touch (estilo pílulas) */}
+        <div className="flex items-center gap-2 pt-2 border-t border-[#1E293B]/80 overflow-x-auto no-scrollbar">
           <Link
             href="/transacoes"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-800 text-zinc-200 rounded-full text-xs font-semibold shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#151D30] hover:bg-[#1B253D] border border-[#1E293B] text-[#F8FAFC] rounded-full text-xs font-semibold shrink-0 transition-colors"
           >
-            <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400" />
+            <ArrowLeftRight className="w-3.5 h-3.5 text-[#FACC15]" />
             Extrato
           </Link>
           <Link
             href="/cartoes"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-800 text-zinc-200 rounded-full text-xs font-semibold shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#151D30] hover:bg-[#1B253D] border border-[#1E293B] text-[#F8FAFC] rounded-full text-xs font-semibold shrink-0 transition-colors"
           >
-            <CreditCard className="w-3.5 h-3.5 text-purple-400" />
+            <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
             Cartões
           </Link>
           <Link
             href="/contas"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-800 text-zinc-200 rounded-full text-xs font-semibold shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#151D30] hover:bg-[#1B253D] border border-[#1E293B] text-[#F8FAFC] rounded-full text-xs font-semibold shrink-0 transition-colors"
           >
             <Landmark className="w-3.5 h-3.5 text-blue-400" />
             Bancos ({accounts.length})
@@ -151,14 +151,14 @@ export function GeneralDashboardMobile({
       {pendingIncome > 0 && (
         <Link
           href="/transacoes"
-          className="block p-5 bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 rounded-2xl space-y-3 transition-all active:scale-[0.99] group shadow-sm"
+          className="block p-5 bg-[#0D121F] border border-[#1E293B] hover:border-emerald-500/40 rounded-2xl space-y-3 transition-all active:scale-[0.99] group shadow-sm"
         >
-          <div className="flex items-center justify-between text-zinc-400">
+          <div className="flex items-center justify-between text-[#94A3B8]">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
                 <Clock className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+              <span className="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider">
                 A Receber
               </span>
             </div>
@@ -168,11 +168,11 @@ export function GeneralDashboardMobile({
           </div>
 
           <div>
-            <span className="text-xs text-zinc-400 block font-medium">
+            <span className="text-xs text-[#94A3B8] block font-medium">
               Previsto para {formattedMonth}
             </span>
             <div className="flex items-baseline justify-between gap-2 mt-1">
-              <h3 className="text-2xl font-extrabold text-emerald-400 tracking-tight">
+              <h3 className="text-2xl font-extrabold text-emerald-400 tracking-tight tabular-nums">
                 {formatHidden(formatCurrency(pendingIncome))}
               </h3>
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
@@ -184,74 +184,74 @@ export function GeneralDashboardMobile({
       )}
 
       {/* 3. Bloco Estilo Nubank: Entradas e Saídas do Mês */}
-      <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
-        <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
+      <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-3">
+        <span className="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider block">
           Fluxo de {formattedMonth}
         </span>
 
         <div className="grid grid-cols-2 gap-3 pt-1">
-          <div className="p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-xl">
+          <div className="p-3 bg-[#080B11]/80 border border-[#1E293B]/80 rounded-xl">
             <div className="flex items-center gap-1 text-emerald-400 text-xs font-semibold mb-1">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>Receitas</span>
             </div>
-            <span className="text-base font-extrabold text-emerald-400 block">
+            <span className="text-base font-extrabold text-emerald-400 block tabular-nums">
               {formatHidden(formatCurrency(receivedIncome))}
             </span>
           </div>
 
-          <div className="p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-xl">
+          <div className="p-3 bg-[#080B11]/80 border border-[#1E293B]/80 rounded-xl">
             <div className="flex items-center gap-1 text-rose-400 text-xs font-semibold mb-1">
               <ArrowDownRight className="w-3.5 h-3.5" />
               <span>Despesas Pagas</span>
             </div>
-            <span className="text-base font-extrabold text-rose-400 block">
+            <span className="text-base font-extrabold text-rose-400 block tabular-nums">
               {formatHidden(formatCurrency(paidExpense))}
             </span>
           </div>
         </div>
 
         {pendingExpense > 0 && (
-          <div className="flex items-center justify-between text-xs text-zinc-400 pt-1">
+          <div className="flex items-center justify-between text-xs text-[#94A3B8] pt-1">
             <span>Despesas ainda pendentes:</span>
-            <span className="text-amber-400 font-bold">{formatHidden(formatCurrency(pendingExpense))}</span>
+            <span className="text-amber-400 font-bold tabular-nums">{formatHidden(formatCurrency(pendingExpense))}</span>
           </div>
         )}
       </div>
 
       {/* 4. Bloco Estilo Nubank: Histórico de Movimentações */}
       {recentTransactions.length > 0 && (
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl space-y-3">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
+            <span className="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider block">
               Últimas Movimentações
             </span>
             <Link
               href="/transacoes"
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-0.5"
+              className="text-xs text-[#FACC15] hover:text-[#FDE047] font-semibold flex items-center gap-0.5 transition-colors"
             >
               Ver extrato <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="divide-y divide-zinc-800/80">
+          <div className="divide-y divide-[#1E293B]/80">
             {recentTransactions.map((t) => {
               const isIncome = t.type === 'income';
 
               return (
                 <div key={t.id} className="py-2.5 flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <span className="text-xs font-semibold text-zinc-200 block truncate">
+                    <span className="text-xs font-semibold text-[#F8FAFC] block truncate">
                       {t.description}
                     </span>
-                    <span className="text-[10px] text-zinc-500 block mt-0.5">
+                    <span className="text-[10px] text-[#64748B] block mt-0.5">
                       {formatDate(t.due_date)} • {t.category?.name || 'Geral'}
                     </span>
                   </div>
 
                   <span
-                    className={`text-xs font-bold shrink-0 ${
-                      isIncome ? 'text-emerald-400' : 'text-zinc-200'
+                    className={`text-xs font-bold shrink-0 tabular-nums ${
+                      isIncome ? 'text-emerald-400' : 'text-[#F8FAFC]'
                     }`}
                   >
                     {isIncome ? '+' : '-'} {formatHidden(formatCurrency(Number(t.amount)))}

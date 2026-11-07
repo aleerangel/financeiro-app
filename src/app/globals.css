@@ -1,8 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #080B11;
+  --foreground: #F8FAFC;
+
+  /* Canário PRO Design System Tokens */
+  --canvas-bg: #080B11;
+  --surface-base: #0D121F;
+  --surface-elevated: #151D30;
+  --surface-active: #1B253D;
+
+  --canary-primary: #FACC15;
+  --canary-hover: #FDE047;
+  --canary-active: #EAB308;
+  --canary-subtle: rgba(250, 204, 21, 0.12);
+
+  --border-subtle: #1E293B;
+  --border-focus: rgba(250, 204, 21, 0.45);
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
 }
 
 @theme inline {
@@ -10,17 +28,35 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-canary-bg: var(--canvas-bg);
+  --color-canary-surface: var(--surface-base);
+  --color-canary-surface-elevated: var(--surface-elevated);
+  --color-canary-surface-active: var(--surface-active);
+
+  --color-canary-500: var(--canary-primary);
+  --color-canary-400: var(--canary-hover);
+  --color-canary-600: var(--canary-active);
+  --color-canary-subtle: var(--canary-subtle);
+
+  --color-canary-border: var(--border-subtle);
+  --color-canary-focus: var(--border-focus);
+
+  --color-canary-text-primary: var(--text-primary);
+  --color-canary-text-secondary: var(--text-secondary);
+  --color-canary-text-muted: var(--text-muted);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #080B11;
+  color: #F8FAFC;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Suporte a números tabulares monoespaçados para valores financeiros */
+.tabular-nums, .font-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }

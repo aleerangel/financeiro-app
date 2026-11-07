@@ -92,25 +92,25 @@ export function WalletInvoiceCard({
   if (cards.length === 0) {
     return (
       <div
-        className={`p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between ${className}`}
+        className={`p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between ${className}`}
       >
-        <div className="flex items-center justify-between text-zinc-400 mb-2">
+        <div className="flex items-center justify-between text-[#94A3B8] mb-2">
           <span className="text-xs font-semibold uppercase tracking-wider">
             Cartão de Crédito
           </span>
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">
             <CardIcon className="w-4 h-4" />
           </div>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-zinc-300">Nenhum cartão</h2>
-          <span className="text-xs text-zinc-500 mt-1 block">
+          <h2 className="text-xl font-bold text-[#F8FAFC]">Nenhum cartão</h2>
+          <span className="text-xs text-[#94A3B8] mt-1 block">
             Cadastre um cartão para acompanhar limites e faturas.
           </span>
         </div>
         <Link
           href="/cartoes"
-          className="mt-3 text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1"
+          className="mt-3 text-xs font-semibold text-[#FACC15] hover:text-[#FDE047] flex items-center gap-1 transition-colors"
         >
           Cadastrar cartão <ChevronRight className="w-3.5 h-3.5" />
         </Link>
@@ -124,21 +124,21 @@ export function WalletInvoiceCard({
     const { card, status } = single;
     return (
       <div
-        className={`p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between relative overflow-hidden ${className}`}
+        className={`p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between relative overflow-hidden ${className}`}
       >
-        <div className="flex items-center justify-between text-zinc-400 mb-2">
+        <div className="flex items-center justify-between text-[#94A3B8] mb-2">
           <div className="flex items-center gap-2">
             <span
               className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: card.color || '#8b5cf6' }}
+              style={{ backgroundColor: card.color || '#6366f1' }}
             />
-            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate max-w-[140px]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#F8FAFC] truncate max-w-[140px]">
               {card.name}
             </span>
           </div>
           <Link
             href="/cartoes"
-            className="text-[11px] font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-0.5"
+            className="text-[11px] font-semibold text-[#FACC15] hover:text-[#FDE047] flex items-center gap-0.5 transition-colors"
           >
             Faturas <ChevronRight className="w-3.5 h-3.5" />
           </Link>
@@ -146,7 +146,7 @@ export function WalletInvoiceCard({
 
         <div>
           <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-2xl font-bold text-purple-300">
+            <h2 className="text-2xl font-bold text-indigo-300 tabular-nums">
               {formatHidden(formatCurrency(card.current_invoice || 0))}
             </h2>
             <span
@@ -162,12 +162,12 @@ export function WalletInvoiceCard({
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+          <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-2">
             <span>
-              Usado: <strong className="text-zinc-200">{formatHidden(formatCurrency(card.used_limit))}</strong>
+              Usado: <strong className="text-[#F8FAFC] tabular-nums">{formatHidden(formatCurrency(card.used_limit))}</strong>
             </span>
             <span>
-              Disp: <strong className="text-emerald-400">{formatHidden(formatCurrency(card.available_limit))}</strong>
+              Disp: <strong className="text-emerald-400 tabular-nums">{formatHidden(formatCurrency(card.available_limit))}</strong>
             </span>
           </div>
         </div>
@@ -192,7 +192,7 @@ export function WalletInvoiceCard({
 
   return (
     <div
-      className={`relative p-5 bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden min-h-[300px] flex flex-col justify-between ${className}`}
+      className={`relative p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl overflow-hidden min-h-[300px] flex flex-col justify-between ${className}`}
     >
       {/* CAMADA 1: VISÃO CONSOLIDADA DA CARTEIRA COM PILHA SOBREPOSTA */}
       <div
@@ -204,19 +204,19 @@ export function WalletInvoiceCard({
       >
         <div>
           {/* Cabeçalho Consolidado */}
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
+          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold uppercase tracking-wider">
                 Fatura Atual
               </span>
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
+              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
                 {cards.length} cartões
               </span>
             </div>
 
             <Link
               href="/cartoes"
-              className="text-[11px] font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-0.5"
+              className="text-[11px] font-semibold text-[#FACC15] hover:text-[#FDE047] flex items-center gap-0.5 transition-colors"
             >
               Faturas <ChevronRight className="w-3.5 h-3.5" />
             </Link>
@@ -224,30 +224,30 @@ export function WalletInvoiceCard({
 
           {/* Valor Total Consolidado */}
           <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-2xl font-black text-purple-300">
+            <h2 className="text-2xl font-black text-indigo-300 tabular-nums">
               {formatHidden(formatCurrency(totalCurrentInvoice))}
             </h2>
-            <span className="text-[11px] text-zinc-400 font-medium">
+            <span className="text-[11px] text-[#94A3B8] font-medium">
               Total somado
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-zinc-400 mt-1 mb-3">
+          <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 mb-3">
             <span>
-              Usado: <strong className="text-zinc-200">{formatHidden(formatCurrency(totalUsed))}</strong>
+              Usado: <strong className="text-[#F8FAFC] tabular-nums">{formatHidden(formatCurrency(totalUsed))}</strong>
             </span>
             <span>
-              Disp: <strong className="text-emerald-400">{formatHidden(formatCurrency(totalAvailable))}</strong>
+              Disp: <strong className="text-emerald-400 tabular-nums">{formatHidden(formatCurrency(totalAvailable))}</strong>
             </span>
           </div>
 
           {/* Pilha de Cartões (Design de Carteira com Sobreposição Real) */}
           <div className="pt-2">
             <div className="flex items-center justify-between mb-2.5">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#94A3B8]">
                 Carteira
               </span>
-              <span className="text-[10px] text-purple-400 font-medium">
+              <span className="text-[10px] text-indigo-400 font-medium">
                 Toque no cartão para ver detalhes
               </span>
             </div>

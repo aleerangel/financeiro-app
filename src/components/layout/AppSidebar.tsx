@@ -21,6 +21,7 @@ import {
 import { useSidebar } from '@/context/SidebarContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { getSegmentIcon } from '@/components/ui/SegmentIcon';
+import { CanaryIcon } from '@/components/ui/CanaryLogo';
 
 const BusinessSettingsModal = dynamic(
   () => import('@/components/settings/BusinessSettingsModal').then((m) => m.BusinessSettingsModal),
@@ -82,33 +83,31 @@ export function AppSidebar() {
 
   return (
     <aside
-      className={`hidden md:flex flex-col h-screen sticky top-0 bg-zinc-950 border-r border-zinc-800/80 transition-all duration-200 z-40 select-none ${
+      className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#080B11] border-r border-[#1E293B] transition-all duration-200 z-40 select-none ${
         collapsed ? 'w-[72px]' : 'w-64'
       }`}
       aria-label="Navegação Principal"
     >
-      {/* 1. Topo: Logo & Identidade Canário */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-800/80 shrink-0">
+      {/* 1. Topo: Logo & Identidade Canário Oficial */}
+      <div className="h-16 flex items-center justify-between px-4 border-b border-[#1E293B] shrink-0">
         <Link
           href="/dashboard"
           className="flex items-center gap-2.5 overflow-hidden transition-opacity hover:opacity-90"
         >
-          <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold shrink-0 shadow-sm shadow-amber-500/5">
-            <span className="text-base tracking-tighter" role="img" aria-label="Canário">
-              🐤
-            </span>
+          <div className="w-9 h-9 rounded-xl bg-[#0F1524] border border-[#1E293B] flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/5">
+            <CanaryIcon size="sm" />
           </div>
 
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="font-extrabold text-base text-zinc-100 tracking-tight leading-tight flex items-center gap-1.5 truncate">
+              <span className="font-black text-base text-[#F8FAFC] tracking-tight leading-tight flex items-center gap-1.5 truncate">
                 Canário
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15]/30">
                   PRO
                 </span>
               </span>
-              <span className="text-[11px] text-zinc-400 truncate">
-                {hasBusiness ? businessName : 'Finanças Pessoais'}
+              <span className="text-[11px] text-[#94A3B8] font-medium truncate">
+                {hasBusiness ? businessName : 'Finanças & Negócio'}
               </span>
             </div>
           )}
@@ -116,11 +115,11 @@ export function AppSidebar() {
       </div>
 
       {/* 2. Menu de Navegação com Grupos */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-zinc-800">
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-800">
         {navGroups.map((group) => (
           <div key={group.title} className="space-y-1">
             {!collapsed && (
-              <h4 className="px-3 text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2 truncate">
+              <h4 className="px-3 text-[11px] font-bold uppercase tracking-wider text-[#64748B] mb-2 truncate">
                 {group.title}
               </h4>
             )}
@@ -139,15 +138,15 @@ export function AppSidebar() {
                     title={collapsed ? item.label : undefined}
                     className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20 shadow-sm shadow-emerald-500/5'
-                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/80 border border-transparent'
+                        ? 'bg-[#FACC15]/10 text-[#FACC15] font-semibold border border-[#FACC15]/30 shadow-sm shadow-amber-500/5'
+                        : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#0D121F] border border-transparent'
                     } ${collapsed ? 'justify-center px-0' : ''}`}
                   >
                     <Icon
                       className={`w-5 h-5 shrink-0 transition-transform ${
                         isActive
-                          ? 'text-emerald-400'
-                          : 'text-zinc-400 group-hover:text-zinc-200 group-hover:scale-105'
+                          ? 'text-[#FACC15]'
+                          : 'text-[#94A3B8] group-hover:text-[#F8FAFC] group-hover:scale-105'
                       }`}
                     />
 
@@ -157,7 +156,7 @@ export function AppSidebar() {
 
                     {/* Tooltip flutuante no modo colapsado */}
                     {collapsed && (
-                      <div className="absolute left-full ml-3.5 px-2.5 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs font-semibold rounded-lg shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                      <div className="absolute left-full ml-3.5 px-2.5 py-1.5 bg-[#0D121F] border border-[#1E293B] text-[#F8FAFC] text-xs font-semibold rounded-lg shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
                         {item.label}
                       </div>
                     )}
@@ -170,14 +169,14 @@ export function AppSidebar() {
       </div>
 
       {/* 3. Rodapé: Configurar Meu Negócio */}
-      <div className="p-3 border-t border-zinc-800/80 shrink-0 bg-zinc-950">
+      <div className="p-3 border-t border-[#1E293B] shrink-0 bg-[#080B11]">
         <button
           type="button"
           onClick={() => setBusinessSettingsOpen(true)}
           className={`group relative flex items-center gap-3 w-full p-2.5 rounded-xl text-sm font-medium transition-all ${
             hasBusiness
-              ? 'text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800/60 hover:border-zinc-700 bg-zinc-900/40'
-              : 'text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20'
+              ? 'text-zinc-200 hover:text-white hover:bg-[#151D30] border border-[#1E293B] bg-[#0D121F]'
+              : 'text-[#FACC15] hover:text-amber-200 bg-[#FACC15]/10 hover:bg-[#FACC15]/15 border border-[#FACC15]/30'
           } ${collapsed ? 'justify-center px-0' : ''}`}
           title={collapsed ? (hasBusiness ? `Configurações: ${businessName}` : 'Configurar Meu Negócio') : undefined}
           aria-label={hasBusiness ? `Configurações do negócio: ${businessName}` : 'Configurar Meu Negócio'}
@@ -185,8 +184,8 @@ export function AppSidebar() {
           <div
             className={`p-1.5 rounded-lg shrink-0 transition-colors ${
               hasBusiness
-                ? 'bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20'
-                : 'bg-amber-500/20 text-amber-300 group-hover:bg-amber-500/30'
+                ? 'bg-[#FACC15]/10 text-[#FACC15] group-hover:bg-[#FACC15]/20'
+                : 'bg-[#FACC15]/20 text-[#FACC15] group-hover:bg-[#FACC15]/30'
             }`}
           >
             <Store className="w-4 h-4" />
@@ -195,20 +194,20 @@ export function AppSidebar() {
           {!collapsed && (
             <>
               <div className="flex flex-col text-left min-w-0 flex-1">
-                <span className="text-xs font-semibold truncate text-zinc-200">
+                <span className="text-xs font-bold truncate text-[#F8FAFC]">
                   {hasBusiness ? businessName : 'Configurar Meu Negócio'}
                 </span>
-                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 truncate">
+                <span className="text-[10px] text-[#94A3B8] group-hover:text-zinc-300 truncate font-medium">
                   {hasBusiness ? 'Configurações do negócio' : 'Ativar modo negócio'}
                 </span>
               </div>
-              <Settings className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-300 shrink-0 transition-colors" />
+              <Settings className="w-3.5 h-3.5 text-[#64748B] group-hover:text-[#F8FAFC] shrink-0 transition-colors" />
             </>
           )}
 
           {/* Tooltip flutuante no modo colapsado */}
           {collapsed && (
-            <div className="absolute left-full ml-3.5 px-2.5 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs font-semibold rounded-lg shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+            <div className="absolute left-full ml-3.5 px-2.5 py-1.5 bg-[#0D121F] border border-[#1E293B] text-[#F8FAFC] text-xs font-semibold rounded-lg shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
               {hasBusiness ? `Configurações: ${businessName}` : 'Configurar Meu Negócio'}
             </div>
           )}
