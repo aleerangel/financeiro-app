@@ -69,18 +69,21 @@ const FIXED_INCOME_KEYWORDS = [
   'pro-labore',
 ];
 
-export const CANARIO_METALLIC_PALETTE = [
-  '#FACC15', // Canário Radiante (Ouro Principal)
-  '#EAB308', // Ouro Médio
-  '#CA8A04', // Ouro Queimado / Âmbar Escuro
-  '#94A3B8', // Ardósia Prateado
-  '#64748B', // Ardósia Metálico Médio
-  '#475569', // Ardósia Profundo
-  '#334155', // Cobalto / Ardósia Escuro
+export const CANARIO_CHART_PALETTE = [
+  '#FACC15', // 1. Canário Radiante (Dourado Ouro - destaque principal)
+  '#38BDF8', // 2. Azul Safira / Sky (Contraste frio imediato com o dourado)
+  '#34D399', // 3. Esmeralda Refinado (Verde elegante e nítido)
+  '#FB923C', // 4. Coral / Tangerina (Laranja quente bem diferenciado do amarelo)
+  '#A78BFA', // 5. Ametista / Violeta (Roxo suave sofisticado)
+  '#F472B6', // 6. Rosa Framboesa (Rosa vibrante e distinto)
+  '#2DD4BF', // 7. Turquesa / Menta (Ciano fresco)
+  '#E2E8F0', // 8. Prata Metálico Claro (Neutro de alto brilho)
 ];
 
+export const CANARIO_METALLIC_PALETTE = CANARIO_CHART_PALETTE;
+
 export function getCategoryPaletteColor(index: number): string {
-  return CANARIO_METALLIC_PALETTE[Math.abs(index) % CANARIO_METALLIC_PALETTE.length];
+  return CANARIO_CHART_PALETTE[Math.abs(index) % CANARIO_CHART_PALETTE.length];
 }
 
 export function isVariableIncomeCategoryName(name: string): boolean {
