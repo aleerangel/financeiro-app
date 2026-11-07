@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   ChevronDown,
   ChevronUp,
@@ -21,9 +22,21 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 import { BusinessMessageSettings } from '@/lib/whatsapp-templates';
-import { WhatsAppChargeModal } from './WhatsAppChargeModal';
-import { EditSaleDebtModal } from './EditSaleDebtModal';
-import { AmortizeModal } from '../sales/AmortizeModal';
+
+const WhatsAppChargeModal = dynamic(
+  () => import('./WhatsAppChargeModal').then((m) => m.WhatsAppChargeModal),
+  { ssr: false }
+);
+
+const EditSaleDebtModal = dynamic(
+  () => import('./EditSaleDebtModal').then((m) => m.EditSaleDebtModal),
+  { ssr: false }
+);
+
+const AmortizeModal = dynamic(
+  () => import('../sales/AmortizeModal').then((m) => m.AmortizeModal),
+  { ssr: false }
+);
 
 interface DebtClientCardProps {
   clientDebt: ClientDebtItem;

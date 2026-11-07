@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Tags,
   Plus,
@@ -15,10 +16,14 @@ import { deleteCategory } from '@/lib/actions/categories';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { CategoryIcon } from './CategoryIcon';
-import { CategoryModal } from './CategoryModal';
 import { isBusinessCategory } from '@/lib/business-scope-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
+
+const CategoryModal = dynamic(
+  () => import('./CategoryModal').then((m) => m.CategoryModal),
+  { ssr: false }
+);
 
 interface CategoriesListProps {
   initialCategories: Category[];

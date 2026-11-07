@@ -1,14 +1,19 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Plus, CreditCard as CardIcon, Wifi, Calendar, MoreVertical, Pencil, Trash2, Receipt } from 'lucide-react';
 import { CreditCardWithUsage, deleteCreditCard } from '@/lib/actions/credit-cards';
 import { formatCurrency } from '@/lib/utils';
 import { getCardInvoiceStatus } from '@/lib/credit-card-utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
-import { CreditCardModal } from './CreditCardModal';
 import { CreditCardInvoicesPanel } from './CreditCardInvoicesPanel';
+
+const CreditCardModal = dynamic(
+  () => import('./CreditCardModal').then((m) => m.CreditCardModal),
+  { ssr: false }
+);
 
 interface CreditCardsListProps {
   initialCards: CreditCardWithUsage[];

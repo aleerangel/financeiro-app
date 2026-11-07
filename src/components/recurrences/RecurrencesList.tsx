@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Plus,
   Repeat,
@@ -16,11 +17,15 @@ import { toggleRecurrenceActive, deleteRecurrence, syncMonthlyRecurrences } from
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
-import { RecurrenceModal } from './RecurrenceModal';
 import { useDateContext } from '@/context/DateContext';
 import { isBusinessRecurrence } from '@/lib/business-scope-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
+
+const RecurrenceModal = dynamic(
+  () => import('./RecurrenceModal').then((m) => m.RecurrenceModal),
+  { ssr: false }
+);
 
 interface RecurrencesListProps {
   initialRecurrences: Recurrence[];

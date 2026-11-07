@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Crown,
   Plus,
@@ -33,14 +34,47 @@ import {
   updateClientSubscriptionStatus,
   deleteClientSubscription,
 } from '@/lib/actions/subscriptions';
-import { SubscriptionModal } from './SubscriptionModal';
-import { SubscriptionPlanModal } from './SubscriptionPlanModal';
-import { PayInvoiceModal } from './PayInvoiceModal';
-import { SubscriptionChargeWhatsAppModal } from './SubscriptionChargeWhatsAppModal';
-import { SubscriptionReceiptWhatsAppModal } from './SubscriptionReceiptWhatsAppModal';
-import { SubscriptionInvoicesHistoryModal } from './SubscriptionInvoicesHistoryModal';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
+
+const SubscriptionModal = dynamic(
+  () => import('./SubscriptionModal').then((m) => m.SubscriptionModal),
+  { ssr: false }
+);
+
+const SubscriptionPlanModal = dynamic(
+  () => import('./SubscriptionPlanModal').then((m) => m.SubscriptionPlanModal),
+  { ssr: false }
+);
+
+const PayInvoiceModal = dynamic(
+  () => import('./PayInvoiceModal').then((m) => m.PayInvoiceModal),
+  { ssr: false }
+);
+
+const SubscriptionChargeWhatsAppModal = dynamic(
+  () =>
+    import('./SubscriptionChargeWhatsAppModal').then(
+      (m) => m.SubscriptionChargeWhatsAppModal
+    ),
+  { ssr: false }
+);
+
+const SubscriptionReceiptWhatsAppModal = dynamic(
+  () =>
+    import('./SubscriptionReceiptWhatsAppModal').then(
+      (m) => m.SubscriptionReceiptWhatsAppModal
+    ),
+  { ssr: false }
+);
+
+const SubscriptionInvoicesHistoryModal = dynamic(
+  () =>
+    import('./SubscriptionInvoicesHistoryModal').then(
+      (m) => m.SubscriptionInvoicesHistoryModal
+    ),
+  { ssr: false }
+);
 
 interface SubscriptionsListProps {
   initialSubscriptions: ClientSubscription[];

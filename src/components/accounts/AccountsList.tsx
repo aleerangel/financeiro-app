@@ -1,14 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Plus, Wallet, Landmark, PiggyBank, TrendingUp, MoreVertical, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { AccountWithBalance, deleteAccount } from '@/lib/actions/accounts';
 import { formatCurrency } from '@/lib/utils';
-import { AccountModal } from './AccountModal';
-import { EditAccountBalanceModal } from './EditAccountBalanceModal';
+
+const AccountModal = dynamic(
+  () => import('./AccountModal').then((m) => m.AccountModal),
+  { ssr: false }
+);
+
+const EditAccountBalanceModal = dynamic(
+  () =>
+    import('./EditAccountBalanceModal').then((m) => m.EditAccountBalanceModal),
+  { ssr: false }
+);
 
 interface AccountsListProps {
   initialAccounts: AccountWithBalance[];

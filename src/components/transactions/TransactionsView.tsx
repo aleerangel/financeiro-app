@@ -241,22 +241,31 @@ export function TransactionsView({
     }
   };
 
-  // Cálculos consolidados do mês (Realizado vs Previsto)
-  const receivedIncome = transactions
-    .filter((t) => t.type === 'income' && t.is_paid)
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+  // Cálculos consolidados do mês (Realizado vs Previsto) memoizados em passada única O(N)
+  const { receivedIncome, pendingIncome, paidExpense, pendingExpense } = useMemo(() => {
+    let recInc = 0;
+    let pendInc = 0;
+    let paidExp = 0;
+    let pendExp = 0;
 
-  const pendingIncome = transactions
-    .filter((t) => t.type === 'income' && !t.is_paid)
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+    for (const t of transactions) {
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'income') {
+        if (t.is_paid) recInc += amt;
+        else pendInc += amt;
+      } else if (t.type === 'expense') {
+        if (t.is_paid) paidExp += amt;
+        else pendExp += amt;
+      }
+    }
 
-  const paidExpense = transactions
-    .filter((t) => t.type === 'expense' && t.is_paid)
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
-
-  const pendingExpense = transactions
-    .filter((t) => t.type === 'expense' && !t.is_paid)
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+    return {
+      receivedIncome: recInc,
+      pendingIncome: pendInc,
+      paidExpense: paidExp,
+      pendingExpense: pendExp,
+    };
+  }, [transactions]);
 
   const isPast = isPastMonth(month, year);
 

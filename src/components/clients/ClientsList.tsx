@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   Users,
@@ -33,17 +34,34 @@ import { toast } from 'sonner';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
-import { ClientModal } from './ClientModal';
 import {
-  ClientHistoryModal,
   getStatusBadgeStyle,
   formatShortDayMonth,
 } from './ClientHistoryModal';
-import { AmortizeModal } from '@/components/sales/AmortizeModal';
-import {
-  ClientEngagementWhatsAppModal,
-  EngagementPurpose,
-} from './ClientEngagementWhatsAppModal';
+import { EngagementPurpose } from './ClientEngagementWhatsAppModal';
+
+const ClientModal = dynamic(
+  () => import('./ClientModal').then((m) => m.ClientModal),
+  { ssr: false }
+);
+
+const ClientHistoryModal = dynamic(
+  () => import('./ClientHistoryModal').then((m) => m.ClientHistoryModal),
+  { ssr: false }
+);
+
+const AmortizeModal = dynamic(
+  () => import('@/components/sales/AmortizeModal').then((m) => m.AmortizeModal),
+  { ssr: false }
+);
+
+const ClientEngagementWhatsAppModal = dynamic(
+  () =>
+    import('./ClientEngagementWhatsAppModal').then(
+      (m) => m.ClientEngagementWhatsAppModal
+    ),
+  { ssr: false }
+);
 
 function isBirthdayThisMonth(birthDateStr?: string | null): boolean {
   if (!birthDateStr) return false;

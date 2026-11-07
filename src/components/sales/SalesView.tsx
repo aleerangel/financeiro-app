@@ -23,7 +23,11 @@ import { ExportDropdown } from '@/components/ui/ExportDropdown';
 import { exportSalesReport, ExportFormat } from '@/lib/export-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
-import { AmortizeModal } from './AmortizeModal';
+
+const AmortizeModal = dynamic(
+  () => import('./AmortizeModal').then((m) => m.AmortizeModal),
+  { ssr: false }
+);
 
 const NewSaleModal = dynamic(
   () => import('./NewSaleModal').then((m) => m.NewSaleModal),

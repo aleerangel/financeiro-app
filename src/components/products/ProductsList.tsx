@@ -1,15 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Plus, Package, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Product } from '@/types/database';
 import { toggleProductActive, deleteProduct } from '@/lib/actions/products';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
-import { ProductModal } from './ProductModal';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
+
+const ProductModal = dynamic(
+  () => import('./ProductModal').then((m) => m.ProductModal),
+  { ssr: false }
+);
 
 interface ProductsListProps {
   initialProducts: Product[];
