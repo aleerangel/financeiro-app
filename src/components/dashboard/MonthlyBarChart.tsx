@@ -7,6 +7,7 @@ import { calculatePendingProjectedYield } from '@/lib/account-yield-utils';
 import {
   CategoryMonthlyEvolutionItem,
   computeCategoryEvolutionMetrics,
+  getCategoryPaletteColor,
 } from '@/lib/category-evolution-utils';
 import { resolveIncomeCategoryMeta } from '@/lib/business-scope-utils';
 import { useReferenceMonthTransactions } from '@/hooks/useReferenceMonthTransactions';
@@ -163,17 +164,32 @@ export function MonthlyBarChart({
 
     const pendingIncPct = tIncome > 0 ? Math.max(0, 100 - recIncPct) : 0;
 
+    // Ordenação e mapeamento de cores da paleta metálica Canário
+    const sortedSegments = Array.from(incomeMap.values())
+      .filter((seg) => seg.total > 0)
+      .sort((a, b) => {
+        if (b.received !== a.received) return b.received - a.received;
+        return b.pending - a.pending;
+      });
+
+    const categoryColorMap = new Map<string, string>();
+    sortedSegments.forEach((seg, idx) => {
+      categoryColorMap.set(seg.name, getCategoryPaletteColor(idx));
+    });
+
     // Fatias do gráfico de rosca (somente receitas já recebidas)
-    const chartSegments = Array.from(incomeMap.values())
+    const chartSegments = sortedSegments
       .filter((seg) => seg.received > 0)
       .map((seg) => ({
         ...seg,
+        color: categoryColorMap.get(seg.name) || getCategoryPaletteColor(0),
         percentage: recInc > 0 ? (seg.received / recInc) * 100 : 0,
       }))
       .sort((a, b) => b.received - a.received);
 
     const radius = 60;
     const circumference = 2 * Math.PI * radius;
+    const sliceGap = chartSegments.length > 1 ? 2.5 : 0;
 
     const chartArcs = chartSegments.reduce<{
       acc: number;
@@ -183,14 +199,16 @@ export function MonthlyBarChart({
       })[];
     }>(
       (state, item) => {
-        const arcLength = (item.percentage / 100) * circumference;
+        const fullArcLength = (item.percentage / 100) * circumference;
+        const visibleArcLength = Math.max(0, fullArcLength - sliceGap);
+
         return {
-          acc: state.acc + arcLength,
+          acc: state.acc + fullArcLength,
           items: [
             ...state.items,
             {
               ...item,
-              strokeDasharray: `${arcLength} ${circumference}`,
+              strokeDasharray: `${visibleArcLength} ${circumference}`,
               strokeDashoffset: -state.acc,
             },
           ],
@@ -199,17 +217,12 @@ export function MonthlyBarChart({
       { acc: 0, items: [] }
     ).items;
 
-    // Lista de categorias (inclui pendentes para visualização, mas sem desenhar no gráfico circular)
-    const legendCategories = Array.from(incomeMap.values())
-      .filter((seg) => seg.total > 0)
-      .map((seg) => ({
-        ...seg,
-        percentage: recInc > 0 ? (seg.received / recInc) * 100 : 0,
-      }))
-      .sort((a, b) => {
-        if (b.received !== a.received) return b.received - a.received;
-        return b.pending - a.pending;
-      });
+    // Lista de categorias na legenda
+    const legendCategories = sortedSegments.map((seg) => ({
+      ...seg,
+      color: categoryColorMap.get(seg.name) || getCategoryPaletteColor(0),
+      percentage: recInc > 0 ? (seg.received / recInc) * 100 : 0,
+    }));
 
     return {
       receivedIncome: recInc,

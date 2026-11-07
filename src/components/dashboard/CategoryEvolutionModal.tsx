@@ -223,7 +223,7 @@ export function CategoryEvolutionModal({
         {
           id: 'empty',
           name: isIncome ? 'Receitas' : 'Despesas',
-          color: isIncome ? '#10b981' : '#f43f5e',
+          color: isIncome ? '#FACC15' : '#94A3B8',
           values: Array(12).fill(0),
           formatValue: (v) => formatCurrency(v),
         },

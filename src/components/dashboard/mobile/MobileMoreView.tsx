@@ -188,9 +188,9 @@ export function MobileMoreView({
               description: 'Histórico de atendimentos, radar de retorno WhatsApp e VIPs',
               href: '/clientes',
               icon: Users,
-              iconColor: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
+              iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
               badge: clientsReturnCount > 0 ? `${clientsReturnCount} para retorno` : null,
-              badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+              badgeColor: 'bg-[#FACC15]/15 text-[#FACC15] border-[#FACC15]/30',
             },
             {
               title: 'Clube & Mensalidades',
@@ -204,14 +204,14 @@ export function MobileMoreView({
               description: 'Vendas a prazo, cobrança no WhatsApp e quitação',
               href: '/fiados',
               icon: Receipt,
-              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+              iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
             },
             {
               title: 'Serviços & Catálogo de Produtos',
               description: 'Catálogo de serviços, itens e controle de estoque',
               href: '/produtos',
               icon: Package,
-              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+              iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
             },
             {
               title: 'Configurar WhatsApp & Chave Pix',
@@ -219,7 +219,7 @@ export function MobileMoreView({
               onClick: handleOpenMessageSettings,
               isLoading: loadingSettings,
               icon: MessageSquare,
-              iconColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+              iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
             },
           ],
         }
@@ -243,28 +243,32 @@ export function MobileMoreView({
           description: `${accounts.length} contas cadastradas • Saldo: ${formatHidden(formatCurrency(totalBalance))}`,
           href: '/contas',
           icon: Wallet,
-          iconColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+          iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
         },
         {
           title: 'Cartões de Crédito',
           description: `${cards.length} cartões gerenciados • Faturas e limites`,
           href: '/cartoes',
           icon: CreditCard,
+<<<<<<< HEAD
           iconColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+=======
+          iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
+>>>>>>> main
         },
         {
           title: 'Contas Fixas & Recorrências',
           description: 'Aluguel, água, energia, internet e assinaturas automáticas',
           href: '/recorrencias',
           icon: Repeat,
-          iconColor: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+          iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
         },
         {
           title: 'Categorias',
           description: 'Organização de entradas, saídas e centros de custo',
           href: '/categorias',
           icon: Tag,
-          iconColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+          iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
         },
         {
           title: 'Configurações de Notificações',

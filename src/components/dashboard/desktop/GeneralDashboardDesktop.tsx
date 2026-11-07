@@ -98,26 +98,26 @@ export function GeneralDashboardDesktop({
     getGeneralDashboardData
   );
 
-  // 1. Gráfico de Fluxo (3 curvas)
+  // 1. Gráfico de Fluxo (3 curvas com identidade Canário estrita)
   const flowSeries: ChartSeries[] = [
     {
       id: 'serviceRevenue',
       name: 'Saldo de Serviços',
-      color: '#22c55e', // Verde esmeralda
+      color: '#38BDF8', // Azul Safira
       values: flowChart.activeStats.map((s) => s.serviceRevenue),
       formatValue: (v) => formatHidden(formatCurrency(v)),
     },
     {
       id: 'generalIncome',
       name: 'Saldo Geral (Entradas)',
-      color: '#3b82f6', // Azul
+      color: '#94A3B8', // Ardósia Metálico
       values: flowChart.activeStats.map((s) => s.generalIncome),
       formatValue: (v) => formatHidden(formatCurrency(v)),
     },
     {
       id: 'netBalance',
       name: 'Balanço Geral (Entrada - Saída)',
-      color: '#f59e0b', // Âmbar
+      color: '#FACC15', // Canário Radiante
       values: flowChart.activeStats.map((s) => s.netBalance),
       formatValue: (v) => formatHidden(formatCurrency(v)),
     },
@@ -128,7 +128,7 @@ export function GeneralDashboardDesktop({
     {
       id: 'accountBalance',
       name: 'Saldo em Contas',
-      color: '#a855f7', // Roxo
+      color: '#FACC15', // Canário Radiante
       values: balanceChart.activeStats.map((s) => s.accountBalance),
       formatValue: (v) => formatHidden(formatCurrency(v)),
     },

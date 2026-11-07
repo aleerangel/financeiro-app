@@ -69,6 +69,23 @@ const FIXED_INCOME_KEYWORDS = [
   'pro-labore',
 ];
 
+export const CANARIO_CHART_PALETTE = [
+  '#FACC15', // 1. Dourado Canário Radiante (Identidade principal da marca)
+  '#38BDF8', // 2. Azul Safira / Cobalto Luminoso (Contraste frio imediato)
+  '#F1F5F9', // 3. Platina Metálica Gelo (Neutro de alto brilho e clareza)
+  '#B45309', // 4. Bronze Nobre / Âmbar Escuro (Quente profundo, recorte escuro)
+  '#2563EB', // 5. Cobalto Real Profundo (Azul elétrico encorpado)
+  '#94A3B8', // 6. Ardósia Metálico Prateado (Cinza médio refinado)
+  '#FEF08A', // 7. Ouro Champanhe Pálido (Dourado suave luminoso)
+  '#475569', // 8. Cobalto Noite / Grafite (Ardósia escuro de fechamento)
+];
+
+export const CANARIO_METALLIC_PALETTE = CANARIO_CHART_PALETTE;
+
+export function getCategoryPaletteColor(index: number): string {
+  return CANARIO_CHART_PALETTE[Math.abs(index) % CANARIO_CHART_PALETTE.length];
+}
+
 export function isVariableIncomeCategoryName(name: string): boolean {
   const lower = name.trim().toLowerCase();
   if (!lower) return true;
@@ -191,9 +208,23 @@ export function buildYearlyCategoryEvolution(
     return sumB - sumA;
   };
 
+  const sortedIncome = Array.from(incomeMap.values())
+    .sort(sortByYearlyTotal)
+    .map((item, index) => ({
+      ...item,
+      color: getCategoryPaletteColor(index),
+    }));
+
+  const sortedExpense = Array.from(expenseMap.values())
+    .sort(sortByYearlyTotal)
+    .map((item, index) => ({
+      ...item,
+      color: getCategoryPaletteColor(index),
+    }));
+
   return {
-    incomeCategories: Array.from(incomeMap.values()).sort(sortByYearlyTotal),
-    expenseCategories: Array.from(expenseMap.values()).sort(sortByYearlyTotal),
+    incomeCategories: sortedIncome,
+    expenseCategories: sortedExpense,
   };
 }
 

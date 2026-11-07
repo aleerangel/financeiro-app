@@ -1,25 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Check, User, Store } from 'lucide-react';
+import { X, User, Store } from 'lucide-react';
 import { Category, CategoryType, FinancialScope } from '@/types/database';
 import { createCategory, updateCategory } from '@/lib/actions/categories';
 import { CATEGORY_ICONS_LIST, CategoryIcon } from './CategoryIcon';
 import { isBusinessCategory } from '@/lib/business-scope-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
-
-const PRESET_COLORS = [
-  '#ef4444', // Red
-  '#f97316', // Orange
-  '#f59e0b', // Amber
-  '#10b981', // Emerald
-  '#06b6d4', // Cyan
-  '#3b82f6', // Blue
-  '#8b5cf6', // Violet
-  '#ec4899', // Pink
-  '#64748b', // Slate
-  '#eab308', // Yellow
-];
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -63,7 +50,6 @@ function CategoryModalDialog({
   const [scope, setScope] = useState<FinancialScope>(
     hasBusiness && category && isBusinessCategory(category) ? 'business' : 'personal'
   );
-  const [color, setColor] = useState(category?.color || '#10b981');
   const [icon, setIcon] = useState(category?.icon || 'tag');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,12 +65,15 @@ function CategoryModalDialog({
       setLoading(true);
       setError(null);
 
+      // Mantém valor neutro fixo para preservar retrocompatibilidade da tabela categories
+      const fallbackColor = category?.color || '#FACC15';
+
       let saved: Category;
       if (isEditing && category) {
         saved = await updateCategory(category.id, {
           name: name.trim(),
           type,
-          color,
+          color: fallbackColor,
           icon,
           scope,
         });
@@ -92,7 +81,7 @@ function CategoryModalDialog({
         saved = await createCategory({
           name: name.trim(),
           type,
-          color,
+          color: fallbackColor,
           icon,
           scope,
         });
@@ -112,11 +101,8 @@ function CategoryModalDialog({
       <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-950 font-bold"
-              style={{ backgroundColor: color }}
-            >
-              <CategoryIcon name={icon} className="w-4 h-4 text-zinc-950" />
+            <div className="w-8 h-8 rounded-xl bg-[#151D30] border border-[#1E293B] flex items-center justify-center text-[#FACC15]">
+              <CategoryIcon name={icon} className="w-4 h-4 stroke-[2.2]" />
             </div>
             <h3 className="font-bold text-[#F8FAFC] text-lg">
               {isEditing ? 'Editar Categoria' : 'Nova Categoria'}
@@ -183,7 +169,7 @@ function CategoryModalDialog({
                 onClick={() => setType('expense')}
                 className={`py-2 text-xs font-semibold rounded-lg transition ${
                   type === 'expense'
-                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold'
                     : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
@@ -194,7 +180,7 @@ function CategoryModalDialog({
                 onClick={() => setType('income')}
                 className={`py-2 text-xs font-semibold rounded-lg transition ${
                   type === 'income'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    ? 'bg-[#FACC15]/20 text-[#FDE047] border border-[#FACC15]/40 font-bold'
                     : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
@@ -217,35 +203,6 @@ function CategoryModalDialog({
               required
               autoFocus
             />
-          </div>
-
-          {/* Seletor de Cores */}
-          <div>
-            <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
-              Cor
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition hover:scale-110 relative"
-                  style={{ backgroundColor: c }}
-                >
-                  {color.toLowerCase() === c.toLowerCase() && (
-                    <Check className="w-3.5 h-3.5 text-zinc-950 stroke-[3]" />
-                  )}
-                </button>
-              ))}
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-7 h-7 rounded-full bg-transparent cursor-pointer border-0 p-0"
-                title="Personalizar cor"
-              />
-            </div>
           </div>
 
           {/* Seletor de Ícones */}

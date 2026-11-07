@@ -5,6 +5,7 @@ import { Transaction } from '@/types/database';
 import {
   CategoryMonthlyEvolutionItem,
   computeCategoryEvolutionMetrics,
+  getCategoryPaletteColor,
 } from '@/lib/category-evolution-utils';
 import { useReferenceMonthTransactions } from '@/hooks/useReferenceMonthTransactions';
 import { formatCurrency } from '@/lib/utils';
@@ -132,17 +133,32 @@ export function CategoryDonutChart({
         : 0;
     const pendPct = total > 0 ? Math.max(0, 100 - paidPct) : 0;
 
+    // Ordenação e mapeamento de cores da paleta metálica Canário
+    const sortedCategories = Array.from(map.values())
+      .filter((item) => item.total > 0)
+      .sort((a, b) => {
+        if (b.paid !== a.paid) return b.paid - a.paid;
+        return b.pending - a.pending;
+      });
+
+    const categoryColorMap = new Map<string, string>();
+    sortedCategories.forEach((cat, idx) => {
+      categoryColorMap.set(cat.name, getCategoryPaletteColor(idx));
+    });
+
     // Fatias do gráfico de rosca (somente despesas já pagas)
-    const chartTotals = Array.from(map.values())
+    const chartTotals = sortedCategories
       .filter((item) => item.paid > 0)
       .map((item) => ({
         ...item,
+        color: categoryColorMap.get(item.name) || getCategoryPaletteColor(0),
         percentage: paidExp > 0 ? (item.paid / paidExp) * 100 : 0,
       }))
       .sort((a, b) => b.paid - a.paid);
 
     const radius = 60;
     const circumference = 2 * Math.PI * radius;
+    const sliceGap = chartTotals.length > 1 ? 2.5 : 0;
 
     const chartArcs = chartTotals.reduce<{
       acc: number;
@@ -152,14 +168,16 @@ export function CategoryDonutChart({
       })[];
     }>(
       (state, item) => {
-        const arcLength = (item.percentage / 100) * circumference;
+        const fullArcLength = (item.percentage / 100) * circumference;
+        const visibleArcLength = Math.max(0, fullArcLength - sliceGap);
+
         return {
-          acc: state.acc + arcLength,
+          acc: state.acc + fullArcLength,
           items: [
             ...state.items,
             {
               ...item,
-              strokeDasharray: `${arcLength} ${circumference}`,
+              strokeDasharray: `${visibleArcLength} ${circumference}`,
               strokeDashoffset: -state.acc,
             },
           ],
@@ -168,17 +186,12 @@ export function CategoryDonutChart({
       { acc: 0, items: [] }
     ).items;
 
-    // Lista de categorias (inclui pendentes para visualização, mas sem desenhar no gráfico circular)
-    const legendCategories = Array.from(map.values())
-      .filter((item) => item.total > 0)
-      .map((item) => ({
-        ...item,
-        percentage: paidExp > 0 ? (item.paid / paidExp) * 100 : 0,
-      }))
-      .sort((a, b) => {
-        if (b.paid !== a.paid) return b.paid - a.paid;
-        return b.pending - a.pending;
-      });
+    // Lista de categorias na legenda
+    const legendCategories = sortedCategories.map((item) => ({
+      ...item,
+      color: categoryColorMap.get(item.name) || getCategoryPaletteColor(0),
+      percentage: paidExp > 0 ? (item.paid / paidExp) * 100 : 0,
+    }));
 
     return {
       chartArcs,

@@ -408,13 +408,7 @@ export function TransactionsView({
             </div>
 
             <div className="flex items-center gap-2 text-xs text-zinc-400 mt-0.5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5">
-                {t.category?.color && (
-                  <span
-                    className="w-2 h-2 rounded-full inline-block"
-                    style={{ backgroundColor: t.category.color }}
-                  />
-                )}
+              <span className="inline-flex items-center font-medium text-zinc-300">
                 {t.category?.name || 'Sem Categoria'}
               </span>
               <span>•</span>
@@ -566,13 +560,7 @@ export function TransactionsView({
               </span>
             )}
 
-            <span className="inline-flex items-center gap-1 truncate max-w-[120px]">
-              {t.category?.color && (
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: t.category.color }}
-                />
-              )}
+            <span className="inline-flex items-center font-medium text-zinc-300 truncate max-w-[120px]">
               <span className="truncate">{t.category?.name || 'Sem Categoria'}</span>
             </span>
 
