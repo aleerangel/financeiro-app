@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
 import { formatCurrency } from '@/lib/utils';
-import { getCardInvoiceStatus } from '@/lib/credit-card-utils';
+import { getCardInvoiceStatus, CardInvoiceStatus } from '@/lib/credit-card-utils';
 
 interface WalletInvoiceCardProps {
   cards: CreditCardWithUsage[];
@@ -19,44 +19,13 @@ interface WalletInvoiceCardProps {
   className?: string;
 }
 
-const STORAGE_KEY = 'financeiro_last_accessed_card_id';
-
 export function WalletInvoiceCard({
   cards,
   showValues = true,
   className = '',
 }: WalletInvoiceCardProps) {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [lastSelectedCardId, setLastSelectedCardId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved && cards.some((c) => c.id === saved)) {
-          return saved;
-        }
-      } catch {
-        // Ignora em caso de indisponibilidade de storage
-      }
-    }
-    return null;
-  });
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
-
-  // Ordem da pilha: o último cartão acessado fica no topo (index 0)
-  const [cardOrder, setCardOrder] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved && cards.some((c) => c.id === saved)) {
-          const others = cards.map((c) => c.id).filter((id) => id !== saved);
-          return [saved, ...others];
-        }
-      } catch {
-        // Ignora
-      }
-    }
-    return cards.map((c) => c.id);
-  });
 
   const formatHidden = (val: string) => (showValues ? val : '••••••');
 
@@ -83,48 +52,36 @@ export function WalletInvoiceCard({
     }));
   }, [cards]);
 
-  // Lista de cartões com o último acessado movido para o topo da pilha
-  const orderedCardsWithStatus = useMemo(() => {
-    const map = new Map(cardsWithStatus.map((item) => [item.card.id, item]));
-    const result: typeof cardsWithStatus = [];
+  // Ordena os cartões de modo que o cartão com a fatura de fechamento/vencimento mais próximo
+  // fique NO TOPO DA PILHA (camada frontal com maior z-index, na frente de todos)
+  const stackCards = useMemo(() => {
+    const getUrgencyScore = (item: { card: CreditCardWithUsage; status: CardInvoiceStatus }) => {
+      // Data do próximo evento:
+      // Se fechada: dueDateStr (vencimento iminente)
+      // Se aberta: closingDateStr (fechamento iminente)
+      const eventDateStr = item.status.isOpen
+        ? item.status.closingDateStr
+        : item.status.dueDateStr;
+      const time = new Date(eventDateStr + 'T12:00:00').getTime();
 
-    // Primeiro insere na ordem do cardOrder (último acessado no topo)
-    for (const id of cardOrder) {
-      const item = map.get(id);
-      if (item) {
-        result.push(item);
-        map.delete(id);
-      }
-    }
+      // Faturas fechadas têm urgência máxima imediata (prioridade sobre faturas abertas)
+      return item.status.isOpen ? time : time - 100 * 24 * 60 * 60 * 1000;
+    };
 
-    // Qualquer cartão novo adicionado
-    for (const item of map.values()) {
-      result.push(item);
-    }
+    const copy = [...cardsWithStatus];
+    // Mais distante primeiro (fundo da pilha), mais próximo por último (topo da pilha, sobre todos)
+    return copy.sort((a, b) => getUrgencyScore(b) - getUrgencyScore(a));
+  }, [cardsWithStatus]);
 
-    return result;
-  }, [cardsWithStatus, cardOrder]);
-
-  const activeCardId = selectedCardId || lastSelectedCardId || orderedCardsWithStatus[0]?.card.id;
+  // O cartão do topo da pilha é o padrão quando nenhum estiver selecionado
+  const topCard = stackCards[stackCards.length - 1] || stackCards[0] || null;
   const activeExpandedCard = useMemo(() => {
-    return (
-      orderedCardsWithStatus.find((item) => item.card.id === activeCardId) ||
-      orderedCardsWithStatus[0] ||
-      null
-    );
-  }, [orderedCardsWithStatus, activeCardId]);
+    if (!selectedCardId) return topCard;
+    return stackCards.find((item) => item.card.id === selectedCardId) || topCard;
+  }, [stackCards, selectedCardId, topCard]);
 
   const handleSelectCard = (id: string) => {
-    setLastSelectedCardId(id);
     setSelectedCardId(id);
-    setCardOrder((prev) => [id, ...prev.filter((cardId) => cardId !== id)]);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY, id);
-      } catch {
-        // Ignora
-      }
-    }
   };
 
   const handleBackToWallet = () => {
@@ -296,7 +253,7 @@ export function WalletInvoiceCard({
             </div>
 
             <div className="relative pt-1 pb-1">
-              {orderedCardsWithStatus.map(({ card, status }, index) => {
+              {stackCards.map(({ card, status }, index) => {
                 const isHovered = hoveredCardId === card.id;
                 return (
                   <div
@@ -413,7 +370,7 @@ export function WalletInvoiceCard({
 
               {/* Seletor Rápido de Cartões em Modo Expandido */}
               <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md px-2 py-1 rounded-full border border-white/10">
-                {orderedCardsWithStatus.map(({ card: c }) => (
+                {stackCards.map(({ card: c }) => (
                   <button
                     key={c.id}
                     type="button"
