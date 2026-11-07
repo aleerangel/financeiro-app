@@ -284,13 +284,13 @@ export function CreditCardsList({ initialCards }: CreditCardsListProps) {
         )}
       </div>
 
-      {/* Aba / Painel de Faturas do Cartão Selecionado */}
-      {selectedCard && (
-        <div ref={invoicesPanelRef}>
+      {/* Aba / Painel de Faturas dos Cartões (Consolidado e Individual) */}
+      {initialCards.length > 0 && (
+        <div ref={invoicesPanelRef} className="pt-2">
           <CreditCardInvoicesPanel
-            key={selectedCard.id}
-            card={selectedCard}
-            onClose={() => setSelectedCardId(null)}
+            cards={initialCards}
+            activeCardId={selectedCardId || (initialCards.length > 1 ? 'all' : initialCards[0].id)}
+            onSelectCardId={(id) => setSelectedCardId(id === 'all' ? null : id)}
           />
         </div>
       )}

@@ -36,6 +36,7 @@ import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Store } from 'lucide-react';
 import { useMobileNavigation } from '@/context/MobileNavigationContext';
+import { WalletInvoiceCard } from '@/components/cards/WalletInvoiceCard';
 
 const CategoryEvolutionModal = dynamic(
   () => import('../CategoryEvolutionModal').then((m) => m.CategoryEvolutionModal),
@@ -141,10 +142,6 @@ export function GeneralDashboardDesktop({
 
   // Cálculos do mês atual
   const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.current_balance || 0), 0);
-  const totalCardLimit = cards.reduce((sum, c) => sum + Number(c.credit_limit || 0), 0);
-  const totalCardUsed = cards.reduce((sum, c) => sum + Number(c.used_limit || 0), 0);
-  const totalCardAvailable = Math.max(0, totalCardLimit - totalCardUsed);
-  const totalCurrentInvoice = cards.reduce((sum, c) => sum + Number(c.current_invoice || 0), 0);
 
   let receivedIncome = 0;
   let pendingIncome = 0;
@@ -198,44 +195,11 @@ export function GeneralDashboardDesktop({
           </div>
         </div>
 
-        {/* Card Faturas de Cartão */}
-        <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              Fatura Atual
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
-              <CreditCard className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-baseline justify-between gap-2">
-              <h2 className="text-2xl font-bold text-purple-300">{formatHidden(formatCurrency(totalCurrentInvoice))}</h2>
-              {cards[0] && (
-                (() => {
-                  const primaryStatus = cards[0].invoice_status || getCardInvoiceStatus(cards[0]);
-                  return (
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        primaryStatus.isOpen
-                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                          : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                      }`}
-                    >
-                      {primaryStatus.isOpen
-                        ? `${primaryStatus.closingLabel}${primaryStatus.daysLeftLabel ? ` • ${primaryStatus.daysLeftLabel}` : ''}`
-                        : primaryStatus.dueLabel}
-                    </span>
-                  );
-                })()
-              )}
-            </div>
-            <div className="flex items-center justify-between text-[11px] text-zinc-400 mt-1">
-              <span>Usado: <strong className="text-zinc-200">{formatHidden(formatCurrency(totalCardUsed))}</strong></span>
-              <span>Disp: <strong className="text-emerald-400">{formatHidden(formatCurrency(totalCardAvailable))}</strong></span>
-            </div>
-          </div>
-        </div>
+        {/* Card Fatura Atual com Carteira Multi-Cartão */}
+        <WalletInvoiceCard
+          cards={cards}
+          showValues={showValues}
+        />
 
         {/* Card Receitas do Mês */}
         <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-2xl flex flex-col justify-between">

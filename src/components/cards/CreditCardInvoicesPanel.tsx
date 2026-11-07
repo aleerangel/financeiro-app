@@ -10,11 +10,12 @@ import {
   Receipt,
   Trash2,
   X,
-  AlertTriangle,
   Sparkles,
   Repeat,
   Layers,
   Store,
+  CreditCard as CardIcon,
+  Info,
 } from 'lucide-react';
 import { Transaction } from '@/types/database';
 import { isBusinessTransaction } from '@/lib/business-scope-utils';
@@ -35,8 +36,11 @@ import { useRouter } from 'next/navigation';
 import { PayInvoiceModal } from './PayInvoiceModal';
 
 interface CreditCardInvoicesPanelProps {
-  card: CreditCardWithUsage;
-  onClose: () => void;
+  cards?: CreditCardWithUsage[];
+  card?: CreditCardWithUsage;
+  activeCardId?: string | 'all';
+  onSelectCardId?: (cardId: string | 'all') => void;
+  onClose?: () => void;
 }
 
 const MONTH_SHORT_NAMES = [
@@ -50,7 +54,10 @@ const MONTH_FULL_NAMES = [
 ];
 
 export function CreditCardInvoicesPanel({
+  cards = [],
   card,
+  activeCardId: propActiveCardId,
+  onSelectCardId,
   onClose,
 }: CreditCardInvoicesPanelProps) {
   const router = useRouter();
@@ -58,14 +65,49 @@ export function CreditCardInvoicesPanel({
   const { hasBusiness, businessName } = useBusinessProfile();
   const { month: globalMonth, year: globalYear } = useDateContext();
 
+  // Consolidação de lista de cartões disponíveis
+  const allCards: CreditCardWithUsage[] = useMemo(() => {
+    if (cards.length > 0) return cards;
+    if (card) return [card];
+    return [];
+  }, [cards, card]);
+
+  // Estado interno para controle do cartão ativo se não for controlado via prop
+  const [internalActiveCardId, setInternalActiveCardId] = useState<string | 'all'>(() => {
+    if (propActiveCardId !== undefined) return propActiveCardId;
+    if (card) return card.id;
+    return allCards.length > 1 ? 'all' : allCards[0]?.id || 'all';
+  });
+
+  const activeCardId = propActiveCardId !== undefined ? propActiveCardId : internalActiveCardId;
+
+  const handleCardChange = (newCardId: string | 'all') => {
+    if (onSelectCardId) {
+      onSelectCardId(newCardId);
+    } else {
+      setInternalActiveCardId(newCardId);
+    }
+  };
+
+  const activeCard = useMemo(() => {
+    if (activeCardId === 'all') return null;
+    return allCards.find((c) => c.id === activeCardId) || null;
+  }, [allCards, activeCardId]);
+
+  const isConsolidated = activeCardId === 'all' || !activeCard;
+  const themeColor = activeCard?.color || '#8b5cf6';
+
   const [selectedMonth, setSelectedMonth] = useState<number>(globalMonth);
   const [selectedYear, setSelectedYear] = useState<number>(globalYear);
   const [prevGlobalKey, setPrevGlobalKey] = useState<string>(`${globalYear}-${globalMonth}`);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loadedCardKey, setLoadedCardKey] = useState<string | null>(null);
+  const [fetchLoading, setFetchLoading] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [itemLoadingId, setItemLoadingId] = useState<string | null>(null);
   const [payModalOpen, setPayModalOpen] = useState<boolean>(false);
+
+  const loading = loadedCardKey !== activeCardId || fetchLoading;
 
   const currentGlobalKey = `${globalYear}-${globalMonth}`;
   if (prevGlobalKey !== currentGlobalKey) {
@@ -76,34 +118,34 @@ export function CreditCardInvoicesPanel({
 
   const refreshCardTransactions = useCallback(async () => {
     try {
-      setLoading(true);
-      const data = await getCreditCardTransactions(card.id);
+      setFetchLoading(true);
+      const data = await getCreditCardTransactions(activeCardId === 'all' ? undefined : activeCardId);
       setTransactions(data);
     } catch (err) {
       console.error('Erro ao carregar faturas do cartão:', err);
     } finally {
-      setLoading(false);
+      setFetchLoading(false);
     }
-  }, [card.id]);
+  }, [activeCardId]);
 
   useEffect(() => {
     let active = true;
-    getCreditCardTransactions(card.id)
+    getCreditCardTransactions(activeCardId === 'all' ? undefined : activeCardId)
       .then((data) => {
         if (active) {
           setTransactions(data);
-          setLoading(false);
+          setLoadedCardKey(activeCardId);
         }
       })
       .catch((err) => {
-        console.error('Erro ao carregar faturas do cartão:', err);
-        if (active) setLoading(false);
+        console.error('Erro ao carregar faturas:', err);
+        if (active) setLoadedCardKey(activeCardId);
       });
 
     return () => {
       active = false;
     };
-  }, [card.id]);
+  }, [activeCardId]);
 
   // Agrupa faturas por chave YYYY-MM para exibir as abas de meses com movimentação
   const invoicesByMonthKey = useMemo(() => {
@@ -179,9 +221,19 @@ export function CreditCardInvoicesPanel({
     );
   }, [invoicesByMonthKey, currentInvoiceKey, selectedMonth, selectedYear]);
 
-  // Obtém datas exatas e status da fatura selecionada a partir da fonte única da verdade
+  // Obtém datas e status da fatura
   const invoiceDatesInfo = useMemo(() => {
-    const baseStatus = getCardInvoiceStatus(card, selectedMonth, selectedYear);
+    if (isConsolidated) {
+      return {
+        statusLabel: `Visão Consolidada (${allCards.length} cartões)`,
+        statusColor: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+        subtitle: 'Vencimentos variados conforme cada cartão cadastrado',
+        isConsolidated: true,
+      };
+    }
+
+    // Cartão individual
+    const baseStatus = getCardInvoiceStatus(activeCard!, selectedMonth, selectedYear);
     const todayStr = getTodayYMD();
 
     let statusLabel = 'Sem lançamentos';
@@ -211,8 +263,10 @@ export function CreditCardInvoicesPanel({
       daysLeftLabel: baseStatus.daysLeftLabel,
       closingLabel: baseStatus.closingLabel,
       dueLabel: baseStatus.dueLabel,
+      subtitle: `Fechamento em ${formatDate(baseStatus.closingDateStr)} • Vencimento em ${formatDate(baseStatus.dueDateStr)}`,
+      isConsolidated: false,
     };
-  }, [card, selectedMonth, selectedYear, currentInvoice]);
+  }, [isConsolidated, allCards.length, activeCard, selectedMonth, selectedYear, currentInvoice]);
 
   const handlePrevMonth = () => {
     if (selectedMonth === 0) {
@@ -233,9 +287,10 @@ export function CreditCardInvoicesPanel({
   };
 
   const handlePayEntireInvoice = async (markAsPaid: boolean) => {
+    if (!activeCard) return;
     try {
       setActionLoading(true);
-      await setCreditCardInvoicePaid(card.id, selectedMonth, selectedYear, markAsPaid);
+      await setCreditCardInvoicePaid(activeCard.id, selectedMonth, selectedYear, markAsPaid);
       toast.success(markAsPaid ? 'Fatura marcada como paga com sucesso!' : 'Fatura reaberta!');
       await refreshCardTransactions();
       router.refresh();
@@ -297,24 +352,77 @@ export function CreditCardInvoicesPanel({
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+      {/* Abas Rápidas de Seleção de Cartão (Se houver mais de 1 cartão cadastrado) */}
+      {allCards.length > 1 && (
+        <div className="px-5 pt-3.5 pb-2 border-b border-zinc-800/80 bg-zinc-950/70 flex items-center gap-2 overflow-x-auto scrollbar-none">
+          <button
+            type="button"
+            onClick={() => handleCardChange('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              activeCardId === 'all'
+                ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+            }`}
+          >
+            <CardIcon className="w-3.5 h-3.5" />
+            <span>Todos os Cartões</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/15 font-mono">
+              {allCards.length}
+            </span>
+          </button>
+
+          {allCards.map((c) => {
+            const isCardActive = activeCardId === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => handleCardChange(c.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  isCardActive
+                    ? 'text-white shadow-md'
+                    : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                }`}
+                style={
+                  isCardActive
+                    ? { backgroundColor: c.color || '#8b5cf6' }
+                    : undefined
+                }
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: c.color || '#8b5cf6' }}
+                />
+                <span className="truncate max-w-[130px]">{c.name}</span>
+                {c.current_invoice > 0 && (
+                  <span className="text-[10px] opacity-80">
+                    ({formatCurrency(c.current_invoice)})
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Cabeçalho do Painel de Faturas */}
       <div
         className="p-5 sm:p-6 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         style={{
-          backgroundImage: `linear-gradient(135deg, ${card.color || '#8b5cf6'}22 0%, transparent 65%)`,
+          backgroundImage: `linear-gradient(135deg, ${themeColor}22 0%, transparent 65%)`,
         }}
       >
         <div className="flex items-center gap-3">
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-md shrink-0"
-            style={{ backgroundColor: card.color || '#8b5cf6' }}
+            style={{ backgroundColor: themeColor }}
           >
             <Receipt className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-lg font-bold text-zinc-100">
-                Faturas • {card.name}
+                {isConsolidated ? 'Faturas Consolidadas • Todos os Cartões' : `Faturas • ${activeCard?.name}`}
               </h3>
               <span
                 className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${invoiceDatesInfo.statusColor}`}
@@ -323,8 +431,7 @@ export function CreditCardInvoicesPanel({
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Fechamento em {formatDate(invoiceDatesInfo.closingDateStr)} • Vencimento em{' '}
-              <strong className="text-zinc-200">{formatDate(invoiceDatesInfo.dueDateStr)}</strong>
+              {invoiceDatesInfo.subtitle}
             </p>
           </div>
         </div>
@@ -334,7 +441,7 @@ export function CreditCardInvoicesPanel({
           <div className="flex items-center gap-1 bg-zinc-950/90 border border-zinc-800 rounded-xl px-2 py-1">
             <button
               onClick={handlePrevMonth}
-              className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition"
+              className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
               title="Fatura anterior"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -344,32 +451,31 @@ export function CreditCardInvoicesPanel({
             </span>
             <button
               onClick={handleNextMonth}
-              className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition"
+              className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
               title="Próxima fatura"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition"
-            title="Fechar aba de faturas"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer"
+              title="Fechar aba de faturas"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Abas Rápidas de Meses com Faturas */}
-      {invoicesByMonthKey.length > 0 && (
-        <div className="px-5 pt-4 pb-2 border-b border-zinc-800/70 bg-zinc-950/40 overflow-x-auto">
-          <div className="flex items-center gap-2 min-w-max pb-1">
+      {/* Navegação por Abas de Faturas Históricas */}
+      {invoicesByMonthKey.length > 1 && (
+        <div className="px-5 pt-3 pb-0 border-b border-zinc-800/80 bg-zinc-950/40 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-2">
             {invoicesByMonthKey.map((inv) => {
-              const isSelected =
-                inv.month === selectedMonth && inv.year === selectedYear;
-              const isAllPaid = inv.items.length > 0 && inv.pendingTotal <= 0;
-
+              const isSelected = inv.key === currentInvoiceKey;
               return (
                 <button
                   key={inv.key}
@@ -377,26 +483,15 @@ export function CreditCardInvoicesPanel({
                     setSelectedMonth(inv.month);
                     setSelectedYear(inv.year);
                   }}
-                  className={`px-3.5 py-2 rounded-xl text-left border transition flex flex-col gap-0.5 min-w-[105px] ${
+                  className={`px-3 py-2 border-b-2 text-xs font-medium transition flex items-center gap-2 shrink-0 cursor-pointer ${
                     isSelected
-                      ? 'bg-zinc-800 border-emerald-500/50 text-zinc-100 shadow-sm'
-                      : 'bg-zinc-900/70 border-zinc-800/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                      ? 'border-emerald-400 text-emerald-400 font-bold'
+                      : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider">
-                      {MONTH_SHORT_NAMES[inv.month]}/{String(inv.year).slice(-2)}
-                    </span>
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        inv.items.length === 0
-                          ? 'bg-zinc-600'
-                          : isAllPaid
-                          ? 'bg-emerald-400'
-                          : 'bg-amber-400'
-                      }`}
-                    />
-                  </div>
+                  <span>
+                    {MONTH_SHORT_NAMES[inv.month]}/{String(inv.year).slice(-2)}
+                  </span>
                   <span
                     className={`text-xs font-semibold ${
                       isSelected ? 'text-zinc-100' : 'text-zinc-300'
@@ -458,13 +553,19 @@ export function CreditCardInvoicesPanel({
           )}
         </div>
 
+        {/* Ação de Pagamento */}
         {currentInvoice.items.length > 0 && (
           <div className="flex items-center gap-2">
-            {currentInvoice.pendingTotal > 0 ? (
+            {isConsolidated ? (
+              <div className="text-xs text-zinc-400 bg-zinc-800/40 border border-zinc-800 px-3 py-2 rounded-xl flex items-center gap-1.5">
+                <Info className="w-4 h-4 text-purple-400 shrink-0" />
+                <span>Selecione um cartão na barra acima para pagar sua fatura.</span>
+              </div>
+            ) : currentInvoice.pendingTotal > 0 ? (
               <button
                 onClick={() => setPayModalOpen(true)}
                 disabled={actionLoading}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10 active:scale-95"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-zinc-950 font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-500/10 active:scale-95 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
                 {actionLoading
@@ -475,7 +576,7 @@ export function CreditCardInvoicesPanel({
               <button
                 onClick={() => handlePayEntireInvoice(false)}
                 disabled={actionLoading}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-200 font-medium text-xs rounded-xl transition border border-zinc-700"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-200 font-medium text-xs rounded-xl transition border border-zinc-700 cursor-pointer"
               >
                 <Clock className="w-3.5 h-3.5" />
                 {actionLoading ? 'Processando...' : 'Reabrir Fatura'}
@@ -498,7 +599,7 @@ export function CreditCardInvoicesPanel({
               Nenhuma compra nesta fatura de {MONTH_FULL_NAMES[selectedMonth]} de {selectedYear}.
             </p>
             <p className="text-xs text-zinc-500 mt-1">
-              Use as abas acima ou as setas para navegar entre outras faturas deste cartão.
+              Use as abas acima ou as setas para navegar entre outras faturas.
             </p>
           </div>
         ) : (
@@ -518,7 +619,7 @@ export function CreditCardInvoicesPanel({
                     onClick={() => handleToggleItemPaid(tx)}
                     disabled={itemLoadingId === tx.id}
                     title={tx.is_paid ? 'Marcar como pendente' : 'Marcar item como pago'}
-                    className={`mt-0.5 sm:mt-0 w-8 h-8 rounded-xl flex items-center justify-center border transition shrink-0 ${
+                    className={`mt-0.5 sm:mt-0 w-8 h-8 rounded-xl flex items-center justify-center border transition shrink-0 cursor-pointer ${
                       tx.is_paid
                         ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
                         : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
@@ -536,6 +637,27 @@ export function CreditCardInvoicesPanel({
                       <span className="font-semibold text-sm text-zinc-100 truncate">
                         {tx.description}
                       </span>
+
+                      {/* Tag do Cartão (Destaque em Visão Consolidada ou Multi-Cartão) */}
+                      {(isConsolidated || allCards.length > 1) && tx.credit_card && (
+                        <button
+                          type="button"
+                          onClick={() => tx.credit_card && handleCardChange(tx.credit_card.id)}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border transition hover:opacity-80 cursor-pointer"
+                          style={{
+                            backgroundColor: `${tx.credit_card.color || '#8b5cf6'}20`,
+                            borderColor: `${tx.credit_card.color || '#8b5cf6'}40`,
+                            color: tx.credit_card.color || '#a78bfa',
+                          }}
+                          title={`Filtrar apenas ${tx.credit_card.name}`}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: tx.credit_card.color || '#8b5cf6' }}
+                          />
+                          <span>{tx.credit_card.name}</span>
+                        </button>
+                      )}
 
                       {isBusinessTransaction(tx) && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 truncate max-w-[120px]">
@@ -578,34 +700,30 @@ export function CreditCardInvoicesPanel({
                         Compra: {formatDate(tx.transaction_date)}
                       </span>
                       <span>•</span>
-                      <span>Vence: {formatDate(tx.due_date)}</span>
+                      <span>Vencimento da fatura: {formatDate(tx.due_date)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-3">
                   <div className="text-right">
                     <span
                       className={`text-sm sm:text-base font-bold block ${
-                        tx.is_paid ? 'text-emerald-400 line-through' : 'text-zinc-100'
+                        tx.is_paid ? 'text-zinc-400 line-through' : 'text-zinc-100'
                       }`}
                     >
-                      {formatCurrency(Number(tx.amount))}
+                      {formatCurrency(tx.amount)}
                     </span>
-                    <span
-                      className={`text-[10px] font-medium ${
-                        tx.is_paid ? 'text-emerald-400' : 'text-amber-400'
-                      }`}
-                    >
-                      {tx.is_paid ? 'Pago' : 'Na fatura'}
+                    <span className="text-[10px] text-zinc-500">
+                      {tx.is_paid ? 'Pago' : 'Pendente'}
                     </span>
                   </div>
 
                   <button
                     onClick={() => handleDeleteItem(tx)}
                     disabled={itemLoadingId === tx.id}
-                    className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition"
                     title="Excluir lançamento"
+                    className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -616,37 +734,28 @@ export function CreditCardInvoicesPanel({
         )}
       </div>
 
-      {/* Rodapé informativo */}
-      { invoiceDatesInfo.statusLabel === 'Fatura Vencida' && (
-        <div className="px-5 py-3 bg-rose-950/30 border-t border-rose-900/40 flex items-center gap-2 text-xs text-rose-300">
-          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>
-            Esta fatura venceu em {formatDate(invoiceDatesInfo.dueDateStr)} e ainda possui{' '}
-            <strong>{formatCurrency(currentInvoice.pendingTotal)}</strong> em aberto.
-          </span>
-        </div>
+      {/* Modal de Pagamento de Fatura (Apenas para cartão individual ativo) */}
+      {activeCard && !isConsolidated && (
+        <PayInvoiceModal
+          isOpen={payModalOpen}
+          onClose={() => setPayModalOpen(false)}
+          card={activeCard}
+          month={selectedMonth}
+          year={selectedYear}
+          monthName={MONTH_FULL_NAMES[selectedMonth]}
+          totalAmount={currentInvoice.total}
+          paidAmount={currentInvoice.paidTotal}
+          pendingAmount={currentInvoice.pendingTotal}
+          isInvoiceOpen={invoiceDatesInfo.statusLabel === 'Fatura Aberta'}
+          dueDateStr={invoiceDatesInfo.dueDateStr || ''}
+          closingDateStr={invoiceDatesInfo.closingDateStr || ''}
+          pendingTransactions={currentInvoice.items.filter((i) => !i.is_paid)}
+          onSuccess={async () => {
+            await refreshCardTransactions();
+            router.refresh();
+          }}
+        />
       )}
-
-      {/* Modal de Pagamento de Fatura (Total ou Parcial Estilo Nubank) */}
-      <PayInvoiceModal
-        isOpen={payModalOpen}
-        onClose={() => setPayModalOpen(false)}
-        card={card}
-        month={selectedMonth}
-        year={selectedYear}
-        monthName={MONTH_FULL_NAMES[selectedMonth]}
-        totalAmount={currentInvoice.total}
-        paidAmount={currentInvoice.paidTotal}
-        pendingAmount={currentInvoice.pendingTotal}
-        pendingTransactions={currentInvoice.items.filter((tx) => !tx.is_paid)}
-        isInvoiceOpen={getTodayYMD() < invoiceDatesInfo.closingDateStr}
-        dueDateStr={invoiceDatesInfo.dueDateStr}
-        closingDateStr={invoiceDatesInfo.closingDateStr}
-        onSuccess={async () => {
-          await refreshCardTransactions();
-          router.refresh();
-        }}
-      />
     </div>
   );
 }

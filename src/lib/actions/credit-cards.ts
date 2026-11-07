@@ -224,13 +224,13 @@ export async function deleteCreditCard(id: string) {
   revalidatePath('/dashboard');
 }
 
-export async function getCreditCardTransactions(cardId: string): Promise<Transaction[]> {
+export async function getCreditCardTransactions(cardId?: string): Promise<Transaction[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error('Não autenticado');
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('transactions')
     .select(`
       *,
@@ -239,10 +239,18 @@ export async function getCreditCardTransactions(cardId: string): Promise<Transac
       credit_card:credit_cards(*)
     `)
     .eq('user_id', user.id)
-    .eq('credit_card_id', cardId)
+    .eq('payment_method', 'credit')
     .order('due_date', { ascending: true })
     .order('transaction_date', { ascending: false })
     .order('created_at', { ascending: false });
+
+  if (cardId && cardId !== 'all') {
+    query = query.eq('credit_card_id', cardId);
+  } else {
+    query = query.not('credit_card_id', 'is', null);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Erro ao buscar faturas do cartão:', error);
