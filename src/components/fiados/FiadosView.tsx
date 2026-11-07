@@ -164,14 +164,14 @@ export function FiadosView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              Fiados & Contas a Receber
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F8FAFC]">
+              Fiados &amp; Contas a Receber
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FACC15]/10 text-[#FACC15] border border-[#FACC15]/20">
               {initialSummary.totalClientsWithDebt} clientes
             </span>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-[#94A3B8] mt-1">
             Controle de vendas a prazo, cobranças no WhatsApp e quitações parciais.
           </p>
         </div>
@@ -182,42 +182,42 @@ export function FiadosView({
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+            className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#0D121F] hover:bg-[#151D30] text-[#F8FAFC] border border-[#1E293B] text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
             title="Configurar chave Pix e modelos de cobrança"
           >
-            <Settings className="w-4 h-4 text-amber-400" />
-            <span>Configurar WhatsApp & Pix</span>
+            <Settings className="w-4 h-4 text-[#FACC15]" />
+            <span>Configurar WhatsApp &amp; Pix</span>
           </button>
 
           {/* Menu de Exportação */}
           <div className="relative shrink-0">
             <button
               onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#0D121F] hover:bg-[#151D30] text-[#F8FAFC] border border-[#1E293B] text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
             >
-              <Download className="w-4 h-4 text-slate-400" />
+              <Download className="w-4 h-4 text-[#94A3B8]" />
               <span>Exportar Relatório</span>
             </button>
 
             {isExportMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-xl z-20 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute right-0 mt-2 w-48 bg-[#0D121F] border border-[#1E293B] rounded-xl shadow-xl z-20 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
                 <button
                   onClick={() => handleExport('pdf')}
-                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
+                  className="w-full px-4 py-2 text-left text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] flex items-center gap-2.5 transition-colors cursor-pointer"
                 >
                   <FileText className="w-4 h-4 text-rose-400" />
                   <span>Salvar em PDF</span>
                 </button>
                 <button
                   onClick={() => handleExport('xlsx')}
-                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
+                  className="w-full px-4 py-2 text-left text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] flex items-center gap-2.5 transition-colors cursor-pointer"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
                   <span>Planilha Excel (.xlsx)</span>
                 </button>
                 <button
                   onClick={() => handleExport('csv')}
-                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
+                  className="w-full px-4 py-2 text-left text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] flex items-center gap-2.5 transition-colors cursor-pointer"
                 >
                   <FileCode className="w-4 h-4 text-blue-400" />
                   <span>Arquivo CSV</span>
@@ -230,16 +230,16 @@ export function FiadosView({
 
       {/* Alerta caso a Chave Pix ainda não esteja configurada */}
       {!messageSettings.pix_key && (
-        <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-3.5 bg-gradient-to-r from-[#FACC15]/15 via-[#FACC15]/10 to-transparent border border-[#FACC15]/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-[#FACC15]/20 border border-[#FACC15]/30 flex items-center justify-center text-[#FACC15] shrink-0">
               <QrCode className="w-4 h-4" />
             </div>
             <div className="text-xs">
               <p className="font-semibold text-amber-300">
                 Cadastre sua Chave Pix para agilizar o recebimento
               </p>
-              <p className="text-slate-400">
+              <p className="text-[#94A3B8]">
                 Sua chave será inserida automaticamente nas cobranças do WhatsApp, permitindo ao cliente copiar e pagar na hora.
               </p>
             </div>
@@ -247,7 +247,7 @@ export function FiadosView({
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0 transition-colors shadow-sm"
+            className="px-3 py-1.5 rounded-lg bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-bold text-xs shrink-0 transition-colors shadow-sm cursor-pointer"
           >
             Cadastrar Chave Pix
           </button>
@@ -257,27 +257,27 @@ export function FiadosView({
       {/* 4 Cards de Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total a Receber */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+        <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
               Total a Receber
             </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="w-8 h-8 rounded-lg bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <span className="text-2xl sm:text-3xl font-extrabold text-[#F8FAFC] tracking-tight tabular-nums">
               {formatCurrency(initialSummary.totalPendingDebt)}
             </span>
-            <p className="text-xs text-slate-500 mt-1">Saldo devedor total acumulado</p>
+            <p className="text-xs text-[#64748B] mt-1">Saldo devedor total acumulado</p>
           </div>
         </div>
 
         {/* Total Vencido em Atraso */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+        <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
               Total Vencido
             </span>
             <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
@@ -285,19 +285,19 @@ export function FiadosView({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-rose-400 tracking-tight">
+            <span className="text-2xl sm:text-3xl font-extrabold text-rose-400 tracking-tight tabular-nums">
               {formatCurrency(initialSummary.totalOverdueDebt)}
             </span>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[#64748B] mt-1">
               {counts.overdue} {counts.overdue === 1 ? 'cliente em atraso' : 'clientes em atraso'}
             </p>
           </div>
         </div>
 
         {/* Clientes com Débito */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+        <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
               Clientes Devedores
             </span>
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
@@ -305,39 +305,39 @@ export function FiadosView({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <span className="text-2xl sm:text-3xl font-extrabold text-[#F8FAFC] tracking-tight tabular-nums">
               {initialSummary.totalClientsWithDebt}
             </span>
-            <p className="text-xs text-slate-500 mt-1">Com pelo menos uma comanda em aberto</p>
+            <p className="text-xs text-[#64748B] mt-1">Com pelo menos uma comanda em aberto</p>
           </div>
         </div>
 
         {/* Maior Pendência Individual */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+        <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl p-4 sm:p-5 relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
               Maior Pendência
             </span>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             {initialSummary.maxClientDebt ? (
               <>
-                <span className="text-2xl sm:text-3xl font-extrabold text-purple-400 tracking-tight">
+                <span className="text-2xl sm:text-3xl font-extrabold text-indigo-300 tracking-tight tabular-nums">
                   {formatCurrency(initialSummary.maxClientDebt.amount)}
                 </span>
-                <p className="text-xs text-slate-400 truncate mt-1">
-                  Cliente: <span className="text-white font-medium">{initialSummary.maxClientDebt.clientName}</span>
+                <p className="text-xs text-[#94A3B8] truncate mt-1">
+                  Cliente: <span className="text-[#F8FAFC] font-medium">{initialSummary.maxClientDebt.clientName}</span>
                 </p>
               </>
             ) : (
               <>
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-600">
+                <span className="text-2xl sm:text-3xl font-extrabold text-[#64748B] tabular-nums">
                   R$ 0,00
                 </span>
-                <p className="text-xs text-slate-500 mt-1">Nenhuma pendência ativa</p>
+                <p className="text-xs text-[#64748B] mt-1">Nenhuma pendência ativa</p>
               </>
             )}
           </div>
@@ -345,22 +345,22 @@ export function FiadosView({
       </div>
 
       {/* Barra de Filtros e Busca */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-4">
+      <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl p-4 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Campo de Busca */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B]" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Pesquisar por nome do cliente ou telefone..."
-              className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+              className="w-full pl-10 pr-10 py-2.5 bg-[#080B11] border border-[#1E293B] rounded-xl text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition-colors"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#F8FAFC] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -369,11 +369,11 @@ export function FiadosView({
 
           {/* Ordenação */}
           <div className="flex items-center gap-2 shrink-0">
-            <ArrowUpDown className="w-4 h-4 text-slate-500 shrink-0" />
+            <ArrowUpDown className="w-4 h-4 text-[#64748B] shrink-0" />
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as SortOption)}
-              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-300 focus:outline-none focus:border-amber-500"
+              className="bg-[#080B11] border border-[#1E293B] rounded-xl px-3 py-2.5 text-xs sm:text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15] cursor-pointer"
             >
               <option value="amount_desc">Maior Débito</option>
               <option value="amount_asc">Menor Débito</option>
@@ -384,21 +384,21 @@ export function FiadosView({
         </div>
 
         {/* Pílulas de Filtro de Vencimento */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#1E293B]/80">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'all'
-                ? 'bg-amber-500 text-slate-950 font-semibold'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                ? 'bg-[#FACC15] text-[#080B11] font-semibold shadow-sm'
+                : 'bg-[#080B11] border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <span>Todos</span>
             <span
               className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                 activeTab === 'all'
-                  ? 'bg-slate-950/20 text-slate-950'
-                  : 'bg-slate-900 text-slate-400'
+                  ? 'bg-black/20 text-[#080B11]'
+                  : 'bg-[#0D121F] text-[#94A3B8]'
               }`}
             >
               {counts.all}
@@ -407,10 +407,10 @@ export function FiadosView({
 
           <button
             onClick={() => setActiveTab('overdue')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'overdue'
                 ? 'bg-rose-500 text-white font-semibold'
-                : 'bg-slate-800 text-rose-400 hover:bg-slate-700'
+                : 'bg-[#080B11] border border-[#1E293B] text-rose-400 hover:bg-[#151D30]'
             }`}
           >
             <span>Vencidos</span>
@@ -427,10 +427,10 @@ export function FiadosView({
 
           <button
             onClick={() => setActiveTab('soon')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'soon'
                 ? 'bg-blue-500 text-white font-semibold'
-                : 'bg-slate-800 text-blue-400 hover:bg-slate-700'
+                : 'bg-[#080B11] border border-[#1E293B] text-blue-400 hover:bg-[#151D30]'
             }`}
           >
             <span>Vencem em até 7 dias</span>
@@ -447,18 +447,18 @@ export function FiadosView({
 
           <button
             onClick={() => setActiveTab('no_due')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'no_due'
-                ? 'bg-slate-200 text-slate-950 font-semibold'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                ? 'bg-[#F8FAFC] text-[#080B11] font-semibold'
+                : 'bg-[#080B11] border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <span>Sem Prazo</span>
             <span
               className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                 activeTab === 'no_due'
-                  ? 'bg-black/20 text-slate-950'
-                  : 'bg-slate-900 text-slate-400'
+                  ? 'bg-black/20 text-[#080B11]'
+                  : 'bg-[#0D121F] text-[#94A3B8]'
               }`}
             >
               {counts.noDue}
@@ -481,28 +481,28 @@ export function FiadosView({
             />
           ))
         ) : (
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-10 text-center space-y-3">
+          <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl p-10 text-center space-y-3">
             {initialSummary.clients.length === 0 ? (
               <>
                 <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="text-lg font-bold text-[#F8FAFC]">
                   Tudo em dia por aqui!
                 </h3>
-                <p className="text-sm text-slate-400 max-w-md mx-auto">
+                <p className="text-sm text-[#94A3B8] max-w-md mx-auto">
                   Nenhum cliente possui comandas a prazo pendentes no momento. Todas as contas foram quitadas.
                 </p>
               </>
             ) : (
               <>
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-800 flex items-center justify-center text-slate-400">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-[#080B11] border border-[#1E293B] flex items-center justify-center text-[#94A3B8]">
                   <Filter className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-[#F8FAFC]">
                   Nenhum devedor encontrado
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto">
+                <p className="text-xs sm:text-sm text-[#94A3B8] max-w-sm mx-auto">
                   Nenhum cliente corresponde aos critérios de pesquisa ou filtros selecionados.
                 </p>
                 <button
@@ -510,7 +510,7 @@ export function FiadosView({
                     setSearchTerm('');
                     setActiveTab('all');
                   }}
-                  className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-medium transition-colors"
+                  className="px-3.5 py-1.5 rounded-lg bg-[#080B11] hover:bg-[#151D30] border border-[#1E293B] text-xs text-[#F8FAFC] font-medium transition-colors cursor-pointer"
                 >
                   Limpar filtros
                 </button>
