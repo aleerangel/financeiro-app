@@ -659,14 +659,14 @@ export function DashboardView({
       <LegacyWelcomeBanner />
 
       {/* 1. Cabeçalho do Dashboard: ocupando toda a largura da área principal com proporção da referência visual */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-2 border-b border-[#1E293B]">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4 sm:gap-6 pb-4 border-b border-[#1E293B] min-w-0">
         {/* Lado Esquerdo: Saudação com destaque visual ~34px e subtítulo ~16px */}
-        <div>
-          <h1 className="text-[28px] sm:text-[32px] lg:text-[34px] font-bold text-[#F8FAFC] tracking-tight leading-tight flex items-baseline gap-2 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-[26px] sm:text-[30px] lg:text-[34px] font-bold text-[#F8FAFC] tracking-tight leading-tight flex items-baseline gap-2 flex-wrap">
             <span>{greeting},</span>
             <span className="text-[#FACC15]">{userName}</span>
           </h1>
-          <p className="text-[15px] lg:text-[16px] text-[#94A3B8] mt-1 font-normal">
+          <p className="text-[14px] lg:text-[15px] text-[#94A3B8] mt-1 font-normal truncate max-w-[650px]">
             {effectiveViewMode === 'business'
               ? `Acompanhe as métricas e o desempenho de ${businessName}`
               : 'Aqui está o resumo financeiro consolidado do seu patrimônio'}
@@ -674,101 +674,107 @@ export function DashboardView({
         </div>
 
         {/* Lado Direito: Seletor de período, Notificações, Privacidade, Modo e Botão de Ação Principal */}
-        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap xl:justify-end">
-          {/* Navegação de Mês/Ano Desktop */}
-          <div className="flex items-center bg-[#0D121F] border border-[#1E293B] px-2 py-1 rounded-xl shadow-sm h-[46px]">
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
-              aria-label="Mês anterior"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-xs font-bold text-[#F8FAFC] px-2 select-none min-w-[120px] text-center">
-              {formattedMonth}
-            </span>
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
-              aria-label="Próximo mês"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Botão de Retrospectiva do Mês se for mês passado */}
-          {isPastMonth(month, year) && (
-            <button
-              type="button"
-              onClick={() => setWrappedOpen(true)}
-              className="flex items-center gap-1.5 h-[46px] px-3.5 rounded-xl text-xs font-semibold bg-[#151D30] hover:bg-[#1E293B] text-[#FACC15] border border-[#FACC15]/30 shadow-sm active:scale-[0.98] transition cursor-pointer"
-              title={`Ver Retrospectiva de ${formattedMonth}`}
-            >
-              <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#FACC15]" />
-              <span>Retrospectiva</span>
-            </button>
-          )}
-
-          {/* Alternador Principal: Negócio vs Geral (Apenas se hasBusiness for true) */}
-          {hasBusiness && (
-            <div className="flex items-center bg-[#0D121F] border border-[#1E293B] p-1 rounded-xl shadow-sm h-[46px]">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap 2xl:flex-nowrap 2xl:justify-end min-w-0">
+          {/* Subgrupo 1: Período e Modo */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            {/* Navegação de Mês/Ano Desktop */}
+            <div className="flex items-center bg-[#0D121F] border border-[#1E293B] px-2 py-1 rounded-xl shadow-sm h-[44px]">
               <button
                 type="button"
-                onClick={() => setViewMode('business')}
-                className={`flex items-center gap-1.5 px-3 h-full rounded-lg text-xs font-semibold transition cursor-pointer ${
-                  effectiveViewMode === 'business'
-                    ? 'bg-[#FACC15] text-[#080B11] shadow-sm font-bold'
-                    : 'text-[#94A3B8] hover:text-[#F8FAFC]'
-                }`}
+                onClick={prevMonth}
+                className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
+                aria-label="Mês anterior"
               >
-                <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5" />
-                <span>{businessName}</span>
+                <ChevronLeft className="w-4 h-4" />
               </button>
+              <span className="text-xs font-bold text-[#F8FAFC] px-2 select-none min-w-[110px] text-center">
+                {formattedMonth}
+              </span>
               <button
                 type="button"
-                onClick={() => setViewMode('general')}
-                className={`flex items-center gap-1.5 px-3 h-full rounded-lg text-xs font-semibold transition cursor-pointer ${
-                  effectiveViewMode === 'general'
-                    ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B] font-bold'
-                    : 'text-[#94A3B8] hover:text-[#F8FAFC]'
-                }`}
+                onClick={nextMonth}
+                className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
+                aria-label="Próximo mês"
               >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Visão Geral</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-          )}
 
-          {/* Botão de Privacidade / Ocultar Valores */}
-          <button
-            type="button"
-            onClick={() => setShowValues(!showValues)}
-            className="h-[46px] w-[46px] flex items-center justify-center text-[#94A3B8] hover:text-[#F8FAFC] bg-[#0D121F] border border-[#1E293B] hover:bg-[#151D30] rounded-xl transition cursor-pointer shadow-sm"
-            title={showValues ? 'Ocultar valores sensíveis' : 'Mostrar valores sensíveis'}
-            aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
-          >
-            {showValues ? (
-              <Eye className="w-4 h-4 text-[#94A3B8]" />
-            ) : (
-              <EyeOff className="w-4 h-4 text-[#FACC15]" />
+            {/* Alternador Principal: Negócio vs Geral (Apenas se hasBusiness for true) */}
+            {hasBusiness && (
+              <div className="flex items-center bg-[#0D121F] border border-[#1E293B] p-1 rounded-xl shadow-sm h-[44px]">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('business')}
+                  className={`flex items-center gap-1.5 px-3 h-full rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    effectiveViewMode === 'business'
+                      ? 'bg-[#FACC15] text-[#080B11] shadow-sm font-bold'
+                      : 'text-[#94A3B8] hover:text-[#F8FAFC]'
+                  }`}
+                >
+                  <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5" />
+                  <span className="truncate max-w-[110px]">{businessName}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('general')}
+                  className={`flex items-center gap-1.5 px-3 h-full rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    effectiveViewMode === 'general'
+                      ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B] font-bold'
+                      : 'text-[#94A3B8] hover:text-[#F8FAFC]'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Geral</span>
+                </button>
+              </div>
             )}
-          </button>
-
-          {/* Notificações */}
-          <div className="h-[46px] flex items-center justify-center bg-[#0D121F] border border-[#1E293B] rounded-xl px-1 shadow-sm">
-            <NotificationBell userEmail={userEmail} />
           </div>
 
-          {/* Exportação */}
-          <ExportDropdown onExport={handleExport} />
+          {/* Subgrupo 2: Ações & Utilitários */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Botão de Retrospectiva do Mês se for mês passado */}
+            {isPastMonth(month, year) && (
+              <button
+                type="button"
+                onClick={() => setWrappedOpen(true)}
+                className="flex items-center gap-1.5 h-[44px] px-3 rounded-xl text-xs font-semibold bg-[#151D30] hover:bg-[#1E293B] text-[#FACC15] border border-[#FACC15]/30 shadow-sm active:scale-[0.98] transition cursor-pointer"
+                title={`Ver Retrospectiva de ${formattedMonth}`}
+              >
+                <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#FACC15]" />
+                <span className="hidden sm:inline">Retrospectiva</span>
+              </button>
+            )}
 
-          {/* Botão Principal de Ação em Destaque (~46px, ~18px px, rounded-xl) */}
-          <QuickActionDropdown
-            size="lg"
-            defaultScope={effectiveViewMode === 'business' ? 'business' : 'personal'}
-          />
+            {/* Botão de Privacidade / Ocultar Valores */}
+            <button
+              type="button"
+              onClick={() => setShowValues(!showValues)}
+              className="h-[44px] w-[44px] flex items-center justify-center text-[#94A3B8] hover:text-[#F8FAFC] bg-[#0D121F] border border-[#1E293B] hover:bg-[#151D30] rounded-xl transition cursor-pointer shadow-sm"
+              title={showValues ? 'Ocultar valores sensíveis' : 'Mostrar valores sensíveis'}
+              aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+            >
+              {showValues ? (
+                <Eye className="w-4 h-4 text-[#94A3B8]" />
+              ) : (
+                <EyeOff className="w-4 h-4 text-[#FACC15]" />
+              )}
+            </button>
+
+            {/* Notificações */}
+            <div className="h-[44px] flex items-center justify-center bg-[#0D121F] border border-[#1E293B] rounded-xl px-1 shadow-sm">
+              <NotificationBell userEmail={userEmail} />
+            </div>
+
+            {/* Exportação */}
+            <ExportDropdown onExport={handleExport} />
+
+            {/* Botão Principal de Ação em Destaque (~46px, ~18px px, rounded-xl) */}
+            <QuickActionDropdown
+              size="lg"
+              defaultScope={effectiveViewMode === 'business' ? 'business' : 'personal'}
+            />
+          </div>
         </div>
       </div>
 

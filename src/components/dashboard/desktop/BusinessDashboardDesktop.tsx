@@ -131,11 +131,11 @@ export function BusinessDashboardDesktop({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* 1ª Linha: Indicadores principais em 3 colunas equivalentes (gap 16px, altura ~134px) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0">
         {/* Coluna 1: Faturamento Bruto & Atendimentos */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px]">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] min-w-0">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-[#94A3B8]">
               Faturamento ({formattedMonth || 'Mês'})
@@ -159,7 +159,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* Coluna 2: Lucro Líquido Real & Rentabilidade */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px]">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="text-[11px] uppercase tracking-wider font-semibold text-[#FACC15]">
@@ -210,7 +210,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* Coluna 3: Gastos do Negócio & Fiados a Receber */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px]">
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] min-w-0 md:col-span-2 xl:col-span-1">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400">
               Gastos do Negócio
@@ -365,9 +365,9 @@ export function BusinessDashboardDesktop({
       )}
 
       {/* 2ª Linha: Gráfico Principal (~2/3) e Bloco Lateral de Contas (~1/3), gap 20px */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 min-w-0">
         {/* Gráfico (Ocupa 2 colunas no desktop e largura total em telas menores) */}
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2 min-w-0">
           <SmoothLineChart
             title={`Faturamento, Gastos e Lucro - ${businessName}`}
             subtitle={businessChart.subtitle}
@@ -393,7 +393,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* Saldo das Contas (Ocupa 1 coluna) */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+        <div className="xl:col-span-1 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-zinc-100 text-base">Saldo das Contas</h3>
@@ -463,9 +463,9 @@ export function BusinessDashboardDesktop({
       </div>
 
       {/* 3ª Linha: Três blocos com proporção ~1 : 1.3 : 1 (gap 20px) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-5 min-w-0">
         {/* Bloco 1 (Proporção 1): Consumo por Meio de Pagamento */}
-        <div className="lg:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+        <div className="md:col-span-1 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -535,7 +535,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* Bloco 2 (Proporção 1.3): 5 Lançamentos Recentes (Vendas & Atendimentos) */}
-        <div className="lg:col-span-5 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+        <div className="md:col-span-1 xl:col-span-5 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -593,7 +593,7 @@ export function BusinessDashboardDesktop({
         </div>
 
         {/* Bloco 3 (Proporção 1): Últimos Gastos do Negócio */}
-        <div className="lg:col-span-3 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+        <div className="md:col-span-2 xl:col-span-3 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>

@@ -169,14 +169,23 @@ export function GeneralDashboardDesktop({
 
   const totalIncome = receivedIncome + pendingIncome;
 
+  let totalCurrentInvoice = 0;
+  let totalUsed = 0;
+  let totalAvailable = 0;
+  for (const c of cards) {
+    totalCurrentInvoice += Number(c.current_invoice || 0);
+    totalUsed += Number(c.used_limit || 0);
+    totalAvailable += Number(c.available_limit || 0);
+  }
+
   const recentTransactions = transactions
     .filter((t) => !(t.recurrence_id && !t.is_paid))
     .slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* 1. Primeira Linha: Indicadores principais em 3 colunas de larguras equivalentes (gap ~16px, altura ~134px) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {/* Coluna 1: Saldo Total em Contas */}
         <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm">
           <div className="flex items-center justify-between text-[#94A3B8] mb-2">
@@ -195,16 +204,38 @@ export function GeneralDashboardDesktop({
           </div>
         </div>
 
-        {/* Coluna 2: Fatura Atual com Carteira Multi-Cartão */}
-        <div className="min-h-[134px]">
-          <WalletInvoiceCard
-            cards={cards}
-            showValues={showValues}
-          />
+        {/* Coluna 2: Fatura Consolidada dos Cartões (Compacta ~134px) */}
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm">
+          <div className="flex items-center justify-between text-[#94A3B8] mb-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-xs font-semibold uppercase tracking-wider truncate">
+                Fatura dos Cartões
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 shrink-0">
+                {cards.length} {cards.length === 1 ? 'cartão' : 'cartões'}
+              </span>
+            </div>
+            <Link
+              href="/cartoes"
+              className="text-[11px] font-semibold text-[#FACC15] hover:text-[#FDE047] flex items-center gap-0.5 transition-colors shrink-0"
+              title="Gerenciar cartões e faturas"
+            >
+              Faturas <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-indigo-300 tabular-nums">
+              {formatHidden(formatCurrency(totalCurrentInvoice))}
+            </h2>
+            <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
+              <span>Usado: <strong className="text-[#F8FAFC] font-semibold">{formatHidden(formatCurrency(totalUsed))}</strong></span>
+              <span>Disp: <strong className="text-emerald-400 font-semibold">{formatHidden(formatCurrency(totalAvailable))}</strong></span>
+            </div>
+          </div>
         </div>
 
         {/* Coluna 3: Fluxo Operacional (Receitas do Mês & Despesas Pagas) */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm">
+        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px] shadow-sm md:col-span-2 xl:col-span-1">
           <div className="grid grid-cols-2 gap-3 divide-x divide-[#1E293B]/80 h-full">
             <div className="flex flex-col justify-between pr-1">
               <div className="flex items-center justify-between text-[#94A3B8] mb-1">
@@ -258,9 +289,9 @@ export function GeneralDashboardDesktop({
       </div>
 
       {/* 2. Segunda Linha: Gráfico Principal (~2/3) e Bloco Lateral (~1/3) com gap ~20px */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 min-w-0">
         {/* Coluna Esquerda (~2/3): Gráfico Principal de Fluxo */}
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2 min-w-0">
           <SmoothLineChart
             title="Fluxo (Vendas, Receitas e Balanço)"
             subtitle={flowChart.subtitle}
@@ -286,7 +317,7 @@ export function GeneralDashboardDesktop({
         </div>
 
         {/* Coluna Direita (~1/3): Bloco Lateral de Gastos por Categoria */}
-        <div className="lg:col-span-1">
+        <div className="xl:col-span-1 min-w-0">
           <CategoryDonutChart
             transactions={transactions}
             expenseEvolution={generalData?.expenseCategoryEvolution || []}
@@ -300,9 +331,9 @@ export function GeneralDashboardDesktop({
       </div>
 
       {/* 3. Terceira Linha: Três Blocos horizontais com proporção aproximada 1 : 1.3 : 1 e gap ~20px */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-5 min-w-0">
         {/* Bloco 1 (1 parte): Minhas Contas */}
-        <div className="lg:col-span-3 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm">
+        <div className="md:col-span-1 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm min-w-0">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2 text-sm sm:text-base">
               <Landmark className="w-4 h-4 text-[#FACC15]" />
@@ -346,7 +377,7 @@ export function GeneralDashboardDesktop({
         </div>
 
         {/* Bloco 2 (1.3 partes): Meus Cartões */}
-        <div className="lg:col-span-5 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm">
+        <div className="md:col-span-1 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm min-w-0">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2 text-sm sm:text-base">
               <CreditCard className="w-4 h-4 text-indigo-400" />
@@ -416,7 +447,7 @@ export function GeneralDashboardDesktop({
         </div>
 
         {/* Bloco 3 (1 parte): Lançamentos do Mês */}
-        <div className="lg:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm">
+        <div className="md:col-span-2 xl:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-4 shadow-sm min-w-0">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2 text-sm sm:text-base">
               <ArrowLeftRight className="w-4 h-4 text-[#FACC15]" />

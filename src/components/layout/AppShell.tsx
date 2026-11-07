@@ -61,7 +61,7 @@ export function AppShell({ userEmail, initialProfile, initialContextMode, childr
       <DateProvider key={userEmail || 'anonymous'}>
         <MobileNavigationProvider initialContextMode={initialContextMode}>
           <SidebarProvider>
-            <div className="min-h-screen flex bg-[#080B11] text-[#F8FAFC]">
+            <div className="min-h-screen flex bg-[#080B11] text-[#F8FAFC] overflow-x-hidden">
               {/* 1. Sidebar Fixa Desktop (232px) */}
               <AppSidebar userEmail={userEmail} />
 
@@ -71,7 +71,7 @@ export function AppShell({ userEmail, initialProfile, initialContextMode, childr
 
                 <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-[26px] md:pt-[32px] md:pb-[24px] min-w-0">
                   <MobilePullToRefresh>
-                    <div className="w-full mx-auto min-w-0">
+                    <div className="w-full max-w-[1680px] mx-auto min-w-0">
                       <MobileBackButton />
                       {children}
                     </div>
