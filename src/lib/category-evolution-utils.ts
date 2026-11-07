@@ -69,6 +69,20 @@ const FIXED_INCOME_KEYWORDS = [
   'pro-labore',
 ];
 
+export const CANARIO_METALLIC_PALETTE = [
+  '#FACC15', // Canário Radiante (Ouro Principal)
+  '#EAB308', // Ouro Médio
+  '#CA8A04', // Ouro Queimado / Âmbar Escuro
+  '#94A3B8', // Ardósia Prateado
+  '#64748B', // Ardósia Metálico Médio
+  '#475569', // Ardósia Profundo
+  '#334155', // Cobalto / Ardósia Escuro
+];
+
+export function getCategoryPaletteColor(index: number): string {
+  return CANARIO_METALLIC_PALETTE[Math.abs(index) % CANARIO_METALLIC_PALETTE.length];
+}
+
 export function isVariableIncomeCategoryName(name: string): boolean {
   const lower = name.trim().toLowerCase();
   if (!lower) return true;
@@ -191,9 +205,23 @@ export function buildYearlyCategoryEvolution(
     return sumB - sumA;
   };
 
+  const sortedIncome = Array.from(incomeMap.values())
+    .sort(sortByYearlyTotal)
+    .map((item, index) => ({
+      ...item,
+      color: getCategoryPaletteColor(index),
+    }));
+
+  const sortedExpense = Array.from(expenseMap.values())
+    .sort(sortByYearlyTotal)
+    .map((item, index) => ({
+      ...item,
+      color: getCategoryPaletteColor(index),
+    }));
+
   return {
-    incomeCategories: Array.from(incomeMap.values()).sort(sortByYearlyTotal),
-    expenseCategories: Array.from(expenseMap.values()).sort(sortByYearlyTotal),
+    incomeCategories: sortedIncome,
+    expenseCategories: sortedExpense,
   };
 }
 

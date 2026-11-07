@@ -681,14 +681,7 @@ export function CreditCardInvoicesPanel({
                       )}
 
                       {tx.category && (
-                        <span
-                          className="text-[10px] font-medium px-2 py-0.5 rounded-md border"
-                          style={{
-                            backgroundColor: `${tx.category.color}15`,
-                            borderColor: `${tx.category.color}35`,
-                            color: tx.category.color,
-                          }}
-                        >
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-[#151D30] border border-[#1E293B] text-[#94A3B8]">
                           {tx.category.name}
                         </span>
                       )}
