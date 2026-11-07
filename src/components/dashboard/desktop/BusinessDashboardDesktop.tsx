@@ -132,10 +132,10 @@ export function BusinessDashboardDesktop({
 
   return (
     <div className="space-y-6">
-      {/* KPIs de Resultado do Negócio no Mês Selecionado */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
-        {/* 1. Faturamento Bruto */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+      {/* 1ª Linha: Indicadores principais em 3 colunas equivalentes (gap 16px, altura ~134px) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Coluna 1: Faturamento Bruto & Atendimentos */}
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px]">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-[#94A3B8]">
               Faturamento ({formattedMonth || 'Mês'})
@@ -145,38 +145,72 @@ export function BusinessDashboardDesktop({
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-2xl font-extrabold text-emerald-400 block tabular-nums">
+            <span className="text-2xl font-extrabold text-emerald-400 block tabular-nums">
               {formatHidden(formatCurrency(summary.revenue))}
             </span>
-            <span className="text-[11px] text-[#94A3B8] mt-1 block tabular-nums">
-              Ticket médio: {formatHidden(formatCurrency(summary.averageTicket))}
-            </span>
+            <div className="flex items-center justify-between gap-2 mt-1 text-[11px] text-[#94A3B8] tabular-nums">
+              <span>Ticket médio: {formatHidden(formatCurrency(summary.averageTicket))}</span>
+              <span>
+                {summary.salesCount} {formatSalesUnit(summary.salesCount, salesLabel)}
+                {summary.clientReturnRate > 1 ? ` • ${summary.clientReturnRate.toFixed(1)}x` : ''}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* 2. Clientes Atendidos no Mês */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+        {/* Coluna 2: Lucro Líquido Real & Rentabilidade */}
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px]">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-blue-400">
-              Clientes Atendidos
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <Users className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-wider font-semibold text-[#FACC15]">
+                Lucro Líquido Real
+              </span>
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                  summary.profitMargin >= 70
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                    : summary.profitMargin >= 40
+                    ? 'bg-amber-400/15 text-amber-300 border border-amber-400/25'
+                    : 'bg-rose-500/15 text-rose-400 border border-rose-500/25'
+                }`}
+              >
+                {summary.revenue > 0 ? (showValues ? `${summary.profitMargin}% margem` : '••••') : '—'}
+              </span>
+            </div>
+            <div className="w-7 h-7 rounded-lg bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
+              <Wallet className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-2xl font-extrabold text-blue-400 block tabular-nums">
-              {summary.salesCount} {formatSalesUnit(summary.salesCount, salesLabel)}
+            <span
+              className={`text-2xl font-extrabold block tabular-nums ${
+                summary.netProfit >= 0 ? 'text-[#F8FAFC]' : 'text-rose-400'
+              }`}
+            >
+              {formatHidden(formatCurrency(summary.netProfit))}
             </span>
-            <span className="text-[11px] text-[#94A3B8] mt-1 block">
-              {summary.uniqueClientsCount} {summary.uniqueClientsCount === 1 ? 'cliente único' : 'clientes únicos'}
-              {summary.clientReturnRate > 1 ? ` • ${summary.clientReturnRate.toFixed(1)}x visitas` : ''}
-            </span>
+            <div className="flex items-center justify-between gap-2 mt-1 text-[11px] text-[#94A3B8] tabular-nums">
+              <span>Após faturas: {formatHidden(formatCurrency(summary.projectedProfit))}</span>
+              <div className="w-20 h-1.5 bg-[#080B11] rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    summary.profitMargin >= 70
+                      ? 'bg-emerald-400'
+                      : summary.profitMargin >= 40
+                      ? 'bg-amber-400'
+                      : 'bg-rose-400'
+                  }`}
+                  style={{
+                    width: `${Math.max(0, Math.min(100, summary.profitMargin))}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* 3. Gastos do Negócio */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+        {/* Coluna 3: Gastos do Negócio & Fiados a Receber */}
+        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between min-h-[134px]">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-rose-400">
               Gastos do Negócio
@@ -186,104 +220,26 @@ export function BusinessDashboardDesktop({
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-2xl font-extrabold text-rose-400 block tabular-nums">
+            <span className="text-2xl font-extrabold text-rose-400 block tabular-nums">
               {formatHidden(formatCurrency(summary.paidExpenses))}
             </span>
-            <span className="text-[11px] text-[#94A3B8] mt-1 block tabular-nums">
-              {summary.pendingExpenses > 0
-                ? `+ ${formatHidden(formatCurrency(summary.pendingExpenses))} em aberto/fatura`
-                : 'Nenhum custo pendente'}
-            </span>
-          </div>
-        </div>
-
-        {/* 3. Lucro Líquido Real */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#FACC15]">
-              Lucro Líquido Real
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-[#FACC15]/10 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15]">
-              <Wallet className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span
-              className={`text-lg sm:text-2xl font-extrabold block tabular-nums ${
-                summary.netProfit >= 0 ? 'text-[#F8FAFC]' : 'text-rose-400'
-              }`}
-            >
-              {formatHidden(formatCurrency(summary.netProfit))}
-            </span>
-            <span className="text-[11px] text-[#94A3B8] mt-1 block tabular-nums">
-              Após faturas: {formatHidden(formatCurrency(summary.projectedProfit))}
-            </span>
-          </div>
-        </div>
-
-        {/* 4. Margem de Lucro (%) */}
-        <div className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#94A3B8]">
-              Margem de Lucro
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-              <Percent className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span
-              className={`text-lg sm:text-2xl font-extrabold block tabular-nums ${
-                summary.profitMargin >= 70
-                  ? 'text-emerald-400'
-                  : summary.profitMargin >= 40
-                  ? 'text-amber-300'
-                  : summary.revenue > 0
-                  ? 'text-rose-400'
-                  : 'text-[#94A3B8]'
-              }`}
-            >
-              {summary.revenue > 0 ? (showValues ? `${summary.profitMargin}%` : '••••') : '—'}
-            </span>
-            <div className="w-full h-1.5 bg-[#080B11] rounded-full overflow-hidden mt-2">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  summary.profitMargin >= 70
-                    ? 'bg-emerald-400'
-                    : summary.profitMargin >= 40
-                    ? 'bg-amber-400'
-                    : 'bg-rose-400'
-                }`}
-                style={{
-                  width: `${Math.max(0, Math.min(100, summary.profitMargin))}%`,
-                }}
-              />
+            <div className="flex items-center justify-between gap-2 mt-1 text-[11px] tabular-nums">
+              <span className="text-[#94A3B8] truncate">
+                {summary.pendingExpenses > 0
+                  ? `+ ${formatHidden(formatCurrency(summary.pendingExpenses))} pend.`
+                  : 'Custos em dia'}
+              </span>
+              <Link
+                href="/fiados"
+                className="text-[#FACC15] hover:text-[#FDE047] font-semibold flex items-center gap-0.5 shrink-0 transition-colors"
+                title="Ver cobranças e fiados a receber"
+              >
+                <span>Fiados: {formatHidden(formatCurrency(summary.totalReceivables || 0))}</span>
+                <ArrowUpRight className="w-3 h-3" />
+              </Link>
             </div>
           </div>
         </div>
-
-        {/* 6. A Receber (Fiados) */}
-        <Link
-          href="/fiados"
-          className="p-4 sm:p-5 bg-[#0D121F] border border-[#1E293B] hover:border-[#FACC15]/50 hover:bg-[#151D30] rounded-2xl flex flex-col justify-between transition-all duration-200 group cursor-pointer shadow-sm"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#FACC15] group-hover:text-[#FDE047]">
-              A Receber (Fiados)
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-[#FACC15]/10 border border-[#FACC15]/20 group-hover:bg-[#FACC15]/20 flex items-center justify-center text-[#FACC15] transition-colors">
-              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-lg sm:text-2xl font-extrabold text-[#FACC15] block tracking-tight tabular-nums">
-              {formatHidden(formatCurrency(summary.totalReceivables || 0))}
-            </span>
-            <span className="text-[11px] text-zinc-400 group-hover:text-zinc-300 mt-1 flex items-center gap-1 transition-colors">
-              Ver cobranças &rarr;
-            </span>
-          </div>
-        </Link>
       </div>
 
       {/* Alerta de Reposição de Estoque (Largura total quando houver itens em estoque baixo) */}
@@ -408,10 +364,10 @@ export function BusinessDashboardDesktop({
         </div>
       )}
 
-      {/* Linha Superior: Gráfico de Vendas e Receita + Saldo das Contas */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Gráfico (Ocupa 2 colunas no desktop largo e largura total em tela vertical) */}
-        <div className="xl:col-span-2">
+      {/* 2ª Linha: Gráfico Principal (~2/3) e Bloco Lateral de Contas (~1/3), gap 20px */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Gráfico (Ocupa 2 colunas no desktop e largura total em telas menores) */}
+        <div className="lg:col-span-2">
           <SmoothLineChart
             title={`Faturamento, Gastos e Lucro - ${businessName}`}
             subtitle={businessChart.subtitle}
@@ -506,6 +462,193 @@ export function BusinessDashboardDesktop({
         </div>
       </div>
 
+      {/* 3ª Linha: Três blocos com proporção ~1 : 1.3 : 1 (gap 20px) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Bloco 1 (Proporção 1): Consumo por Meio de Pagamento */}
+        <div className="lg:col-span-4 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-zinc-100 text-base">
+                  Consumo por Meio
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Gastos de {businessName} em {formattedMonth || 'mês atual'}
+                </p>
+              </div>
+              {onAddBusinessExpense && (
+                <button
+                  type="button"
+                  onClick={onAddBusinessExpense}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Novo Gasto
+                </button>
+              )}
+            </div>
+
+            {data.expensesBySource && data.expensesBySource.length > 0 ? (
+              <div className="space-y-3">
+                {data.expensesBySource.map((src) => (
+                  <div
+                    key={src.id}
+                    className="p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between gap-2"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
+                        style={{ backgroundColor: src.color || '#f59e0b' }}
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-zinc-100 truncate">
+                            {src.name}
+                          </span>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                            {src.type === 'card' ? 'Cartão' : 'Conta'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-zinc-400 block mt-0.5 truncate">
+                          Pago: {formatCurrency(src.paidAmount)}
+                          {src.pendingAmount > 0
+                            ? ` • Pendente: ${formatCurrency(src.pendingAmount)}`
+                            : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="text-xs sm:text-sm font-extrabold text-rose-400 shrink-0">
+                      - {formatCurrency(src.totalAmount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-10 text-center text-xs text-zinc-500">
+                Nenhum gasto do negócio registrado neste mês.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bloco 2 (Proporção 1.3): 5 Lançamentos Recentes (Vendas & Atendimentos) */}
+        <div className="lg:col-span-5 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-zinc-100 text-base">Atendimentos Recentes</h3>
+                <p className="text-xs text-zinc-400">Últimas vendas e serviços registrados</p>
+              </div>
+              <Link
+                href="/vendas"
+                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Ver todos
+              </Link>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
+                    <th className="pb-2.5 font-semibold">Cliente</th>
+                    <th className="pb-2.5 font-semibold">Conta</th>
+                    <th className="pb-2.5 font-semibold text-right">Valor</th>
+                    <th className="pb-2.5 font-semibold text-right">Data/Hora</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {data.recentSales && data.recentSales.map((sale) => (
+                    <tr key={sale.id} className="hover:bg-zinc-800/30 transition">
+                      <td className="py-2.5 font-semibold text-zinc-100 truncate max-w-[110px]">
+                        {sale.client_name}
+                      </td>
+                      <td className="py-2.5 text-zinc-400 truncate max-w-[80px]">
+                        {sale.account_name}
+                      </td>
+                      <td className="py-2.5 text-right font-bold text-emerald-400">
+                        + {formatCurrency(sale.total_amount)}
+                      </td>
+                      <td className="py-2.5 text-right text-zinc-400 font-mono text-[10px]">
+                        {formatDateTime(sale.sale_date)}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {(!data.recentSales || data.recentSales.length === 0) && !loading && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-zinc-500">
+                        Nenhum atendimento recente registrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Bloco 3 (Proporção 1): Últimos Gastos do Negócio */}
+        <div className="lg:col-span-3 p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-zinc-100 text-base">
+                  Últimos Gastos
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Despesas de {businessName}
+                </p>
+              </div>
+              <Link
+                href="/transacoes"
+                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium shrink-0"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Ver todos
+              </Link>
+            </div>
+
+            {data.recentExpenses && data.recentExpenses.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
+                      <th className="pb-2.5 font-semibold">Gasto</th>
+                      <th className="pb-2.5 font-semibold text-right">Valor</th>
+                      <th className="pb-2.5 font-semibold text-right">Venc.</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800/60">
+                    {data.recentExpenses.map((exp) => (
+                      <tr key={exp.id} className="hover:bg-zinc-800/30 transition">
+                        <td className="py-2.5 font-semibold text-zinc-100 max-w-[100px] truncate" title={exp.description}>
+                          {exp.description}
+                        </td>
+                        <td className="py-2.5 text-right font-bold text-rose-400">
+                          - {formatCurrency(exp.amount)}
+                        </td>
+                        <td className="py-2.5 text-right text-zinc-400 font-mono text-[10px]">
+                          {formatDate(exp.due_date)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-10 text-center text-xs text-zinc-500">
+                Nenhuma despesa lançada neste mês.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Ponto de Equilíbrio (Break-Even) — Barra Horizontal de Largura Total */}
       {data.breakEven && (data.breakEven.totalExpenses > 0 || data.breakEven.revenue > 0) && (
         <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl space-y-3">
@@ -563,138 +706,7 @@ export function BusinessDashboardDesktop({
         </div>
       )}
 
-      {/* Controle de Gastos do Negócio: Consumo por Cartão/Conta + Últimos Gastos */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Consumo da Barbearia por Conta / Cartão */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-zinc-100 text-base">
-                  Consumo por Meio de Pagamento
-                </h3>
-                <p className="text-xs text-zinc-400">
-                  Quanto os gastos de {businessName} utilizaram de cada meio em {formattedMonth || 'mês atual'}
-                </p>
-              </div>
-              {onAddBusinessExpense && (
-                <button
-                  type="button"
-                  onClick={onAddBusinessExpense}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition shrink-0"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Novo Gasto
-                </button>
-              )}
-            </div>
 
-            {data.expensesBySource && data.expensesBySource.length > 0 ? (
-              <div className="space-y-3">
-                {data.expensesBySource.map((src) => (
-                  <div
-                    key={src.id}
-                    className="p-3.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0"
-                        style={{ backgroundColor: src.color || '#f59e0b' }}
-                      >
-                        <CreditCard className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-zinc-100 truncate">
-                            {src.name}
-                          </span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300">
-                            {src.type === 'card' ? 'Cartão' : 'Conta'}
-                          </span>
-                        </div>
-                        <span className="text-xs text-zinc-400 block mt-0.5">
-                          Pago: {formatCurrency(src.paidAmount)}
-                          {src.pendingAmount > 0
-                            ? ` • Na fatura/pendente: ${formatCurrency(src.pendingAmount)}`
-                            : ''}
-                        </span>
-                      </div>
-                    </div>
-
-                    <span className="text-sm sm:text-base font-extrabold text-rose-400 shrink-0">
-                      - {formatCurrency(src.totalAmount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-10 text-center text-xs text-zinc-500">
-                Nenhum gasto do negócio registrado neste mês.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Últimos Gastos do Negócio (Insumos, Ferramentas, Produtos, etc.) */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-zinc-100 text-base">
-                  Últimos Gastos do Negócio
-                </h3>
-                <p className="text-xs text-zinc-400">
-                  Insumos, ferramentas, produtos e contas fixas de {businessName}
-                </p>
-              </div>
-              <Link
-                href="/transacoes"
-                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium shrink-0"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                Ver todos
-              </Link>
-            </div>
-
-            {data.recentExpenses && data.recentExpenses.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
-                      <th className="pb-2.5 font-semibold">Insumo / Gasto</th>
-                      <th className="pb-2.5 font-semibold">Meio</th>
-                      <th className="pb-2.5 font-semibold text-right">Valor</th>
-                      <th className="pb-2.5 font-semibold text-right">Vencimento</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/60">
-                    {data.recentExpenses.map((exp) => (
-                      <tr key={exp.id} className="hover:bg-zinc-800/30 transition">
-                        <td className="py-3 font-semibold text-zinc-100 max-w-[140px] truncate">
-                          {exp.description}
-                        </td>
-                        <td className="py-3 text-zinc-400">
-                          {exp.source_name}
-                        </td>
-                        <td className="py-3 text-right font-bold text-rose-400">
-                          - {formatCurrency(exp.amount)}
-                        </td>
-                        <td className="py-3 text-right text-zinc-400 font-mono text-[11px]">
-                          {formatDate(exp.due_date)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="py-10 text-center text-xs text-zinc-500">
-                Nenhuma despesa da barbearia lançada neste mês.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Grade Analítica: Divisão Serviços vs Produtos + Top 5 Clientes do Mês */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -830,157 +842,99 @@ export function BusinessDashboardDesktop({
         </div>
       </div>
 
-      {/* Linha Inferior: 5 Produtos/Serviços mais vendidos + 5 Lançamentos recentes */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* 5 Produtos/Serviços mais vendidos */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-zinc-100 text-base">
-                  5 Produtos/Serviços mais vendidos
-                </h3>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
-                  Crescimento calculado com base no mesmo período do mês anterior
-                </p>
-              </div>
-              <Link
-                href="/produtos"
-                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium shrink-0"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                Ver todos
-              </Link>
+      {/* Linha Inferior: 5 Produtos/Serviços mais vendidos */}
+      <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-bold text-zinc-100 text-base">
+                5 Produtos/Serviços mais vendidos
+              </h3>
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                Crescimento calculado com base no mesmo período do mês anterior
+              </p>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
-                    <th className="pb-2.5 font-semibold">Produto</th>
-                    <th className="pb-2.5 font-semibold text-center">Vendas</th>
-                    <th className="pb-2.5 font-semibold text-right">Receita</th>
-                    <th className="pb-2.5 font-semibold text-right">
-                      <span className="inline-flex items-center gap-1 justify-end">
-                        <span>Crescimento</span>
-                        <span
-                          className="cursor-help text-zinc-500 hover:text-zinc-300 transition"
-                          title="Crescimento calculado comparando com o mesmo período (dia 1 até o dia atual) do mês anterior"
-                        >
-                          <Info className="w-3 h-3" />
-                        </span>
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/60">
-                  {data.topProducts.map((p, idx) => (
-                    <tr key={`${p.name}-${idx}`} className="hover:bg-zinc-800/30 transition">
-                      <td className="py-3 font-medium text-zinc-100 flex items-center gap-2">
-                        <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                        <span className="truncate max-w-[130px] sm:max-w-none">{p.name}</span>
-                      </td>
-                      <td className="py-3 text-center text-zinc-300 font-semibold">
-                        {p.salesCount}
-                      </td>
-                      <td className="py-3 text-right font-bold text-zinc-100">
-                        {formatCurrency(p.revenue)}
-                      </td>
-                      <td className="py-3 text-right">
-                        {p.growth > 0 ? (
-                          <span
-                            className="inline-flex items-center gap-0.5 text-emerald-400 font-bold text-[11px]"
-                            title="Crescimento em relação ao mesmo período do mês anterior"
-                          >
-                            <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
-                            {p.growth}%
-                          </span>
-                        ) : p.growth < 0 ? (
-                          <span
-                            className="inline-flex items-center gap-0.5 text-rose-400 font-bold text-[11px]"
-                            title="Queda em relação ao mesmo período do mês anterior"
-                          >
-                            <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
-                            {Math.abs(p.growth)}%
-                          </span>
-                        ) : (
-                          <span
-                            className="inline-flex items-center gap-0.5 text-zinc-500 font-medium text-[11px]"
-                            title="Sem variação em relação ao mesmo período do mês anterior"
-                          >
-                            <Minus className="w-3 h-3" />
-                            0%
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {data.topProducts.length === 0 && !loading && (
-                    <tr>
-                      <td colSpan={4} className="py-8 text-center text-zinc-500">
-                        Nenhuma venda registrada ainda.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <Link
+              href="/produtos"
+              className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium shrink-0"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Ver todos
+            </Link>
           </div>
-        </div>
 
-        {/* 5 Lançamentos recentes */}
-        <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-zinc-100 text-base">5 Lançamentos recentes</h3>
-              <Link
-                href="/vendas"
-                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                Ver todos
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
-                    <th className="pb-2.5 font-semibold">Descrição</th>
-                    <th className="pb-2.5 font-semibold">Conta</th>
-                    <th className="pb-2.5 font-semibold text-right">Valor</th>
-                    <th className="pb-2.5 font-semibold text-right">Data/Hora</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
+                  <th className="pb-2.5 font-semibold">Produto</th>
+                  <th className="pb-2.5 font-semibold text-center">Vendas</th>
+                  <th className="pb-2.5 font-semibold text-right">Receita</th>
+                  <th className="pb-2.5 font-semibold text-right">
+                    <span className="inline-flex items-center gap-1 justify-end">
+                      <span>Crescimento</span>
+                      <span
+                        className="cursor-help text-zinc-500 hover:text-zinc-300 transition"
+                        title="Crescimento calculado comparando com o mesmo período (dia 1 até o dia atual) do mês anterior"
+                      >
+                        <Info className="w-3 h-3" />
+                      </span>
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/60">
+                {data.topProducts.map((p, idx) => (
+                  <tr key={`${p.name}-${idx}`} className="hover:bg-zinc-800/30 transition">
+                    <td className="py-3 font-medium text-zinc-100 flex items-center gap-2">
+                      <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <span className="truncate max-w-[130px] sm:max-w-none">{p.name}</span>
+                    </td>
+                    <td className="py-3 text-center text-zinc-300 font-semibold">
+                      {p.salesCount}
+                    </td>
+                    <td className="py-3 text-right font-bold text-zinc-100">
+                      {formatCurrency(p.revenue)}
+                    </td>
+                    <td className="py-3 text-right">
+                      {p.growth > 0 ? (
+                        <span
+                          className="inline-flex items-center gap-0.5 text-emerald-400 font-bold text-[11px]"
+                          title="Crescimento em relação ao mesmo período do mês anterior"
+                        >
+                          <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
+                          {p.growth}%
+                        </span>
+                      ) : p.growth < 0 ? (
+                        <span
+                          className="inline-flex items-center gap-0.5 text-rose-400 font-bold text-[11px]"
+                          title="Queda em relação ao mesmo período do mês anterior"
+                        >
+                          <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
+                          {Math.abs(p.growth)}%
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center gap-0.5 text-zinc-500 font-medium text-[11px]"
+                          title="Sem variação em relação ao mesmo período do mês anterior"
+                        >
+                          <Minus className="w-3 h-3" />
+                          0%
+                        </span>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/60">
-                  {data.recentSales.map((sale) => (
-                    <tr key={sale.id} className="hover:bg-zinc-800/30 transition">
-                      <td className="py-3 font-semibold text-zinc-100 truncate max-w-[120px]">
-                        {sale.client_name}
-                      </td>
-                      <td className="py-3 text-zinc-400">
-                        {sale.account_name}
-                      </td>
-                      <td className="py-3 text-right font-bold text-emerald-400">
-                        + {formatCurrency(sale.total_amount)}
-                      </td>
-                      <td className="py-3 text-right text-zinc-400 font-mono text-[11px]">
-                        {formatDateTime(sale.sale_date)}
-                      </td>
-                    </tr>
-                  ))}
+                ))}
 
-                  {data.recentSales.length === 0 && !loading && (
-                    <tr>
-                      <td colSpan={4} className="py-8 text-center text-zinc-500">
-                        Nenhum atendimento recente registrado.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                {data.topProducts.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-zinc-500">
+                      Nenhuma venda registrada ainda.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

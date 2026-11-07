@@ -62,6 +62,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardView
+      userEmail={user.email}
       initialAccounts={accounts}
       initialCards={cards}
       categories={categories}

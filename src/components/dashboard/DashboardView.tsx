@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { AccountWithBalance, getAccounts } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -37,6 +39,7 @@ import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { UnifiedDailyPendingHub } from './UnifiedDailyPendingHub';
 import { QuickActionDropdown } from '@/components/layout/QuickActionDropdown';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 // Abas secundárias do mobile carregadas sob demanda (evita sobrecarga de JS inicial)
 const MobileSummaryView = dynamic(
@@ -105,6 +108,7 @@ interface DashboardMonthCache {
 }
 
 interface DashboardViewProps {
+  userEmail?: string;
   initialAccounts: AccountWithBalance[];
   initialCards: CreditCardWithUsage[];
   categories: Category[];
@@ -116,7 +120,29 @@ interface DashboardViewProps {
   initialIsMobile?: boolean;
 }
 
+function getUserGreeting(email?: string): { greeting: string; userName: string } {
+  const currentHour = new Date().getHours();
+  let greeting = 'Olá';
+  if (currentHour >= 5 && currentHour < 12) {
+    greeting = 'Bom dia';
+  } else if (currentHour >= 12 && currentHour < 18) {
+    greeting = 'Boa tarde';
+  } else {
+    greeting = 'Boa noite';
+  }
+
+  let userName = 'Usuário';
+  if (email) {
+    const prefix = email.split('@')[0];
+    const cleaned = prefix.split(/[._-]/)[0];
+    userName = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+
+  return { greeting, userName };
+}
+
 export function DashboardView({
+  userEmail,
   initialAccounts,
   initialCards,
   categories,
@@ -130,7 +156,7 @@ export function DashboardView({
   const { month, year, formattedMonth, prevMonth, nextMonth } = useDateContext();
   const [wrappedOpen, setWrappedOpen] = useState(false);
   const { isMobile } = { isMobile: useIsMobile(768, initialIsMobile) };
-  const { activeTab, contextMode } = useMobileNavigation();
+  const { activeTab, contextMode, showValues, setShowValues } = useMobileNavigation();
   const router = useRouter();
 
   useEffect(() => {
@@ -625,42 +651,47 @@ export function DashboardView({
   }
 
   // Desktop View
+  const { greeting, userName } = getUserGreeting(userEmail);
+
   return (
     <div className="space-y-6">
       {/* Banner de Boas-Vindas para usuários legados no desktop */}
       <LegacyWelcomeBanner />
 
-      {/* Header com Toggle Negócio vs Geral */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-zinc-800">
+      {/* 1. Cabeçalho do Dashboard: ocupando toda a largura da área principal com proporção da referência visual */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-2 border-b border-[#1E293B]">
+        {/* Lado Esquerdo: Saudação com destaque visual ~34px e subtítulo ~16px */}
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
-            Dashboard Financeiro
+          <h1 className="text-[28px] sm:text-[32px] lg:text-[34px] font-bold text-[#F8FAFC] tracking-tight leading-tight flex items-baseline gap-2 flex-wrap">
+            <span>{greeting},</span>
+            <span className="text-[#FACC15]">{userName}</span>
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-400">
+          <p className="text-[15px] lg:text-[16px] text-[#94A3B8] mt-1 font-normal">
             {effectiveViewMode === 'business'
-              ? `Métricas operacionais e desempenho de ${businessName}`
-              : 'Visão consolidada de todas as contas, cartões e patrimônio'}
+              ? `Acompanhe as métricas e o desempenho de ${businessName}`
+              : 'Aqui está o resumo financeiro consolidado do seu patrimônio'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+        {/* Lado Direito: Seletor de período, Notificações, Privacidade, Modo e Botão de Ação Principal */}
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap xl:justify-end">
           {/* Navegação de Mês/Ano Desktop */}
-          <div className="flex items-center bg-zinc-900 border border-zinc-800 px-2 py-1 rounded-xl shadow-sm">
+          <div className="flex items-center bg-[#0D121F] border border-[#1E293B] px-2 py-1 rounded-xl shadow-sm h-[46px]">
             <button
               type="button"
               onClick={prevMonth}
-              className="p-1 text-zinc-400 hover:text-zinc-100 rounded-lg hover:bg-zinc-800 transition cursor-pointer"
+              className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
               aria-label="Mês anterior"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs font-bold text-zinc-200 px-2 select-none min-w-[130px] text-center">
+            <span className="text-xs font-bold text-[#F8FAFC] px-2 select-none min-w-[120px] text-center">
               {formattedMonth}
             </span>
             <button
               type="button"
               onClick={nextMonth}
-              className="p-1 text-zinc-400 hover:text-zinc-100 rounded-lg hover:bg-zinc-800 transition cursor-pointer"
+              className="p-1.5 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#151D30] transition cursor-pointer"
               aria-label="Próximo mês"
             >
               <ChevronRight className="w-4 h-4" />
@@ -672,118 +703,144 @@ export function DashboardView({
             <button
               type="button"
               onClick={() => setWrappedOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-md shadow-violet-600/20 active:scale-[0.98] transition cursor-pointer"
+              className="flex items-center gap-1.5 h-[46px] px-3.5 rounded-xl text-xs font-semibold bg-[#151D30] hover:bg-[#1E293B] text-[#FACC15] border border-[#FACC15]/30 shadow-sm active:scale-[0.98] transition cursor-pointer"
               title={`Ver Retrospectiva de ${formattedMonth}`}
             >
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#FACC15]" />
               <span>Retrospectiva</span>
             </button>
           )}
 
           {/* Alternador Principal: Negócio vs Geral (Apenas se hasBusiness for true) */}
           {hasBusiness && (
-            <div className="flex items-center bg-zinc-900 border border-zinc-800 p-1 rounded-xl shadow-sm">
+            <div className="flex items-center bg-[#0D121F] border border-[#1E293B] p-1 rounded-xl shadow-sm h-[46px]">
               <button
+                type="button"
                 onClick={() => setViewMode('business')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`flex items-center gap-1.5 px-3 h-full rounded-lg text-xs font-semibold transition cursor-pointer ${
                   effectiveViewMode === 'business'
-                    ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-[#FACC15] text-[#080B11] shadow-sm font-bold'
+                    : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
                 <SegmentIcon segment={profile.segment} className="w-3.5 h-3.5" />
-                {businessName}
+                <span>{businessName}</span>
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode('general')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`flex items-center gap-1.5 px-3 h-full rounded-lg text-xs font-semibold transition cursor-pointer ${
                   effectiveViewMode === 'general'
-                    ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-[#151D30] text-[#F8FAFC] border border-[#1E293B] font-bold'
+                    : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                Visão Geral
+                <span>Visão Geral</span>
               </button>
             </div>
           )}
 
+          {/* Botão de Privacidade / Ocultar Valores */}
+          <button
+            type="button"
+            onClick={() => setShowValues(!showValues)}
+            className="h-[46px] w-[46px] flex items-center justify-center text-[#94A3B8] hover:text-[#F8FAFC] bg-[#0D121F] border border-[#1E293B] hover:bg-[#151D30] rounded-xl transition cursor-pointer shadow-sm"
+            title={showValues ? 'Ocultar valores sensíveis' : 'Mostrar valores sensíveis'}
+            aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+          >
+            {showValues ? (
+              <Eye className="w-4 h-4 text-[#94A3B8]" />
+            ) : (
+              <EyeOff className="w-4 h-4 text-[#FACC15]" />
+            )}
+          </button>
+
+          {/* Notificações */}
+          <div className="h-[46px] flex items-center justify-center bg-[#0D121F] border border-[#1E293B] rounded-xl px-1 shadow-sm">
+            <NotificationBell userEmail={userEmail} />
+          </div>
+
           {/* Exportação */}
           <ExportDropdown onExport={handleExport} />
 
-          {/* Menu Unificado de Ações Rápidas */}
+          {/* Botão Principal de Ação em Destaque (~46px, ~18px px, rounded-xl) */}
           <QuickActionDropdown
+            size="lg"
             defaultScope={effectiveViewMode === 'business' ? 'business' : 'personal'}
           />
         </div>
       </div>
 
-      {/* Banner de Retrospectiva para Meses Anteriores */}
-      {isPastMonth(month, year) && (
-        <MonthlyWrappedBanner
-          month={month}
-          year={year}
-          onOpenWrapped={() => setWrappedOpen(true)}
-        />
-      )}
+      {/* 2. Conteúdo do Dashboard com espaçamento de ~38px após o cabeçalho */}
+      <div className="mt-[38px] space-y-6">
+        {/* Banner de Retrospectiva para Meses Anteriores */}
+        {isPastMonth(month, year) && (
+          <MonthlyWrappedBanner
+            month={month}
+            year={year}
+            onOpenWrapped={() => setWrappedOpen(true)}
+          />
+        )}
 
-      {/* Hub Unificado de Confirmações & Pendências do Dia (Topo Absoluto Desktop) */}
-      <UnifiedDailyPendingHub
-        pendingReceipts={pendingReceipts}
-        upcomingBills={upcomingBills}
-        cards={initialCards}
-        onReceiptConfirmed={(id) => {
-          setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
-          refreshData();
-        }}
-        onBillPaid={(id) => {
-          setUpcomingBills((prev) => prev.filter((b) => b.id !== id));
-          refreshData();
-        }}
-        scopeFilter={effectiveViewMode === 'business' ? 'business' : 'all'}
-      />
-
-      {/* Renderização Condicional baseada no modo escolhido */}
-      {effectiveViewMode === 'business' ? (
-        <BusinessDashboardView
-          data={businessData}
-          accounts={accounts}
-          formattedMonth={formattedMonth}
-          loading={loading}
-          onEditBalance={(acc) => {
-            setAccountToAdjustBalance(acc);
-            setBalanceModalOpen(true);
-          }}
-          onAddBusinessExpense={() => {
-            setModalDefaultScope('business');
-            setModalOpen(true);
-          }}
-        />
-      ) : (
-        <GeneralDashboardView
-          generalData={generalData}
-          yearlyStats={generalData.yearlyStats}
-          upcomingBills={upcomingBills}
-          onBillPaid={(id) => {
-            setUpcomingBills((prev) => prev.filter((b) => b.id !== id));
-            refreshData();
-          }}
+        {/* Hub Unificado de Confirmações & Pendências do Dia (Topo Absoluto Desktop) */}
+        <UnifiedDailyPendingHub
           pendingReceipts={pendingReceipts}
+          upcomingBills={upcomingBills}
+          cards={initialCards}
           onReceiptConfirmed={(id) => {
             setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
             refreshData();
           }}
-          transactions={transactions}
-          accounts={accounts}
-          cards={initialCards}
-          formattedMonth={formattedMonth}
-          loading={loading}
-          onEditBalance={(acc) => {
-            setAccountToAdjustBalance(acc);
-            setBalanceModalOpen(true);
+          onBillPaid={(id) => {
+            setUpcomingBills((prev) => prev.filter((b) => b.id !== id));
+            refreshData();
           }}
+          scopeFilter={effectiveViewMode === 'business' ? 'business' : 'all'}
         />
-      )}
+
+        {/* Renderização Condicional baseada no modo escolhido */}
+        {effectiveViewMode === 'business' ? (
+          <BusinessDashboardView
+            data={businessData}
+            accounts={accounts}
+            formattedMonth={formattedMonth}
+            loading={loading}
+            onEditBalance={(acc) => {
+              setAccountToAdjustBalance(acc);
+              setBalanceModalOpen(true);
+            }}
+            onAddBusinessExpense={() => {
+              setModalDefaultScope('business');
+              setModalOpen(true);
+            }}
+          />
+        ) : (
+          <GeneralDashboardView
+            generalData={generalData}
+            yearlyStats={generalData.yearlyStats}
+            upcomingBills={upcomingBills}
+            onBillPaid={(id) => {
+              setUpcomingBills((prev) => prev.filter((b) => b.id !== id));
+              refreshData();
+            }}
+            pendingReceipts={pendingReceipts}
+            onReceiptConfirmed={(id) => {
+              setPendingReceipts((prev) => prev.filter((r) => r.id !== id));
+              refreshData();
+            }}
+            transactions={transactions}
+            accounts={accounts}
+            cards={initialCards}
+            formattedMonth={formattedMonth}
+            loading={loading}
+            onEditBalance={(acc) => {
+              setAccountToAdjustBalance(acc);
+              setBalanceModalOpen(true);
+            }}
+          />
+        )}
+      </div>
 
       {/* Modal de Nova Transação Financeira */}
       <TransactionModal
