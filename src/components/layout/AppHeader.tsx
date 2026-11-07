@@ -60,6 +60,11 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
 
   const breadcrumb = getBreadcrumb(pathname, businessName, salesLabel);
 
+  // No dashboard desktop, a tela possui cabeçalho de amplitude total dedicado conforme a referência visual
+  if (pathname === '/dashboard') {
+    return null;
+  }
+
   const handleLogout = async () => {
     if (loggingOut) return;
     setLoggingOut(true);

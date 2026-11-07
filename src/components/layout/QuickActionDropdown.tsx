@@ -15,7 +15,7 @@ import { FinancialScope } from '@/types/database';
 
 interface QuickActionDropdownProps {
   buttonLabel?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   align?: 'left' | 'right';
   defaultScope?: FinancialScope;
 }
@@ -76,16 +76,18 @@ export function QuickActionDropdown({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-1.5 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] font-black rounded-xl transition shadow-md shadow-amber-500/15 active:scale-95 cursor-pointer ${
+        className={`flex items-center gap-2 bg-[#FACC15] hover:bg-[#FDE047] active:bg-[#EAB308] text-[#080B11] font-semibold rounded-xl transition shadow-lg shadow-amber-500/10 active:scale-[0.98] cursor-pointer ${
           size === 'sm'
             ? 'px-3 py-1.5 text-xs'
+            : size === 'lg'
+            ? 'h-[46px] px-[18px] text-sm'
             : 'px-4 py-2 text-xs sm:text-sm'
         }`}
         aria-expanded={isOpen}
         aria-haspopup="true"
         title="Criar nova transação ou atendimento"
       >
-        <Plus className={size === 'sm' ? 'w-3.5 h-3.5 stroke-[3]' : 'w-4 h-4 stroke-[3]'} />
+        <Plus className={size === 'sm' ? 'w-3.5 h-3.5 stroke-[2.5]' : 'w-4 h-4 stroke-[2.5]'} />
         <span>{buttonLabel}</span>
         <ChevronDown
           className={`w-3.5 h-3.5 transition-transform duration-200 opacity-90 ${

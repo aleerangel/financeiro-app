@@ -62,16 +62,16 @@ export function AppShell({ userEmail, initialProfile, initialContextMode, childr
         <MobileNavigationProvider initialContextMode={initialContextMode}>
           <SidebarProvider>
             <div className="min-h-screen flex bg-[#080B11] text-[#F8FAFC]">
-              {/* 1. Sidebar Fixa Desktop */}
-              <AppSidebar />
+              {/* 1. Sidebar Fixa Desktop (232px) */}
+              <AppSidebar userEmail={userEmail} />
 
-              {/* 2. Área Principal com Header e Conteúdo Full-Width */}
-              <div className="flex-1 flex flex-col min-w-0">
+              {/* 2. Área Principal com início logo após a sidebar (md:pl-[232px]) */}
+              <div className="flex-1 flex flex-col min-w-0 md:pl-[232px]">
                 <AppHeader userEmail={userEmail} />
 
-                <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-5 lg:px-6 xl:px-8 md:py-6 lg:py-8 md:pb-12 min-w-0">
+                <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-[26px] md:pt-[32px] md:pb-[24px] min-w-0">
                   <MobilePullToRefresh>
-                    <div className="w-full max-w-[1680px] mx-auto min-w-0">
+                    <div className="w-full mx-auto min-w-0">
                       <MobileBackButton />
                       {children}
                     </div>
