@@ -239,9 +239,9 @@ export function WalletInvoiceCard({
     >
       {/* CAMADA 1: VISÃO CONSOLIDADA DA CARTEIRA COM PILHA SOBREPOSTA */}
       <div
-        className={`transition-all duration-500 ease-out flex flex-col justify-between h-full ${
+        className={`transition-opacity transition-transform duration-200 ease-out flex flex-col justify-between h-full ${
           selectedCardId
-            ? 'opacity-0 scale-95 pointer-events-none -translate-y-3'
+            ? 'opacity-0 scale-98 pointer-events-none -translate-y-2'
             : 'opacity-100 scale-100 pointer-events-auto translate-y-0'
         }`}
       >
@@ -312,11 +312,11 @@ export function WalletInvoiceCard({
                         handleSelectCard(card.id);
                       }
                     }}
-                    className={`group relative p-3 rounded-2xl border border-white/20 transition-all duration-300 cursor-pointer select-none overflow-hidden ${
+                    className={`group relative p-3 rounded-2xl border border-white/20 transition-transform duration-150 cursor-pointer select-none overflow-hidden ${
                       index > 0 ? '-mt-9 sm:-mt-10' : ''
                     } ${
                       isHovered
-                        ? '-translate-y-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.6),0_12px_24px_rgba(0,0,0,0.4)]'
+                        ? '-translate-y-2 shadow-[0_-8px_24px_rgba(0,0,0,0.6),0_12px_24px_rgba(0,0,0,0.4)]'
                         : 'shadow-[0_-3px_12px_rgba(0,0,0,0.4),0_6px_16px_rgba(0,0,0,0.3)]'
                     } active:scale-[0.99]`}
                     style={{
@@ -386,10 +386,10 @@ export function WalletInvoiceCard({
       {/* CAMADA 2: O CARTÃO SELECIONADO PREENCHENDO TODO O CARD COM ANIMAÇÃO */}
       {activeExpandedCard && (
         <div
-          className={`absolute inset-0 p-5 rounded-2xl flex flex-col justify-between transition-all duration-500 ease-out overflow-hidden ${
+          className={`absolute inset-0 p-5 rounded-2xl flex flex-col justify-between transition-opacity transition-transform duration-200 ease-out overflow-hidden ${
             selectedCardId
               ? 'opacity-100 scale-100 pointer-events-auto translate-y-0'
-              : 'opacity-0 scale-95 pointer-events-none translate-y-6'
+              : 'opacity-0 scale-98 pointer-events-none translate-y-3'
           }`}
           style={{
             backgroundColor: activeExpandedCard.card.color || '#8b5cf6',
