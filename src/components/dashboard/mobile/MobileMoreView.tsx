@@ -181,14 +181,14 @@ export function MobileMoreView({
               description: 'Nome fantasia, segmento, rotinas e preferências',
               onClick: () => setIsBusinessSettingsOpen(true),
               icon: Store,
-              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+              iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
             },
             {
               title: 'Clientes & Fidelização (CRM)',
               description: 'Histórico de atendimentos, radar de retorno WhatsApp e VIPs',
               href: '/clientes',
               icon: Users,
-              iconColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+              iconColor: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
               badge: clientsReturnCount > 0 ? `${clientsReturnCount} para retorno` : null,
               badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
             },
@@ -197,7 +197,7 @@ export function MobileMoreView({
               description: 'Assinaturas recorrentes, cobrança WhatsApp e recebimento',
               href: '/mensalidades',
               icon: Crown,
-              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+              iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
             },
             {
               title: 'Fiados & Contas a Receber',
@@ -231,7 +231,7 @@ export function MobileMoreView({
               description: 'Ative controle de atendimentos, clientes, catálogo e fiados',
               onClick: () => setIsBusinessSettingsOpen(true),
               icon: Store,
-              iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+              iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
             },
           ],
         },
@@ -250,7 +250,7 @@ export function MobileMoreView({
           description: `${cards.length} cartões gerenciados • Faturas e limites`,
           href: '/cartoes',
           icon: CreditCard,
-          iconColor: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+          iconColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
         },
         {
           title: 'Contas Fixas & Recorrências',
@@ -271,7 +271,7 @@ export function MobileMoreView({
           description: 'Avisos no app, push no celular e resumos por e-mail',
           onClick: () => setIsNotificationsOpen(true),
           icon: Bell,
-          iconColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+          iconColor: 'text-[#FACC15] bg-[#FACC15]/10 border-[#FACC15]/25',
         },
       ],
     },
@@ -281,11 +281,11 @@ export function MobileMoreView({
     <div className="space-y-5 pb-12">
       {menuSections.map((section, sIdx) => (
         <div key={sIdx} className="space-y-2">
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-400 block px-1">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#94A3B8] block px-1">
             {section.title}
           </span>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl divide-y divide-zinc-800/80 overflow-hidden">
+          <div className="bg-[#0D121F] border border-[#1E293B] rounded-2xl divide-y divide-[#1E293B] overflow-hidden shadow-lg">
             {section.items.map((item, iIdx) => {
               const Icon = item.icon;
               const isNavigating = navigatingHref === item.href;
@@ -303,7 +303,7 @@ export function MobileMoreView({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`font-bold text-xs block ${isItemBusy ? 'text-emerald-300' : 'text-zinc-100'}`}>
+                        <span className={`font-bold text-xs block ${isItemBusy ? 'text-[#FACC15]' : 'text-[#F8FAFC]'}`}>
                           {item.title}
                         </span>
                         {item.badge && (
@@ -314,16 +314,16 @@ export function MobileMoreView({
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-zinc-400 block mt-0.5">
+                      <span className="text-[11px] text-[#94A3B8] block mt-0.5">
                         {isItemBusy ? 'Abrindo...' : item.description}
                       </span>
                     </div>
                   </div>
 
                   {isItemBusy ? (
-                    <Loader2 className="w-4 h-4 text-emerald-400 animate-spin shrink-0 ml-2" />
+                    <Loader2 className="w-4 h-4 text-[#FACC15] animate-spin shrink-0 ml-2" />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0 ml-2" />
+                    <ChevronRight className="w-4 h-4 text-[#64748B] shrink-0 ml-2" />
                   )}
                 </>
               );
@@ -335,10 +335,10 @@ export function MobileMoreView({
                     type="button"
                     onClick={item.onClick}
                     disabled={Boolean(item.isLoading)}
-                    className={`w-full p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] disabled:opacity-70 ${
+                    className={`w-full p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] disabled:opacity-70 cursor-pointer ${
                       item.isLoading
-                        ? 'bg-zinc-800/90 border-l-2 border-emerald-400'
-                        : 'hover:bg-zinc-800/40 active:bg-zinc-800'
+                        ? 'bg-[#151D30] border-l-2 border-[#FACC15]'
+                        : 'hover:bg-[#151D30]/40 active:bg-[#151D30]'
                     }`}
                   >
                     {innerContent}
@@ -353,13 +353,12 @@ export function MobileMoreView({
                   prefetch={true}
                   onClick={() => {
                     setNavigatingHref(item.href!);
-                    // Timeout de segurança: limpa o destaque se a navegação for cancelada ou ao retornar
                     setTimeout(() => setNavigatingHref(null), 600);
                   }}
-                  className={`p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] ${
+                  className={`p-3.5 flex items-center justify-between text-left transition active:scale-[0.99] cursor-pointer ${
                     isNavigating
-                      ? 'bg-zinc-800/90 border-l-2 border-emerald-400'
-                      : 'hover:bg-zinc-800/40 active:bg-zinc-800'
+                      ? 'bg-[#151D30] border-l-2 border-[#FACC15]'
+                      : 'hover:bg-[#151D30]/40 active:bg-[#151D30]'
                   }`}
                 >
                   {innerContent}
@@ -371,16 +370,16 @@ export function MobileMoreView({
       ))}
 
       {/* Card de Informações do Sistema e Logout */}
-      <div className="p-4 bg-zinc-900/60 border border-zinc-800 rounded-2xl flex items-center justify-between gap-3 text-xs text-zinc-400">
+      <div className="p-4 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex items-center justify-between gap-3 text-xs text-[#94A3B8] shadow-lg">
         <div className="flex items-center gap-2 min-w-0">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="truncate">Canário PRO • Gestão Financeira</span>
+          <ShieldCheck className="w-4 h-4 text-[#FACC15] shrink-0" />
+          <span className="truncate font-semibold text-[#F8FAFC]">Canário PRO • Gestão Financeira</span>
         </div>
         <button
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl font-bold text-xs transition active:scale-95 disabled:opacity-50 shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl font-bold text-xs transition active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
         >
           {loggingOut ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
