@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { CreditCardWithUsage, createCreditCard, updateCreditCard } from '@/lib/actions/credit-cards';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
 
 interface CreditCardModalProps {
   isOpen: boolean;
@@ -22,8 +24,8 @@ const PRESET_CARD_COLORS = [
 
 export function CreditCardModal({ isOpen, onClose, cardToEdit }: CreditCardModalProps) {
   const [name, setName] = useState(cardToEdit?.name || '');
-  const [creditLimit, setCreditLimit] = useState(
-    cardToEdit?.credit_limit ? String(cardToEdit.credit_limit) : '1000'
+  const [creditLimit, setCreditLimit] = useState(() =>
+    numberToCurrencyInputString(cardToEdit?.credit_limit ?? 1000)
   );
   const [closingDay, setClosingDay] = useState(cardToEdit?.closing_day || 1);
   const [dueDay, setDueDay] = useState(cardToEdit?.due_day || 10);
@@ -43,7 +45,7 @@ export function CreditCardModal({ isOpen, onClose, cardToEdit }: CreditCardModal
     try {
       setLoading(true);
       setError(null);
-      const parsedLimit = parseFloat(creditLimit.replace(',', '.')) || 0;
+      const parsedLimit = parseCurrencyInputToNumber(creditLimit);
 
       if (cardToEdit) {
         await updateCreditCard(cardToEdit.id, {
@@ -113,11 +115,10 @@ export function CreditCardModal({ isOpen, onClose, cardToEdit }: CreditCardModal
             <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
               Limite Total (R$)
             </label>
-            <input
-              type="text"
+            <CurrencyInput
               value={creditLimit}
-              onChange={(e) => setCreditLimit(e.target.value)}
-              placeholder="Ex: 5000,00"
+              onChangeValue={(_, formatted) => setCreditLimit(formatted)}
+              placeholder="0,00"
               className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
               required
             />

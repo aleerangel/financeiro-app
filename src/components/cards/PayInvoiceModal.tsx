@@ -17,6 +17,8 @@ import {
 import { getAccounts, AccountWithBalance } from '@/lib/actions/accounts';
 import { Transaction } from '@/types/database';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { toast } from 'sonner';
 
 interface PayInvoiceModalProps {
@@ -150,7 +152,7 @@ function PayInvoiceModalDialog({
     };
   }, [card.id, month, year, pendingTransactions]);
 
-  const numericPartial = parseFloat(partialAmountStr.replace(',', '.')) || 0;
+  const numericPartial = parseCurrencyInputToNumber(partialAmountStr);
   const effectivePayAmount = payMode === 'full' || !isInvoiceOpen ? pendingAmount : numericPartial;
 
   const selectedTargetItem = pendingItems.find((t) => t.id === selectedTargetTxId);
@@ -423,12 +425,10 @@ function PayInvoiceModalDialog({
                         </label>
                         <div className="bg-[#080B11] p-3 rounded-xl border border-[#1E293B] flex items-center justify-center gap-1 focus-within:border-[#FACC15]/50 transition">
                           <span className="text-xl font-bold text-[#64748B]">R$</span>
-                          <input
-                            type="text"
-                            inputMode="decimal"
+                          <CurrencyInput
                             placeholder="0,00"
                             value={partialAmountStr}
-                            onChange={(e) => setPartialAmountStr(e.target.value)}
+                            onChangeValue={(_, formatted) => setPartialAmountStr(formatted)}
                             autoFocus
                             className="w-36 bg-transparent text-2xl font-extrabold text-[#F8FAFC] text-center focus:outline-none placeholder:text-[#64748B] tabular-nums"
                           />

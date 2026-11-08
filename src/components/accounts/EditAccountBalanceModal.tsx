@@ -9,6 +9,8 @@ import {
   recordAccountYield,
 } from '@/lib/actions/accounts';
 import { formatCurrency } from '@/lib/utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { useOptionalMobileNavigation } from '@/context/MobileNavigationContext';
 
 interface EditAccountBalanceModalProps {
@@ -39,23 +41,18 @@ function EditAccountBalanceDialog({
   const [yieldInputType, setYieldInputType] = useState<'by_new_balance' | 'by_yield_amount'>(
     'by_new_balance'
   );
-  const [newBankBalance, setNewBankBalance] = useState(
-    String(currentBalance.toFixed(2)).replace('.', ',')
+  const [newBankBalance, setNewBankBalance] = useState(() =>
+    numberToCurrencyInputString(currentBalance)
   );
   const [directYieldAmount, setDirectYieldAmount] = useState('');
-  const [adjustBalance, setAdjustBalance] = useState(
-    String(currentBalance.toFixed(2)).replace('.', ',')
+  const [adjustBalance, setAdjustBalance] = useState(() =>
+    numberToCurrencyInputString(currentBalance)
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const parseCurrencyInput = (val: string): number => {
-    if (!val.trim()) return 0;
-    const normalized = val.includes(',')
-      ? val.replace(/\./g, '').replace(',', '.')
-      : val;
-    const parsed = parseFloat(normalized);
-    return isNaN(parsed) ? 0 : parsed;
+    return parseCurrencyInputToNumber(val);
   };
 
   const calculatedYield =
@@ -221,11 +218,10 @@ function EditAccountBalanceDialog({
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[#64748B] font-medium">
                       R$
                     </span>
-                    <input
-                      type="text"
+                    <CurrencyInput
                       autoFocus
                       value={newBankBalance}
-                      onChange={(e) => setNewBankBalance(e.target.value)}
+                      onChangeValue={(_, formatted) => setNewBankBalance(formatted)}
                       placeholder="0,00"
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-lg font-bold text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                     />
@@ -245,7 +241,7 @@ function EditAccountBalanceDialog({
                         type="button"
                         onClick={() =>
                           setDirectYieldAmount(
-                            String(account.estimated_monthly_yield.toFixed(2)).replace('.', ',')
+                            numberToCurrencyInputString(account.estimated_monthly_yield)
                           )
                         }
                         className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold"
@@ -259,11 +255,10 @@ function EditAccountBalanceDialog({
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-emerald-400 font-bold">
                       + R$
                     </span>
-                    <input
-                      type="text"
+                    <CurrencyInput
                       autoFocus
                       value={directYieldAmount}
-                      onChange={(e) => setDirectYieldAmount(e.target.value)}
+                      onChangeValue={(_, formatted) => setDirectYieldAmount(formatted)}
                       placeholder="0,00"
                       className="w-full pl-14 pr-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-lg font-bold text-emerald-400 placeholder-[#64748B] focus:outline-none focus:border-emerald-500 transition tabular-nums"
                     />
@@ -299,11 +294,10 @@ function EditAccountBalanceDialog({
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[#64748B] font-medium">
                   R$
                 </span>
-                <input
-                  type="text"
+                <CurrencyInput
                   autoFocus
                   value={adjustBalance}
-                  onChange={(e) => setAdjustBalance(e.target.value)}
+                  onChangeValue={(_, formatted) => setAdjustBalance(formatted)}
                   placeholder="0,00"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-base font-bold text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                 />

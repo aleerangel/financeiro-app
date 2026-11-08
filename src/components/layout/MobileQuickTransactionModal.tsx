@@ -25,6 +25,8 @@ import { createTransaction } from '@/lib/actions/transactions';
 import { isBusinessCategory } from '@/lib/business-scope-utils';
 import { getTodayYMD } from '@/lib/date-utils';
 import { formatCurrency } from '@/lib/utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { toast } from 'sonner';
 
 export function MobileQuickTransactionModal() {
@@ -100,8 +102,7 @@ function MobileQuickTransactionModalDialog() {
   }, [availableCategories, categoryId]);
 
   const parsedAmount = useMemo(() => {
-    const val = parseFloat(amountStr.replace(',', '.'));
-    return isNaN(val) || val <= 0 ? 0 : val;
+    return parseCurrencyInputToNumber(amountStr);
   }, [amountStr]);
 
   const handleClose = () => {
@@ -109,8 +110,8 @@ function MobileQuickTransactionModalDialog() {
   };
 
   const handleSave = async (keepOpen: boolean = false) => {
-    const numericAmount = parseFloat(amountStr.replace(',', '.'));
-    if (isNaN(numericAmount) || numericAmount <= 0) {
+    const numericAmount = parseCurrencyInputToNumber(amountStr);
+    if (numericAmount <= 0) {
       toast.error('Informe um valor válido maior que zero');
       return;
     }
@@ -321,12 +322,10 @@ function MobileQuickTransactionModalDialog() {
             </span>
             <div className="flex items-center justify-center gap-1">
               <span className="text-2xl font-bold text-[#94A3B8]">R$</span>
-              <input
-                type="text"
-                inputMode="decimal"
+              <CurrencyInput
                 placeholder="0,00"
                 value={amountStr}
-                onChange={(e) => setAmountStr(e.target.value)}
+                onChangeValue={(_, formatted) => setAmountStr(formatted)}
                 autoFocus
                 className="w-48 bg-transparent text-3xl font-extrabold text-[#F8FAFC] text-center focus:outline-none placeholder:text-slate-600 tabular-nums"
               />

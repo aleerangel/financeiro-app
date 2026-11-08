@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { X, Crown, Calendar, DollarSign, User, FileText, Check } from 'lucide-react';
 import { Client, SubscriptionPlan, ClientSubscription } from '@/types/database';
 import { saveClientSubscription } from '@/lib/actions/subscriptions';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { getTodayYMD } from '@/lib/date-utils';
 import { toast } from 'sonner';
 
@@ -44,10 +46,10 @@ function SubscriptionModalDialog({
     : plans[0]?.id || '';
 
   const initialPrice = subscriptionToEdit
-    ? String(subscriptionToEdit.price)
+    ? numberToCurrencyInputString(subscriptionToEdit.price)
     : plans[0]
-    ? String(plans[0].price)
-    : '80';
+    ? numberToCurrencyInputString(plans[0].price)
+    : '80,00';
 
   const [clientId, setClientId] = useState(initialClientId);
   const [planId, setPlanId] = useState(initialPlanId);
@@ -75,7 +77,7 @@ function SubscriptionModalDialog({
       setPlanId(selectedPlanId);
       const selected = plans.find((p) => p.id === selectedPlanId);
       if (selected) {
-        setPrice(String(selected.price));
+        setPrice(numberToCurrencyInputString(selected.price));
       }
     }
   };
@@ -88,8 +90,8 @@ function SubscriptionModalDialog({
       return;
     }
 
-    const numPrice = parseFloat(price.replace(',', '.'));
-    if (isNaN(numPrice) || numPrice < 0) {
+    const numPrice = parseCurrencyInputToNumber(price);
+    if (numPrice < 0) {
       toast.error('Informe um valor mensal válido');
       return;
     }
@@ -225,13 +227,10 @@ function SubscriptionModalDialog({
                 <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                 Valor Mensal (R$) *
               </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
+              <CurrencyInput
                 value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="80.00"
+                onChangeValue={(_, formatted) => setPrice(formatted)}
+                placeholder="0,00"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-emerald-400 font-bold placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
                 required
               />

@@ -5,6 +5,8 @@ import { X, Sparkles, Plus, Trash2, Check } from 'lucide-react';
 import { SubscriptionPlan } from '@/types/database';
 import { saveSubscriptionPlan, deleteSubscriptionPlan } from '@/lib/actions/subscriptions';
 import { formatCurrency } from '@/lib/utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { toast } from 'sonner';
 
 interface SubscriptionPlanModalProps {
@@ -35,8 +37,8 @@ export function SubscriptionPlanModal({
       toast.error('Informe o nome do plano');
       return;
     }
-    const numPrice = parseFloat(price.replace(',', '.'));
-    if (isNaN(numPrice) || numPrice < 0) {
+    const numPrice = parseCurrencyInputToNumber(price);
+    if (numPrice <= 0) {
       toast.error('Informe um valor válido');
       return;
     }
@@ -166,13 +168,10 @@ export function SubscriptionPlanModal({
                   <label className="block text-xs font-semibold text-zinc-300 mb-1">
                     Preço Mensal (R$) *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <CurrencyInput
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="80.00"
+                    onChangeValue={(_, formatted) => setPrice(formatted)}
+                    placeholder="0,00"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400 font-semibold"
                     required
                   />

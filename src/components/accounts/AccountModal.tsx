@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { X, TrendingUp } from 'lucide-react';
 import { AccountType, AccountYieldType } from '@/types/database';
 import { AccountWithBalance, createAccount, updateAccount } from '@/lib/actions/accounts';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { toast } from 'sonner';
 
 interface AccountModalProps {
@@ -37,9 +39,8 @@ const PRESET_COLORS = [
 function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
   const [name, setName] = useState(accountToEdit?.name || '');
   const [type, setType] = useState<AccountType>(accountToEdit?.type || 'checking');
-  const [balance, setBalance] = useState(
-    String(accountToEdit?.current_balance ?? accountToEdit?.initial_balance ?? 0)
-  );
+  const initialBal = accountToEdit?.current_balance ?? accountToEdit?.initial_balance ?? 0;
+  const [balance, setBalance] = useState(() => numberToCurrencyInputString(initialBal));
   const [color, setColor] = useState(accountToEdit?.color || '#3b82f6');
   const [yieldType, setYieldType] = useState<AccountYieldType>(
     accountToEdit?.yield_type || 'none'
@@ -69,7 +70,7 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
     try {
       setLoading(true);
       setError(null);
-      const parsedBalance = parseFloat(balance.replace(/\./g, '').replace(',', '.')) || 0;
+      const parsedBalance = parseCurrencyInputToNumber(balance);
       const parsedYieldRate =
         yieldType === 'none'
           ? 0
@@ -167,10 +168,9 @@ function AccountModalDialog({ accountToEdit, onClose }: DialogProps) {
               <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
                 {accountToEdit ? 'Saldo Atual (R$)' : 'Saldo Inicial (R$)'}
               </label>
-              <input
-                type="text"
+              <CurrencyInput
                 value={balance}
-                onChange={(e) => setBalance(e.target.value)}
+                onChangeValue={(_, formatted) => setBalance(formatted)}
                 placeholder="0,00"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
               />

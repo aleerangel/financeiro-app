@@ -37,6 +37,8 @@ import { ClientModal } from '@/components/clients/ClientModal';
 import { SaleCreditReceiptModal } from '@/components/fiados/SaleCreditReceiptModal';
 import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { toast } from 'sonner';
 
 export function MobileNewSaleDrawer() {
@@ -190,8 +192,8 @@ function MobileNewSaleDrawerDialog() {
       toast.error('Informe o nome do serviço ou produto avulso');
       return;
     }
-    const priceNum = parseFloat(customItemPrice.replace(',', '.'));
-    if (isNaN(priceNum) || priceNum <= 0) {
+    const priceNum = parseCurrencyInputToNumber(customItemPrice);
+    if (priceNum <= 0) {
       toast.error('Informe um valor válido para o item avulso');
       return;
     }
@@ -254,7 +256,7 @@ function MobileNewSaleDrawerDialog() {
         return;
       }
 
-      const initPayNum = initialPayment ? parseFloat(initialPayment.replace(',', '.')) : 0;
+      const initPayNum = parseCurrencyInputToNumber(initialPayment);
       if (initPayNum > totalAmount) {
         toast.error('O valor de entrada não pode ser maior que o total do atendimento');
         setSubmitting(false);
@@ -516,12 +518,10 @@ function MobileNewSaleDrawerDialog() {
                     onChange={(e) => setCustomItemName(e.target.value)}
                     className="flex-1 bg-[#0D121F] border border-[#1E293B] rounded-lg px-2.5 py-1.5 text-xs text-[#F8FAFC] placeholder:text-slate-500 focus:outline-none focus:border-[#FACC15]/50"
                   />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="R$ 0,00"
+                  <CurrencyInput
+                    placeholder="0,00"
                     value={customItemPrice}
-                    onChange={(e) => setCustomItemPrice(e.target.value)}
+                    onChangeValue={(_, formatted) => setCustomItemPrice(formatted)}
                     className="w-24 bg-[#0D121F] border border-[#1E293B] rounded-lg px-2.5 py-1.5 text-xs text-[#F8FAFC] placeholder:text-slate-500 text-center focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
                   />
                   <button
@@ -781,19 +781,15 @@ function MobileNewSaleDrawerDialog() {
                     <label className="text-[11px] font-semibold text-[#94A3B8] block mb-1">
                       Entrada Imediata
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max={totalAmount}
-                      placeholder="R$ 0,00"
+                    <CurrencyInput
+                      placeholder="0,00"
                       value={initialPayment}
-                      onChange={(e) => setInitialPayment(e.target.value)}
+                      onChangeValue={(_, formatted) => setInitialPayment(formatted)}
                       className="w-full bg-[#0D121F] border border-[#1E293B] rounded-xl px-2.5 py-1.5 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
                     />
                   </div>
 
-                  {parseFloat(initialPayment || '0') > 0 && (
+                  {parseCurrencyInputToNumber(initialPayment) > 0 && (
                     <div>
                       <label className="text-[11px] font-semibold text-[#94A3B8] block mb-1">
                         Forma da Entrada
@@ -875,7 +871,7 @@ function MobileNewSaleDrawerDialog() {
                   <span>Saldo a receber:</span>
                   <strong className="text-[#FACC15] font-bold tabular-nums">
                     {formatCurrency(
-                      Math.max(0, totalAmount - (parseFloat(initialPayment || '0') || 0))
+                      Math.max(0, totalAmount - parseCurrencyInputToNumber(initialPayment))
                     )}
                   </strong>
                 </div>

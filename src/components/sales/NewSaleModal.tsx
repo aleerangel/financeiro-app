@@ -13,6 +13,8 @@ import { createSale, CreateSaleItemInput } from '@/lib/actions/sales';
 import { saveClientSubscription } from '@/lib/actions/subscriptions';
 import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { findExactClientMatch } from '@/lib/client-search-utils';
 import { toast } from 'sonner';
 import { ClientModal } from '@/components/clients/ClientModal';
@@ -197,8 +199,8 @@ export function NewSaleModal({
     );
   };
 
-  const handleUpdatePrice = (productId: string | null | undefined, newPriceStr: string) => {
-    const val = parseFloat(newPriceStr.replace(',', '.')) || 0;
+  const handleUpdatePrice = (productId: string | null | undefined, newPrice: number | string) => {
+    const val = typeof newPrice === 'number' ? newPrice : parseCurrencyInputToNumber(newPrice);
     setSelectedItems((prev) =>
       prev.map((item) =>
         item.product_id === productId && !item.is_service_component
@@ -271,7 +273,7 @@ export function NewSaleModal({
         return;
       }
 
-      const initPayNum = initialPayment ? parseFloat(initialPayment.replace(',', '.')) : 0;
+      const initPayNum = parseCurrencyInputToNumber(initialPayment);
       if (initPayNum > totalAmount) {
         setError('O valor de entrada não pode ser maior que o total do atendimento.');
         setLoading(false);
@@ -507,11 +509,10 @@ export function NewSaleModal({
                             </span>
                             <div className="flex items-center gap-1.5 text-xs text-[#94A3B8] mt-0.5">
                               <span>Valor un: R$</span>
-                              <input
-                                type="text"
+                              <CurrencyInput
                                 value={item.unit_price}
-                                onChange={(e) => handleUpdatePrice(item.product_id, e.target.value)}
-                                className="w-16 px-1.5 py-0.5 rounded bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] text-center font-bold focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
+                                onChangeValue={(val) => handleUpdatePrice(item.product_id, val)}
+                                className="w-20 px-1.5 py-0.5 rounded bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] text-center font-bold focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
                               />
                             </div>
                           </div>
@@ -752,19 +753,15 @@ export function NewSaleModal({
                   <label className="block text-xs font-medium text-[#94A3B8] mb-1">
                     Entrada Imediata (Opcional)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max={totalAmount}
-                    placeholder="R$ 0,00"
+                  <CurrencyInput
+                    placeholder="0,00"
                     value={initialPayment}
-                    onChange={(e) => setInitialPayment(e.target.value)}
+                    onChangeValue={(_, formatted) => setInitialPayment(formatted)}
                     className="w-full px-3 py-2 rounded-xl bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                   />
                 </div>
 
-                {parseFloat(initialPayment || '0') > 0 && (
+                {parseCurrencyInputToNumber(initialPayment) > 0 && (
                   <div>
                     <label className="block text-xs font-medium text-[#94A3B8] mb-1">
                       Forma da Entrada
@@ -847,7 +844,7 @@ export function NewSaleModal({
                 <span>Saldo que ficará a receber:</span>
                 <strong className="text-[#FACC15] font-bold tabular-nums">
                   {formatCurrency(
-                    Math.max(0, totalAmount - (parseFloat(initialPayment || '0') || 0))
+                    Math.max(0, totalAmount - parseCurrencyInputToNumber(initialPayment))
                   )}
                 </strong>
               </div>

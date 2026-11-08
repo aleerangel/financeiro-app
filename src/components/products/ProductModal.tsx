@@ -5,6 +5,8 @@ import { X, Plus, Trash2, Package } from 'lucide-react';
 import { Product, ProductType } from '@/types/database';
 import { createProduct, updateProduct, ServiceProductInput } from '@/lib/actions/products';
 import { formatCurrency } from '@/lib/utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { toast } from 'sonner';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 import { getSegmentEmoji } from '@/components/ui/SegmentIcon';
@@ -58,12 +60,12 @@ function ProductModalDialog({
   const { profile } = useBusinessProfile();
   const [name, setName] = useState(productToEdit?.name || '');
   const [type, setType] = useState<ProductType>(productToEdit?.type || 'service');
-  const [price, setPrice] = useState(
-    productToEdit?.default_price !== undefined ? String(productToEdit.default_price) : '35'
+  const [price, setPrice] = useState(() =>
+    numberToCurrencyInputString(productToEdit?.default_price ?? 35)
   );
-  const [costPrice, setCostPrice] = useState(
+  const [costPrice, setCostPrice] = useState(() =>
     productToEdit?.cost_price !== undefined && Number(productToEdit.cost_price) > 0
-      ? String(productToEdit.cost_price)
+      ? numberToCurrencyInputString(productToEdit.cost_price)
       : ''
   );
   const hasExistingStock =
@@ -124,8 +126,8 @@ function ProductModalDialog({
     try {
       setLoading(true);
       setError(null);
-      const parsedPrice = parseFloat(price.replace(',', '.')) || 0;
-      const parsedCostPrice = costPrice.trim() ? parseFloat(costPrice.replace(',', '.')) || 0 : 0;
+      const parsedPrice = parseCurrencyInputToNumber(price);
+      const parsedCostPrice = parseCurrencyInputToNumber(costPrice);
       const parsedStock =
         stockQuantity.trim() !== '' ? parseFloat(stockQuantity.replace(',', '.')) : null;
       const parsedMinStock =
@@ -237,10 +239,9 @@ function ProductModalDialog({
               <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
                 {type === 'product' ? 'Preço de Venda (R$)' : 'Preço Padrão (R$)'}
               </label>
-              <input
-                type="text"
+              <CurrencyInput
                 value={price}
-                onChange={(e) => setPrice(e.target.value)}
+                onChangeValue={(_, formatted) => setPrice(formatted)}
                 placeholder="0,00"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                 required
@@ -252,10 +253,9 @@ function ProductModalDialog({
                 <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">
                   Custo Unitário (R$)
                 </label>
-                <input
-                  type="text"
+                <CurrencyInput
                   value={costPrice}
-                  onChange={(e) => setCostPrice(e.target.value)}
+                  onChangeValue={(_, formatted) => setCostPrice(formatted)}
                   placeholder="Opcional (0,00)"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                 />

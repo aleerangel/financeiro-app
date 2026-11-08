@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { X, ArrowDownRight, ArrowUpRight, User, Store } from 'lucide-react';
 import { Account, CreditCard, Category, TransactionType, Recurrence, FinancialScope } from '@/types/database';
 import { createRecurrence, updateRecurrence } from '@/lib/actions/recurrences';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { isBusinessCategory, isBusinessRecurrence } from '@/lib/business-scope-utils';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 
@@ -59,7 +61,9 @@ function RecurrenceModalDialog({
   );
   const [type, setType] = useState<TransactionType>(recurrence?.type || 'expense');
   const [description, setDescription] = useState(recurrence?.description || '');
-  const [amount, setAmount] = useState(recurrence?.amount ? String(recurrence.amount) : '');
+  const [amount, setAmount] = useState(() =>
+    recurrence?.amount ? numberToCurrencyInputString(recurrence.amount) : ''
+  );
   const [dueDay, setDueDay] = useState(recurrence?.due_day || 5);
   const [categoryId, setCategoryId] = useState(recurrence?.category_id || '');
   const [payMethodType, setPayMethodType] = useState<'account' | 'card'>(
@@ -90,7 +94,7 @@ function RecurrenceModalDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsedAmount = parseFloat(amount.replace(',', '.')) || 0;
+    const parsedAmount = parseCurrencyInputToNumber(amount);
     if (!description.trim()) {
       setError('Informe o nome da despesa/receita fixa.');
       return;
@@ -243,10 +247,9 @@ function RecurrenceModalDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-[#94A3B8] mb-1.5">Valor (R$)</label>
-              <input
-                type="text"
+              <CurrencyInput
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChangeValue={(_, formatted) => setAmount(formatted)}
                 placeholder="0,00"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#080B11] border border-[#1E293B] text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50 transition tabular-nums"
                 required

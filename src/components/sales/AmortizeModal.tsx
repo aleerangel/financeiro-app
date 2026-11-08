@@ -7,6 +7,8 @@ import { ClientWithStats } from '@/lib/actions/clients';
 import { amortizeSale, amortizeClientDebt } from '@/lib/actions/sales';
 import { formatCurrency } from '@/lib/utils';
 import { getTodayYMD } from '@/lib/date-utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { toast } from 'sonner';
 
 export interface AmortizeTargetSale {
@@ -49,7 +51,9 @@ export function AmortizeModal({
 
   const clientName = isConsolidated ? client?.name : sale?.client_name;
 
-  const [amountStr, setAmountStr] = useState(totalDebt > 0 ? String(totalDebt) : '');
+  const [amountStr, setAmountStr] = useState(() =>
+    totalDebt > 0 ? numberToCurrencyInputString(totalDebt) : ''
+  );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
   const [paymentDate, setPaymentDate] = useState(getTodayYMD());
@@ -60,15 +64,15 @@ export function AmortizeModal({
   if (!isOpen) return null;
 
   const handlePayFull = () => {
-    setAmountStr(String(totalDebt));
+    setAmountStr(numberToCurrencyInputString(totalDebt));
     setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = parseFloat(amountStr.replace(',', '.'));
+    const amount = parseCurrencyInputToNumber(amountStr);
 
-    if (isNaN(amount) || amount <= 0) {
+    if (amount <= 0) {
       setError('Informe um valor de amortização válido maior que zero.');
       return;
     }
@@ -186,15 +190,11 @@ export function AmortizeModal({
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
                 R$
               </span>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                max={totalDebt}
+              <CurrencyInput
                 required
                 value={amountStr}
-                onChange={(e) => {
-                  setAmountStr(e.target.value);
+                onChangeValue={(_, formatted) => {
+                  setAmountStr(formatted);
                   setError(null);
                 }}
                 placeholder="0,00"

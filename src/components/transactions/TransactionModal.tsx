@@ -6,6 +6,8 @@ import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, User, Store } 
 import { Account, CreditCard, Category, Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { createTransaction, updateTransaction } from '@/lib/actions/transactions';
 import { formatCurrency } from '@/lib/utils';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import {
   isBusinessCategory,
   isBusinessTransaction,
@@ -74,7 +76,9 @@ function TransactionModalDialog({
   const [scope, setScope] = useState<FinancialScope>(effectiveInitialScope);
   const [tab, setTab] = useState<TabType>(initialTab);
   const [description, setDescription] = useState(transaction?.description || '');
-  const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : '');
+  const [amount, setAmount] = useState(() =>
+    transaction?.amount ? numberToCurrencyInputString(transaction.amount) : ''
+  );
   const [date, setDate] = useState(
     transaction?.due_date || transaction?.transaction_date || getTodayYMD()
   );
@@ -126,7 +130,7 @@ function TransactionModalDialog({
     });
   }, [categories, tab]);
 
-  const parsedAmount = parseFloat(amount.replace(',', '.')) || 0;
+  const parsedAmount = parseCurrencyInputToNumber(amount);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,10 +325,9 @@ function TransactionModalDialog({
           {/* Campo de Valor em Destaque */}
           <div>
             <label className="block text-xs font-medium text-[#94A3B8] mb-1">Valor (R$)</label>
-            <input
-              type="text"
+            <CurrencyInput
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChangeValue={(_, formatted) => setAmount(formatted)}
               placeholder="0,00"
               className={`w-full text-2xl sm:text-3xl font-extrabold px-4 py-3 rounded-2xl bg-[#080B11] border border-[#1E293B] focus:outline-none transition tabular-nums ${
                 tab === 'income'
