@@ -56,8 +56,9 @@ function getDueStatus(dueDateStr: string): {
   const due = new Date(y, m - 1, d);
   due.setHours(0, 0, 0, 0);
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayStr = getTodayYMD();
+  const [ty, tm, td] = todayStr.split('-').map(Number);
+  const today = new Date(ty, tm - 1, td);
   today.setHours(0, 0, 0, 0);
 
   const diffTime = due.getTime() - today.getTime();
@@ -209,24 +210,24 @@ export function UnifiedDailyPendingHub({
 
   return (
     <div
-      className={`rounded-2xl border transition-all duration-200 overflow-hidden shadow-lg ${
+      className={`rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm ${
         hasOverdue
-          ? 'bg-gradient-to-r from-amber-950/35 via-[#0D121F] to-[#0D121F] border-amber-500/35 shadow-amber-950/20'
-          : 'bg-gradient-to-r from-emerald-950/35 via-[#0D121F] to-[#0D121F] border-emerald-500/35 shadow-emerald-950/20'
+          ? 'bg-gradient-to-r from-amber-500/10 via-[#0D121F] to-[#0D121F] border-amber-500/35 hover:border-amber-400/50'
+          : 'bg-gradient-to-r from-[#FACC15]/10 via-[#0D121F] to-[#0D121F] border-[#FACC15]/30 hover:border-[#FACC15]/50'
       } ${className}`}
     >
       {/* Barra de Cabeçalho do Hub - Clicável para expandir/recolher */}
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] transition select-none active:scale-[0.99]"
+        className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] transition select-none active:scale-[0.99] cursor-pointer"
       >
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
+            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
               hasOverdue
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                : 'bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15]/30'
             }`}
           >
             <Layers className="w-5 h-5 stroke-[2.2]" />
@@ -234,14 +235,14 @@ export function UnifiedDailyPendingHub({
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-extrabold text-[#F8FAFC] tracking-tight">
+              <h3 className="text-sm font-bold text-[#F8FAFC] tracking-tight">
                 {hasOverdue ? 'Atenção: Pendências & Vencimentos de Hoje' : 'Pendências & Confirmações de Hoje'}
               </h3>
               <span
                 className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
                   hasOverdue
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                    ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                    : 'bg-[#FACC15]/15 text-[#FDE047] border border-[#FACC15]/30'
                 }`}
               >
                 {items.length} {items.length === 1 ? 'ação necessária' : 'ações necessárias'}
@@ -258,7 +259,7 @@ export function UnifiedDailyPendingHub({
 
         {/* Resumo Financeiro & Seta de Expansão */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden xs:flex flex-col items-end text-right">
+          <div className="hidden xs:flex flex-col items-end text-right tabular-nums">
             {totalIncomes > 0 && (
               <span className="text-xs font-bold text-emerald-400">
                 +{formatCurrency(totalIncomes)}
@@ -272,8 +273,8 @@ export function UnifiedDailyPendingHub({
           </div>
 
           <div
-            className={`w-7 h-7 rounded-full bg-zinc-800/80 flex items-center justify-center text-zinc-400 transition-transform duration-200 ${
-              expanded ? 'rotate-180 text-zinc-200 bg-zinc-700' : ''
+            className={`w-7 h-7 rounded-full bg-[#151D30] border border-[#1E293B] flex items-center justify-center text-[#94A3B8] transition-transform duration-200 ${
+              expanded ? 'rotate-180 text-[#F8FAFC] bg-[#1B253D] border-[#FACC15]/30' : 'hover:text-[#F8FAFC]'
             }`}
           >
             <ChevronDown className="w-4 h-4" />
@@ -283,7 +284,7 @@ export function UnifiedDailyPendingHub({
 
       {/* Lista Unificada Expandida */}
       {expanded && (
-        <div className="p-3.5 pt-0 space-y-2.5 border-t border-[#1E293B]/80 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="p-3.5 pt-0 space-y-2.5 border-t border-[#1E293B] animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center justify-between text-[11px] text-[#94A3B8] pt-2 pb-0.5 px-1">
             <span>Ordene ou confirme com 1 toque:</span>
             <div className="flex items-center gap-2 text-[11px] tabular-nums">
@@ -305,7 +306,7 @@ export function UnifiedDailyPendingHub({
             return (
               <div
                 key={item.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[#080B11]/90 border border-[#1E293B] gap-3 hover:border-[#FACC15]/40 transition shadow-sm"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[#080B11] border border-[#1E293B] gap-3 hover:border-[#FACC15]/40 transition shadow-sm"
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0">
                   {/* Ícone Semântico do Tipo */}
@@ -348,23 +349,23 @@ export function UnifiedDailyPendingHub({
                       )}
 
                       {item.isBusiness && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#FACC15]/15 text-[#FDE047] border border-[#FACC15]/30 shrink-0">
                           Negócio
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 mt-0.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 text-[11px] text-[#94A3B8] mt-0.5 flex-wrap">
                       <span>Data: {formatDate(item.dueDate)}</span>
                       {item.categoryName && (
                         <>
-                          <span>•</span>
+                          <span className="text-[#64748B]">•</span>
                           <span className="text-zinc-300">{item.categoryName}</span>
                         </>
                       )}
                       {item.accountName && (
                         <>
-                          <span>•</span>
+                          <span className="text-[#64748B]">•</span>
                           <span className="flex items-center gap-1 text-emerald-400">
                             <Landmark className="w-3 h-3" />
                             {item.accountName}
@@ -373,8 +374,8 @@ export function UnifiedDailyPendingHub({
                       )}
                       {item.cardName && !item.accountName && (
                         <>
-                          <span>•</span>
-                          <span className="flex items-center gap-1 text-purple-400">
+                          <span className="text-[#64748B]">•</span>
+                          <span className="flex items-center gap-1 text-indigo-400">
                             <CardIcon className="w-3 h-3" />
                             {item.cardName}
                           </span>
@@ -385,9 +386,9 @@ export function UnifiedDailyPendingHub({
                 </div>
 
                 {/* Valor & Botão de Ação Direta */}
-                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t border-zinc-800/60 sm:border-t-0">
+                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t border-[#1E293B] sm:border-t-0">
                   <span
-                    className={`text-sm sm:text-base font-extrabold tracking-tight ${
+                    className={`text-sm sm:text-base font-extrabold tracking-tight tabular-nums ${
                       isIncome ? 'text-emerald-400' : 'text-rose-400'
                     }`}
                   >
@@ -398,7 +399,7 @@ export function UnifiedDailyPendingHub({
                   {isInvoice ? (
                     <Link
                       href="/cartoes"
-                      className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 transition active:scale-[0.98] shadow-sm"
+                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition active:scale-[0.98] shadow-sm"
                     >
                       <span>Pagar Fatura</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -408,9 +409,9 @@ export function UnifiedDailyPendingHub({
                       type="button"
                       disabled={isActing}
                       onClick={() => handleAction(item)}
-                      className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition active:scale-[0.98] disabled:opacity-60 shadow-sm ${
+                      className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition active:scale-[0.98] disabled:opacity-60 shadow-sm cursor-pointer ${
                         isIncome
-                          ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950'
+                          ? 'bg-emerald-500 hover:bg-emerald-400 text-[#080B11]'
                           : 'bg-rose-600 hover:bg-rose-500 text-white'
                       }`}
                     >
@@ -421,7 +422,7 @@ export function UnifiedDailyPendingHub({
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
                           <span>{isIncome ? 'Confirmar Recebimento' : 'Confirmar Pagamento'}</span>
                         </>
                       )}
