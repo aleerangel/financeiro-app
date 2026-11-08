@@ -142,7 +142,7 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
   const isFinalSlide = currentSlide === totalSlides - 1;
 
   return (
-    <div className="relative w-full max-w-md mx-auto aspect-[9/16] max-h-[82vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between select-none bg-slate-950 text-white border border-white/10">
+    <div className="relative w-full max-w-md mx-auto aspect-[9/16] max-h-[82vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between select-none bg-[#080B11] text-[#F8FAFC] border border-[#1E293B]">
       {/* Barras de Progresso no Topo */}
       <div className="absolute top-0 inset-x-0 z-30 p-3 pt-3 flex gap-1.5 pointer-events-none">
         {Array.from({ length: totalSlides }).map((_, idx) => {
@@ -153,10 +153,10 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
           return (
             <div
               key={idx}
-              className="flex-1 h-1.5 rounded-full bg-white/20 overflow-hidden backdrop-blur-sm"
+              className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden backdrop-blur-sm"
             >
               <div
-                className="h-full bg-white rounded-full transition-all duration-75"
+                className="h-full bg-[#FACC15] rounded-full transition-all duration-75 shadow-[0_0_8px_rgba(250,204,21,0.5)]"
                 style={{ width: `${fillPercent}%` }}
               />
             </div>
@@ -165,15 +165,15 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
       </div>
 
       {/* Cabeçalho do Slide */}
-      <div className="relative z-20 pt-7 px-4 flex items-center justify-between text-xs text-white/80">
-        <div className="flex items-center gap-1.5 font-medium bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+      <div className="relative z-20 pt-7 px-4 flex items-center justify-between text-xs text-[#94A3B8]">
+        <div className="flex items-center gap-1.5 font-semibold bg-[#0D121F]/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#1E293B] text-[#F8FAFC]">
+          <Sparkles className="w-3.5 h-3.5 text-[#FACC15]" />
           <span>{data.monthName} {data.year}</span>
         </div>
 
         <button
           onClick={() => setIsPaused((p) => !p)}
-          className="p-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-black/60 transition-colors cursor-pointer"
+          className="p-1.5 rounded-full bg-[#0D121F]/90 backdrop-blur-md border border-[#1E293B] hover:bg-[#151D30] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors cursor-pointer"
           aria-label={isPaused ? 'Continuar' : 'Pausar'}
         >
           {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
@@ -203,45 +203,45 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
         {/* SLIDE 0: Veredito e Título */}
         {currentSlide === 0 && (
           <div className="space-y-5 animate-in fade-in zoom-in-95 duration-500 text-center">
-            <div className="inline-block p-4 rounded-3xl bg-gradient-to-tr from-violet-600 to-fuchsia-600 text-6xl shadow-xl shadow-fuchsia-600/30">
+            <div className="inline-block p-4 rounded-3xl bg-gradient-to-tr from-[#FACC15]/20 via-[#FDE047]/15 to-[#F59E0B]/10 border border-[#FACC15]/30 text-6xl shadow-xl shadow-[#FACC15]/10">
               {data.monthTitle.badge}
             </div>
 
             <div>
-              <span className="text-xs uppercase tracking-widest text-violet-300 font-semibold">
+              <span className="text-xs uppercase tracking-widest text-[#FACC15] font-extrabold">
                 Seu Veredito de {data.monthName}
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black mt-1 tracking-tight text-white">
+              <h2 className="text-2xl sm:text-3xl font-black mt-1 tracking-tight text-[#F8FAFC]">
                 {data.monthTitle.title}
               </h2>
-              <p className="text-sm text-white/80 mt-2 px-2 leading-relaxed">
+              <p className="text-sm text-[#94A3B8] mt-2 px-2 leading-relaxed">
                 {data.monthTitle.description}
               </p>
             </div>
 
             <div className="pt-2 grid grid-cols-2 gap-2.5">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                <span className="text-[11px] text-white/60 block">Saldo Final</span>
-                <span className={`text-lg font-black ${data.netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <div className="bg-[#0D121F]/90 backdrop-blur-md rounded-2xl p-3 border border-[#1E293B]">
+                <span className="text-[11px] text-[#64748B] block font-medium">Saldo Final</span>
+                <span className={`text-lg font-black tabular-nums ${data.netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {formatCurrency(data.netBalance)}
                 </span>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                <span className="text-[11px] text-white/60 block">Taxa de Poupança</span>
-                <span className="text-lg font-black text-amber-300">
+              <div className="bg-[#0D121F]/90 backdrop-blur-md rounded-2xl p-3 border border-[#1E293B]">
+                <span className="text-[11px] text-[#64748B] block font-medium">Taxa de Poupança</span>
+                <span className="text-lg font-black text-[#FACC15] tabular-nums">
                   {data.savingsRate}%
                 </span>
               </div>
             </div>
 
             {data.balanceGrowthPercent !== null && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-xs border border-white/10 text-white/90">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0D121F]/90 backdrop-blur-md text-xs border border-[#1E293B] text-[#F8FAFC]">
                 {data.balanceGrowthPercent >= 0 ? (
                   <TrendingUp className="w-4 h-4 text-emerald-400" />
                 ) : (
                   <TrendingDown className="w-4 h-4 text-rose-400" />
                 )}
-                <span>
+                <span className="tabular-nums">
                   {data.balanceGrowthPercent > 0 ? '+' : ''}{data.balanceGrowthPercent}% em relação ao mês anterior
                 </span>
               </div>
@@ -253,29 +253,29 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
         {currentSlide === 1 && (
           <div className="space-y-4 animate-in fade-in zoom-in-95 duration-500">
             <div className="text-center">
-              <span className="text-xs uppercase tracking-widest text-rose-300 font-semibold">
+              <span className="text-xs uppercase tracking-widest text-rose-400 font-extrabold">
                 Raio-X das Despesas
               </span>
-              <h2 className="text-2xl font-black mt-1 text-white">
+              <h2 className="text-2xl font-black mt-1 text-[#F8FAFC]">
                 Onde Foi Parar a Grana? 💸
               </h2>
-              <p className="text-xs text-white/70 mt-1">
-                Total desembolsado no mês: <strong className="text-white">{formatCurrency(data.totalExpense)}</strong>
+              <p className="text-xs text-[#94A3B8] mt-1">
+                Total desembolsado no mês: <strong className="text-[#F8FAFC] tabular-nums">{formatCurrency(data.totalExpense)}</strong>
               </p>
             </div>
 
             {/* O Vilão do Mês */}
             {data.largestExpense && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-950/70 to-rose-900/40 border border-rose-500/30 backdrop-blur-md">
-                <div className="flex items-center justify-between text-xs text-rose-300 font-medium">
+              <div className="p-3.5 rounded-2xl bg-[#0D121F]/95 border border-rose-500/30 backdrop-blur-md">
+                <div className="flex items-center justify-between text-xs text-rose-400 font-semibold">
                   <span>🚨 O Maior Gasto Único</span>
-                  <span>{formatCurrency(data.largestExpense.amount)}</span>
+                  <span className="tabular-nums">{formatCurrency(data.largestExpense.amount)}</span>
                 </div>
-                <div className="text-base font-bold text-white mt-1">
+                <div className="text-base font-bold text-[#F8FAFC] mt-1">
                   {data.largestExpense.description}
                 </div>
                 {data.largestExpense.categoryName && (
-                  <span className="text-[11px] text-white/60">
+                  <span className="text-[11px] text-[#94A3B8]">
                     Categoria: {data.largestExpense.categoryName}
                   </span>
                 )}
@@ -284,19 +284,19 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
 
             {/* Categoria Campeã e Top Categorias */}
             {data.topCategory && (
-              <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md space-y-2">
-                <div className="text-xs text-white/70">
+              <div className="p-3.5 rounded-2xl bg-[#0D121F]/95 border border-[#1E293B] backdrop-blur-md space-y-2">
+                <div className="text-xs text-[#94A3B8]">
                   🏆 Categoria campeã em despesas:
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-base text-white">
+                  <span className="font-bold text-base text-[#F8FAFC]">
                     {data.topCategory.name}
                   </span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#151D30] text-[#94A3B8] border border-[#1E293B] tabular-nums">
                     {data.topCategory.percentage}% do total
                   </span>
                 </div>
-                <div className="text-sm font-semibold text-rose-300">
+                <div className="text-sm font-semibold text-rose-400 tabular-nums">
                   {formatCurrency(data.topCategory.amount)}
                 </div>
               </div>
@@ -304,12 +304,12 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
 
             {data.topCategories.length > 1 && (
               <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] text-white/60 block">Outras categorias de destaque:</span>
+                <span className="text-[11px] text-[#64748B] block">Outras categorias de destaque:</span>
                 <div className="flex flex-wrap gap-1.5">
                   {data.topCategories.slice(1).map((cat, i) => (
                     <span
                       key={i}
-                      className="px-2.5 py-1 rounded-full bg-white/10 text-xs text-white/90 border border-white/10"
+                      className="px-2.5 py-1 rounded-full bg-[#151D30] text-xs text-[#F8FAFC] border border-[#1E293B] tabular-nums"
                     >
                       {cat.name}: {formatCurrency(cat.amount)}
                     </span>
@@ -324,55 +324,55 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
         {isBusinessSlide && data.businessStats && (
           <div className="space-y-4 animate-in fade-in zoom-in-95 duration-500">
             <div className="text-center">
-              <span className="text-xs uppercase tracking-widest text-violet-300 font-semibold flex items-center justify-center gap-1.5">
-                <ShoppingBag className="w-3.5 h-3.5" /> {data.businessName}
+              <span className="text-xs uppercase tracking-widest text-[#FACC15] font-extrabold flex items-center justify-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-[#FACC15]" /> {data.businessName}
               </span>
-              <h2 className="text-2xl font-black mt-1 text-white">
+              <h2 className="text-2xl font-black mt-1 text-[#F8FAFC]">
                 O Show do Seu Negócio 💈
               </h2>
-              <div className="text-xl font-black text-violet-300 mt-1">
+              <div className="text-xl font-black text-[#FACC15] mt-1 tabular-nums">
                 {formatCurrency(data.businessStats.totalRevenue)}
               </div>
-              <span className="text-xs text-white/70">
+              <span className="text-xs text-[#94A3B8]">
                 em {data.businessStats.totalSalesCount} atendimentos realizados
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-2.5 pt-1">
               {data.businessStats.topProductOrService && (
-                <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 backdrop-blur-md">
-                  <div className="flex items-center gap-1 text-xs text-amber-300 font-medium">
+                <div className="p-3 rounded-2xl bg-[#0D121F]/90 border border-[#FACC15]/30 backdrop-blur-md">
+                  <div className="flex items-center gap-1 text-xs text-[#FACC15] font-semibold">
                     <Award className="w-3.5 h-3.5" /> Campeão de Vendas
                   </div>
-                  <div className="text-sm font-bold text-white mt-0.5">
+                  <div className="text-sm font-bold text-[#F8FAFC] mt-0.5">
                     {data.businessStats.topProductOrService.name}
                   </div>
-                  <span className="text-[11px] text-white/70">
+                  <span className="text-[11px] text-[#94A3B8] tabular-nums">
                     {data.businessStats.topProductOrService.quantity} saídas ({formatCurrency(data.businessStats.topProductOrService.revenue)})
                   </span>
                 </div>
               )}
 
               {data.businessStats.vipClient && (
-                <div className="p-3 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 backdrop-blur-md">
-                  <div className="flex items-center gap-1 text-xs text-indigo-300 font-medium">
+                <div className="p-3 rounded-2xl bg-[#0D121F]/90 border border-indigo-500/30 backdrop-blur-md">
+                  <div className="flex items-center gap-1 text-xs text-indigo-400 font-semibold">
                     <Crown className="w-3.5 h-3.5" /> Cliente Mais Fiel (VIP)
                   </div>
-                  <div className="text-sm font-bold text-white mt-0.5">
+                  <div className="text-sm font-bold text-[#F8FAFC] mt-0.5">
                     {data.businessStats.vipClient.name}
                   </div>
-                  <span className="text-[11px] text-white/70">
+                  <span className="text-[11px] text-[#94A3B8] tabular-nums">
                     {data.businessStats.vipClient.visitsCount} visitas no mês ({formatCurrency(data.businessStats.vipClient.totalSpent)})
                   </span>
                 </div>
               )}
 
               {data.businessStats.busiestDayOfWeek && (
-                <div className="p-2.5 rounded-xl bg-white/10 border border-white/10 text-center text-xs text-white/90">
-                  <span className="flex items-center justify-center gap-1.5 text-white font-bold text-sm">
-                    <Calendar className="w-3.5 h-3.5 text-violet-400" /> {data.businessStats.busiestDayOfWeek.name}
+                <div className="p-2.5 rounded-xl bg-[#0D121F]/90 border border-[#1E293B] text-center text-xs text-[#94A3B8]">
+                  <span className="flex items-center justify-center gap-1.5 text-[#F8FAFC] font-bold text-sm">
+                    <Calendar className="w-3.5 h-3.5 text-[#38BDF8]" /> {data.businessStats.busiestDayOfWeek.name}
                   </span>
-                  <span className="text-white/70 block text-[11px] mt-0.5">
+                  <span className="text-[#64748B] block text-[11px] mt-0.5">
                     Dia com mais clientes ({data.businessStats.busiestDayOfWeek.count} atendimentos)
                   </span>
                 </div>
@@ -385,36 +385,36 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
         {isCardsYieldsSlide && (
           <div className="space-y-5 animate-in fade-in zoom-in-95 duration-500 text-center">
             <div>
-              <span className="text-xs uppercase tracking-widest text-sky-300 font-semibold">
+              <span className="text-xs uppercase tracking-widest text-[#38BDF8] font-extrabold">
                 Contas e Faturas
               </span>
-              <h2 className="text-2xl font-black mt-1 text-white">
+              <h2 className="text-2xl font-black mt-1 text-[#F8FAFC]">
                 Cartão & Rendimentos 💳
               </h2>
             </div>
 
-            <div className="p-4 rounded-3xl bg-gradient-to-br from-indigo-950/60 to-purple-950/60 border border-indigo-500/30 backdrop-blur-md text-left space-y-1">
-              <span className="text-xs text-indigo-300 font-medium flex items-center gap-1.5">
+            <div className="p-4 rounded-3xl bg-[#0D121F]/90 border border-indigo-500/30 backdrop-blur-md text-left space-y-1">
+              <span className="text-xs text-indigo-400 font-semibold flex items-center gap-1.5">
                 <CreditCard className="w-4 h-4" /> Fatura do Cartão de Crédito
               </span>
-              <div className="text-2xl font-black text-white">
+              <div className="text-2xl font-black text-[#F8FAFC] tabular-nums">
                 {formatCurrency(data.creditCardTotal)}
               </div>
-              <p className="text-xs text-white/70 pt-1">
+              <p className="text-xs text-[#94A3B8] pt-1">
                 {data.creditCardTotal > 0
                   ? 'Fatura fechada no período. Manter sob controle é a chave!'
                   : 'Nenhum gasto em cartão no mês. Zero sustos na fatura! 🚀'}
               </p>
             </div>
 
-            <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-950/60 to-teal-950/60 border border-emerald-500/30 backdrop-blur-md text-left space-y-1">
-              <span className="text-xs text-emerald-300 font-medium flex items-center gap-1.5">
+            <div className="p-4 rounded-3xl bg-[#0D121F]/90 border border-emerald-500/30 backdrop-blur-md text-left space-y-1">
+              <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
                 <PiggyBank className="w-4 h-4" /> Dinheiro Trabalhando Por Você
               </span>
-              <div className="text-2xl font-black text-emerald-400">
+              <div className="text-2xl font-black text-emerald-400 tabular-nums">
                 +{formatCurrency(data.accountYieldTotal)}
               </div>
-              <p className="text-xs text-white/70 pt-1">
+              <p className="text-xs text-[#94A3B8] pt-1">
                 {data.accountYieldTotal > 0
                   ? 'Rendimentos passivos creditados nas suas contas.'
                   : 'Ative contas remuneradas para fazer cada centavo render!'}
@@ -431,33 +431,33 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
             </div>
 
             <div>
-              <span className="text-xs uppercase tracking-widest text-amber-300 font-semibold">
+              <span className="text-xs uppercase tracking-widest text-[#FACC15] font-extrabold">
                 Fechamento Concluído
               </span>
-              <h2 className="text-2xl font-black mt-0.5 text-white">
+              <h2 className="text-2xl font-black mt-0.5 text-[#F8FAFC]">
                 Mês de {data.monthName} no Bolso!
               </h2>
-              <p className="text-xs text-white/80 mt-1">
+              <p className="text-xs text-[#94A3B8] mt-1">
                 {data.monthTitle.title} {data.monthTitle.badge}
               </p>
             </div>
 
             {/* Mini Card Resumo */}
-            <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md text-left space-y-2 text-xs">
-              <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                <span className="text-white/70">Saldo Final</span>
-                <span className={`font-bold ${data.netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <div className="p-4 rounded-2xl bg-[#0D121F]/95 border border-[#1E293B] backdrop-blur-md text-left space-y-2 text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-[#1E293B]">
+                <span className="text-[#94A3B8]">Saldo Final</span>
+                <span className={`font-bold tabular-nums ${data.netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {formatCurrency(data.netBalance)}
                 </span>
               </div>
-              <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                <span className="text-white/70">Taxa de Poupança</span>
-                <span className="font-bold text-amber-300">{data.savingsRate}%</span>
+              <div className="flex justify-between items-center pb-2 border-b border-[#1E293B]">
+                <span className="text-[#94A3B8]">Taxa de Poupança</span>
+                <span className="font-bold text-[#FACC15] tabular-nums">{data.savingsRate}%</span>
               </div>
               {data.hasBusiness && data.businessStats && (
                 <div className="flex justify-between items-center">
-                  <span className="text-white/70">Faturamento {data.businessName}</span>
-                  <span className="font-bold text-violet-300">
+                  <span className="text-[#94A3B8]">Faturamento {data.businessName}</span>
+                  <span className="font-bold text-[#FACC15] tabular-nums">
                     {formatCurrency(data.businessStats.totalRevenue)}
                   </span>
                 </div>
@@ -476,7 +476,7 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
 
               <button
                 onClick={restartStories}
-                className="w-full py-2.5 px-4 rounded-xl font-medium text-xs text-white/80 bg-white/10 hover:bg-white/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-xl font-medium text-xs text-[#F8FAFC] bg-[#151D30] hover:bg-[#1E293B] border border-[#1E293B] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Ver Novamente do Começo</span>
@@ -487,23 +487,23 @@ export function MonthlyWrappedStories({ data, onFinish }: MonthlyWrappedStoriesP
       </div>
 
       {/* Rodapé do Container com botões discretos de navegação */}
-      <div className="relative z-20 pb-4 px-4 flex items-center justify-between text-xs text-white/60">
+      <div className="relative z-20 pb-4 px-4 flex items-center justify-between text-xs text-[#64748B]">
         <button
           onClick={prevSlide}
           disabled={currentSlide === 0}
-          className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-20 transition-all cursor-pointer"
+          className="p-1.5 rounded-full bg-[#0D121F] border border-[#1E293B] hover:bg-[#151D30] text-[#94A3B8] hover:text-[#F8FAFC] disabled:opacity-20 transition-all cursor-pointer"
           aria-label="Slide anterior"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <span className="font-mono text-[11px] select-none">
+        <span className="font-mono text-[11px] select-none text-[#94A3B8]">
           {currentSlide + 1} de {totalSlides}
         </span>
 
         <button
           onClick={nextSlide}
-          className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-all cursor-pointer"
+          className="p-1.5 rounded-full bg-[#0D121F] border border-[#1E293B] hover:bg-[#151D30] text-[#94A3B8] hover:text-[#F8FAFC] transition-all cursor-pointer"
           aria-label="Próximo slide"
         >
           <ChevronRight className="w-4 h-4" />
