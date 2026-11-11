@@ -582,32 +582,48 @@ export function TransactionsView({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTogglePaid(t);
-            }}
-            disabled={actionLoadingId === t.id}
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition shrink-0 active:scale-95 ${
-              t.is_paid
-                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
-                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
-            }`}
-            title={t.is_paid ? 'Marcar como Pendente' : 'Marcar como Pago'}
-          >
-            {t.is_paid ? (
-              <>
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                <span>Pago</span>
-              </>
-            ) : (
-              <>
-                <Clock className="w-3 h-3 text-amber-400" />
-                <span>Pendente</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTogglePaid(t);
+              }}
+              disabled={actionLoadingId === t.id}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition shrink-0 active:scale-95 ${
+                t.is_paid
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                  : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
+              }`}
+              title={t.is_paid ? 'Marcar como Pendente' : 'Marcar como Pago'}
+            >
+              {t.is_paid ? (
+                <>
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <span>Pago</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  <span>Pendente</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(t);
+              }}
+              disabled={actionLoadingId === t.id}
+              className="p-1 text-[#64748B] hover:text-rose-400 active:text-rose-300 rounded-md transition cursor-pointer"
+              title="Excluir lançamento"
+              aria-label="Excluir lançamento"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     );

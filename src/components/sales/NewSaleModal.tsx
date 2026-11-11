@@ -73,6 +73,8 @@ export function NewSaleModal({
 
   const [addingPartForServiceId, setAddingPartForServiceId] = useState<string | null>(null);
   const [selectedServicePartId, setSelectedServicePartId] = useState<string>('');
+  const [customItemName, setCustomItemName] = useState('');
+  const [customItemPrice, setCustomItemPrice] = useState('');
 
   if (!isOpen && !creditReceiptData && !receiptSale) return null;
 
@@ -176,17 +178,49 @@ export function NewSaleModal({
     setAddingPartForServiceId(null);
   };
 
+  const handleAddCustomItem = () => {
+    if (!customItemName.trim()) {
+      toast.error('Informe o nome do serviço ou produto avulso');
+      return;
+    }
+    const priceNum = parseCurrencyInputToNumber(customItemPrice);
+    if (priceNum <= 0) {
+      toast.error('Informe um valor válido para o item avulso');
+      return;
+    }
+
+    setSelectedItems((prev) => [
+      ...prev,
+      {
+        product_id: null,
+        product_name: customItemName.trim(),
+        quantity: 1,
+        unit_price: priceNum,
+        unit_cost: 0,
+        is_service_component: false,
+        parent_service_id: null,
+      },
+    ]);
+
+    setCustomItemName('');
+    setCustomItemPrice('');
+  };
+
   const handleUpdateQuantity = (
     productId: string | null | undefined,
     delta: number,
     isServiceComponent: boolean = false,
-    parentServiceId: string | null = null
+    parentServiceId: string | null = null,
+    productName?: string
   ) => {
     setSelectedItems((prev) =>
       prev
         .map((item) => {
+          const matches = productId
+            ? item.product_id === productId
+            : item.product_name === productName;
           if (
-            item.product_id === productId &&
+            matches &&
             Boolean(item.is_service_component) === isServiceComponent &&
             (item.parent_service_id || null) === parentServiceId
           ) {
@@ -199,21 +233,29 @@ export function NewSaleModal({
     );
   };
 
-  const handleUpdatePrice = (productId: string | null | undefined, newPrice: number | string) => {
+  const handleUpdatePrice = (
+    productId: string | null | undefined,
+    newPrice: number | string,
+    productName?: string
+  ) => {
     const val = typeof newPrice === 'number' ? newPrice : parseCurrencyInputToNumber(newPrice);
     setSelectedItems((prev) =>
-      prev.map((item) =>
-        item.product_id === productId && !item.is_service_component
+      prev.map((item) => {
+        const matches = productId
+          ? item.product_id === productId
+          : item.product_name === productName;
+        return matches && !item.is_service_component
           ? { ...item, unit_price: val }
-          : item
-      )
+          : item;
+      })
     );
   };
 
   const handleRemoveItem = (
     productId: string | null | undefined,
     isServiceComponent: boolean = false,
-    parentServiceId: string | null = null
+    parentServiceId: string | null = null,
+    productName?: string
   ) => {
     setSelectedItems((prev) =>
       prev.filter((item) => {
@@ -224,11 +266,13 @@ export function NewSaleModal({
             (item.parent_service_id || null) === parentServiceId
           );
         }
-        // Ao remover um serviço principal, remove também as peças vinculadas a ele
         if (item.is_service_component && item.parent_service_id === productId) {
           return false;
         }
-        return !(item.product_id === productId && !item.is_service_component);
+        const matches = productId
+          ? item.product_id === productId
+          : item.product_name === productName;
+        return !(matches && !item.is_service_component);
       })
     );
   };
@@ -478,6 +522,37 @@ export function NewSaleModal({
                 );
               })}
             </div>
+
+            {/* Inserção de Item Avulso Desktop */}
+            <div className="mt-3 p-3 bg-[#080B11] rounded-xl border border-[#1E293B]">
+              <span className="text-[11px] font-semibold text-[#94A3B8] block mb-2">
+                Ou adicione um item avulso (serviço sob medida ou item fora do catálogo):
+              </span>
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <input
+                  type="text"
+                  placeholder="Nome do item (ex: Barba Especial)"
+                  value={customItemName}
+                  onChange={(e) => setCustomItemName(e.target.value)}
+                  className="flex-1 min-w-[180px] bg-[#0D121F] border border-[#1E293B] rounded-lg px-2.5 py-1.5 text-xs text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#FACC15]/50"
+                />
+                <CurrencyInput
+                  placeholder="0,00"
+                  value={customItemPrice}
+                  onChangeValue={(_, formatted) => setCustomItemPrice(formatted)}
+                  className="w-24 bg-[#0D121F] border border-[#1E293B] rounded-lg px-2.5 py-1.5 text-xs text-[#F8FAFC] placeholder-[#64748B] text-center focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomItem}
+                  className="px-3 py-1.5 bg-[#FACC15] hover:bg-[#FDE047] text-[#080B11] rounded-lg font-bold text-xs transition flex items-center gap-1 cursor-pointer shrink-0"
+                  title="Adicionar item avulso"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Adicionar</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Itens Adicionados na Comanda */}
@@ -501,7 +576,7 @@ export function NewSaleModal({
                       : [];
 
                     return (
-                      <div key={item.product_id} className="py-2.5 space-y-2">
+                      <div key={item.product_id || item.product_name} className="py-2.5 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <span className="text-sm font-semibold text-[#F8FAFC] block truncate">
@@ -511,7 +586,7 @@ export function NewSaleModal({
                               <span>Valor un: R$</span>
                               <CurrencyInput
                                 value={item.unit_price}
-                                onChangeValue={(val) => handleUpdatePrice(item.product_id, val)}
+                                onChangeValue={(val) => handleUpdatePrice(item.product_id, val, item.product_name)}
                                 className="w-20 px-1.5 py-0.5 rounded bg-[#0D121F] border border-[#1E293B] text-xs text-[#F8FAFC] text-center font-bold focus:outline-none focus:border-[#FACC15]/50 tabular-nums"
                               />
                             </div>
@@ -521,7 +596,7 @@ export function NewSaleModal({
                             <div className="flex items-center gap-1.5 bg-[#0D121F] border border-[#1E293B] rounded-xl px-2 py-1">
                               <button
                                 type="button"
-                                onClick={() => handleUpdateQuantity(item.product_id, -1, false, null)}
+                                onClick={() => handleUpdateQuantity(item.product_id, -1, false, null, item.product_name)}
                                 className="p-1 hover:text-[#F8FAFC] text-[#94A3B8]"
                               >
                                 <Minus className="w-3.5 h-3.5" />
@@ -531,7 +606,7 @@ export function NewSaleModal({
                               </span>
                               <button
                                 type="button"
-                                onClick={() => handleUpdateQuantity(item.product_id, 1, false, null)}
+                                onClick={() => handleUpdateQuantity(item.product_id, 1, false, null, item.product_name)}
                                 className="p-1 hover:text-[#F8FAFC] text-[#94A3B8]"
                               >
                                 <Plus className="w-3.5 h-3.5" />
@@ -544,7 +619,7 @@ export function NewSaleModal({
 
                             <button
                               type="button"
-                              onClick={() => handleRemoveItem(item.product_id, false, null)}
+                              onClick={() => handleRemoveItem(item.product_id, false, null, item.product_name)}
                               className="p-1 text-[#64748B] hover:text-rose-400 transition"
                             >
                               <Trash2 className="w-4 h-4" />

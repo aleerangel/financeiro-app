@@ -2,12 +2,14 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, User, Store } from 'lucide-react';
+import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, User, Store, Trash2 } from 'lucide-react';
 import { Account, CreditCard, Category, Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
-import { createTransaction, updateTransaction } from '@/lib/actions/transactions';
+import { createTransaction, updateTransaction, deleteTransaction } from '@/lib/actions/transactions';
 import { formatCurrency } from '@/lib/utils';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { numberToCurrencyInputString, parseCurrencyInputToNumber } from '@/lib/currency-mask';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { toast } from 'sonner';
 import {
   isBusinessCategory,
   isBusinessTransaction,
@@ -72,6 +74,7 @@ function TransactionModalDialog({
   );
 
   const { hasBusiness, businessName } = useBusinessProfile();
+  const { confirm } = useConfirm();
   const effectiveInitialScope = hasBusiness ? initialScope : 'personal';
   const [scope, setScope] = useState<FinancialScope>(effectiveInitialScope);
   const [tab, setTab] = useState<TabType>(initialTab);
@@ -96,7 +99,34 @@ function TransactionModalDialog({
   const [isPaid, setIsPaid] = useState(transaction ? transaction.is_paid : true);
   const [notes, setNotes] = useState(stripScopeTagFromNotes(transaction?.notes));
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!transaction) return;
+    const ok = await confirm({
+      title: 'Excluir Lançamento',
+      description: `Tem certeza que deseja excluir "${transaction.description}"? Esta ação removerá o lançamento do seu extrato e atualizará os saldos.`,
+      confirmLabel: 'Excluir Lançamento',
+      variant: 'danger',
+    });
+
+    if (ok) {
+      try {
+        setDeleting(true);
+        await deleteTransaction(transaction.id);
+        toast.success('Lançamento excluído com sucesso!');
+        if (onSuccess) onSuccess();
+        onClose();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Erro ao excluir lançamento.';
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setDeleting(false);
+      }
+    }
+  };
 
   const handleScopeChange = (nextScope: FinancialScope) => {
     setScope(nextScope);
@@ -481,28 +511,42 @@ function TransactionModalDialog({
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2.5 text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`px-5 py-2.5 font-bold text-sm rounded-xl transition disabled:opacity-50 ${
-                tab === 'income'
-                  ? 'bg-emerald-400 hover:bg-emerald-300 text-[#080B11]'
-                  : tab === 'credit'
-                  ? 'bg-[#6366F1] hover:bg-[#818CF8] text-white shadow-md shadow-[#6366F1]/20'
-                  : 'bg-rose-500 hover:bg-rose-400 text-white shadow-md shadow-rose-500/20'
-              }`}
-            >
-              {loading ? 'Salvando...' : isEditing ? 'Atualizar Transação' : 'Confirmar Lançamento'}
-            </button>
+          <div className="pt-2 flex items-center justify-between gap-2">
+            {isEditing ? (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={loading || deleting}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl transition cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{deleting ? 'Excluindo...' : 'Excluir'}</span>
+              </button>
+            ) : <div />}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading || deleting}
+                className="px-4 py-2.5 text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#151D30] rounded-xl transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading || deleting}
+                className={`px-5 py-2.5 font-bold text-sm rounded-xl transition disabled:opacity-50 cursor-pointer ${
+                  tab === 'income'
+                    ? 'bg-emerald-400 hover:bg-emerald-300 text-[#080B11]'
+                    : tab === 'credit'
+                    ? 'bg-[#6366F1] hover:bg-[#818CF8] text-white shadow-md shadow-[#6366F1]/20'
+                    : 'bg-rose-500 hover:bg-rose-400 text-white shadow-md shadow-rose-500/20'
+                }`}
+              >
+                {loading ? 'Salvando...' : isEditing ? 'Atualizar Transação' : 'Confirmar Lançamento'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

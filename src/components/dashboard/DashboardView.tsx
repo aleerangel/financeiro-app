@@ -10,6 +10,8 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { AccountWithBalance, getAccounts } from '@/lib/actions/accounts';
 import { CreditCardWithUsage } from '@/lib/actions/credit-cards';
@@ -36,6 +38,7 @@ import { BusinessDashboardMobile } from './mobile/BusinessDashboardMobile';
 import { GeneralDashboardMobile } from './mobile/GeneralDashboardMobile';
 import { LegacyWelcomeBanner } from './LegacyWelcomeBanner';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
+import { useSidebar } from '@/context/SidebarContext';
 import { SegmentIcon } from '@/components/ui/SegmentIcon';
 import { UnifiedDailyPendingHub } from './UnifiedDailyPendingHub';
 import { QuickActionDropdown } from '@/components/layout/QuickActionDropdown';
@@ -157,6 +160,7 @@ export function DashboardView({
   const [wrappedOpen, setWrappedOpen] = useState(false);
   const { isMobile } = { isMobile: useIsMobile(768, initialIsMobile) };
   const { activeTab, contextMode, showValues, setShowValues } = useMobileNavigation();
+  const { collapsed, toggleSidebar } = useSidebar();
   const router = useRouter();
 
   useEffect(() => {
@@ -660,17 +664,33 @@ export function DashboardView({
 
       {/* 1. Cabeçalho do Dashboard: ocupando toda a largura da área principal com proporção da referência visual */}
       <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4 sm:gap-6 pb-4 border-b border-[#1E293B] min-w-0">
-        {/* Lado Esquerdo: Saudação com destaque visual ~34px e subtítulo ~16px */}
-        <div className="min-w-0">
-          <h1 className="text-[26px] sm:text-[30px] lg:text-[34px] font-bold text-[#F8FAFC] tracking-tight leading-tight flex items-baseline gap-2 flex-wrap">
-            <span>{greeting},</span>
-            <span className="text-[#FACC15]">{userName}</span>
-          </h1>
-          <p className="text-[14px] lg:text-[15px] text-[#94A3B8] mt-1 font-normal truncate max-w-[650px]">
-            {effectiveViewMode === 'business'
-              ? `Acompanhe as métricas e o desempenho de ${businessName}`
-              : 'Aqui está o resumo financeiro consolidado do seu patrimônio'}
-          </p>
+        {/* Lado Esquerdo: Toggle da Sidebar + Saudação com destaque visual ~34px e subtítulo ~16px */}
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="hidden md:flex p-2.5 text-[#94A3B8] hover:text-[#F8FAFC] bg-[#0D121F] border border-[#1E293B] hover:bg-[#151D30] rounded-xl transition shrink-0 cursor-pointer shadow-sm"
+            title={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+            aria-label="Alternar menu lateral"
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="w-4 h-4 text-[#FACC15]" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4 text-[#94A3B8]" />
+            )}
+          </button>
+
+          <div className="min-w-0">
+            <h1 className="text-[26px] sm:text-[30px] lg:text-[34px] font-bold text-[#F8FAFC] tracking-tight leading-tight flex items-baseline gap-2 flex-wrap">
+              <span>{greeting},</span>
+              <span className="text-[#FACC15]">{userName}</span>
+            </h1>
+            <p className="text-[14px] lg:text-[15px] text-[#94A3B8] mt-1 font-normal truncate max-w-[650px]">
+              {effectiveViewMode === 'business'
+                ? `Acompanhe as métricas e o desempenho de ${businessName}`
+                : 'Aqui está o resumo financeiro consolidado do seu patrimônio'}
+            </p>
+          </div>
         </div>
 
         {/* Lado Direito: Seletor de período, Notificações, Privacidade, Modo e Botão de Ação Principal */}

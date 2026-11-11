@@ -550,7 +550,137 @@ export function ClientsList({ initialClients, accounts = [] }: ClientsListProps)
 
       {/* Tabela de Clientes */}
       <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl">
-        <div className="overflow-x-auto">
+        {/* Mobile Cards (telas pequenas) */}
+        <div className="block md:hidden space-y-3">
+          {filteredClients.map((client) => {
+            const { analytics } = client;
+
+            return (
+              <div
+                key={client.id}
+                onClick={() => setSelectedClientForHistory(client)}
+                className="p-4 bg-[#080B11] border border-[#1E293B] hover:border-slate-700 rounded-xl transition cursor-pointer space-y-3"
+              >
+                {/* Header do Card: Avatar, Nome, Badges */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700/80 flex items-center justify-center font-bold text-sm text-emerald-400 shrink-0">
+                      {client.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-zinc-100 text-sm truncate">{client.name}</span>
+                        {client.isVip && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                            <Crown className="w-2.5 h-2.5 text-amber-400" /> VIP
+                          </span>
+                        )}
+                        {isBirthdayToday(client.birth_date) ? (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                            🎂 Hoje!
+                          </span>
+                        ) : isBirthdayThisMonth(client.birth_date) ? (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-500/10 text-pink-300 border border-pink-500/20">
+                            🎂 Aniversariante
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeStyle(
+                            analytics.status
+                          )}`}
+                        >
+                          {analytics.statusLabel}
+                        </span>
+                        {Number(client.totalDebt || 0) > 0 && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                            Deve {formatCurrency(Number(client.totalDebt))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ações rápidas */}
+                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {client.phone && (
+                      <button
+                        onClick={() => openEngagementModal(client)}
+                        className="p-1.5 text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition"
+                        title="Enviar mensagem WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleEdit(client)}
+                      className="p-1.5 text-zinc-400 hover:text-zinc-100 rounded-lg hover:bg-zinc-800 transition"
+                      title="Editar cliente"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(client.id, client.name)}
+                      disabled={deletingId === client.id}
+                      className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg hover:bg-zinc-800 transition"
+                      title="Excluir cliente"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Métricas do cliente */}
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#1E293B]/60 text-center">
+                  <div className="p-2 rounded-lg bg-zinc-900/40">
+                    <span className="text-[10px] uppercase text-[#94A3B8] block">Visitas</span>
+                    <span className="text-xs font-semibold text-zinc-200">{client.totalSalesCount}</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-zinc-900/40">
+                    <span className="text-[10px] uppercase text-[#94A3B8] block">Total Gasto</span>
+                    <span className="text-xs font-semibold text-emerald-400">
+                      {formatCurrency(client.totalSpent)}
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-zinc-900/40">
+                    <span className="text-[10px] uppercase text-[#94A3B8] block">Última Visita</span>
+                    <span className="text-xs font-medium text-zinc-300">
+                      {client.lastSaleDate ? formatDate(client.lastSaleDate) : '—'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Ciclo / Frequência e Link de Nova Venda */}
+                <div className="flex items-center justify-between text-[11px] text-[#94A3B8] pt-1">
+                  <span>
+                    {analytics.cycleDays ? `Ciclo médio: ~${analytics.cycleDays} dias` : 'Sem ciclo definido'}
+                  </span>
+                  <Link
+                    href={`/vendas?client_id=${client.id}&new=true`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-medium"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Novo(a) {salesLabel.toLowerCase()}</span>
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+
+          {filteredClients.length === 0 && (
+            <div className="py-12 text-center text-zinc-500">
+              <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              {searchTerm || statusFilter !== 'all'
+                ? 'Nenhum cliente encontrado para este filtro.'
+                : 'Nenhum cliente cadastrado ainda. Clique em "Novo Cliente" para começar.'}
+            </div>
+          )}
+        </div>
+
+        {/* Tabela Desktop */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-[#1E293B] text-[#94A3B8] uppercase tracking-wider text-[10px]">

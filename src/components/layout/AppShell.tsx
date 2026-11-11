@@ -4,7 +4,7 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import { DateProvider } from '@/context/DateContext';
 import { MobileNavigationProvider, useMobileNavigation, MobileContextMode } from '@/context/MobileNavigationContext';
-import { SidebarProvider } from '@/context/SidebarContext';
+import { SidebarProvider, useSidebar } from '@/context/SidebarContext';
 import { BusinessProfile } from '@/types/database';
 import { BusinessProfileProvider } from '@/context/BusinessProfileContext';
 import { AppSidebar } from './AppSidebar';
@@ -55,35 +55,53 @@ function AppShellDrawers() {
   );
 }
 
+function AppShellContent({
+  userEmail,
+  children,
+}: {
+  userEmail?: string;
+  children: React.ReactNode;
+}) {
+  const { collapsed } = useSidebar();
+
+  return (
+    <div className="min-h-screen flex bg-[#080B11] text-[#F8FAFC] overflow-x-hidden">
+      {/* 1. Sidebar Desktop (232px expandida, 72px recolhida com transição suave) */}
+      <AppSidebar userEmail={userEmail} />
+
+      {/* 2. Área Principal com início ajustado dinamicamente conforme estado da sidebar */}
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+          collapsed ? 'md:pl-[72px]' : 'md:pl-[232px]'
+        }`}
+      >
+        <AppHeader userEmail={userEmail} />
+
+        <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-[26px] md:pt-[32px] md:pb-[24px] min-w-0">
+          <MobilePullToRefresh>
+            <div className="w-full max-w-[1680px] mx-auto min-w-0">
+              <MobileBackButton />
+              {children}
+            </div>
+          </MobilePullToRefresh>
+        </main>
+      </div>
+
+      {/* 3. Navegação e Drawers Mobile preservados 100% */}
+      <BottomNav />
+      <AppShellDrawers />
+      <OnboardingModal />
+    </div>
+  );
+}
+
 export function AppShell({ userEmail, initialProfile, initialContextMode, children }: AppShellProps) {
   return (
     <BusinessProfileProvider initialProfile={initialProfile}>
       <DateProvider key={userEmail || 'anonymous'}>
         <MobileNavigationProvider initialContextMode={initialContextMode}>
           <SidebarProvider>
-            <div className="min-h-screen flex bg-[#080B11] text-[#F8FAFC] overflow-x-hidden">
-              {/* 1. Sidebar Fixa Desktop (232px) */}
-              <AppSidebar userEmail={userEmail} />
-
-              {/* 2. Área Principal com início logo após a sidebar (md:pl-[232px]) */}
-              <div className="flex-1 flex flex-col min-w-0 md:pl-[232px]">
-                <AppHeader userEmail={userEmail} />
-
-                <main className="flex-1 w-full px-4 pt-3 pb-24 md:px-[26px] md:pt-[32px] md:pb-[24px] min-w-0">
-                  <MobilePullToRefresh>
-                    <div className="w-full max-w-[1680px] mx-auto min-w-0">
-                      <MobileBackButton />
-                      {children}
-                    </div>
-                  </MobilePullToRefresh>
-                </main>
-              </div>
-
-              {/* 3. Navegação e Drawers Mobile preservados 100% */}
-              <BottomNav />
-              <AppShellDrawers />
-              <OnboardingModal />
-            </div>
+            <AppShellContent userEmail={userEmail}>{children}</AppShellContent>
           </SidebarProvider>
         </MobileNavigationProvider>
       </DateProvider>
