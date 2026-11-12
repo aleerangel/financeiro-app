@@ -40,6 +40,7 @@ export function GeneralDashboardMobile({
   accounts,
   cards,
   formattedMonth,
+  onEditBalance,
 }: GeneralDashboardMobileProps) {
   const { showValues } = useMobileNavigation();
 
@@ -112,6 +113,40 @@ export function GeneralDashboardMobile({
             <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1 mt-1 tabular-nums">
               <Sparkles className="w-3 h-3" /> Rendendo +{formatHidden(formatCurrency(totalYieldMonth))} este mês
             </span>
+          )}
+
+          {/* Subdivisão discreta por conta quando houver mais de uma */}
+          {accounts.length > 1 && (
+            <div className="mt-3 pt-2.5 border-t border-[#1E293B]/60 space-y-1.5">
+              {accounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  className="flex items-center justify-between text-xs text-[#94A3B8]"
+                >
+                  <div className="flex items-center gap-2 min-w-0 pr-2">
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: acc.color || '#3b82f6' }}
+                    />
+                    <span className="truncate text-slate-300 font-medium">{acc.name}</span>
+                  </div>
+                  {onEditBalance ? (
+                    <button
+                      type="button"
+                      onClick={() => onEditBalance(acc)}
+                      className="tabular-nums font-semibold text-slate-200 hover:text-[#FACC15] transition-colors shrink-0"
+                      title="Ajustar saldo"
+                    >
+                      {formatHidden(formatCurrency(Number(acc.current_balance || 0)))}
+                    </button>
+                  ) : (
+                    <span className="tabular-nums font-semibold text-slate-200 shrink-0">
+                      {formatHidden(formatCurrency(Number(acc.current_balance || 0)))}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
