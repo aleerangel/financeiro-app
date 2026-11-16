@@ -191,8 +191,8 @@ export function GeneralDashboardDesktop({
   const totalExpectedExpense = paidExpense + pendingExpense + totalCurrentInvoice;
   const paidExpensePct =
     totalExpectedExpense > 0
-      ? Math.min(100, Math.round((paidExpenseTotal / totalExpectedExpense) * 100))
-      : paidExpenseTotal > 0
+      ? Math.min(100, Math.round((paidExpense / totalExpectedExpense) * 100))
+      : paidExpense > 0
       ? 100
       : 0;
 
@@ -242,7 +242,7 @@ export function GeneralDashboardDesktop({
           </div>
         </div>
 
-        {/* Coluna 2: Saídas (Despesas Pagas + Faturas de Cartões) */}
+        {/* Coluna 2: Saídas (Despesas Pagas) */}
         <div className="p-5 bg-[#0D121F] border border-[#1E293B] rounded-2xl flex flex-col justify-between shadow-sm min-w-0">
           <div className="flex items-center justify-between text-[#94A3B8] mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-rose-400">
@@ -254,14 +254,18 @@ export function GeneralDashboardDesktop({
           </div>
           <div>
             <h2 className="text-2xl font-bold text-rose-400 tabular-nums">
-              {formatHidden(formatCurrency(paidExpenseTotal))}
+              {formatHidden(formatCurrency(paidExpense))}
             </h2>
 
             {/* Barra de Progresso / Realização da Despesa */}
             <div className="my-2">
               <div className="flex items-center justify-between text-[10px] text-[#94A3B8] mb-1">
-                <span className="font-medium text-rose-400">{paidExpensePct}% liquidado</span>
-                <span>{pendingExpense > 0 ? `A pagar: ${formatHidden(formatCurrency(pendingExpense))}` : 'Faturas somadas'}</span>
+                <span className="font-medium text-rose-400">{paidExpensePct}% pago</span>
+                <span>
+                  {pendingExpense + totalCurrentInvoice > 0
+                    ? `Restam ${formatHidden(formatCurrency(pendingExpense + totalCurrentInvoice))}`
+                    : '100% liquidado'}
+                </span>
               </div>
               <div className="w-full h-1.5 bg-[#080B11] rounded-full overflow-hidden border border-[#1E293B]">
                 <div
@@ -272,7 +276,7 @@ export function GeneralDashboardDesktop({
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
-              <span>Pagas: {formatHidden(formatCurrency(paidExpense))}</span>
+              <span>{pendingExpense + totalCurrentInvoice > 0 ? `Total: ${formatHidden(formatCurrency(totalExpectedExpense))}` : 'Contas em dia'}</span>
               <span>Faturas: {formatHidden(formatCurrency(totalCurrentInvoice))}</span>
             </div>
           </div>
