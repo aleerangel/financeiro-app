@@ -188,7 +188,7 @@ export function GeneralDashboardDesktop({
   }
 
   const paidExpenseTotal = paidExpense + totalCurrentInvoice;
-  const totalExpectedExpense = paidExpense + pendingExpense + totalCurrentInvoice;
+  const totalExpectedExpense = paidExpense + pendingExpense;
   const paidExpensePct =
     totalExpectedExpense > 0
       ? Math.min(100, Math.round((paidExpense / totalExpectedExpense) * 100))
@@ -262,8 +262,8 @@ export function GeneralDashboardDesktop({
               <div className="flex items-center justify-between text-[10px] text-[#94A3B8] mb-1">
                 <span className="font-medium text-rose-400">{paidExpensePct}% pago</span>
                 <span>
-                  {pendingExpense + totalCurrentInvoice > 0
-                    ? `Restam ${formatHidden(formatCurrency(pendingExpense + totalCurrentInvoice))}`
+                  {pendingExpense > 0
+                    ? `Restam ${formatHidden(formatCurrency(pendingExpense))}`
                     : '100% liquidado'}
                 </span>
               </div>
@@ -276,7 +276,7 @@ export function GeneralDashboardDesktop({
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-1 tabular-nums">
-              <span>{pendingExpense + totalCurrentInvoice > 0 ? `Total: ${formatHidden(formatCurrency(totalExpectedExpense))}` : 'Contas em dia'}</span>
+              <span>{pendingExpense > 0 ? `Total: ${formatHidden(formatCurrency(totalExpectedExpense))}` : 'Contas em dia'}</span>
               <span>Faturas: {formatHidden(formatCurrency(totalCurrentInvoice))}</span>
             </div>
           </div>
