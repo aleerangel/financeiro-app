@@ -3,7 +3,7 @@
 import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Recurrence, TransactionType, FinancialScope } from '@/types/database';
-import { isPastMonth, getZonedParts } from '@/lib/date-utils';
+import { isPastMonth, getZonedParts, getTodayYMD } from '@/lib/date-utils';
 import { isRecurrenceEligible, buildDueDate } from '@/lib/recurrence-utils';
 import { isBusinessRecurrence, applyScopeToNotes } from '@/lib/business-scope-utils';
 
@@ -381,5 +381,114 @@ export async function deleteRecurrence(id: string) {
 
   revalidatePath('/recorrencias');
   revalidatePath('/dashboard');
+}
+
+export interface AdvanceRecurrencePaymentInput {
+  recurrenceId: string;
+  targetMonth: number; // 0 a 11
+  targetYear: number;
+  amount?: number;
+  accountId?: string | null;
+  paidDate?: string; // YYYY-MM-DD
+}
+
+export async function advanceRecurrencePayment(input: AdvanceRecurrencePaymentInput) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Não autenticado');
+
+  // 1. Busca a conta fixa
+  const { data: rec, error: recError } = await supabase
+    .from('recurrences')
+    .select('*')
+    .eq('id', input.recurrenceId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (recError || !rec) {
+    throw new Error('Conta fixa não encontrada.');
+  }
+
+  // 2. Garante sincronização da competência alvo
+  await syncMonthlyRecurrences(input.targetMonth, input.targetYear);
+
+  const startDate = `${input.targetYear}-${String(input.targetMonth + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(input.targetYear, input.targetMonth + 1, 0).getDate();
+  const endDate = `${input.targetYear}-${String(input.targetMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  // 3. Busca o lançamento já existente da competência
+  const { data: existingTx } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('recurrence_id', rec.id)
+    .gte('due_date', startDate)
+    .lte('due_date', endDate)
+    .maybeSingle();
+
+  const paidDateStr = input.paidDate || getTodayYMD();
+  const resolvedPaidAt = `${paidDateStr}T12:00:00.000Z`;
+  const effectiveAmount = input.amount !== undefined && input.amount > 0 ? input.amount : Number(rec.amount);
+
+  let targetTxId: string;
+
+  if (existingTx) {
+    targetTxId = existingTx.id;
+    const { error: updateError } = await supabase
+      .from('transactions')
+      .update({
+        is_paid: true,
+        paid_at: resolvedPaidAt,
+        amount: effectiveAmount,
+        account_id: input.accountId !== undefined ? input.accountId : existingTx.account_id,
+        notes: existingTx.notes
+          ? `${existingTx.notes}\n[PAGAMENTO_ADIANTADO]`
+          : '[PAGAMENTO_ADIANTADO]',
+      })
+      .eq('id', existingTx.id)
+      .eq('user_id', user.id);
+
+    if (updateError) throw new Error(updateError.message);
+  } else {
+    // Se não existia ainda, cria o lançamento da competência já como pago
+    const dueDate = buildDueDate(input.targetYear, input.targetMonth, rec.due_day);
+    const isBiz = isBusinessRecurrence(rec as unknown as Recurrence);
+    const scope: FinancialScope = isBiz ? 'business' : 'personal';
+
+    const { data: newTx, error: insertError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: user.id,
+        description: rec.description,
+        amount: effectiveAmount,
+        type: rec.type,
+        payment_method: rec.credit_card_id ? 'credit' : rec.account_id ? 'debit' : 'pix',
+        transaction_date: dueDate,
+        due_date: dueDate,
+        category_id: rec.category_id || null,
+        account_id: input.accountId !== undefined ? input.accountId : rec.account_id || null,
+        credit_card_id: rec.credit_card_id || null,
+        recurrence_id: rec.id,
+        is_paid: true,
+        paid_at: resolvedPaidAt,
+        notes: applyScopeToNotes('Lançamento adiantado de conta fixa [PAGAMENTO_ADIANTADO]', scope),
+        scope,
+      })
+      .select()
+      .single();
+
+    if (insertError) throw new Error(insertError.message);
+    targetTxId = newTx.id;
+  }
+
+  invalidateRecurrenceSync(user.id);
+
+  revalidatePath('/recorrencias');
+  revalidatePath('/transacoes');
+  revalidatePath('/dashboard');
+  revalidatePath('/contas');
+
+  return { success: true, transactionId: targetTxId };
 }
 

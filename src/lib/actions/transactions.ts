@@ -4,9 +4,10 @@ import { createClient, getAuthenticatedUser } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { calculateInstallmentDueDates, parseAdvancePaymentMetadata } from '@/lib/credit-card-utils';
-import { getZonedParts, getTodayYMD, getZonedRangeBoundsIso, getZonedYMD, isCurrentMonth } from '@/lib/date-utils';
+import { getZonedParts, getTodayYMD, getZonedRangeBoundsIso, getZonedYMD, isCurrentMonth, isPastMonth } from '@/lib/date-utils';
 import { applyScopeToNotes } from '@/lib/business-scope-utils';
 import { fetchAllPages } from '@/lib/supabase/pagination';
+import { syncMonthlyRecurrences } from './recurrences';
 
 export interface CreateTransactionInput {
   description: string;
@@ -46,6 +47,11 @@ export async function getTransactions(month: number, year: number): Promise<Tran
 
   if (!user) {
     throw new Error('Não autenticado');
+  }
+
+  // Sincroniza automaticamente as contas fixas do mês (se for mês atual ou futuro)
+  if (!isPastMonth(month, year)) {
+    await syncMonthlyRecurrences(month, year).catch(() => {});
   }
 
   // Primeiro e último dia do mês selecionado

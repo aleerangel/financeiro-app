@@ -11,6 +11,7 @@ import {
   Trash2,
   RefreshCw,
   Pencil,
+  Zap,
 } from 'lucide-react';
 import { Recurrence, Account, CreditCard, Category } from '@/types/database';
 import { toggleRecurrenceActive, deleteRecurrence, syncMonthlyRecurrences } from '@/lib/actions/recurrences';
@@ -24,6 +25,11 @@ import { SegmentIcon } from '@/components/ui/SegmentIcon';
 
 const RecurrenceModal = dynamic(
   () => import('./RecurrenceModal').then((m) => m.RecurrenceModal),
+  { ssr: false }
+);
+
+const AdvanceRecurrencePaymentModal = dynamic(
+  () => import('./AdvanceRecurrencePaymentModal').then((m) => m.AdvanceRecurrencePaymentModal),
   { ssr: false }
 );
 
@@ -46,6 +52,8 @@ export function RecurrencesList({
   const [recurrences, setRecurrences] = useState<Recurrence[]>(initialRecurrences);
   const [modalOpen, setModalOpen] = useState(false);
   const [recurrenceToEdit, setRecurrenceToEdit] = useState<Recurrence | null>(null);
+  const [advanceModalOpen, setAdvanceModalOpen] = useState(false);
+  const [recurrenceToAdvance, setRecurrenceToAdvance] = useState<Recurrence | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -234,6 +242,21 @@ export function RecurrencesList({
                   {formatCurrency(Number(rec.amount))}
                 </span>
 
+                {/* Botão Adiantar Pagamento (quando ativa) */}
+                {rec.active && (
+                  <button
+                    onClick={() => {
+                      setRecurrenceToAdvance(rec);
+                      setAdvanceModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FACC15]/10 hover:bg-[#FACC15]/20 text-[#FACC15] border border-[#FACC15]/30 transition cursor-pointer"
+                    title="Adiantar pagamento do próximo mês"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>Adiantar</span>
+                  </button>
+                )}
+
                 {/* Botão Pausar / Ativar */}
                 <button
                   onClick={() => handleToggle(rec)}
@@ -295,6 +318,17 @@ export function RecurrencesList({
         accounts={accounts}
         cards={cards}
         categories={categories}
+        onSuccess={() => window.location.reload()}
+      />
+
+      <AdvanceRecurrencePaymentModal
+        isOpen={advanceModalOpen}
+        onClose={() => {
+          setAdvanceModalOpen(false);
+          setRecurrenceToAdvance(null);
+        }}
+        recurrence={recurrenceToAdvance}
+        accounts={accounts}
         onSuccess={() => window.location.reload()}
       />
     </div>
