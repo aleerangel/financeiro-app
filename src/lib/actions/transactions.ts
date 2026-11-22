@@ -35,6 +35,7 @@ export interface UpdateTransactionInput {
   account_id?: string | null;
   credit_card_id?: string | null;
   is_paid?: boolean;
+  paid_at?: string | null;
   notes?: string | null;
   scope?: FinancialScope;
 }
@@ -237,9 +238,65 @@ export async function updateTransaction(id: string, input: UpdateTransactionInpu
   if (input.category_id !== undefined) updates.category_id = input.category_id;
   if (input.account_id !== undefined) updates.account_id = input.account_id;
   if (input.credit_card_id !== undefined) updates.credit_card_id = input.credit_card_id;
-  if (input.is_paid !== undefined) {
+
+  // Se for compra no cartão de crédito com alteração de data da compra, recalcula o vencimento da fatura
+  if (
+    input.payment_method === 'credit' &&
+    input.credit_card_id &&
+    input.transaction_date
+  ) {
+    const { data: card } = await supabase
+      .from('credit_cards')
+      .select('closing_day, due_day')
+      .eq('id', input.credit_card_id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (card) {
+      const calculatedDueDates = calculateInstallmentDueDates(
+        input.transaction_date,
+        card.closing_day,
+        card.due_day,
+        1
+      );
+      if (calculatedDueDates.length > 0) {
+        updates.due_date = calculatedDueDates[0];
+      }
+    }
+  }
+
+  // Tratamento da data de pagamento efetiva (paid_at)
+  if (input.paid_at !== undefined) {
+    updates.paid_at = input.paid_at
+      ? (input.paid_at.includes('T') ? input.paid_at : `${input.paid_at}T12:00:00.000Z`)
+      : null;
+    if (input.is_paid !== undefined) {
+      updates.is_paid = input.is_paid;
+    } else if (input.paid_at) {
+      updates.is_paid = true;
+    }
+  } else if (input.is_paid !== undefined) {
     updates.is_paid = input.is_paid;
-    updates.paid_at = input.is_paid ? new Date().toISOString() : null;
+    if (input.is_paid) {
+      const targetDate = input.transaction_date || input.due_date;
+      updates.paid_at = targetDate ? `${targetDate}T12:00:00.000Z` : new Date().toISOString();
+    } else {
+      updates.paid_at = null;
+    }
+  } else if (input.transaction_date || input.due_date) {
+    // is_paid não foi explicitado, mas a data foi alterada. Se a transação já estiver quitada,
+    // atualiza paid_at para acompanhar a nova data da transação
+    const { data: currentTx } = await supabase
+      .from('transactions')
+      .select('is_paid, payment_method')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (currentTx?.is_paid && currentTx.payment_method !== 'credit') {
+      const targetDate = input.transaction_date || input.due_date;
+      updates.paid_at = `${targetDate}T12:00:00.000Z`;
+    }
   }
   if (input.notes !== undefined) {
     // Preserva tag de vínculo com adiantamento parcial caso a transação seja editada

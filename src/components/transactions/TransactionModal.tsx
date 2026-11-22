@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { X, ArrowDownRight, ArrowUpRight, CreditCard as CardIcon, User, Store, Trash2 } from 'lucide-react';
 import { Account, CreditCard, Category, Transaction, TransactionType, PaymentMethod, FinancialScope } from '@/types/database';
 import { createTransaction, updateTransaction, deleteTransaction } from '@/lib/actions/transactions';
@@ -75,6 +76,7 @@ function TransactionModalDialog({
 
   const { hasBusiness, businessName } = useBusinessProfile();
   const { confirm } = useConfirm();
+  const router = useRouter();
   const effectiveInitialScope = hasBusiness ? initialScope : 'personal';
   const [scope, setScope] = useState<FinancialScope>(effectiveInitialScope);
   const [tab, setTab] = useState<TabType>(initialTab);
@@ -205,10 +207,12 @@ function TransactionModalDialog({
           category_id: categoryId || null,
           account_id: tab !== 'credit' ? accountId || null : null,
           credit_card_id: tab === 'credit' ? cardId || null : null,
-          is_paid: tab === 'credit' ? false : isPaid,
+          is_paid: tab === 'credit' ? transaction.is_paid : isPaid,
+          paid_at: tab !== 'credit' && isPaid ? `${date}T12:00:00.000Z` : undefined,
           notes: notes.trim() || null,
           scope,
         });
+        toast.success('Lançamento atualizado com sucesso!');
       } else {
         await createTransaction({
           description: description.trim(),
@@ -225,6 +229,9 @@ function TransactionModalDialog({
           notes: notes.trim() || null,
           scope,
         });
+        toast.success(
+          txType === 'income' ? 'Receita criada com sucesso!' : 'Despesa registrada com sucesso!'
+        );
       }
 
       if (mobileNav?.notifyMutation) {
@@ -247,6 +254,7 @@ function TransactionModalDialog({
         });
       }
 
+      router.refresh();
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
