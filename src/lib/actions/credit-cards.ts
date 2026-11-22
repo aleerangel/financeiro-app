@@ -265,7 +265,8 @@ export async function setCreditCardInvoicePaid(
   month: number,
   year: number,
   isPaid: boolean,
-  accountId?: string | null
+  accountId?: string | null,
+  paidDate?: string | null
 ): Promise<void> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -276,9 +277,13 @@ export async function setCreditCardInvoicePaid(
   const lastDay = new Date(year, month + 1, 0).getDate();
   const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
+  const resolvedPaidAt = isPaid
+    ? (paidDate ? (paidDate.includes('T') ? paidDate : `${paidDate}T12:00:00.000Z`) : new Date().toISOString())
+    : null;
+
   const updatePayload: Record<string, unknown> = {
     is_paid: isPaid,
-    paid_at: isPaid ? new Date().toISOString() : null,
+    paid_at: resolvedPaidAt,
   };
 
   if (!isPaid) {
@@ -330,7 +335,8 @@ export async function payCreditCardInvoiceAmount(
   year: number,
   amountToPay: number,
   accountId?: string | null,
-  targetTransactionId?: string | null
+  targetTransactionId?: string | null,
+  paidDate?: string | null
 ): Promise<PayInvoiceResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -368,7 +374,10 @@ export async function payCreditCardInvoiceAmount(
     return { paidAmount: 0, remainingPending: 0, isFullyPaid: true };
   }
 
-  const nowIso = new Date().toISOString();
+  const resolvedPaidAt = paidDate
+    ? (paidDate.includes('T') ? paidDate : `${paidDate}T12:00:00.000Z`)
+    : new Date().toISOString();
+  const nowIso = resolvedPaidAt;
   let resolvedAccountId: string | null = null;
   if (accountId === 'none') {
     resolvedAccountId = null;
@@ -469,7 +478,7 @@ export async function payCreditCardInvoiceAmount(
 
   // Caso 2: Pagamento total da fatura
   if (amountToPay >= totalPending - 0.009) {
-    await setCreditCardInvoicePaid(cardId, month, year, true, resolvedAccountId);
+    await setCreditCardInvoicePaid(cardId, month, year, true, resolvedAccountId, paidDate);
     return { paidAmount: totalPending, remainingPending: 0, isFullyPaid: true };
   }
 

@@ -160,7 +160,8 @@ export async function exportTransactionsReport({
     const sourceLabel = t.credit_card?.name
       ? `Cartão ${t.credit_card.name}`
       : t.account?.name || '-';
-    const dateFormatted = formatDate(t.due_date || t.transaction_date);
+    const effectiveDate = t.is_paid && t.paid_at ? t.paid_at : (t.due_date || t.transaction_date);
+    const dateFormatted = formatDate(effectiveDate);
 
     return [
       dateFormatted,
@@ -291,7 +292,7 @@ export async function exportTransactionsReport({
       : t.account?.name || '-';
 
     return [
-      formatDate(t.due_date || t.transaction_date),
+      formatDate(t.is_paid && t.paid_at ? t.paid_at : (t.due_date || t.transaction_date)),
       t.description,
       t.category?.name || 'Sem categoria',
       sourceLabel,

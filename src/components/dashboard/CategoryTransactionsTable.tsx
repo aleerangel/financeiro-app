@@ -165,7 +165,7 @@ export function CategoryTransactionsTable({
                           : t.account?.name || 'Conta / Carteira'}
                       </span>
                       <span>•</span>
-                      <span>{formatDate(t.due_date)}</span>
+                      <span>{formatDate(t.is_paid && t.paid_at ? t.paid_at : t.due_date)}</span>
                     </div>
                   </div>
                 </div>

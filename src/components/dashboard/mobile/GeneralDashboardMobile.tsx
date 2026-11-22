@@ -280,7 +280,7 @@ export function GeneralDashboardMobile({
                       {t.description}
                     </span>
                     <span className="text-[10px] text-[#64748B] block mt-0.5">
-                      {formatDate(t.due_date)} • {t.category?.name || 'Geral'}
+                      {formatDate(t.is_paid && t.paid_at ? t.paid_at : t.due_date)} • {t.category?.name || 'Geral'}
                     </span>
                   </div>
 

@@ -604,7 +604,7 @@ export function CategoryEvolutionMobileView({
                         </div>
 
                         <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mt-0.5">
-                          <span>{formatDate(tx.due_date)}</span>
+                          <span>{formatDate(tx.is_paid && tx.paid_at ? tx.paid_at : tx.due_date)}</span>
                           <span>•</span>
                           <span className="truncate max-w-[110px]">
                             {isCredit

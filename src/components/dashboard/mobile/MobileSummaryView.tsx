@@ -1376,7 +1376,7 @@ export function MobileSummaryView({
                         {exp.description}
                       </span>
                       <span className="text-[10px] text-zinc-400 block">
-                        {formatDate(exp.due_date)} • {exp.category_name} • {exp.source_name}
+                        {formatDate(exp.is_paid && exp.paid_at ? exp.paid_at : exp.due_date)} • {exp.category_name} • {exp.source_name}
                       </span>
                     </div>
 

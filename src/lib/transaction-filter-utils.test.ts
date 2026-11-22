@@ -122,4 +122,26 @@ describe('transaction-filter-utils', () => {
     expect(groups[1].date).toBe('2026-10-10');
     expect(groups[1].expenseTotal).toBe(180);
   });
+
+  it('groups credit card transactions paid after due date on paid_at day rather than due_date', () => {
+    const creditTx: Transaction = {
+      id: 'cc-late-payment',
+      user_id: 'u1',
+      description: 'Fatura Nubank',
+      amount: 450,
+      type: 'expense',
+      payment_method: 'credit',
+      transaction_date: '2026-11-05',
+      due_date: '2026-11-21',
+      is_paid: true,
+      paid_at: '2026-11-22T15:00:00.000Z',
+      scope: 'personal',
+      created_at: '2026-11-05T10:00:00.000Z',
+    };
+
+    const groups = groupTransactionsByDay([creditTx]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].date).toBe('2026-11-22');
+    expect(groups[0].expenseTotal).toBe(450);
+  });
 });

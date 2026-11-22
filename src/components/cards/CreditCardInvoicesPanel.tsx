@@ -290,7 +290,14 @@ export function CreditCardInvoicesPanel({
     if (!activeCard) return;
     try {
       setActionLoading(true);
-      await setCreditCardInvoicePaid(activeCard.id, selectedMonth, selectedYear, markAsPaid);
+      await setCreditCardInvoicePaid(
+        activeCard.id,
+        selectedMonth,
+        selectedYear,
+        markAsPaid,
+        null,
+        markAsPaid ? getTodayYMD() : null
+      );
       toast.success(markAsPaid ? 'Fatura marcada como paga com sucesso!' : 'Fatura reaberta!');
       await refreshCardTransactions();
       router.refresh();

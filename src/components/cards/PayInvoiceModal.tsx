@@ -8,6 +8,7 @@ import {
   Sparkles,
   Receipt,
   Landmark,
+  Calendar,
 } from 'lucide-react';
 import {
   CreditCardWithUsage,
@@ -17,6 +18,7 @@ import {
 import { getAccounts, AccountWithBalance } from '@/lib/actions/accounts';
 import { Transaction } from '@/types/database';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { getTodayYMD } from '@/lib/date-utils';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { parseCurrencyInputToNumber } from '@/lib/currency-mask';
 import { toast } from 'sonner';
@@ -95,6 +97,7 @@ function PayInvoiceModalDialog({
   const [payMode, setPayMode] = useState<'full' | 'partial'>('full');
   const [selectedTargetTxId, setSelectedTargetTxId] = useState<string>('');
   const [partialAmountStr, setPartialAmountStr] = useState('');
+  const [paidDate, setPaidDate] = useState<string>(getTodayYMD());
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [loadingAccounts, setLoadingAccounts] = useState(true);
@@ -193,7 +196,8 @@ function PayInvoiceModalDialog({
         year,
         effectivePayAmount,
         accountToDebit,
-        selectedTargetTxId || null
+        selectedTargetTxId || null,
+        paidDate
       );
 
       if (res.isFullyPaid) {
@@ -518,6 +522,24 @@ function PayInvoiceModalDialog({
             )}
             <p className="text-[11px] text-[#64748B]">
               O valor pago abaterá o saldo da conta selecionada sem duplicar os gastos por categoria.
+            </p>
+          </div>
+
+          {/* Data do Pagamento / Quitação */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#94A3B8] flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-[#FACC15]" />
+              Data do Pagamento
+            </label>
+            <input
+              type="date"
+              value={paidDate}
+              onChange={(e) => setPaidDate(e.target.value)}
+              required
+              className="w-full px-3.5 py-2.5 bg-[#080B11] border border-[#1E293B] rounded-xl text-xs sm:text-sm text-[#F8FAFC] focus:outline-none focus:border-[#FACC15]/50 transition"
+            />
+            <p className="text-[11px] text-[#64748B]">
+              Data em que a baixa e a movimentação constarão no seu extrato bancário.
             </p>
           </div>
 

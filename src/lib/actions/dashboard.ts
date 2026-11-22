@@ -66,6 +66,7 @@ export interface RecentBusinessExpense {
   amount: number;
   due_date: string;
   is_paid: boolean;
+  paid_at?: string | null;
 }
 
 export interface BusinessExpenseSourceStat {
@@ -889,6 +890,7 @@ export async function getBusinessDashboardData(year: number, currentMonth: numbe
       amount: Number(tx.amount) || 0,
       due_date: tx.due_date,
       is_paid: tx.is_paid,
+      paid_at: tx.paid_at,
     };
   });
 

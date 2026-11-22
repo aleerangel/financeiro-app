@@ -15,7 +15,7 @@ import {
   isBusinessTransaction,
   stripScopeTagFromNotes,
 } from '@/lib/business-scope-utils';
-import { getTodayYMD } from '@/lib/date-utils';
+import { getTodayYMD, getZonedYMD } from '@/lib/date-utils';
 import { useOptionalMobileNavigation } from '@/context/MobileNavigationContext';
 import { useBusinessProfile } from '@/context/BusinessProfileContext';
 
@@ -82,9 +82,12 @@ function TransactionModalDialog({
   const [amount, setAmount] = useState(() =>
     transaction?.amount ? numberToCurrencyInputString(transaction.amount) : ''
   );
-  const [date, setDate] = useState(
-    transaction?.due_date || transaction?.transaction_date || getTodayYMD()
-  );
+  const initialDate =
+    (transaction?.is_paid && transaction?.paid_at ? getZonedYMD(transaction.paid_at) : null) ||
+    transaction?.due_date ||
+    transaction?.transaction_date ||
+    getTodayYMD();
+  const [date, setDate] = useState(initialDate);
   const [categoryId, setCategoryId] = useState<string>(
     transaction?.category_id ||
       (initialScope === 'business' && defaultBizCategory ? defaultBizCategory.id : '')
