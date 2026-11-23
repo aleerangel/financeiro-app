@@ -517,6 +517,8 @@ export async function getUpcomingAndOverdueBills(daysAhead: number = 3): Promise
     .eq('user_id', user.id)
     .eq('type', 'expense')
     .eq('is_paid', false)
+    .neq('payment_method', 'credit')
+    .is('credit_card_id', null)
     .lte('due_date', maxDueDate)
     .order('due_date', { ascending: true })
     .limit(10);

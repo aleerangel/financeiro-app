@@ -121,10 +121,11 @@ export function UnifiedDailyPendingHub({
       });
     }
 
-    // 2. Contas a pagar (due_date <= hoje e is_paid = false)
+    // 2. Contas a pagar (due_date <= hoje e is_paid = false, exceto compras de cartão de crédito já consolidadas na fatura)
     for (const tx of upcomingBills) {
       if (tx.is_paid) continue;
       if (tx.due_date > todayStr) continue; // REGRA: apenas hoje ou atrasados
+      if (tx.payment_method === 'credit' || tx.credit_card_id) continue; // Evita duplicidade com a fatura do cartão
 
       const isBiz = isBusinessTransaction(tx);
       if (scopeFilter === 'business' && !isBiz) continue;
