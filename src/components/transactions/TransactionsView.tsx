@@ -915,12 +915,14 @@ export function TransactionsView({
                     {/* Balanço do dia exibido em todas as versões (Desktop e Mobile) */}
                     <span
                       className={`font-bold px-2 py-0.5 rounded-md border text-[10px] sm:text-[11px] ${
-                        dayNet >= 0
+                        dayNet > 0
                           ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
+                          : dayNet < 0
+                          ? 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
+                          : 'bg-zinc-800/40 text-zinc-400 border border-zinc-700/40'
                       }`}
                     >
-                      Dia: {dayNet >= 0 ? '+' : '-'}
+                      Dia: {dayNet > 0 ? '+' : dayNet < 0 ? '-' : ''}
                       {formatCurrency(Math.abs(dayNet))}
                     </span>
                   </div>

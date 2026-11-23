@@ -113,14 +113,18 @@ describe('transaction-filter-utils', () => {
     expect(cardOnly.map((t) => t.id)).toEqual(['2']);
   });
 
-  it('groups transactions by day descending with income and expense subtotals', () => {
+  it('groups transactions by day descending with income and expense subtotals counting only paid transactions in realized totals', () => {
     const groups = groupTransactionsByDay(MOCK_TXS);
     expect(groups).toHaveLength(2);
     expect(groups[0].date).toBe('2026-10-15');
     expect(groups[0].incomeTotal).toBe(45);
-    expect(groups[0].expenseTotal).toBe(320);
+    // Despesa de R$ 320 está pendente (is_paid: false), logo expenseTotal realizado é 0
+    expect(groups[0].expenseTotal).toBe(0);
+    expect(groups[0].pendingExpenseTotal).toBe(320);
+
     expect(groups[1].date).toBe('2026-10-10');
     expect(groups[1].expenseTotal).toBe(180);
+    expect(groups[1].incomeTotal).toBe(0);
   });
 
   it('groups credit card transactions paid after due date on paid_at day rather than due_date', () => {

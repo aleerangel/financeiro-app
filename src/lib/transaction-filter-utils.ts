@@ -24,6 +24,8 @@ export interface TransactionDayGroup {
   items: Transaction[];
   incomeTotal: number;
   expenseTotal: number;
+  pendingIncomeTotal?: number;
+  pendingExpenseTotal?: number;
 }
 
 const WEEKDAY_NAMES = [
@@ -112,13 +114,23 @@ export function groupTransactionsByDay(
       items: [],
       incomeTotal: 0,
       expenseTotal: 0,
+      pendingIncomeTotal: 0,
+      pendingExpenseTotal: 0,
     };
     existing.items.push(t);
     const amt = Number(t.amount) || 0;
-    if (t.type === 'income') {
-      existing.incomeTotal += amt;
+    if (t.is_paid) {
+      if (t.type === 'income') {
+        existing.incomeTotal += amt;
+      } else {
+        existing.expenseTotal += amt;
+      }
     } else {
-      existing.expenseTotal += amt;
+      if (t.type === 'income') {
+        existing.pendingIncomeTotal = (existing.pendingIncomeTotal || 0) + amt;
+      } else {
+        existing.pendingExpenseTotal = (existing.pendingExpenseTotal || 0) + amt;
+      }
     }
     map.set(d, existing);
   }
